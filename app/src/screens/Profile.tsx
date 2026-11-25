@@ -7,6 +7,7 @@ import { loadData } from '../data/load.ts';
 import { whyOf } from '../data/why.ts';
 import { NAME_MAX, initialOf, nameProblem, tidyName } from '../join/name.ts';
 import { Back, Field, Heading } from '../ui/parts.tsx';
+import { Alerts } from './Alerts.tsx';
 import './profile.css';
 
 const TROUBLE: Record<Trouble, string> = {
@@ -16,9 +17,9 @@ const TROUBLE: Record<Trouble, string> = {
 };
 
 /**
- * Your Profile (SCOPE.md, "Screens"). For now: your name, your recovery key
- * and signing this phone out. Badges, rank history, stats, notification
- * settings and "Suggest an idea" arrive with the features they belong to.
+ * Your Profile (SCOPE.md, "Screens"): your name, your recovery key, alerts,
+ * signing this phone out and the league log. Badges, rank history, stats and
+ * "Suggest an idea" arrive with the features they belong to.
  */
 export function Profile(props: { me: Me; onBack: () => void; onRenamed: (me: Me) => void; onSignedOut: () => void; onCommish: () => void; onLog: () => void }) {
   const league = useDoc<{ commish?: string; coCommish?: string | null }>(`leagues/${props.me.league}`);
@@ -170,6 +171,8 @@ export function Profile(props: { me: Me; onBack: () => void; onRenamed: (me: Me)
             {key !== null ? 'Hide my key' : fetchingKey ? 'Getting it' : 'Show my key'}
           </button>
         </section>
+
+        <Alerts me={props.me} />
 
         <section class="panel" aria-labelledby="profile-phone-title">
           <h2 id="profile-phone-title">This phone</h2>

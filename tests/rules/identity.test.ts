@@ -312,10 +312,56 @@ describe('Profiles and devices', () => {
   });
 
   it("A device's push settings can be read and written by that device only", async () => {
-    await assertSucceeds(dev2().doc('devices/dev2').set({ token: 'abc', league: 'L1', player: 'p2', updatedAt: now() }));
+    await assertSucceeds(dev2().doc('devices/dev2').set(alerts('p2')));
     await assertSucceeds(dev2().doc('devices/dev2').get());
     await assertFails(dev3().doc('devices/dev2').get());
     await assertFails(dev1().doc('devices/dev2').get());
-    await assertFails(dev3().doc('devices/dev2').set({ token: 'stolen' }));
+    await assertFails(dev3().doc('devices/dev2').set({ ...alerts('p3'), token: 'stolen' }));
+    // Nobody lists everyone's devices.
+    await assertFails(dev2().collection('devices').get());
+  });
+
+  it("A device signs up for alerts only as the player its claim holds, so alerts can't follow someone else", async () => {
+    await assertFails(dev2().doc('devices/dev2').set(alerts('p3')));
+    await assertFails(dev2().doc('devices/dev2').set({ ...alerts('p2'), league: 'L2' }));
+    await assertFails(stranger().doc('devices/dev9').set(alerts('p2')));
+  });
+
+  it('Alert settings hold a token, the platform, the 7 categories on or off, and quiet hours from 0 to 23, saved at the server time', async () => {
+    await assertFails(dev2().doc('devices/dev2').set({ ...alerts('p2'), token: '' }));
+    await assertFails(dev2().doc('devices/dev2').set({ ...alerts('p2'), platform: 'fridge' }));
+    await assertFails(dev2().doc('devices/dev2').set({ ...alerts('p2'), settings: { ...alerts('p2').settings, everything: true } }));
+    await assertFails(dev2().doc('devices/dev2').set({ ...alerts('p2'), settings: { ...alerts('p2').settings, daily: 'yes' } }));
+    await assertFails(dev2().doc('devices/dev2').set({ ...alerts('p2'), quiet: { start: 24, end: 8 } }));
+    await assertFails(dev2().doc('devices/dev2').set({ ...alerts('p2'), quiet: { start: 23, end: 8.5 } }));
+    await assertFails(dev2().doc('devices/dev2').set({ ...alerts('p2'), quiet: { start: 23, end: 8, weekends: true } }));
+    await assertFails(dev2().doc('devices/dev2').set({ ...alerts('p2'), updatedAt: new Date(0) }));
+    await assertFails(dev2().doc('devices/dev2').set({ ...alerts('p2'), note: 'extra' }));
+    const { quiet: _quiet, ...noQuiet } = alerts('p2');
+    await assertFails(dev2().doc('devices/dev2').set(noQuiet));
+  });
+
+  it('A device can turn its alerts off by deleting its settings; nobody else can', async () => {
+    await dev2().doc('devices/dev2').set(alerts('p2'));
+    await assertFails(dev3().doc('devices/dev2').delete());
+    await assertSucceeds(dev2().doc('devices/dev2').delete());
+  });
+
+  it('A phone that was signed out can no longer save alerts for that player', async () => {
+    await asJob((db) => db.doc(`${league}/keys/p2`).update({ key: 'TCL-EEEE-EEEE' }));
+    await assertFails(dev2().doc('devices/dev2').set(alerts('p2')));
   });
 });
+
+/** A device's alert settings as the app saves them. */
+function alerts(player: string) {
+  return {
+    token: 'push-token-1',
+    platform: 'ios',
+    league: 'L1',
+    player,
+    settings: { daily: true, matchup: true, powerups: false, social: true, receipts: true, progress: true, league: true },
+    quiet: { start: 23, end: 8 },
+    updatedAt: now(),
+  };
+}

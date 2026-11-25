@@ -27,7 +27,7 @@ Where everything lives in Firestore, who can write it and who can read it. It co
 | Path | Written by | Read by | Phase | Fields |
 | --- | --- | --- | --- | --- |
 | `codes/{code}` | Setup script | Anyone signed in, one at a time, never listed | 1, rules today | `league`, `name` |
-| `devices/{device}` | That device | That device, jobs | 1, rules today | `token`, `platform`, `league`, `player`, `settings` (alert categories on or off), `quiet` (start, end), `updatedAt` |
+| `devices/{device}` | That device, only as the player its claim holds | That device, jobs; never listed | 1, rules today | `token`, `platform` (ios, android, desktop), `league`, `player`, `settings` (the 7 alert categories, each on or off), `quiet` (`start` and `end`, hours 0 to 23 in league time), `updatedAt` |
 | `leagues/{league}` | Setup script creates it. Joining adds one member. The commish edits it with an audit entry. | Members | 1, rules today | `name`, `code`, `commish`, `coCommish`, `joining` (open, approval, closed), `members` (map of player ids, 12 at most), `season` (the current one), `audit`, `demo` (true only for a demo league, the one kind the delete job may remove). Phase 3: `banner` (the reigning champion) |
 
 ## In a league: `leagues/{league}/...`

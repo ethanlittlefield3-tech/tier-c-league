@@ -242,6 +242,14 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 135. **A restore puts the database back as that morning's backup found it:** everything in the backup is written back, and anything it doesn't have is deleted, except proof photos. It can be limited to one league, and it needs the word "restore" typed in.
 136. **Timestamps keep every nanosecond,** so a restored day still compares equal with itself in the security rules (for example `firstAt`, which a day keeps for good).
 
+**Alerts, part 1: on the phone** (new on 2026-11-25, not yet reviewed by the commish)
+
+137. **Alerts are turned on with a tap,** as an iPhone requires: in Profile, or right after saving the recovery key. Each of the 7 kinds can be switched off (Daily, Matchup, Power-ups, Social, Receipts, Progress and League), and quiet hours default to 11 pm to 8 am in league time.
+138. **A phone signs up for alerts only as the player its claim holds,** so alerts never follow someone else, and a signed-out phone can't sign up again until it's back in.
+139. **The push token is fetched again on every open,** and saved if it changed, so a lapsed one is replaced (SCOPE.md, "Push notifications").
+140. **One service worker does two jobs:** it keeps the app's files on the phone, so the app opens with no signal once it has been opened before, and it shows alerts. A tap on an alert opens the app at its screen.
+141. **Alerts wait on one thing from the commish: the Cloud Messaging web push key.** Until it's in the app, Profile says alerts aren't switched on yet. The key is public by design, like the rest of the app's Firebase settings, so it can be pasted into the chat.
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.

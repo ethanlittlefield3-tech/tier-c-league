@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 263 of 263 passing.
+- **Tests:** 267 of 267 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -67,6 +67,10 @@ A device is in a league only while its claim holds the player's current recovery
 - A display name must be 1 to 24 characters
 - An accented letter counts as one character and an emoji as two
 - A device's push settings can be read and written by that device only
+- A device signs up for alerts only as the player its claim holds, so alerts can't follow someone else
+- Alert settings hold a token, the platform, the 7 categories on or off, and quiet hours from 0 to 23, saved at the server time
+- A device can turn its alerts off by deleting its settings; nobody else can
+- A phone that was signed out can no longer save alerts for that player
 
 ## Joining with the commish's approval
 

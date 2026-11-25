@@ -3,6 +3,8 @@ import { formatLeagueCode } from '@tcl/engine';
 import { Lockup } from '../art/Lockup.tsx';
 import { PlayerBadge } from '../art/PlayerBadge.tsx';
 import scene from '../art/title-scene.svg';
+import { DEFAULT_ALERTS, type AlertSettings } from '@tcl/engine';
+import type { AlertState } from '../data/alerts.ts';
 import type { JoinAnswer, Me, Trouble } from '../data/identity.ts';
 import { whyOf } from '../data/why.ts';
 import { readCode, readKey, type EntryProblem } from '../join/entry.ts';
@@ -19,6 +21,8 @@ export interface JoinApi {
   askToJoin(input: Waiting): Promise<void>;
   watchJoinRequest(league: string, onChange: (answer: JoinAnswer) => void): () => void;
   withdrawJoin(league: string): Promise<void>;
+  alertState(me: Me): Promise<{ state: AlertState; settings: AlertSettings }>;
+  turnOnAlerts(me: Me, settings: AlertSettings): Promise<AlertState>;
 }
 
 type Step =
@@ -270,6 +274,7 @@ export function Join(props: {
           {copied === 'failed' ? 'That did not work here. Write the key down or take a screenshot. ' : 'Take a screenshot or write it down. '}
           It also stays in your Profile, and your commish can look it up.
         </p>
+        <OfferAlerts api={props.api} me={step.me} />
         <button class="btn" type="button" onClick={() => props.onDone(step.me)}>
           I've saved it
         </button>
@@ -338,5 +343,52 @@ function WaitingToJoin(props: { api: JoinApi; waiting: Waiting; onJoined: (me: M
         )}
       </div>
     </main>
+  );
+}
+
+/**
+ * Alerts, offered once you're in (SCOPE.md, "Join or recover"): only on a
+ * phone that can have them, which on an iPhone means the Home Screen app.
+ */
+function OfferAlerts(props: { api: JoinApi; me: Me }) {
+  const [state, setState] = useState<AlertState | 'loading'>('loading');
+  const [busy, setBusy] = useState(false);
+  const { api, me } = props;
+
+  useEffect(() => {
+    let live = true;
+    api.alertState(me).then(
+      (found) => live && setState(found.state),
+      () => live && setState('unsupported'),
+    );
+    return () => {
+      live = false;
+    };
+  }, [me.player]);
+
+  if (state !== 'off' && state !== 'on' && state !== 'blocked') return null;
+  const turnOn = () => {
+    if (busy) return;
+    setBusy(true);
+    api
+      .turnOnAlerts(me, DEFAULT_ALERTS)
+      .then(setState, () => undefined)
+      .finally(() => setBusy(false));
+  };
+  return (
+    <div class="join-alerts">
+      {state === 'on' ? (
+        <p class="fine-print">Alerts are on. Pick which ones in your Profile.</p>
+      ) : state === 'blocked' ? (
+        <p class="fine-print">Alerts are blocked for Tier C. Turn them on in your phone’s settings any time.</p>
+      ) : (
+        <>
+          <p class="fine-print">Want alerts for deadlines, your matchup and taunts? You pick which in your Profile.</p>
+          <button class="btn btn-second" type="button" disabled={busy} onClick={turnOn}>
+            {busy ? 'Turning on' : 'Turn on alerts'}
+          </button>
+        </>
+      )}
+    </div>
   );
 }

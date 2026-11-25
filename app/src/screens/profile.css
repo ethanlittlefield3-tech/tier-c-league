@@ -125,3 +125,103 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.5);
   color: #1a1206;
 }
+
+/* ---- Alerts ---------------------------------------------------------------- */
+
+.alerts-list {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Each category is a switch: the pill on the right shows on or off. */
+.alerts-switch {
+  position: relative;
+  width: 100%;
+  min-height: 58px;
+  padding: 10px 68px 10px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  border: 1px solid rgba(196, 216, 255, 0.2);
+  border-radius: 12px;
+  background: rgba(17, 30, 73, 0.9);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.alerts-switch::after {
+  content: '';
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  width: 40px;
+  height: 24px;
+  margin-top: -12px;
+  border-radius: 999px;
+  background: rgba(196, 216, 255, 0.22) radial-gradient(circle at 12px 12px, var(--ink) 8px, transparent 9px);
+}
+
+.alerts-switch[aria-checked='true']::after {
+  background: var(--blue) radial-gradient(circle at 28px 12px, var(--ink) 8px, transparent 9px);
+}
+
+.alerts-switch:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.alerts-name {
+  font: 700 16px/1.2 var(--body);
+}
+
+.alerts-help {
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--ink-soft);
+}
+
+.alerts-quiet {
+  margin: 14px 0 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.alerts-quiet legend {
+  margin-bottom: 8px;
+  font: 700 16px/1.2 var(--body);
+}
+
+.alerts-quiet label {
+  flex: 1 1 120px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+.alerts-quiet select {
+  flex: 1;
+  height: 48px;
+  padding: 0 12px;
+  border: 2px solid rgba(196, 216, 255, 0.22);
+  border-radius: 12px;
+  background: var(--navy-800);
+  font: 600 16px/1 var(--body);
+  color: var(--ink);
+  color-scheme: dark;
+}
+
+.alerts-quiet select:focus {
+  outline: none;
+  border-color: var(--blue);
+}

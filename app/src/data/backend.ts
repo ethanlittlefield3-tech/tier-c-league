@@ -13,6 +13,13 @@ export interface Backend {
   options: FirebaseOptions;
   /** Where the local emulators are, or `null` for the real database. */
   emulators: { firestorePort: number; authPort: number } | null;
+  /**
+   * The Cloud Messaging web push key, which lets phones sign up for alerts.
+   * Public by design, like the settings above. `null` until the commish makes
+   * one; `'emulator'` in the emulators, where alerts can't be sent and each
+   * phone gets a stand-in token.
+   */
+  pushKey: string | null;
 }
 
 // The league's Firebase project. These are the settings Firebase gives every
@@ -27,14 +34,18 @@ const LIVE: FirebaseOptions | null = {
   appId: '1:662838025969:web:dca510de9a24975d025350',
 };
 
+// The league's Cloud Messaging web push key, once the commish has made one.
+const PUSH_KEY: string | null = null;
+
 const EMULATED: Backend = {
   options: { projectId: 'demo-tier-c', apiKey: 'demo-key', appId: 'demo-app' },
   // The same ports as firebase/firebase.json.
   emulators: { firestorePort: 8080, authPort: 9099 },
+  pushKey: 'emulator',
 };
 
 /** `null` means the league's database has not been set up yet. */
 export function backend(): Backend | null {
   if (import.meta.env.VITE_BACKEND === 'emulator') return EMULATED;
-  return LIVE ? { options: LIVE, emulators: null } : null;
+  return LIVE ? { options: LIVE, emulators: null, pushKey: PUSH_KEY } : null;
 }

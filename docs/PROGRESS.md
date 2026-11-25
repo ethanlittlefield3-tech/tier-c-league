@@ -227,6 +227,9 @@ Last updated 2026-11-25, after taking starter dares off the Wheel.
   - 7 engine tests, 16 job tests, 1 app test and 1 flow test, which runs the real job against the local database and opens the league in the app.
 - **Backups and restores** (2026-11-25, PHASE1.md Step 4). Early every morning, "Back up the league" writes every document as JSON, one file per collection, and commits it to the private backups repo, so its history holds every morning's copy. Proof photos are left out. "Restore from a backup" takes a date and puts the database back as that backup found it, for one league or all of it, once "restore" is typed in. Both skip until the backups repo and its token are in GitHub Secrets.
   - 6 job tests, and 2 flow tests: a demo league is backed up, deleted and restored, and a second backup matches the first file for file.
+- **Alerts, part 1: on the phone** (2026-11-25). Profile has an Alerts panel: turn them on with a tap, switch each of the 7 kinds on or off, and set quiet hours. A new player is offered alerts right under their recovery key. A service worker shows the alerts, opens the app at the right screen when one is tapped, and keeps the app's files on the phone so it opens with no signal. The push token is fetched again on every open.
+  - New rules for devices: a phone signs up only as the player its claim holds. 4 new rule tests and 1 rewritten. Weakening the rule 14 ways was caught 13 times; the other is still refused by the checks on each field. 3 engine tests and 5 flow tests.
+  - Sending them is next: the tick job, every 10 minutes. Alerts also wait on the Cloud Messaging web push key from the commish.
 - **The README is current** (2026-11-25): what each folder holds, the demo league and the fast test week step by step, and what runs on its own.
 - **The shorter intro on reopening is on purpose:** the full intro plays on the first open each day, and a 1-second title after that (SCOPE.md, "Intro animation").
 
@@ -241,8 +244,7 @@ Last updated 2026-11-25, after taking starter dares off the Wheel.
 
 1. **Step 3, continued.** Every Phase 1 screen now exists, and the demo league lets the commish try them all. Still to come in Commish tools: mark a player as left (waits on the mid-season question below). Then the commish's phone check of every screen (Checkpoint C).
    - **Push alerts** wait on one thing from the commish: a Cloud Messaging web push key, made in the Firebase console. The app will ask for it one step at a time when that feature is next.
-   - **Still to add to joining:** the notifications step (with push alerts). Leagues are made with the Create a league button on GitHub, not from the app (DECISIONS.md, "Build choices").
-   - **Offline start** comes with the offline step: a service worker that keeps the app's files on the phone, so it opens with no signal. Chrome on Android only offers its one-tap Install button once that exists. Until then Android installs from the browser menu, which the guide explains.
+   - **Push alerts, part 2:** the tick job that works out and sends each alert, every 10 minutes, with quiet hours and bundling.
 2. **Before real players join:** limit the app's web key to the app's own address in the Google Cloud console, and look at App Check, which stops other programs from using the database's free daily allowance.
    - **Step 5 items still to come, each with the feature that needs it:** the Cloud Messaging web push key (notifications), and the private backups repo with its token (the backup job is built and waits on them).
 3. **Rules still to write, each with its screen and its tests:** marking a player as left, once the mid-season question is answered. Phase 2 and 3 collections are in DATA-MODEL.md and refused until then.

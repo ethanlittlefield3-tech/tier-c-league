@@ -80,8 +80,33 @@ service cloud.firestore {
     }
 
     // ---- Push settings ------------------------------------------------------
+    // ---- Devices and alerts ---------------------------------------------------
+    // Each device keeps its own push token and alert settings, filed under the
+    // player its claim holds, so alerts only ever follow a player's own phones.
+    // The tick job reads them to send. Nobody lists them.
     match /devices/{device} {
-      allow read, write: if signedIn() && request.auth.uid == device;
+      allow get, delete: if signedIn() && request.auth.uid == device;
+      allow create, update: if signedIn()
+        && request.auth.uid == device
+        && validDevice(request.resource.data)
+        && isPlayer(request.resource.data.league, request.resource.data.player);
+    }
+
+    function validDevice(d) {
+      return d.keys().hasOnly(['token', 'platform', 'league', 'player', 'settings', 'quiet', 'updatedAt'])
+        && d.keys().hasAll(['token', 'platform', 'league', 'player', 'settings', 'quiet', 'updatedAt'])
+        && d.token is string && d.token.size() >= 1 && d.token.size() <= 4096
+        && d.platform in ['ios', 'android', 'desktop']
+        && d.league is string && d.player is string
+        && d.settings is map
+        && d.settings.keys().hasOnly(['daily', 'matchup', 'powerups', 'social', 'receipts', 'progress', 'league'])
+        && d.settings.values().hasOnly([true, false])
+        && d.quiet is map
+        && d.quiet.keys().hasOnly(['start', 'end'])
+        && d.quiet.keys().hasAll(['start', 'end'])
+        && d.quiet.start is int && d.quiet.start >= 0 && d.quiet.start <= 23
+        && d.quiet.end is int && d.quiet.end >= 0 && d.quiet.end <= 23
+        && d.updatedAt == request.time;
     }
 
     match /leagues/{L} {

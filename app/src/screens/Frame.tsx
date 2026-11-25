@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { PlayerBadge } from '../art/PlayerBadge.tsx';
 import { TAB_ICONS, type Tab } from '../art/tabIcons.tsx';
 import type { Me } from '../data/identity.ts';
+import { loadData } from '../data/load.ts';
 import { initialOf } from '../join/name.ts';
 import { AuditLog } from './AuditLog.tsx';
 import { Commish } from './Commish.tsx';
@@ -62,6 +63,35 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
   const [dayOf, setDayOf] = useState<string | null>(null);
   const [backFromProfile, setBackFromProfile] = useState(false);
   const meButton = useRef<HTMLButtonElement>(null);
+  const online = useOnline();
+
+  // An alert opens the app at its screen: by a link when the app wasn't open,
+  // or by a message from the service worker when it was.
+  useEffect(() => {
+    const open = (screen: string) => {
+      if (screen === 'wheel') setWheelOpen(true);
+      else if (screen === 'draft') setDraftOpen(true);
+      else if (TABS.some((info) => info.id === screen)) setTab(screen as Tab);
+    };
+    const fromLink = location.hash.slice(1);
+    if (fromLink) {
+      open(fromLink);
+      history.replaceState(null, '', location.pathname + location.search);
+    }
+    const onMessage = (event: MessageEvent) => {
+      const data = event.data as { type?: string; screen?: string } | null;
+      if (data?.type === 'open') open(String(data.screen ?? ''));
+    };
+    navigator.serviceWorker?.addEventListener('message', onMessage);
+    return () => navigator.serviceWorker?.removeEventListener('message', onMessage);
+  }, []);
+
+  // A phone's push token can lapse, so it is fetched again on every open.
+  useEffect(() => {
+    void loadData()
+      .then((api) => api.refreshAlerts(props.me))
+      .catch(() => undefined);
+  }, [props.me.player]);
 
   // Coming back from Profile, the focus returns to the badge that opened it.
   useEffect(() => {
@@ -105,7 +135,6 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
   }
 
   const current = TABS.find((info) => info.id === tab) ?? TABS[0]!;
-  const online = useOnline();
   return (
     <div class="frame" data-tab={tab}>
       <header class="frame-top">
