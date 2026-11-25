@@ -308,6 +308,12 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 180. **Your nemesis is whoever has beaten you most.** A tie goes to whoever you have the worse record against, then to the one you met last. Nobody is your nemesis until someone has beaten you. The skull shows by their name in the standings and your rivalries in League, and on Match when you face them, with your all-time record against them.
 181. **Each player's records are kept on their own profile** (`rivals`), which League and Match already read, instead of the separate `rivalries` collection DATA-MODEL.md first sketched: no extra reads.
 
+**Phase 2: the win meter** (new on 2026-11-25, not yet reviewed by the commish). A forecast, never a score: no point depends on it.
+
+182. **The win meter projects each side's finish:** points so far, plus a recent daily average for each day left, where the open day counts as half a day. The recent average is the last 4 final weeks' points over 7 days each; before a player has a final week, it is this week's average over the days that have locked.
+183. **The bar splits on the gap between the projections, against how far the days left can swing it** (about 3 points a day for each player). While a day is left it stays between 3% and 97%, never a sure thing. It says who's favored and by how much, or "Too close to call" between 45% and 55%, and it leaves once no day is left, when the lead says it all.
+184. **It sits under the scoreboard on Today,** as SCOPE.md's Today screen lists. Against The House there is no meter.
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.

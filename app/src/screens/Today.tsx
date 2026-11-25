@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { LANES, receiptFixes, receiptStatus, weekPeriod, type Lane, type Square, type StoredReceipt } from '@tcl/engine';
+import { LANES, daysLeft, paceSoFar, receiptFixes, receiptStatus, recentDailyAverage, weekPeriod, winMeter, type Lane, type Square, type StoredReceipt } from '@tcl/engine';
 import { useDoc, useNow, usePeek, useWhere } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
@@ -178,7 +178,9 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
   const weekDoc = useDoc<WeekDoc>(seasonPath && period ? `${seasonPath}/weeks/${period}` : null);
   const targets = weekDoc.data?.targets?.[me] ?? [];
   const opponentId = targets.find((target) => target !== 'HOUSE') ?? null;
-  const opponentProfile = useDoc<{ displayName?: string }>(opponentId ? `${leaguePath}/players/${opponentId}` : null);
+  const opponentProfile = useDoc<{ displayName?: string; rankHistory?: { points: number }[] }>(opponentId ? `${leaguePath}/players/${opponentId}` : null);
+  // Your recent weeks, for the win meter.
+  const myProfile = useDoc<{ rankHistory?: { points: number }[] }>(`${leaguePath}/players/${me}`);
   const opponentRoster = useDoc<RosterDoc>(seasonPath && opponentId ? `${seasonPath}/roster/${opponentId}` : null);
   const opponentRest = useDoc<{ date: string }>(seasonPath && period && opponentId ? `${seasonPath}/kit/${period}_${opponentId}_rest` : null);
   const draftState = useDoc<{ step: string; votesCloseAt?: number }>(seasonPath ? `${seasonPath}/draft/state` : null);
@@ -494,6 +496,15 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
           me={myWeek.totals}
           opponent={theirWeek ? { ...theirWeek.totals, name: opponentProfile.data?.displayName ?? 'Your opponent' } : null}
           vsHouse={targets.includes('HOUSE')}
+          meter={
+            theirWeek && daysLeft(myWeek.cells) > 0
+              ? winMeter(
+                  { points: myWeek.totals.points, dailyAverage: recentDailyAverage(myProfile.data?.rankHistory) ?? paceSoFar(myWeek.cells) },
+                  { points: theirWeek.totals.points, dailyAverage: recentDailyAverage(opponentProfile.data?.rankHistory) ?? paceSoFar(theirWeek.cells) },
+                  daysLeft(myWeek.cells),
+                )
+              : null
+          }
         />
       )}
 

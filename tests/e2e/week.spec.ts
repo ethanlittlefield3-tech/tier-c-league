@@ -65,6 +65,27 @@ test.describe('This week', () => {
     await expect(page.locator('.week-lead')).toHaveText(/leads by|lead by|Level on points|All square/);
   });
 
+  test("The win meter shows who's favored, from points so far and each side's recent pace, and moves as either of you logs", async ({ page, request }) => {
+    const { season } = await inWeek(page, request);
+    const meter = page.getByRole('meter', { name: 'Win meter' });
+    await expect(meter).toHaveAttribute('aria-valuetext', 'Too close to call');
+    const before = Number(await meter.getAttribute('aria-valuenow'));
+
+    // Maya logs a full day: +6, and nothing from you yet.
+    await writeDoc(request, `${season.path}/days/maya_${season.today}`, {
+      player: 'maya',
+      date: season.today,
+      goals: { mind: true, body: true, wildcard: true },
+      screenMinutes: 30,
+      beers: 0,
+      firstAt: new Date(),
+      updatedAt: new Date(),
+    });
+    await expect(meter).toHaveAttribute('aria-valuetext', /^Maya is favored, \d+%$/);
+    expect(Number(await meter.getAttribute('aria-valuenow'))).toBeLessThan(before);
+    await expect(page.locator('.meter-text')).toHaveText(/^Maya is favored/);
+  });
+
   test('Beers this week add up across the week', async ({ page, request }) => {
     await inWeek(page, request);
     await expect(page.locator('.beer-words')).toContainText('0 this week');

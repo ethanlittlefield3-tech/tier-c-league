@@ -230,6 +230,8 @@ Last updated 2026-11-25, after taking starter dares off the Wheel.
 - **Alerts, part 1: on the phone** (2026-11-25). Profile has an Alerts panel: turn them on with a tap, switch each of the 7 kinds on or off, and set quiet hours. A new player is offered alerts right under their recovery key. A service worker shows the alerts, opens the app at the right screen when one is tapped, and keeps the app's files on the phone so it opens with no signal. The push token is fetched again on every open.
   - New rules for devices: a phone signs up only as the player its claim holds. 4 new rule tests and 1 rewritten. Weakening the rule 14 ways was caught 13 times; the other is still refused by the checks on each field. 3 engine tests and 5 flow tests.
   - Sending them is next: the tick job, every 10 minutes. Alerts also wait on the Cloud Messaging web push key from the commish.
+- **The win meter** (2026-11-25, Phase 2). Under Today's scoreboard, a bar in team blue and orange shows who's favored and by how much, from points so far and each side's recent daily average, and moves live as either of you logs (DECISIONS.md, calls 182 to 184).
+  - 7 engine tests and 1 flow test.
 - **Rivalry records and the nemesis tag** (2026-11-25, Phase 2). Whenever a week goes final, the weekly job works out each player's all-time 1v1 record against everyone they have met, across seasons. League lists your rivalries, and the skull marks your nemesis, whoever has beaten you most, there and in the standings. Match shows your all-time record against this week's opponent, and the Nemesis tag when it's them (DECISIONS.md, calls 179 to 181).
   - 6 engine tests, 2 rule tests (they pass as written, because the profile rules already let a player change only their name, car and taunts), and 1 new flow test; the settle flow test checks the stored records and League.
 - **Your goal explosion when you win a week, and your car in the rank-up scene** (2026-11-25, Phase 2). The next time you open the app after a week you won goes final, your car drives onto a stage, your goal explosion bursts over it, and the score shows. A rank up now has your car boosting through the old badge. Each week in a player's rank history also keeps how the matchup ended (DECISIONS.md, calls 177 and 178).
@@ -271,7 +273,7 @@ Last updated 2026-11-25, after taking starter dares off the Wheel.
 2. **Before real players join:** limit the app's web key to the app's own address in the Google Cloud console, and look at App Check, which stops other programs from using the database's free daily allowance.
    - **Step 5 items still to come, each with the feature that needs it:** the Cloud Messaging web push key (notifications), and the private backups repo with its token (the backup job is built and waits on them).
 3. **Rules still to write, each with its screen and its tests:** marking a player as left, once the mid-season question is answered. Phase 2 and 3 collections are in DATA-MODEL.md and refused until then.
-4. **Phase 2, continued:** the win meter, poke and rematch; the highlight reel with sharing, predictions, storylines and the suggestion box; and the trophy case. Phase 3 after that.
+4. **Phase 2, continued:** poke and rematch; the highlight reel with sharing, predictions, storylines and the suggestion box; and the trophy case. Phase 3 after that.
 
 ## Questions for the commish, asked when each feature is built
 

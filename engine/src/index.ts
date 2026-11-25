@@ -29,3 +29,4 @@ export * from './ranks.ts';
 export * from './achievements.ts';
 export * from './badges.ts';
 export * from './rivalries.ts';
+export * from './meter.ts';

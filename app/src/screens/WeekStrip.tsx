@@ -23,7 +23,23 @@ export function leadText(me: WeekSide, them: WeekSide, name: string): string {
  * This week at a glance: the score against your opponent, and your seven days
  * (SCOPE.md, Today: "week bars").
  */
-export function WeekStrip(props: { week: number; cells: DayCell[]; me: WeekSide; opponent: (WeekSide & { name: string }) | null; vsHouse: boolean }) {
+/** What the win meter says: who's favored, or that it's too close to call. */
+export function meterText(share: number, name: string): string {
+  const percent = (value: number) => `${Math.round(value * 100)}%`;
+  if (share >= 0.55) return `You're favored, ${percent(share)}`;
+  if (share <= 0.45) return `${name} is favored, ${percent(1 - share)}`;
+  return 'Too close to call';
+}
+
+export function WeekStrip(props: {
+  week: number;
+  cells: DayCell[];
+  me: WeekSide;
+  opponent: (WeekSide & { name: string }) | null;
+  vsHouse: boolean;
+  /** Your share of the win meter, or null once no day is left. */
+  meter?: number | null;
+}) {
   return (
     <section class="week" aria-labelledby="week-title">
       <div class="week-score">
@@ -40,6 +56,24 @@ export function WeekStrip(props: { week: number; cells: DayCell[]; me: WeekSide;
               </span>
             </p>
             <p class="week-lead">{leadText(props.me, props.opponent, props.opponent.name)}</p>
+            {props.meter !== null && props.meter !== undefined && (
+              <div
+                class="meter"
+                role="meter"
+                aria-label="Win meter"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(props.meter * 100)}
+                aria-valuetext={meterText(props.meter, props.opponent.name)}
+              >
+                <div class="meter-bar" aria-hidden="true">
+                  <span class="meter-me" style={{ transform: `scaleX(${props.meter.toFixed(3)})` }} />
+                </div>
+                <p class="meter-text" aria-hidden="true">
+                  {meterText(props.meter, props.opponent.name)}
+                </p>
+              </div>
+            )}
           </>
         ) : props.vsHouse ? (
           <p class="week-lead">You face The House this week. It scores the league's average.</p>

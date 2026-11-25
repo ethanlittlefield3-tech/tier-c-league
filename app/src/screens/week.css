@@ -112,3 +112,38 @@
 .week-days li[data-rest='true'] .week-cell {
   box-shadow: inset 0 0 0 2px rgba(255, 207, 63, 0.55);
 }
+
+/* The win meter: who's favored, in team blue against team orange. The blue
+   part grows from the left with transform only. */
+.meter {
+  margin: 10px 0 2px;
+}
+
+.meter-bar {
+  position: relative;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ffb36b, #ff8a1e);
+}
+
+.meter-me {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px 0 0 999px;
+  background: linear-gradient(90deg, #3d9bff, #1f8bff);
+  transform-origin: 0 50%;
+}
+
+.meter-text {
+  margin: 6px 0 0;
+  font-size: 13px;
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .meter-me {
+    transition: transform 600ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+}
