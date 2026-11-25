@@ -1,0 +1,229 @@
+/* Feed: the trash-talk panel, brags, and the wall. */
+
+.feed {
+  display: grid;
+  gap: 14px;
+}
+
+/* One row of chips that swipes sideways inside the panel; the page itself never scrolls sideways. */
+.feed-chips {
+  display: flex;
+  gap: 8px;
+  margin: 10px -4px 0;
+  padding: 0 4px 4px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.feed-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.feed-chip {
+  flex: none;
+  white-space: nowrap;
+  min-height: 40px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(159, 208, 255, 0.35);
+  background: rgba(10, 19, 48, 0.85);
+  color: var(--ink);
+  font: 600 14px/1.25 var(--body);
+  text-align: left;
+  cursor: pointer;
+}
+
+.feed-chip:active {
+  transform: scale(0.97);
+}
+
+.feed-chip-saved {
+  border-color: rgba(255, 207, 63, 0.5);
+}
+
+.feed-saved {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.feed-forget {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.feed-own {
+  margin-top: 14px;
+}
+
+.feed-own-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.feed-keep {
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(196, 216, 255, 0.2);
+  background: transparent;
+  color: var(--ink-soft);
+  font: 600 13px/1 var(--body);
+  cursor: pointer;
+}
+
+.feed-keep[aria-pressed='true'] {
+  border-color: rgba(255, 207, 63, 0.6);
+  color: var(--gold);
+}
+
+.btn.feed-send {
+  width: auto;
+  min-width: 104px;
+  margin: 0;
+}
+
+.feed-wall {
+  display: grid;
+  gap: 10px;
+}
+
+.feed-post {
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(196, 216, 255, 0.14);
+  background: rgba(10, 19, 48, 0.75);
+}
+
+.feed-post[data-kind='taunt'],
+.feed-post[data-kind='quick'] {
+  border-left: 3px solid #ff8a3d;
+}
+
+.feed-post[data-kind='brag'] {
+  border-left: 3px solid var(--gold);
+}
+
+.feed-post-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.feed-who {
+  font: italic 900 16px/1.2 var(--display);
+}
+
+.feed-to {
+  font: 600 12px/1 var(--body);
+  font-style: normal;
+  color: var(--ink-soft);
+}
+
+.feed-meta {
+  flex: none;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.feed-text {
+  margin: 6px 0 8px;
+  font-size: 16px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.feed-post-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.feed-react {
+  min-height: 36px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(196, 216, 255, 0.16);
+  background: transparent;
+  color: var(--ink);
+  font: 700 14px/1 var(--body);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.feed-react[aria-pressed='true'] {
+  border-color: rgba(255, 207, 63, 0.7);
+  background: rgba(255, 207, 63, 0.14);
+}
+
+.feed-link {
+  min-height: 36px;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  color: #9fd0ff;
+  font: 600 13px/1 var(--body);
+  cursor: pointer;
+}
+
+.feed-link-quiet {
+  margin-left: auto;
+  color: var(--ink-soft);
+}
+
+.feed-confirm {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(196, 216, 255, 0.12);
+}
+
+.feed-confirm p {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.feed-comments {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(196, 216, 255, 0.12);
+}
+
+.feed-comment {
+  margin: 0 0 8px;
+  font-size: 15px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.feed-comment .feed-link {
+  min-height: 28px;
+}
+
+.feed-comment-form {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.feed-comment-form .field {
+  flex: 1;
+  margin: 0;
+}
+
+.feed-comment-form .btn.feed-send {
+  min-width: 0;
+  padding: 0 18px;
+}

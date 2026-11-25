@@ -34,7 +34,7 @@ test.describe('The app frame', () => {
     await expect(page.getByRole('heading', { name: 'Feed', level: 1 })).toBeVisible();
     await expect(tab(page, 'Feed')).toHaveAttribute('aria-current', 'page');
     await expect(tab(page, 'Today')).not.toHaveAttribute('aria-current', 'page');
-    await expect(page.getByText('The live feed and the wall: taunts, brags, comments and reactions.')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Talk trash' })).toBeVisible();
   });
 
   test('A tab that is not built yet says what it will hold', async ({ page, request }) => {

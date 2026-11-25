@@ -34,15 +34,14 @@ Where everything lives in Firestore, who can write it and who can read it. It co
 
 | Path | Written by | Read by | Phase | Fields |
 | --- | --- | --- | --- | --- |
-| `players/{player}` | Created on joining. The player edits `displayName` and `car`. Jobs write the rest. | Members | 1, rules today | `displayName`, `joinedAt`, `car` (body, paint, decal, wheels, boost, explosion, topper). Jobs, Phase 2: `badges`, `unlocked` (parts by slot), `rank`, `rankHistory`, `stats`, `streaks`, `stickers` (Dare Dodger, the "L"), `trophies` |
+| `players/{player}` | Created on joining. The player edits `displayName`, `car` and `taunts` (up to 10 saved custom taunts). Jobs write the rest. | Members | 1, rules today | `displayName`, `joinedAt`, `car` (body, paint, decal, wheels, boost, explosion, topper). Jobs, Phase 2: `badges`, `unlocked` (parts by slot), `rank`, `rankHistory`, `stats`, `streaks`, `stickers` (Dare Dodger, the "L"), `trophies` |
 | `keys/{player}` | Created on joining. Rotated by anyone who proves the old key. Reissued by the commish with an audit entry. | That player, the commish | 1, rules today | `key`, `prev`, `rotatedAt`, `audit` |
 | `lookup/{key}` | Filed in the same save that sets a key, and taken off file in the same save that replaces it | Anyone signed in who already knows the key, one at a time, never listed | 1, rules today | `player` |
 | `claims/{device}` | That device, with the player's key | That device, the commish | 1, rules today | `player`, `key`, `code` (when joining), `at` |
 | `audit/{entry}` | The commish, never edited or deleted | Members | 1, rules today | `by`, `at`, `action`, `target`, `reason` |
 | `feed/{event}` | Jobs | Members | 1 | `at`, `kind`, `players`, `season`, `period`, `data` |
-| `wall/{post}` | The author. Soft-deleted by the author, or by the commish with an audit entry. | Members | 1 | `by`, `kind` (quick, taunt, brag), `text`, `to`, `at`, `season`, `period`, `deleted`, `audit` |
-| `wall/{post}/comments/{id}` | The author | Members | 1 | `by`, `text`, `at`, `deleted` |
-| `wall/{post}/reactions/{player}` | That player | Members | 1 | `fire`, `skull`, `beer` |
+| `wall/{post}` | The author. Taken down by the author, or by the commish with an audit entry, which blanks its words. Each player writes only their own reactions. | Members | 1, rules today | `by`, `kind` (quick, taunt, brag), `text` (1 to 280 characters; a taunt keeps `{name}` as written), `to` (the player aimed at, or null for a brag), `at`, `deleted`, `audit`, `reactions` (each player's `fire`, `skull` and `beer`, each on or off) |
+| `wall/{post}/comments/{id}` | The writer, on brags only. Taken down like a post. | Members | 1, rules today | `by`, `text` (1 to 280 characters), `at`, `deleted`, `audit` |
 | `taunts/{player}` | That player | That player | 1 | `saved` (custom taunts, with `{name}`) |
 | `suggestions/{idea}` | Any member. The commish tags it. | Members | 2 | `by`, `text`, `at`, `tag` (planned, maybe, no), `votes` |
 | `rivalries/{pair}` | Jobs | Members | 2 | `a`, `b`, `wins`, `draws`, `lastMet` |
@@ -87,3 +86,4 @@ Where everything lives in Firestore, who can write it and who can read it. It co
 7. **Goal votes are filed under the version of the goal they are about.** New words make a new version, so old votes stop counting without anything being deleted, and the rules can check that a vote is for the current words.
 8. **The draft's votes close by the clock** (`votesCloseAt`), not by its step, because SCOPE.md keeps them open for 24 hours while the live draft moves on.
 9. **Rival picks keep who is still unpicked as a list, `left`,** so the rules can check a pick without counting: the picker is first in the list, the rival must be in it, and both come out with the rest left in order.
+10. **Reactions sit on the post itself,** one set per player, not in a document each, so the wall's one live listener carries every count with no extra reads per post.

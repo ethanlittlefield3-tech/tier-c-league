@@ -3,7 +3,7 @@
  * phone or anyone else's. A save made on this phone shows at once, marked as
  * pending until the server accepts it.
  */
-import { Timestamp, collection, doc, getDoc, onSnapshot, query, where } from 'firebase/firestore';
+import { Timestamp, collection, doc, getDoc, limit, onSnapshot, orderBy, query, where } from 'firebase/firestore';
 import { connect } from './firebase.ts';
 import { trouble, type Trouble } from './identity.ts';
 
@@ -100,6 +100,33 @@ export function watchAll(path: string, onChange: (docs: { id: string; data: Reco
       if (stopped) return;
       stop = onSnapshot(
         collection(db, path),
+        (snapshot) => onChange(snapshot.docs.map((found) => ({ id: found.id, data: plain(found.data({ serverTimestamps: 'estimate' })) as Record<string, unknown> }))),
+        (error) => onError(trouble(error).why),
+      );
+    },
+    (error: unknown) => onError(trouble(error).why),
+  );
+  return () => {
+    stopped = true;
+    stop?.();
+  };
+}
+
+/** The newest documents in a collection, by one field, now and after every change. */
+export function watchLatest(
+  path: string,
+  field: string,
+  count: number,
+  onChange: (docs: { id: string; data: Record<string, unknown> }[]) => void,
+  onError: (why: Trouble) => void,
+): () => void {
+  let stop: (() => void) | null = null;
+  let stopped = false;
+  connect().then(
+    ({ db }) => {
+      if (stopped) return;
+      stop = onSnapshot(
+        query(collection(db, path), orderBy(field, 'desc'), limit(count)),
         (snapshot) => onChange(snapshot.docs.map((found) => ({ id: found.id, data: plain(found.data({ serverTimestamps: 'estimate' })) as Record<string, unknown> }))),
         (error) => onError(trouble(error).why),
       );

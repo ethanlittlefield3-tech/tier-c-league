@@ -6,6 +6,7 @@ import { initialOf } from '../join/name.ts';
 import { AuditLog } from './AuditLog.tsx';
 import { Commish } from './Commish.tsx';
 import { Draft } from './Draft.tsx';
+import { Feed } from './Feed.tsx';
 import { League } from './League.tsx';
 import { Match } from './Match.tsx';
 import { Profile } from './Profile.tsx';
@@ -110,7 +111,7 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
         </p>
       )}
       <main class="frame-body" key={tab}>
-        {tab === 'today' ? <Today me={props.me} onDraft={() => setDraftOpen(true)} /> : tab === 'match' ? <Match me={props.me} /> : tab === 'league' ? <League me={props.me} /> : <Soon tab={current} />}
+        {tab === 'today' ? <Today me={props.me} onDraft={() => setDraftOpen(true)} /> : tab === 'match' ? <Match me={props.me} /> : tab === 'feed' ? <Feed me={props.me} /> : tab === 'league' ? <League me={props.me} /> : <Soon tab={current} />}
       </main>
       <nav class="frame-tabs" aria-label="Main">
         {TABS.map((info) => {

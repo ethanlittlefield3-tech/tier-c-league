@@ -147,10 +147,10 @@ service cloud.firestore {
           && getAfter(/databases/$(database)/documents/leagues/$(L)/claims/$(request.auth.uid)).data.player == P
           && joinsNow(P);
 
-        // Players edit their own name and car. Badges, ranks, stats and
-        // unlocked parts come from the jobs.
+        // Players edit their own name, car and saved taunts. Badges, ranks,
+        // stats and unlocked parts come from the jobs.
         allow update: if isPlayer(L, P)
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'car'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'car', 'taunts'])
           && validProfile(request.resource.data);
       }
 
@@ -158,7 +158,14 @@ service cloud.firestore {
         return profile.displayName is string
           && profile.displayName.size() >= 1
           && profile.displayName.size() <= 24
-          && (!('car' in profile) || profile.car is map);
+          && (!('car' in profile) || profile.car is map)
+          && (!('taunts' in profile) || validTaunts(profile.taunts));
+      }
+
+      // Up to 10 saved custom taunts. Each is up to 120 characters in the app;
+      // here the whole list is capped, since rules can't look at each one.
+      function validTaunts(taunts) {
+        return taunts is list && taunts.size() <= 10 && taunts.join('|').size() <= 1300;
       }
 
       // True when this save adds the player to the member list.
@@ -284,6 +291,71 @@ service cloud.firestore {
           && request.resource.data.action.size() >= 1 && request.resource.data.action.size() <= 60
           && request.resource.data.target is string && request.resource.data.target.size() <= 200
           && request.resource.data.reason is string && request.resource.data.reason.size() <= 500;
+      }
+
+      // ---- The wall ---------------------------------------------------------
+      // Taunts and quick chat aimed at another player, and brags. Nobody can
+      // edit a post. Its author can take it down, and so can the commish with
+      // an audit entry; taking it down blanks its words. Reactions sit on the
+      // post, one set per player: fire, skull and beer, each on or off.
+      match /wall/{post} {
+        allow read: if isMember(L);
+        allow create: if isPlayer(L, request.resource.data.by)
+          && request.resource.data.keys().hasOnly(['by', 'kind', 'text', 'to', 'at', 'deleted'])
+          && request.resource.data.kind in ['quick', 'taunt', 'brag']
+          && validText(request.resource.data.text, 280)
+          && request.resource.data.at == request.time
+          && request.resource.data.deleted == false
+          && (request.resource.data.kind == 'brag'
+                ? request.resource.data.to == null
+                : request.resource.data.to is string
+                  && request.resource.data.to != request.resource.data.by
+                  && get(/databases/$(database)/documents/leagues/$(L)).data.members[request.resource.data.to] == true);
+        allow update: if takenDown(resource.data, request.resource.data, 'wall/' + post)
+          || reacted(resource.data, request.resource.data);
+
+        // Comments, on brags only.
+        match /comments/{comment} {
+          allow read: if isMember(L);
+          allow create: if isPlayer(L, request.resource.data.by)
+            && request.resource.data.keys().hasOnly(['by', 'text', 'at', 'deleted'])
+            && validText(request.resource.data.text, 280)
+            && request.resource.data.at == request.time
+            && request.resource.data.deleted == false
+            && wallPost(post).kind == 'brag'
+            && wallPost(post).deleted == false;
+          allow update: if takenDown(resource.data, request.resource.data, 'wall/' + post + '/comments/' + comment);
+        }
+      }
+
+      function wallPost(post) {
+        return get(/databases/$(database)/documents/leagues/$(L)/wall/$(post)).data;
+      }
+
+      function validText(text, most) {
+        return text is string && text.size() >= 1 && text.size() <= most;
+      }
+
+      // Taking a post or a comment down: its author, or the commish with an
+      // audit entry. Its words are blanked.
+      function takenDown(before, after, target) {
+        let changed = after.diff(before).affectedKeys();
+        return before.deleted == false && after.deleted == true && after.text == ''
+          && ((isPlayer(L, before.by) && changed.hasOnly(['deleted', 'text']))
+              || (isCommish(L) && changed.hasOnly(['deleted', 'text', 'audit']) && audited(L, after.audit, 'wall.delete', target)));
+      }
+
+      // One player's own reactions on a post that is still up.
+      function reacted(before, after) {
+        let me = claim(L).player;
+        let mine = after.reactions[me];
+        return isMember(L)
+          && before.deleted == false
+          && after.diff(before).affectedKeys().hasOnly(['reactions'])
+          && after.reactions.diff(before.get('reactions', {})).affectedKeys().hasOnly([me])
+          && mine.keys().hasOnly(['fire', 'skull', 'beer'])
+          && mine.keys().hasAll(['fire', 'skull', 'beer'])
+          && mine.fire is bool && mine.skull is bool && mine.beer is bool;
       }
 
       // ---- Seasons ----------------------------------------------------------

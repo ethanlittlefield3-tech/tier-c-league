@@ -1,6 +1,6 @@
 # Tier C League: progress log
 
-Last updated 2026-11-25, after the draft's dares, which complete the mini draft.
+Last updated 2026-11-25, after Feed, part 1: the wall.
 
 ## Plan change (commish ruling, 2026-11-25)
 
@@ -165,6 +165,14 @@ Last updated 2026-11-25, after the draft's dares, which complete the mini draft.
   - New rules: 12 rule tests, 189 in all. Weakening them 9 ways was caught 9 times, after one missing test was added: votes on dares wait for the dares step.
   - 2 engine tests and 1 flow test.
   - One older flow test failed once in a full run ("What you logged is still there the next time the app opens") and passed in every rerun. It reloaded the app as soon as the screen said "Saved", without checking the beer tap had landed. It now checks the count and the server before reloading, so if it ever fails again it will show which step went wrong.
+- **Feed, part 1: the wall** (2026-11-25).
+  - "Talk to Maya": this week's opponent is one tap from a taunt. SCOPE.md's 10 quick-chat lines sit in one row you swipe sideways, with `{name}` filled in, and each sends on one tap. Write your own taunt with `{name}`, and save up to 10 for later.
+  - Brags: share a win from outside the game. Everyone can comment on it.
+  - Every post takes fire, skull and beer reactions, and the counts move live on every phone.
+  - Take down your own post, or as the commish anyone's, which goes in the league log. Its words are blanked for good.
+  - The wall shows the newest 50 posts, live.
+  - New rules: 20 rule tests, 209 in all. Weakening them 21 ways was caught 20 times, after one test was fixed to catch a post of an unknown kind. The 21st, a reaction missing a part, is still refused, because a missing part can't be checked as on or off.
+  - 5 logic tests and 5 flow tests with two phones.
 - **The shorter intro on reopening is on purpose:** the full intro plays on the first open each day, and a 1-second title after that (SCOPE.md, "Intro animation").
 
 ## Waiting on the commish
@@ -173,12 +181,12 @@ Last updated 2026-11-25, after the draft's dares, which complete the mini draft.
 
 ## Next
 
-1. **Step 3, continued.** Next: Feed and the wall, receipts, and the Wheel.
+1. **Step 3, continued.** Next: the live feed of game events (check-ins, power-ups, revealed Demolitions, docks and results), then receipts and the Wheel.
    - **Still to add to joining:** the notifications step (with push alerts), a commish's "approve joins" switch, and a way to make a league. Leagues are made by a setup script, which is built with the jobs in Step 4.
    - **Offline start** comes with the offline step: a service worker that keeps the app's files on the phone, so it opens with no signal. Chrome on Android only offers its one-tap Install button once that exists. Until then Android installs from the browser menu, which the guide explains.
 2. **Before real players join:** limit the app's web key to the app's own address in the Google Cloud console, and look at App Check, which stops other programs from using the database's free daily allowance.
    - **Step 5 items still to come, each with the feature that needs it:** the Cloud Messaging web push key (notifications), and the private backups repo with its token (the backup job).
-3. **Rules still to write, each with its screen and its tests:** receipts and proofs, the wall, the Wheel and dare proof, and the remaining commish tools (approve joins, settle or unlock a week, moderation). They are in DATA-MODEL.md and refused until then.
+3. **Rules still to write, each with its screen and its tests:** receipts and proofs, the Wheel and dare proof, and the remaining commish tools (approve joins, settle or unlock a week, moderation). They are in DATA-MODEL.md and refused until then.
 
 ## Questions for the commish, asked when each feature is built
 

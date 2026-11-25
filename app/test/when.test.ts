@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { countdown, timeLeft } from '../src/ui/when.ts';
+import { ago, countdown, timeLeft } from '../src/ui/when.ts';
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
@@ -34,5 +34,18 @@ describe("The draft pick's countdown", () => {
   it('Stops at 0:00 once the time is up', () => {
     expect(countdown(0)).toBe('0:00');
     expect(countdown(-3_000)).toBe('0:00');
+  });
+});
+
+describe('How long ago, in the feed', () => {
+  it('Under a minute is "now", then minutes, hours and days', () => {
+    expect(ago(30_000)).toBe('now');
+    expect(ago(5 * MINUTE)).toBe('5 m');
+    expect(ago(2 * HOUR + 10 * MINUTE)).toBe('2 h');
+    expect(ago(3 * 24 * HOUR)).toBe('3 d');
+  });
+
+  it('A clock a little behind the server still reads "now", never a negative time', () => {
+    expect(ago(-4_000)).toBe('now');
   });
 });

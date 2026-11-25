@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 189 of 189 passing.
+- **Tests:** 209 of 209 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -298,3 +298,36 @@ Everyone in the league can read them. Only the weekly job writes them.
 - Nobody outside the league can
 - Only the weekly job writes them: no phone can, the commish included
 - A week's results can be read by everyone in the league and written by no phone
+
+## The wall
+
+Everyone in the league reads it. You post, comment and react in your own name. Nobody edits a post, and only its author or the commish takes it down.
+
+**The wall**
+
+- A player posts a taunt or a quick-chat line at another player
+- A brag is aimed at nobody
+- A taunt is aimed at someone in the league who isn't you
+- A post is 1 to 280 characters
+- Nobody posts in someone else's name, and nobody outside the league posts at all
+- A post carries the server time, goes up live, and is a taunt, a quick-chat line or a brag
+- Nobody can edit a post
+- The author can take their post down, which blanks its words
+- Nobody else can take a post down, except the commish, whose take-down goes in the audit log
+- Everyone in the league can read the wall; nobody outside can
+
+**Comments and reactions**
+
+- Anyone in the league can comment on a brag
+- Taunts and quick chat take reactions, not comments
+- A comment is 1 to 280 characters, in your own name, at the server time
+- A taken-down post takes no more comments or reactions
+- A comment is taken down by its writer, or by the commish with an audit entry
+- Each player has one set of reactions on a post: fire, skull and beer, each on or off
+- A reaction changes nothing else on the post
+- Everyone in the league can see the comments; nobody outside can
+
+**Saved custom taunts**
+
+- A player keeps up to 10 custom taunts on their profile
+- Nobody can change someone else's saved taunts

@@ -157,6 +157,16 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 82. **Dares open at the live draft's dares step** and, like goals, can be added or re-worded until the votes close. A dare vetoed by more than half the league stays off the Wheel.
 83. **The 8 starter dares are kept in the app's engine, not the database,** so every league has them from the start with nothing to load. A way for the commish to change them comes with moderation.
 
+**Feed, part 1: the wall** (new on 2026-11-25, not yet reviewed by the commish)
+
+84. **Reactions sit on the post itself,** one set per player, instead of a document for each reaction. The wall's one live listener then carries every count, which keeps reads low on the free plan.
+85. **A taunt keeps `{name}` as written,** and each phone fills in the opponent's current name, so a renamed player still reads right.
+86. **Taunts go to this week's opponent, and a quick-chat line sends on one tap.** Before kickoff that is your Week 1 rival. In a bye week against The House, taunts wait.
+87. **Taking a post down blanks its words for good,** and it leaves the wall. The commish's take-downs go in the league log.
+88. **Posts and comments are up to 280 characters.** Up to 10 saved taunts of up to 120 characters each, kept on your profile so they follow you to a new phone.
+89. **Comments go on brags; taunts and quick chat take reactions only,** as SCOPE.md's table lists them.
+90. **The wall shows the newest 50 posts,** live. Older posts stay in the database, and paging back through them can come later.
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.
