@@ -1,6 +1,6 @@
 # Tier C League: progress log
 
-Last updated 2026-11-25, after the join and recovery screens.
+Last updated 2026-11-25, with the Firebase setup under way.
 
 ## Plan change (commish ruling, 2026-11-25)
 
@@ -60,9 +60,19 @@ Last updated 2026-11-25, after the join and recovery screens.
   - Not covered by a test: the "not open yet" notice, because the tests always have a database. It was checked by eye.
   - Two things only GitHub's machines showed, both fixed: the switch that points the test build at the local database sat in a file git ignores, and on a slow machine a test could tap the title before it was ready.
 
+- **The league's Firebase project exists** (2026-11-25, ruling R9), and the live app points at it. Its web settings are in `app/src/data/backend.ts`. They are public by design.
+- **The first two jobs** (2026-11-25), in `jobs/`, each with a button on GitHub's Actions tab:
+  - **Create a league** makes a league with one player, the commish. It never prints the league code or the key.
+  - **Publish the security rules** runs by itself after the tests pass on main. Until the service account key is in GitHub Secrets it skips itself.
+  - 10 logic tests cover what a new league starts with. 3 flow tests run the real setup job against the local database, then get in through the app.
+
 ## Waiting on the commish
 
-1. **Firebase setup, one step at a time** (ruling R9). In order: create the project, add a web app, turn on anonymous sign-in, create the database, and put the service account key into GitHub Secrets. Then a "Create a league" button on GitHub makes a test league.
+1. **Firebase setup, one step at a time** (ruling R9). Done: the project, and the web app. Still to do, in order:
+   - Turn on anonymous sign-in.
+   - Create the database.
+   - Put the service account key into GitHub Secrets.
+   - Press "Create a league" on GitHub, read the league code and key in the Firebase console, and get in with "I'm already in a league".
 2. **Phone check of the install.** On an iPhone: open the live address in Safari, follow the three taps, then open Tier C from the Home Screen. Things only a real phone can show: the icon and its label, the launch picture, whether the intro is smooth, and the sound on Tap to enter. This does not block the build.
 
 ## Next
@@ -70,7 +80,8 @@ Last updated 2026-11-25, after the join and recovery screens.
 1. **Step 3, continued.** The screens: Today, Match, Feed, League, Profile, Wheel, Commish and the mini draft. Today is next.
    - **Still to add to joining:** the notifications step (with push alerts), a commish's "approve joins" switch, and a way to make a league. Leagues are made by a setup script, which is built with the jobs in Step 4.
    - **Offline start** comes with the offline step: a service worker that keeps the app's files on the phone, so it opens with no signal. Chrome on Android only offers its one-tap Install button once that exists. Until then Android installs from the browser menu, which the guide explains.
-2. **Rules still to write, each with its screen and its tests:** receipts and proofs, roster and goal votes, the wall, dares, the Wheel, the draft, and the remaining commish tools (approve joins, settle or unlock a week, moderation). They are in DATA-MODEL.md and refused until then.
+2. **Before real players join:** limit the app's web key to the app's own address in the Google Cloud console, and look at App Check, which stops other programs from using the database's free daily allowance.
+3. **Rules still to write, each with its screen and its tests:** receipts and proofs, roster and goal votes, the wall, dares, the Wheel, the draft, and the remaining commish tools (approve joins, settle or unlock a week, moderation). They are in DATA-MODEL.md and refused until then.
 
 ## Questions for the commish, asked when each feature is built
 

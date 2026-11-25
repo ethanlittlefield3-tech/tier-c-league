@@ -51,7 +51,7 @@ test.describe('Joining a league', () => {
     expect(player).toBeTruthy();
     expect((await readDoc(request, `leagues/${league.id}/players/${player}`))?.displayName).toBe('Riley');
     expect((await readDoc(request, `leagues/${league.id}/keys/${player}`))?.key).toBe(key);
-    expect(Object.keys((await readDoc(request, `leagues/${league.id}`))?.members as object).sort()).toEqual([player, 'p1'].sort());
+    expect(Object.keys((await readDoc(request, `leagues/${league.id}`))?.members as object).sort()).toEqual([player, league.commish].sort());
 
     await button(page, "I've saved it").click();
     await expect(heading(page, "You're in, Riley.")).toBeVisible();

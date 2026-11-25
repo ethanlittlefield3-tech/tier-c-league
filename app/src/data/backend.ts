@@ -3,8 +3,7 @@
  *
  * - The live app uses the league's own Firebase project. Its settings are not
  *   secret: they only say where the database is, and every browser that opens
- *   the app can see them. The security rules are what protect the data. The
- *   settings are filled in at Step 5, when the project is created.
+ *   the app can see them. The security rules are what protect the data.
  * - On a developer's machine and in the flow tests, the app talks to the
  *   Firebase emulators instead, so nothing real is ever touched.
  */
@@ -16,8 +15,17 @@ export interface Backend {
   emulators: { firestorePort: number; authPort: number } | null;
 }
 
-// Step 5 fills this in.
-const LIVE: FirebaseOptions | null = null;
+// The league's Firebase project. These are the settings Firebase gives every
+// web app, and they are public by design: they say where the database is, not
+// who may use it. Nothing here unlocks any data. The security rules do that.
+const LIVE: FirebaseOptions | null = {
+  apiKey: 'AIzaSyAesGbAggP1A_3EoXAxM4u_GL14U53Ztgg',
+  authDomain: 'tier-c-league.firebaseapp.com',
+  projectId: 'tier-c-league',
+  storageBucket: 'tier-c-league.firebasestorage.app',
+  messagingSenderId: '662838025969',
+  appId: '1:662838025969:web:dca510de9a24975d025350',
+};
 
 const EMULATED: Backend = {
   options: { projectId: 'demo-tier-c', apiKey: 'demo-key', appId: 'demo-app' },

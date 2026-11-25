@@ -42,7 +42,9 @@ npm run icons         # redraw the app icon and launch pictures (scripts/art/ico
 - Test titles are the rules in plain English. They are printed as the rule lists in the checkpoint reports, so write them for a reader who does not code.
 - Write the rule tests before the code they test.
 - Security rules read time only from `calendar/` documents, never from a date string. Kit, sealed and week documents are filed by period (`w02`), not week number.
-- Job logs are public, because the repo is: log counts and IDs only, never names, recovery keys or photos.
+- Job logs are public, because the repo is: log counts and IDs only, never names, league codes, recovery keys or photos.
+- `jobs/` run as `node jobs/name.ts`. `jobs/admin.ts` connects them: with the `FIREBASE_SERVICE_ACCOUNT` secret on GitHub, or to the emulator when `FIRESTORE_EMULATOR_HOST` is set. The logic lives in `jobs/lib/`, pure and tested. In a workflow, hand the secret to the one step that needs it, never to the whole job.
+- The Firebase web settings in `app/src/data/backend.ts` are public by design. The service account key is the secret.
 - Animations move whole layers and change only `transform` and `opacity`. The resting state of every CSS rule is the finished screen.
 - Flow tests freeze the clock (`page.clock`), so they never wait in real time. A flow test that needs the app itself calls `fromHomeScreen(page)` first, because a phone's browser only gets the install guide. To get past the title, use `enter(page)` or `tapToEnter(page)` from `tests/e2e/helpers.ts`: they wait until the title is ready for a tap, which a slow machine needs.
 - No `.env` files: the repo ignores them all as a guard against secrets. Build switches go in `app/vite.config.ts`.

@@ -3,7 +3,7 @@
 // a league of its own, so tests can run side by side without tripping over
 // each other.
 import type { APIRequestContext } from '@playwright/test';
-import { makeLeagueCode } from '../../engine/src/ids.ts';
+import { leagueSeed, newLeague } from '../../jobs/lib/league-seed.ts';
 
 const ROOT = 'http://127.0.0.1:8080/v1/projects/demo-tier-c/databases/(default)/documents';
 // The emulator treats this as the project's owner, which the rules do not apply to.
@@ -53,29 +53,30 @@ export interface TestLeague {
   /** The league code, without its dash. */
   code: string;
   name: string;
-  /** The recovery key of p1, the commish, who is already in the league. */
+  /** The commish, who is in the league from the start, and their recovery key. */
+  commish: string;
   commishKey: string;
 }
 
 const random = (bytes: number) => crypto.getRandomValues(new Uint8Array(bytes));
 
-/** A fresh league with one player in it already: Alex, the commish. */
+/**
+ * A fresh league, made from the same recipe the real setup job uses, with one
+ * player in it already: Alex, the commish. `players` fills it up to that many.
+ */
 export async function createLeague(
   request: APIRequestContext,
   options: { name?: string; joining?: 'open' | 'closed'; players?: number } = {},
 ): Promise<TestLeague> {
-  const code = makeLeagueCode(random(8));
-  const id = `league-${code.toLowerCase()}`;
-  const name = options.name ?? 'Sunday Squad';
-  const body = makeLeagueCode(random(8));
-  const commishKey = `TCL-${body.slice(0, 4)}-${body.slice(4)}`;
-  const members: { [player: string]: Plain } = {};
-  for (let n = 1; n <= (options.players ?? 1); n += 1) members[`p${n}`] = true;
-
-  await writeDoc(request, `codes/${code}`, { league: id, name });
-  await writeDoc(request, `leagues/${id}`, { name, code, commish: 'p1', coCommish: null, joining: options.joining ?? 'open', members, season: 's1' });
-  await writeDoc(request, `leagues/${id}/players/p1`, { displayName: 'Alex', joinedAt: new Date() });
-  await writeDoc(request, `leagues/${id}/keys/p1`, { key: commishKey, rotatedAt: new Date() });
-  await writeDoc(request, `leagues/${id}/lookup/${commishKey}`, { player: 'p1' });
-  return { id, code, name, commishKey };
+  const league = newLeague({ name: options.name ?? 'Sunday Squad', commishName: 'Alex', random });
+  for (const doc of leagueSeed(league, new Date())) {
+    const data = { ...doc.data } as { [key: string]: Plain };
+    if (doc.path === `leagues/${league.id}`) {
+      const members = data.members as { [player: string]: Plain };
+      for (let n = 2; n <= (options.players ?? 1); n += 1) members[`filler${n}`] = true;
+      data.joining = options.joining ?? 'open';
+    }
+    await writeDoc(request, doc.path, data);
+  }
+  return { id: league.id, code: league.code, name: league.name, commish: league.commish, commishKey: league.commishKey };
 }

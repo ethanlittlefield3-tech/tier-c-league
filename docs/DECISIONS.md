@@ -82,6 +82,12 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 38. **Names are tidied before they are saved:** spaces at the ends go, and a run of spaces becomes one. An emoji counts as two of the 24 characters, because that is how the security rules count.
 39. **Codes and keys can be typed in any case, with or without dashes.** A 0, O, 1 or I gets a hint about look-alikes, since neither codes nor keys ever use them.
 
+**Setting up a league** (new on 2026-11-25, not yet reviewed by the commish)
+
+40. **A league is made with a button on GitHub: Actions, "Create a league".** It starts open to new players, with one player in it: the commish, named "Commish" until they change it.
+41. **The league code and the commish's first key are read in the Firebase console,** which only the commish can open. They are never shown on GitHub, because this repo's logs are public.
+42. **The commish gets in with "I'm already in a league",** the same way anyone gets back in. Their key changes the moment they do, like any recovery.
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.
@@ -111,6 +117,8 @@ Nothing is open. The receipts question that was here is now ruling R6.
 
 - **The database library loads in the background while the intro plays.** It is the biggest piece of the app (about 165 kB zipped), so the first screen never waits on it.
 - **The app waits 15 seconds for the database, then says there is no answer.** Without that, a save made with no signal would wait forever without a word.
+- **The security rules publish themselves.** After every test has passed on main, a job publishes `firebase/firestore.rules` to the league's database. Nobody pastes rules into a console by hand, so the rules that are live are always the rules that were tested.
+- **The service account key is handed to one step of one job at a time,** never to the whole workflow, and never to a step that installs packages.
 - **The fonts are served by the app,** not fetched from a font website. The first screen waits on nobody else, the app can start with no signal once offline start is built, and no other company sees who opens the app. Both fonts are open (SIL Open Font License).
 - **Launch pictures are drawn for a list of screen sizes** (`app/launch-screens.ts`), because iOS only uses a picture that matches the screen exactly. A new iPhone size needs one new row and `npm run icons`. Until then that phone starts on a plain screen and everything else works.
 - **The installed app stays upright on Android.** iPhones and iPads decide for themselves and ignore the request.

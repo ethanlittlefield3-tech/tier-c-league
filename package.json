@@ -12,11 +12,11 @@
     "node": ">=22.18"
   },
   "scripts": {
-    "test": "vitest run --project engine --project app",
+    "test": "vitest run --project engine --project app --project jobs",
     "test:rules": "firebase --config firebase/firebase.json emulators:exec --only firestore --project demo-tier-c \"vitest run --project rules --no-file-parallelism\"",
     "test:all": "npm test && npm run test:rules && npm run test:e2e",
-    "test:watch": "vitest --project engine --project app",
-    "typecheck": "tsc -p engine/tsconfig.json && tsc -p scripts/tsconfig.json && tsc -p tests/tsconfig.json && tsc -p tests/e2e/tsconfig.json && tsc -p app/tsconfig.json",
+    "test:watch": "vitest --project engine --project app --project jobs",
+    "typecheck": "tsc -p engine/tsconfig.json && tsc -p scripts/tsconfig.json && tsc -p jobs/tsconfig.json && tsc -p tests/tsconfig.json && tsc -p tests/e2e/tsconfig.json && tsc -p app/tsconfig.json",
     "check": "npm run typecheck && npm run test:all",
     "checkpoint:a": "vitest run --project engine --reporter=json --outputFile=.vitest/results.json && node scripts/checkpoint-a.ts",
     "checkpoint:b": "firebase --config firebase/firebase.json emulators:exec --only firestore --project demo-tier-c \"vitest run --project rules --no-file-parallelism --reporter=json --outputFile=.vitest/rules.json\" && node scripts/checkpoint-b.ts",
@@ -31,6 +31,7 @@
     "@playwright/test": "1.63.0",
     "@types/node": "^22.0.0",
     "firebase": "^13.4.0",
+    "firebase-admin": "^14.5.1",
     "firebase-tools": "^15.37.0",
     "typescript": "^7.0.2",
     "vitest": "^5.1.1"

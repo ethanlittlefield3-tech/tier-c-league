@@ -14,10 +14,11 @@ This file will grow into the plain-steps guide for running, deploying, backing u
 | `firebase/` | The security rules, which decide what each phone may read and write |
 | `tests/rules/` | Tests that try to break those rules against a local copy of the database |
 | `tests/e2e/` | Tests that tap through the app in a browser at iPhone size |
+| `jobs/` | Work that runs on GitHub with the league's key: making a league and publishing the security rules. The timed jobs come later |
 | `scripts/` | Small tools: the ones that build the checkpoint reports, and the ones that draw the art and the icons |
 | `.github/workflows/` | What GitHub does on every push: run all the tests, then publish the app |
 
-Still to come: the rest of the app's screens and `jobs/` (the timed work).
+Still to come: the rest of the app's screens, and the timed jobs.
 
 ## Run the tests
 
@@ -98,6 +99,19 @@ npm run icons -- --sheet options.png
 ```
 
 That also saves one picture with the three options side by side.
+
+## Making a league
+
+Leagues are made from GitHub, not from the app.
+
+1. On GitHub, open the repo's **Actions** tab.
+2. Choose **Create a league**, then **Run workflow**. Type a league name (the page is public, so nothing personal) and run it.
+3. The league code and the commish's recovery key are not shown on GitHub. Read them in the Firebase console, under **Firestore Database**: the code is the name of the document in `codes`, and the key is in `leagues`, your league, `keys`.
+4. In the app, tap **I'm already in a league** and enter both.
+
+## Where the live rules come from
+
+After every test has passed on `main`, a job publishes `firebase/firestore.rules` to the league's database. There is nothing to do by hand. To publish again, open **Actions**, choose **Publish the security rules**, then **Run workflow**.
 
 ## Where the live app comes from
 

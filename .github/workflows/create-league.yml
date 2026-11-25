@@ -1,0 +1,41 @@
+name: Create a league
+
+# Makes a new league with one player in it: the commish. Start it by hand from
+# the Actions tab ("Run workflow").
+#
+# This page is public, so the league code and the commish's recovery key are
+# never shown here. The job's log says where to find both in the Firebase
+# console, which only the commish can open.
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 'League name. Anyone can see this page, so nothing personal.'
+        required: true
+        default: 'Tier C League'
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  create:
+    name: Create the league
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # The key is handed to this one step only.
+      - name: Create the league
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          LEAGUE_NAME: ${{ inputs.name }}
+        run: node jobs/create-league.ts

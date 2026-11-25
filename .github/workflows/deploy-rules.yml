@@ -1,0 +1,59 @@
+name: Publish the security rules
+
+# Publishes firebase/firestore.rules to the league's database, but only after
+# the CI tests have passed on main. Those include every security-rule test. It
+# can also be started by hand from the Actions tab ("Run workflow").
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One at a time, and never cancel one that is half way through.
+concurrency:
+  group: rules
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish the rules
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check that the league's key is in GitHub Secrets
+        id: key
+        env:
+          KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -n "$KEY" ]; then
+            echo "present=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "The FIREBASE_SERVICE_ACCOUNT secret is not set yet, so there is nowhere to publish to. Skipping."
+          fi
+
+      - uses: actions/checkout@v6
+        if: steps.key.outputs.present == 'yes'
+        with:
+          # The exact commit the tests passed on.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - uses: actions/setup-node@v6
+        if: steps.key.outputs.present == 'yes'
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+        if: steps.key.outputs.present == 'yes'
+
+      # The key is handed to this one step only.
+      - name: Publish
+        if: steps.key.outputs.present == 'yes'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node jobs/deploy-rules.ts
