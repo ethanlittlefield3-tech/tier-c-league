@@ -58,6 +58,7 @@ Last updated 2026-11-25, after the join and recovery screens.
   - The live site has no database yet, so its way in says "The league is not open yet."
   - 13 logic tests and 14 flow tests. The flow tests run against a local copy of the database and sign-in, so nothing real is touched.
   - Not covered by a test: the "not open yet" notice, because the tests always have a database. It was checked by eye.
+  - Two things only GitHub's machines showed, both fixed: the switch that points the test build at the local database sat in a file git ignores, and on a slow machine a test could tap the title before it was ready.
 
 ## Waiting on the commish
 

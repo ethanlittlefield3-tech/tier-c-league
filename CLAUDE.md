@@ -44,7 +44,8 @@ npm run icons         # redraw the app icon and launch pictures (scripts/art/ico
 - Security rules read time only from `calendar/` documents, never from a date string. Kit, sealed and week documents are filed by period (`w02`), not week number.
 - Job logs are public, because the repo is: log counts and IDs only, never names, recovery keys or photos.
 - Animations move whole layers and change only `transform` and `opacity`. The resting state of every CSS rule is the finished screen.
-- Flow tests freeze the clock (`page.clock`), so they never wait in real time. A flow test that needs the app itself calls `fromHomeScreen(page)` first, because a phone's browser only gets the install guide.
+- Flow tests freeze the clock (`page.clock`), so they never wait in real time. A flow test that needs the app itself calls `fromHomeScreen(page)` first, because a phone's browser only gets the install guide. To get past the title, use `enter(page)` or `tapToEnter(page)` from `tests/e2e/helpers.ts`: they wait until the title is ready for a tap, which a slow machine needs.
+- No `.env` files: the repo ignores them all as a guard against secrets. Build switches go in `app/vite.config.ts`.
 - `app/public/icons/` and `app/public/launch/` are drawn by `npm run icons`. Never edit them by hand. A new iPhone screen size is one row in `app/launch-screens.ts`.
 - Only `app/src/data/` imports the Firebase library. Screens get it through `loadData()`, which fetches it in the background, so the first screen never waits on it. Flow tests run against the emulators (`--mode emulator`), and a test that needs a league makes its own with `createLeague`.
 - The app loads nothing from another website: fonts and art are served by the app itself. A flow test fails if that changes.

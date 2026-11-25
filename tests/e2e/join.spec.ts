@@ -1,33 +1,11 @@
 import { expect, test, type APIRequestContext, type Browser, type Page } from '@playwright/test';
 import { formatLeagueCode, makeLeagueCode } from '../../engine/src/ids.ts';
-import { fromHomeScreen } from './helpers.ts';
+import { enter, tapToEnter } from './helpers.ts';
 import { createLeague, readDoc, type TestLeague } from './league.ts';
 
 const KEY_SHAPE = /^TCL-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/;
 const heading = (page: Page, name: string) => page.getByRole('heading', { name });
 const button = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
-
-/**
- * Tap past the title. The title ignores taps for its first third of a second,
- * so this waits until the title is ready (it takes the focus then) and jumps
- * the clock past that moment instead of waiting it out.
- */
-async function tapToEnter(page: Page) {
-  const enterButton = button(page, 'Tap to enter');
-  await expect(enterButton).toBeFocused();
-  await page.clock.fastForward(1000);
-  await enterButton.click();
-}
-
-/** Open the app from the Home Screen and tap past the title, to whatever comes after it. */
-async function enter(page: Page) {
-  await fromHomeScreen(page);
-  // With Reduce Motion on, the title is up at once: these tests are about what comes after it.
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.clock.install();
-  await page.goto('/');
-  await tapToEnter(page);
-}
 
 /** Go through the join steps as a new player. Returns the recovery key the app shows. */
 async function joinAs(page: Page, league: TestLeague, name: string): Promise<string> {
