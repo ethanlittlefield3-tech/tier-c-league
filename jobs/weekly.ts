@@ -12,9 +12,10 @@
 import { randomInt } from 'node:crypto';
 import { FieldValue, Timestamp, getFirestore, type DocumentData } from 'firebase-admin/firestore';
 import { connect } from './admin.ts';
-import { receiptFixes, type StoredReceipt } from '../engine/src/index.ts';
+import { STARTER_DARES, dareStatus, receiptFixes, wheelPool, type StoredReceipt } from '../engine/src/index.ts';
 import { PROOF_DAYS, staleProofs } from './lib/proofs.ts';
 import { revealDemolitions, sameReveals } from './lib/reveals.ts';
+import { approvedDares, drawsDue, type Draw } from './lib/wheel.ts';
 import { settleDue, standingsFrom, type PlayerWeekData, type WeekLineStored } from './lib/settle.ts';
 
 const { app, emulator } = connect();
@@ -110,6 +111,55 @@ for (const league of leagues) {
     settledWeeks += 1;
     if (settled.status === 'final') addEarlier(settled.lines);
     console.log(`League ${league.id}, ${period}: ${settled.status}, ${settled.lines.length} players.`);
+  }
+
+  // The Wheel of Shame: once a week is final, a sealed draw for each of its
+  // spinners, and a new one when a dare's proof is voted down. The pool is the
+  // draft's dares that stand, then starter dares in a random order.
+  const finalWeeks = (await seasonRef.collection('weeks').get()).docs.filter((week) => week.get('status') === 'final' && Array.isArray(week.get('awards')?.wheel));
+  if (finalWeeks.length > 0) {
+    const spins = await seasonRef.collection('spins').get();
+    const proofVotes = (await seasonRef.collection('votes').where('kind', '==', 'proof').get()).docs.map((vote) => vote.data());
+    let pool: string[] | null = null;
+    const poolNow = async () => {
+      if (pool) return pool;
+      const dares = (await seasonRef.collection('dares').get()).docs.map((dare) => ({ player: dare.id, text: String(dare.get('text')), version: Number(dare.get('version')) }));
+      const votes = (await seasonRef.collection('votes').where('kind', '==', 'dare').get()).docs.map((vote) => ({ player: String(vote.get('player')), version: Number(vote.get('version')), choice: String(vote.get('choice')) }));
+      const order = STARTER_DARES.map((_, index) => ({ index, key: randomInt(1_000_000_000) })).sort((a, b) => a.key - b.key).map((item) => item.index);
+      pool = wheelPool(approvedDares(dares, votes, Math.max(0, members.length - 1)), STARTER_DARES, order);
+      return pool;
+    };
+    for (const week of finalWeeks) {
+      const existing = (week.get('wheel') ?? {}) as Record<string, Draw>;
+      const redo = Object.values(existing)
+        .filter((draw) => {
+          const spin = spins.docs.find((found) => found.id === draw.id);
+          const votes = proofVotes.filter((vote) => vote.draw === draw.id);
+          const status = dareStatus({
+            spunAt: spin ? Number(ms(spin.get('at'))) : null,
+            proofAt: spin?.get('proofAt') ? Number(ms(spin.get('proofAt'))) : null,
+            dueAt: draw.dueAt,
+            now,
+            eligible: Math.max(0, members.length - 1),
+            counts: votes.filter((vote) => vote.choice === 'counts').length,
+            doesntCount: votes.filter((vote) => vote.choice === 'doesntCount').length,
+          });
+          return status === 'redo';
+        })
+        .map((draw) => draw.id);
+      const spinners = (week.get('awards').wheel as string[]).filter((player) => player !== 'HOUSE');
+      const needsDraw = spinners.some((player) => !existing[`${week.id}_${player}_1`]) || redo.length > 0;
+      if (!needsDraw) continue;
+      const due = drawsDue({ period: week.id, spinners, existing, redo, pool: await poolNow(), now, timeZone: season.get('timeZone'), roll: () => randomInt(1_000_000_000) });
+      if (due.length === 0) continue;
+      const batch = db.batch();
+      for (const { draw, slice } of due) {
+        batch.set(seasonRef.collection('sealed').doc(`wheel_${draw.id}`), { kind: 'wheel', draw: draw.id, slice, dare: draw.pool[slice] });
+        batch.set(week.ref, { wheel: { [draw.id]: draw } }, { merge: true });
+      }
+      await batch.commit();
+      console.log(`League ${league.id}, ${week.id}: ${due.length} Wheel draw${due.length === 1 ? '' : 's'} sealed.`);
+    }
   }
 
   // Proof photos go after 14 days. Only their times are read, never the photos.

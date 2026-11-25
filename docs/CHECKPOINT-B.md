@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 226 of 226 passing.
+- **Tests:** 232 of 232 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -328,6 +328,19 @@ You ask in your own name, before the day locks, 3 times a week. Only the player 
 
 - While a screen-time receipt is open, the player can still fix the number, even after the day locks, and nothing else
 - Once the receipt is answered or its deadline passes, the number is fixed
+
+## The Wheel of Shame
+
+The job seals each draw. Nobody reads it until its spinner taps Spin, once.
+
+**The Wheel of Shame**
+
+- A draw stays sealed until its spinner spins, even from the spinner and the commish
+- The spinner taps Spin once, at the server time, and everyone in the league sees the result
+- Nobody else can spin for them
+- A spin needs a draw, at the right week, and the server time, and carries nothing else
+- Coin flips stay sealed from everyone
+- Everyone in the league can see the spins; nobody outside can
 
 ## The wall
 

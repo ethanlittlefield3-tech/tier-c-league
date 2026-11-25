@@ -1,6 +1,6 @@
 # Tier C League: progress log
 
-Last updated 2026-11-25, after receipts.
+Last updated 2026-11-25, after the Wheel of Shame, part 1.
 
 ## Plan change (commish ruling, 2026-11-25)
 
@@ -187,6 +187,12 @@ Last updated 2026-11-25, after receipts.
   - New rules: 17 rule tests, 226 in all. Weakening them 22 ways was caught 20 times, after 5 missing tests were added. The other 2, proof from someone else and proof after the deadline, are still refused, because the same save must mark the receipt proven, which only its player can do before the deadline.
   - 1 engine test, 6 logic tests, 2 job tests and 5 flow tests.
   - Not yet: asking on a player other than your opponent (the rules allow it; the screen for another player's day comes later), and the push alerts for a request and its last hour, which come with notifications.
+- **The Wheel of Shame, part 1: the sealed draw and the live spin** (2026-11-25).
+  - When a week goes final, the hourly weekly job draws a dare for each of its lowest scorers, with real randomness, and seals it. The wheel's slices are the draft's dares that stand, then starter dares to fill it to 16.
+  - The spinner gets a card on Today. Everyone gets a banner on Feed. The Wheel screen shows the wheel, drawn for this app, with "Spin the Wheel" for the spinner and "Waiting for Riley to spin" for everyone else.
+  - Tapping Spin reveals the sealed result to everyone at once: the wheel turns for 5 seconds on every phone watching and lands on the dare. Proof is due by 11:59 pm that Sunday.
+  - New rules: 6 rule tests, 232 in all. Weakening them 7 ways was caught 7 times.
+  - 5 engine tests, 4 job tests, 4 logic tests, and 1 flow test that runs the real weekly job, spins on one phone and watches on another.
 - **The shorter intro on reopening is on purpose:** the full intro plays on the first open each day, and a 1-second title after that (SCOPE.md, "Intro animation").
 
 ## Waiting on the commish
@@ -195,7 +201,7 @@ Last updated 2026-11-25, after receipts.
 
 ## Next
 
-1. **Step 3, continued.** Next: the Wheel of Shame, with its sealed draw, live spin and dare proof votes.
+1. **Step 3, continued.** Next: the Wheel, part 2: dare proof, the 24-hour Counts or Doesn't count vote, a new spin when it doesn't count, and the −3 for a dodged dare.
    - **Still to add to joining:** the notifications step (with push alerts), a commish's "approve joins" switch, and a way to make a league. Leagues are made by a setup script, which is built with the jobs in Step 4.
    - **Offline start** comes with the offline step: a service worker that keeps the app's files on the phone, so it opens with no signal. Chrome on Android only offers its one-tap Install button once that exists. Until then Android installs from the browser menu, which the guide explains.
 2. **Before real players join:** limit the app's web key to the app's own address in the Google Cloud console, and look at App Check, which stops other programs from using the database's free daily allowance.
@@ -206,8 +212,8 @@ Last updated 2026-11-25, after receipts.
 
 - **Votes:** is a "majority" more than half of everyone eligible, or more than half of the votes cast? This decides goal vetoes, dare vetoes and dare-proof votes. **Built provisionally as more than half of everyone eligible** (DECISIONS.md, "Still open").
 - **A goal still vetoed when the votes close:** the commish settles it for now. Should something happen on its own?
-- **Wheel:** what happens if the spinner never taps Spin? Proposal: the proof deadline runs from when the week goes final, not from the tap.
-- **Dare pool:** 8 starter dares plus one per player is up to 20, but the wheel holds 8 to 16 slices.
+- **Wheel:** what happens if the spinner never taps Spin? **Built provisionally:** the proof deadline runs from the draw, when the week goes final, not from the tap (DECISIONS.md, "Still open").
+- **Dare pool:** 8 starter dares plus one per player is up to 20, but the wheel holds 8 to 16 slices. **Built provisionally:** every draft dare that stands, then starters at random to fill 16 (DECISIONS.md, "Still open").
 - **Joining or leaving mid-season:** how the schedule and the missed days are handled.
 
 ## What was verified on 2026-11-24

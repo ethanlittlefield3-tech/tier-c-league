@@ -1,0 +1,93 @@
+/* The Wheel of Shame. */
+
+.wheel-card h2 {
+  margin-bottom: 4px;
+}
+
+.wheel-art {
+  width: min(100%, 340px);
+  margin: 8px auto 4px;
+}
+
+.wheel-art svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* The disc turns about the wheel's centre: the middle of the drawing. */
+.wheel-disc {
+  transform-origin: 0 0;
+  transform-box: view-box;
+}
+
+.wheel-disc[data-animate='true'] {
+  transition: transform 5s cubic-bezier(0.12, 0.62, 0.08, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wheel-disc[data-animate='true'] {
+    transition: none;
+  }
+}
+
+.wheel-label {
+  fill: #ffffff;
+  font-family: var(--body);
+  font-weight: 700;
+  paint-order: stroke;
+  stroke: rgba(5, 9, 20, 0.55);
+  stroke-width: 2px;
+}
+
+.wheel-spin {
+  width: 100%;
+  min-width: 0;
+}
+
+.wheel-dare {
+  margin: 12px 0 0;
+  font-size: 18px;
+  line-height: 1.4;
+}
+
+.wheel-dare strong {
+  color: var(--gold);
+}
+
+/* The dare fades in once the wheel has had time to land. Its resting state is shown. */
+.wheel-dare[data-landed='live'] {
+  animation: wheel-reveal 0.6s ease-out 4.8s backwards;
+}
+
+@keyframes wheel-reveal {
+  from {
+    opacity: 0;
+  }
+}
+
+/* On Today and Feed: who spins this week. */
+.wheel-banner {
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 122, 47, 0.55);
+  background: linear-gradient(180deg, rgba(255, 122, 47, 0.16), rgba(255, 122, 47, 0.04));
+}
+
+.wheel-banner h2 {
+  margin: 0;
+  font: italic 900 20px/1.15 var(--display);
+}
+
+.wheel-banner p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+.wheel-banner .btn {
+  width: 100%;
+  min-width: 0;
+  margin-top: 12px;
+}

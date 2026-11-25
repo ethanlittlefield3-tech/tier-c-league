@@ -20,3 +20,4 @@ export * from './days.ts';
 export * from './votes.ts';
 export * from './draft.ts';
 export * from './dares.ts';
+export * from './wheel.ts';

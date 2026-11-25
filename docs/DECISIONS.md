@@ -185,6 +185,13 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 101. **Ruling R6 on the phone:** while a screen-time receipt is open, Today keeps that day reachable and its screen time editable, even after the lock. Only the number can change.
 102. **Receipts show in the live feed** when asked, and again when proven, backed down from, or left past the deadline.
 
+**The Wheel of Shame, part 1** (new on 2026-11-25, not yet reviewed by the commish)
+
+103. **The weekly job draws each Wheel spin when the week goes final,** with real randomness, and seals the result. Nobody can read it before the spinner taps Spin, the commish and the spinner included. Then every phone shows the wheel landing on it.
+104. **Tied lowest scorers each get their own draw** (SCOPE.md: "tied players all spin").
+105. **The spinner's Today has a card for the spin,** and Feed has a banner for everyone while the dares are due.
+106. **The wheel is drawn for this app:** one slice per dare in team blue and orange, a gold pointer, and a 5-second spin that turns the whole disc. With Reduce Motion on, it lands at once.
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.
@@ -193,6 +200,8 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 
 1. **What a "majority" veto means. Built provisionally, waiting on the commish.** The draft counts a goal as vetoed when more than half of the players who can vote veto it (everyone but the goal's owner). The other reading is more than half of the votes cast. Under the built reading, a goal stands when votes close unless a majority vetoed it, so nobody can sink a goal with one veto while the others stay quiet. The same rule will decide dare vetoes and dare proof. Changing it is one line in `engine/src/votes.ts`.
 2. **A goal still vetoed when the votes close.** For now the results list it for the commish to settle, for example by reopening the votes for 12 hours so the player can re-word it. Should something happen on its own instead?
+3. **The Wheel's 16 slices. Built provisionally.** SCOPE.md's pool (8 starters plus one dare per player) can reach 20, but the wheel holds 16. The wheel takes every dare from the draft that stands, then starter dares picked at random each week to fill it to 16. Changing it is one function, `wheelPool` in `engine/src/wheel.ts`.
+4. **A spinner who never taps Spin. Built provisionally.** Proof is due by 11:59 pm on the Sunday after the draw, whether or not they have spun, so not spinning is a dodge (−3 Season Points) once that Sunday ends. Changing it is one function, `dareDue`.
 
 The receipts question that was here is now ruling R6.
 

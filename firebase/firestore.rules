@@ -586,6 +586,22 @@ service cloud.firestore {
             && after.diff(before).affectedKeys().hasOnly(['screenMinutes', 'updatedAt']);
         }
 
+        // ---- The Wheel of Shame --------------------------------------------------
+        // The weekly job seals each draw when the week goes final. The spinner
+        // taps Spin, once, which reveals the result to everyone at once.
+        match /spins/{drawId} {
+          allow read: if isMember(L);
+          allow create: if isPlayer(L, request.resource.data.player)
+            && request.resource.data.keys().hasOnly(['player', 'period', 'at', 'proofAt'])
+            && request.resource.data.at == request.time
+            && request.resource.data.proofAt == null
+            && wheelDraw(request.resource.data.period, drawId).player == request.resource.data.player;
+        }
+
+        function wheelDraw(period, drawId) {
+          return get(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/weeks/$(period)).data.wheel[drawId];
+        }
+
         // ---- Receipts -----------------------------------------------------------
         // SCOPE.md, "Receipts on demand". Anyone can ask for proof of a square
         // someone else claimed, until that day locks: 3 requests a week each,
@@ -753,8 +769,12 @@ service cloud.firestore {
         // day locks. There is no exception for the commish. A document that
         // does not exist is refused the same way, so nobody can probe for one.
         match /sealed/{sealedId} {
+          // A Wheel draw is revealed by its spin, to everyone at once. Anything
+          // else sealed is seen by its author, and by everyone from its reveal time.
           allow get: if isMember(L)
-            && (resource.data.player == claim(L).player || request.time >= resource.data.revealAt);
+            && (resource.data.kind == 'wheel'
+                  ? exists(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/spins/$(resource.data.draw))
+                  : (resource.data.player == claim(L).player || request.time >= resource.data.revealAt));
           allow list: if isMember(L) && resource.data.player == claim(L).player;
           allow create: if validDemolition(sealedId, request.resource.data);
         }

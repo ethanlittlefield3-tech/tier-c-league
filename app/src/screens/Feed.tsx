@@ -9,6 +9,8 @@ import { POST_MAX, QUICK_CHAT, SAVED_TAUNTS_MAX, TAUNT_MAX, fillName } from '../
 import { Field } from '../ui/parts.tsx';
 import { ago } from '../ui/when.ts';
 import { useOpponent } from './useOpponent.ts';
+import { latestWheel, type Draw, type Spin } from './Wheel.tsx';
+import './wheel.css';
 import './feed.css';
 
 interface Post {
@@ -51,7 +53,7 @@ type Names = (player: string) => string;
  * reactions. Mixed in, newest first: check-ins, power-ups, revealed
  * Demolitions, docks and results, all live.
  */
-export function Feed(props: { me: Me }) {
+export function Feed(props: { me: Me; onWheel?: () => void }) {
   const now = useNow();
   const leaguePath = `leagues/${props.me.league}`;
   const league = useDoc<{ season?: string | null; commish?: string; coCommish?: string | null }>(leaguePath);
@@ -63,6 +65,7 @@ export function Feed(props: { me: Me }) {
   const docks = useLatest<FeedInput['adjustments'][number]['data']>(seasonPath ? `${seasonPath}/adjustments` : null, 'at', 10);
   const weeks = useAll<FeedInput['weeks'][number]['data']>(seasonPath ? `${seasonPath}/weeks` : null);
   const receipts = useLatest<NonNullable<FeedInput['receipts']>[number]['data']>(seasonPath ? `${seasonPath}/receipts` : null, 'requestedAt', 20);
+  const spins = useAll<Spin>(seasonPath ? `${seasonPath}/spins` : null);
   const opponent = useOpponent(props.me, now);
   const isCommish = league.data?.commish === props.me.player || league.data?.coCommish === props.me.player;
 
@@ -77,8 +80,22 @@ export function Feed(props: { me: Me }) {
     .sort((a, b) => b.at - a.at)
     .slice(0, 80);
 
+  // The Wheel of Shame, while its dares are still due.
+  const wheel = latestWheel(weeks.docs as { id: string; data: { week: number; wheel?: Record<string, Draw> } }[]);
+  const wheelLive = wheel !== null && wheel.draws.some((draw) => now < draw.dueAt);
+  const waiting = wheel ? wheel.draws.filter((draw) => !spins.docs.some((spin) => spin.id === draw.id)).map((draw) => name(draw.player)) : [];
+
   return (
     <div class="feed">
+      {wheel && wheelLive && (
+        <section class="wheel-banner" aria-labelledby="wheel-banner-title">
+          <h2 id="wheel-banner-title">The Wheel of Shame</h2>
+          <p>{waiting.length > 0 ? `Week ${wheel.week}: ${waiting.join(' and ')} ${waiting.length === 1 && waiting[0] !== 'You' ? 'spins' : 'spin'} live.` : `Week ${wheel.week}: see the dares.`}</p>
+          <button type="button" class="btn btn-second" onClick={props.onWheel}>
+            Open the Wheel
+          </button>
+        </section>
+      )}
       <Talk me={props.me} opponent={opponent} saved={saved} />
       <Brag me={props.me} />
       <section class="feed-wall" aria-label="The feed">

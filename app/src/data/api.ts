@@ -9,3 +9,4 @@ export * from './live.ts';
 export * from './season.ts';
 export * from './receipts.ts';
 export * from './wall.ts';
+export * from './wheel.ts';

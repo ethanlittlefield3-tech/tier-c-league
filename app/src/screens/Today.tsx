@@ -21,6 +21,8 @@ import type { CalDay } from '../today/kit.ts';
 import { playerWeek, type KitPlay } from '../today/week.ts';
 import { PowerUps, type Play } from './PowerUps.tsx';
 import { ReceiptsDue } from './ReceiptsDue.tsx';
+import type { Draw } from './Wheel.tsx';
+import './wheel.css';
 import { GoalMark } from './GoalMark.tsx';
 import { ScreenSheet } from './ScreenSheet.tsx';
 import { WeekStrip } from './WeekStrip.tsx';
@@ -112,7 +114,7 @@ function Notice(props: { title: string; children: string }) {
  * against your opponent, the power-up tray, the rest-day picker and the week
  * bars come next.
  */
-export function Today(props: { me: Me; onDraft?: () => void }) {
+export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => void }) {
   const now = useNow();
   const [picked, setPicked] = useState<'today' | 'yesterday'>('today');
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -177,6 +179,12 @@ export function Today(props: { me: Me; onDraft?: () => void }) {
   const opponentRoster = useDoc<RosterDoc>(seasonPath && opponentId ? `${seasonPath}/roster/${opponentId}` : null);
   const opponentRest = useDoc<{ date: string }>(seasonPath && period && opponentId ? `${seasonPath}/kit/${period}_${opponentId}_rest` : null);
   const draftState = useDoc<{ step: string; votesCloseAt?: number }>(seasonPath ? `${seasonPath}/draft/state` : null);
+  // The Wheel of Shame: last week's lowest scorer spins once that week is final.
+  const thisWeekNumber = (todayCal.data as { week?: number } | null)?.week ?? 0;
+  const prevPeriod = thisWeekNumber > 1 ? weekPeriod(thisWeekNumber - 1) : null;
+  const prevWeek = useDoc<{ wheel?: Record<string, Draw> }>(seasonPath && prevPeriod ? `${seasonPath}/weeks/${prevPeriod}` : null);
+  const mySpins = useWhere<{ player: string }>(seasonPath ? `${seasonPath}/spins` : null, 'player', me);
+  const myDraw = Object.values(prevWeek.data?.wheel ?? {}).find((draw) => draw.player === me && now < draw.dueAt && !mySpins.docs.some((spin) => spin.id === draw.id)) ?? null;
 
   // Both sides of this week, for the week strip and the scoreboard.
   type Change = { date: string; amount: number; void: Square | null; receipt?: boolean };
@@ -341,6 +349,15 @@ export function Today(props: { me: Me; onDraft?: () => void }) {
   return (
     <div class="today" data-window={dayWindow}>
       {draftCard}
+      {myDraw && (
+        <section class="wheel-banner" aria-labelledby="wheel-card-title">
+          <h2 id="wheel-card-title">You spin the Wheel of Shame</h2>
+          <p>Lowest score last week. The league is waiting: spin it live.</p>
+          <button type="button" class="btn" onClick={props.onWheel}>
+            Open the Wheel
+          </button>
+        </section>
+      )}
       <ReceiptsDue me={props.me} seasonId={seasonId} now={now} receipts={myReceipts.docs} />
       <div class="today-days" role="group" aria-label="Which day">
         <button type="button" class="today-day" aria-pressed={showing === 'today'} onClick={() => setPicked('today')}>

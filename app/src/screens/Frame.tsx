@@ -11,6 +11,7 @@ import { League } from './League.tsx';
 import { Match } from './Match.tsx';
 import { Profile } from './Profile.tsx';
 import { Today } from './Today.tsx';
+import { Wheel } from './Wheel.tsx';
 import { useOnline } from '../ui/online.ts';
 import './frame.css';
 
@@ -56,6 +57,7 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
   const [commishOpen, setCommishOpen] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
   const [draftOpen, setDraftOpen] = useState(false);
+  const [wheelOpen, setWheelOpen] = useState(false);
   const [backFromProfile, setBackFromProfile] = useState(false);
   const meButton = useRef<HTMLButtonElement>(null);
 
@@ -63,6 +65,10 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
   useEffect(() => {
     if (!profileOpen && backFromProfile) meButton.current?.focus({ preventScroll: true });
   }, [profileOpen, backFromProfile]);
+
+  if (wheelOpen) {
+    return <Wheel me={props.me} onBack={() => setWheelOpen(false)} />;
+  }
 
   if (draftOpen) {
     return <Draft me={props.me} onBack={() => setDraftOpen(false)} />;
@@ -111,7 +117,7 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
         </p>
       )}
       <main class="frame-body" key={tab}>
-        {tab === 'today' ? <Today me={props.me} onDraft={() => setDraftOpen(true)} /> : tab === 'match' ? <Match me={props.me} /> : tab === 'feed' ? <Feed me={props.me} /> : tab === 'league' ? <League me={props.me} /> : <Soon tab={current} />}
+        {tab === 'today' ? <Today me={props.me} onDraft={() => setDraftOpen(true)} onWheel={() => setWheelOpen(true)} /> : tab === 'match' ? <Match me={props.me} /> : tab === 'feed' ? <Feed me={props.me} onWheel={() => setWheelOpen(true)} /> : tab === 'league' ? <League me={props.me} /> : <Soon tab={current} />}
       </main>
       <nav class="frame-tabs" aria-label="Main">
         {TABS.map((info) => {
