@@ -2,9 +2,11 @@ name: Keep the season calendar
 
 # Writes each league's season calendar from its settings: the days, when each
 # one starts and locks, and when each Rule One arrives. The security rules
-# read every deadline from these. It runs every hour, so a change the commish
-# makes in season setup is in place within the hour. It can also be started by
-# hand from the Actions tab ("Run workflow").
+# read every deadline from these. Then, once a league's draft is done, it
+# builds the schedule from the rival picks and the season goes active. It runs
+# every hour, so a change the commish makes in season setup, or the end of the
+# draft, is in place within the hour. It can also be started by hand from the
+# Actions tab ("Run workflow").
 on:
   schedule:
     - cron: '17 * * * *'
@@ -52,3 +54,10 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: node jobs/season-calendar.ts
+
+      # The key is handed to this one step only.
+      - name: Build the schedule
+        if: steps.key.outputs.present == 'yes'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node jobs/schedule.ts

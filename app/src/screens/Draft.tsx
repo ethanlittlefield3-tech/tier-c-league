@@ -6,11 +6,15 @@ import { loadData } from '../data/load.ts';
 import { whyOf } from '../data/why.ts';
 import { Back, Field, Heading } from '../ui/parts.tsx';
 import { timeLeft } from '../ui/when.ts';
+import { RivalPicks } from './RivalPicks.tsx';
 import './draft.css';
 
 interface DraftState {
   step: 'goals' | 'rivals' | 'dares' | 'done';
   order?: string[];
+  left?: string[];
+  picks?: Record<string, string>;
+  turnStartedAt?: number | null;
   /** When goals and votes close, in milliseconds. */
   votesCloseAt?: number;
 }
@@ -104,7 +108,7 @@ const STEP: Record<DraftState['step'], string> = { goals: 'goals', rivals: 'riva
  */
 export function Draft(props: { me: Me; onBack: () => void }) {
   const leaguePath = `leagues/${props.me.league}`;
-  const league = useDoc<{ season?: string | null; members?: Record<string, boolean> }>(leaguePath);
+  const league = useDoc<{ season?: string | null; members?: Record<string, boolean>; commish?: string; coCommish?: string | null }>(leaguePath);
   const seasonId = league.data?.season ?? null;
   const seasonPath = seasonId ? `${leaguePath}/seasons/${seasonId}` : null;
   const draft = useDoc<DraftState>(seasonPath ? `${seasonPath}/draft/state` : null);
@@ -124,6 +128,7 @@ export function Draft(props: { me: Me; onBack: () => void }) {
   const step = draft.data?.step ?? null;
   const closeAt = draft.data?.votesCloseAt ?? null;
   const closed = closeAt === null || now >= closeAt;
+  const isCommish = league.data?.commish === props.me.player || league.data?.coCommish === props.me.player;
   const name = (player: string) => players.docs.find((found) => found.id === player)?.data.displayName ?? 'Player';
   const allVotes = votes.docs.map((found) => found.data);
 
@@ -167,6 +172,7 @@ export function Draft(props: { me: Me; onBack: () => void }) {
                   ? 'The draft is done.'
                   : `The live draft has moved on to ${STEP[step ?? 'goals']}.`}
             </p>
+            {draft.data.left && seasonId && <RivalPicks me={props.me} seasonId={seasonId} state={draft.data} name={name} isCommish={isCommish} />}
             {closed ? (
               <Results members={members} rosters={rosters.docs} votes={allVotes} eligible={eligible} name={name} me={props.me.player} />
             ) : (

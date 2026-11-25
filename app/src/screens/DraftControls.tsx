@@ -1,10 +1,11 @@
 import { useState } from 'preact/hooks';
-import { REVOTE_HOURS } from '@tcl/engine';
-import { useDoc, useNow } from '../data/hooks.ts';
+import { REVOTE_HOURS, pickDeadline, picker, picksDone } from '@tcl/engine';
+import { useAll, useDoc, useNow } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
 import { whyOf } from '../data/why.ts';
 import { timeLeft } from '../ui/when.ts';
+import { useMissedPicks, type PickView } from './useMissedPicks.ts';
 import './draft.css';
 
 const TROUBLE: Record<Trouble, string> = {
@@ -28,8 +29,11 @@ type Api = Awaited<ReturnType<typeof loadData>>;
  * step, and close the goal votes sooner or give them more time.
  */
 export function DraftControls(props: { me: Me; seasonId: string; status: string; members: string[]; joiningOpen: boolean }) {
-  const draft = useDoc<{ step: string; order?: string[]; votesCloseAt?: number }>(`leagues/${props.me.league}/seasons/${props.seasonId}/draft/state`);
-  const now = useNow();
+  const draft = useDoc<PickView & { step: string; votesCloseAt?: number }>(`leagues/${props.me.league}/seasons/${props.seasonId}/draft/state`);
+  const players = useAll<{ displayName?: string }>(`leagues/${props.me.league}/players`);
+  const now = useNow(draft.data?.step === 'rivals' ? 1000 : 30_000);
+  // The commish's phone makes a missed pick at random, here as well as on the Draft screen.
+  useMissedPicks(props.me, props.seasonId, draft.data, true, now);
   const [busy, setBusy] = useState(false);
   const [confirm, setConfirm] = useState<'start' | 'close' | null>(null);
   const [note, setNote] = useState<{ error: boolean; text: string } | null>(null);
@@ -53,6 +57,10 @@ export function DraftControls(props: { me: Me; seasonId: string; status: string;
   const closeAt = state?.votesCloseAt ?? null;
   const votesOpen = closeAt !== null && now < closeAt;
   const moreTime = () => Math.max(closeAt ?? now, now) + REVOTE_HOURS * 3_600_000;
+  const name = (player: string) => players.docs.find((found) => found.id === player)?.data.displayName ?? 'Player';
+  const picking = state?.step === 'rivals' ? picker(state.left ?? []) : null;
+  const pickTimeUp = picking !== null && state?.turnStartedAt != null && now >= pickDeadline(state.turnStartedAt);
+  const waitingOnPicks = state?.step === 'rivals' && !picksDone(state.left ?? []);
 
   return (
     <section class="panel" aria-labelledby="draft-controls-title">
@@ -88,11 +96,27 @@ export function DraftControls(props: { me: Me; seasonId: string; status: string;
           <p class="panel-text">
             Live step: <strong>{STEP_NAME[state.step] ?? state.step}</strong>.
           </p>
+          {pickTimeUp && picking && (
+            <button type="button" class="btn btn-second" disabled={busy} onClick={() => run((api) => api.pickForMissed(props.me, props.seasonId), 'Picked at random.')}>
+              Pick at random for {name(picking)}
+            </button>
+          )}
           {next && (
-            <button type="button" class="btn btn-second" disabled={busy} onClick={() => run((api) => api.advanceDraft(props.me, props.seasonId, next.step, next.reason), 'Done.')}>
+            <button
+              type="button"
+              class="btn btn-second"
+              disabled={busy || waitingOnPicks}
+              onClick={() =>
+                run(
+                  (api) => (next.step === 'rivals' ? api.startRivalPicks(props.me, props.seasonId, props.members) : api.advanceDraft(props.me, props.seasonId, next.step, next.reason)),
+                  'Done.',
+                )
+              }
+            >
               {next.label}
             </button>
           )}
+          {waitingOnPicks && <p class="panel-text">Dares come once every rival pick is in.</p>}
 
           <p class="panel-text draft-votes-line">
             {votesOpen ? (

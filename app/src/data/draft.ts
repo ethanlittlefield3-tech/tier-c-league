@@ -3,8 +3,8 @@
  * it; players set their goals and vote on each other's. Every commish change
  * goes in the league log.
  */
-import { Timestamp, collection, doc, getDoc, serverTimestamp, setDoc, writeBatch, type Firestore } from 'firebase/firestore';
-import { DRAFT_VOTE_HOURS, type Lane } from '@tcl/engine';
+import { Timestamp, collection, doc, getDoc, runTransaction, serverTimestamp, setDoc, writeBatch, type Firestore } from 'firebase/firestore';
+import { DRAFT_VOTE_HOURS, applyPick, missedPick, pickDeadline, picker, type Lane } from '@tcl/engine';
 import { connect } from './firebase.ts';
 import { trouble, type Me } from './identity.ts';
 
@@ -42,7 +42,7 @@ export const startDraft = (me: Me, season: string, members: string[]) =>
     const seasonAudit = doc(collection(league, 'audit')).id;
     const save = writeBatch(db);
     const votesCloseAt = Timestamp.fromMillis(Date.now() + DRAFT_VOTE_HOURS * 3_600_000);
-    save.set(doc(league, 'seasons', season, 'draft', 'state'), { step: 'goals', order, turn: 0, picks: {}, turnEndsAt: null, startedAt: serverTimestamp(), votesCloseAt, audit: draftAudit });
+    save.set(doc(league, 'seasons', season, 'draft', 'state'), { step: 'goals', order, picks: {}, turnStartedAt: null, startedAt: serverTimestamp(), votesCloseAt, audit: draftAudit });
     save.set(doc(league, 'audit', draftAudit), entry(me, 'draft.update', 'draft', 'Started the draft and drew the order'));
     save.update(doc(league, 'seasons', season), { status: 'draft', updatedAt: serverTimestamp(), audit: seasonAudit });
     save.set(doc(league, 'audit', seasonAudit), entry(me, 'season.settings', `seasons/${season}`, 'The season moved to the draft; its settings are now fixed'));
@@ -60,6 +60,77 @@ export const advanceDraft = (me: Me, season: string, step: 'goals' | 'rivals' | 
     save.update(state, { step, audit });
     save.set(doc(league, 'audit', audit), entry(me, 'draft.update', 'draft', reason));
     await save.commit();
+  });
+
+interface PickState {
+  step?: string;
+  left?: string[];
+  picks?: Record<string, string>;
+}
+
+/** A refusal the screens explain the same way as one from the security rules. */
+const refused = (why: string) => Object.assign(new Error(why), { code: 'permission-denied' });
+
+/**
+ * Moves the live draft on to rival picks: everyone in the draft order who is
+ * still in the league, in that order, and the first pick's clock starts.
+ */
+export const startRivalPicks = (me: Me, season: string, members: string[]) =>
+  attempt(async (db) => {
+    const league = doc(db, 'leagues', me.league);
+    const ref = doc(league, 'seasons', season, 'draft', 'state');
+    const audit = doc(collection(league, 'audit')).id;
+    await runTransaction(db, async (tx) => {
+      const state = (await tx.get(ref)).data() as { step?: string; order?: string[] } | undefined;
+      if (state?.step !== 'goals') throw refused('The draft is not at its goals step.');
+      const left = (state.order ?? []).filter((player) => members.includes(player));
+      tx.update(ref, { step: 'rivals', left, picks: {}, turnStartedAt: serverTimestamp(), audit });
+      tx.set(doc(league, 'audit', audit), entry(me, 'draft.update', 'draft', 'Moved the live draft on to rival picks'));
+    });
+  });
+
+/** Your Week 1 rival, when it is your pick. */
+export const pickRival = (me: Me, season: string, rival: string) =>
+  attempt(async (db) => {
+    const ref = doc(db, 'leagues', me.league, 'seasons', season, 'draft', 'state');
+    await runTransaction(db, async (tx) => {
+      const state = (await tx.get(ref)).data() as PickState | undefined;
+      const left = state?.left ?? [];
+      if (state?.step !== 'rivals' || picker(left) !== me.player) throw refused('It is not your pick.');
+      let next: { left: string[] };
+      try {
+        next = applyPick({ left, picks: state.picks ?? {} }, rival);
+      } catch {
+        throw refused('That player has been picked.');
+      }
+      tx.update(ref, { left: next.left, [`picks.${me.player}`]: rival, turnStartedAt: serverTimestamp() });
+    });
+  });
+
+/**
+ * A missed pick, made at random by the commish's phone once the picker's
+ * clock has run out, and logged. Changes nothing, and answers false, if the
+ * pick was made meanwhile or the clock still has time.
+ */
+export const pickForMissed = (me: Me, season: string) =>
+  attempt(async (db) => {
+    const league = doc(db, 'leagues', me.league);
+    const ref = doc(league, 'seasons', season, 'draft', 'state');
+    const audit = doc(collection(league, 'audit')).id;
+    return runTransaction(db, async (tx) => {
+      const snapshot = await tx.get(ref);
+      const state = snapshot.data() as PickState | undefined;
+      const left = state?.left ?? [];
+      const who = state?.step === 'rivals' ? picker(left) : null;
+      const started = snapshot.get('turnStartedAt') as Timestamp | null | undefined;
+      if (who === null || !started || Date.now() < pickDeadline(started.toMillis())) return false;
+      const [roll] = crypto.getRandomValues(new Uint32Array(1));
+      const rival = missedPick(left, roll ?? 0);
+      const next = applyPick({ left, picks: state?.picks ?? {} }, rival);
+      tx.update(ref, { left: next.left, [`picks.${who}`]: rival, turnStartedAt: serverTimestamp(), audit });
+      tx.set(doc(league, 'audit', audit), entry(me, 'draft.update', 'draft', 'A missed pick, made at random'));
+      return true;
+    });
   });
 
 /** Closes the draft's votes now (`at` of `'now'`), or moves when they close. */

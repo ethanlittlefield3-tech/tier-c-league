@@ -364,13 +364,36 @@ service cloud.firestore {
           allow read: if isMember(L);
           allow create, update: if isCommish(L)
             && doc == 'state'
-            && request.resource.data.keys().hasOnly(['step', 'order', 'turn', 'picks', 'turnEndsAt', 'startedAt', 'votesCloseAt', 'audit'])
+            && request.resource.data.keys().hasOnly(['step', 'order', 'left', 'picks', 'turnStartedAt', 'startedAt', 'votesCloseAt', 'audit'])
             && request.resource.data.step in ['goals', 'rivals', 'dares', 'done']
             && request.resource.data.order is list
-            && request.resource.data.turn is int
             && request.resource.data.picks is map
             && request.resource.data.votesCloseAt is timestamp
             && audited(L, request.resource.data.audit, 'draft.update', 'draft');
+
+          // A rival pick (SCOPE.md, draft step 4). The first unpicked player,
+          // in draft order, picks one of the others still unpicked. Both leave
+          // the running, the rest keep their order, and the next pick's
+          // 2-minute clock starts. A pick is final. With one player left there
+          // is no pick: they face The House.
+          allow update: if doc == 'state'
+            && resource.data.step == 'rivals'
+            && resource.data.left.size() >= 2
+            && isPlayer(L, resource.data.left[0])
+            && validPick(resource.data, request.resource.data);
+        }
+
+        function validPick(before, after) {
+          let picker = before.left[0];
+          let rival = after.picks[picker];
+          return after.diff(before).affectedKeys().hasOnly(['left', 'picks', 'turnStartedAt'])
+            && !(picker in before.picks)
+            && after.picks.diff(before.picks).affectedKeys().hasOnly([picker])
+            && rival is string
+            && rival != picker
+            && rival in before.left
+            && after.left == before.left.removeAll([picker, rival])
+            && after.turnStartedAt == request.time;
         }
 
         // ---- Goals ----------------------------------------------------------

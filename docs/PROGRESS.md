@@ -1,6 +1,6 @@
 # Tier C League: progress log
 
-Last updated 2026-11-25, after the draft's goals and votes.
+Last updated 2026-11-25, after the draft's rival picks and the schedule.
 
 ## Plan change (commish ruling, 2026-11-25)
 
@@ -152,6 +152,13 @@ Last updated 2026-11-25, after the draft's goals and votes.
   - New rules: the draft, goals and votes (17 rule tests, 165 in all). Weakening them 13 ways was caught 12 times. The 13th, letting anyone write the draft, is still refused because the save also needs an audit entry only the commish can write.
   - The vote count is in the engine (`engine/src/votes.ts`, 5 tests). The "majority" in a majority veto is built provisionally: see DECISIONS.md, "Still open".
   - 4 logic tests and 3 flow tests with two phones. They caught one real problem: tapping "Close" while "more time" was still saving undid the close. Both buttons now wait for each other.
+- **The draft, part 2: rival picks and the schedule** (2026-11-25).
+  - Commish tools moves the live draft on to rival picks. In draft order, each unpicked player picks a Week 1 rival on a 2-minute clock, with the countdown on every phone. With an odd count, the last player faces The House.
+  - When a clock runs out, the commish's phone makes the pick at random and logs it. Commish tools also has a button for it.
+  - Week 1 fills in live on every phone. Dares wait until every pick is in.
+  - Once the commish finishes the draft, the hourly season job builds the schedule: Week 1 from the picks, then a round-robin so everyone meets before anyone repeats, with The House for byes. The season goes active, and the schedule shows in League.
+  - New rules for the picks: 12 rule tests, 177 in all. Weakening them 10 ways was caught 9 times. The 10th, allowing a pick with one player left, is still refused because nobody is left to pick. The check also found a missing test, now added: someone who has already picked can never pick again.
+  - The pick rules are in the engine (`engine/src/draft.ts`, 8 tests), shared by the phones and the job. 6 job tests, 2 logic tests and 2 flow tests. One flow test runs the real schedule job, and a second run changes nothing.
 - **The shorter intro on reopening is on purpose:** the full intro plays on the first open each day, and a 1-second title after that (SCOPE.md, "Intro animation").
 
 ## Waiting on the commish
@@ -160,12 +167,12 @@ Last updated 2026-11-25, after the draft's goals and votes.
 
 ## Next
 
-1. **Step 3, continued.** Next: the rest of the mini draft (rival picks on a 2-minute clock, which make the schedule, then dares for the Wheel), Feed and the wall, receipts, and the Wheel.
+1. **Step 3, continued.** Next: dares for the Wheel (the last part of the mini draft), Feed and the wall, receipts, and the Wheel.
    - **Still to add to joining:** the notifications step (with push alerts), a commish's "approve joins" switch, and a way to make a league. Leagues are made by a setup script, which is built with the jobs in Step 4.
    - **Offline start** comes with the offline step: a service worker that keeps the app's files on the phone, so it opens with no signal. Chrome on Android only offers its one-tap Install button once that exists. Until then Android installs from the browser menu, which the guide explains.
 2. **Before real players join:** limit the app's web key to the app's own address in the Google Cloud console, and look at App Check, which stops other programs from using the database's free daily allowance.
    - **Step 5 items still to come, each with the feature that needs it:** the Cloud Messaging web push key (notifications), and the private backups repo with its token (the backup job).
-3. **Rules still to write, each with its screen and its tests:** receipts and proofs, the wall, dares, the Wheel, rival picks, and the remaining commish tools (approve joins, settle or unlock a week, moderation). They are in DATA-MODEL.md and refused until then.
+3. **Rules still to write, each with its screen and its tests:** receipts and proofs, the wall, dares, the Wheel, and the remaining commish tools (approve joins, settle or unlock a week, moderation). They are in DATA-MODEL.md and refused until then.
 
 ## Questions for the commish, asked when each feature is built
 

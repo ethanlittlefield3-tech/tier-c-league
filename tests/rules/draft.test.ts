@@ -19,7 +19,7 @@ async function inGoalsStep() {
   await seedLeague();
   await asJob(async (db) => {
     await db.doc(season).update({ status: 'draft' });
-    await db.doc(STATE).set({ step: 'goals', order: ['p2', 'p3', 'p1'], turn: 0, picks: {}, turnEndsAt: null, startedAt: new Date(), votesCloseAt: inHours(24) });
+    await db.doc(STATE).set({ step: 'goals', order: ['p2', 'p3', 'p1'], picks: {}, turnStartedAt: null, startedAt: new Date(), votesCloseAt: inHours(24) });
     await db.doc(roster('p2')).set(goals());
     await db.doc(roster('p3')).delete();
   });
@@ -28,7 +28,7 @@ async function inGoalsStep() {
 /** The commish starting the draft: the draft order, and the season moving to draft. */
 function startDraft(db: Db, by = 'p1') {
   const batch = db.batch();
-  batch.set(db.doc(STATE), { step: 'goals', order: ['p2', 'p3', 'p1'], turn: 0, picks: {}, turnEndsAt: null, startedAt: now(), votesCloseAt: inHours(24), audit: 'a-draft' });
+  batch.set(db.doc(STATE), { step: 'goals', order: ['p2', 'p3', 'p1'], picks: {}, turnStartedAt: null, startedAt: now(), votesCloseAt: inHours(24), audit: 'a-draft' });
   batch.set(db.doc(`${league}/audit/a-draft`), { ...auditEntry('draft.update', 'draft'), by });
   batch.update(db.doc(season), { status: 'draft', updatedAt: now(), audit: 'a-season' });
   batch.set(db.doc(`${league}/audit/a-season`), { ...auditEntry('season.settings', 'seasons/s1'), by });
@@ -148,5 +148,92 @@ describe('Goals at the draft', () => {
   it('Everyone in the league can see the draft and the votes; nobody outside can', async () => {
     await assertSucceeds(dev3().doc(STATE).get());
     await assertFails(stranger().doc(STATE).get());
+  });
+});
+
+/**
+ * The league at the rival picks. By default nobody has picked yet, and Maya
+ * (p2) picks first. `left` is who is still unpicked, in draft order.
+ */
+async function inRivalPicks(left = ['p2', 'p3', 'p1'], picks: Record<string, string> = {}) {
+  await seedLeague();
+  await asJob(async (db) => {
+    await db.doc(season).update({ status: 'draft' });
+    await db.doc(STATE).set({ step: 'rivals', order: ['p2', 'p3', 'p1'], left, picks, turnStartedAt: new Date(), startedAt: new Date(), votesCloseAt: inHours(24) });
+  });
+}
+
+/** A rival pick as a phone makes it: the pick, who is still unpicked, and the next pick's clock. */
+const pick = (db: Db, picker: string, rival: string, left: string[], clock: unknown = now()) => db.doc(STATE).update({ [`picks.${picker}`]: rival, left, turnStartedAt: clock });
+
+describe('Rival picks', () => {
+  beforeEach(() => inRivalPicks());
+
+  it('In draft order, the first unpicked player picks a Week 1 rival from the others still unpicked', async () => {
+    await assertSucceeds(pick(dev2(), 'p2', 'p3', ['p1']));
+  });
+
+  it("It has to be your turn: nobody picks out of turn, or for someone else", async () => {
+    await assertFails(pick(dev3(), 'p3', 'p1', ['p2']));
+    await assertFails(pick(dev3(), 'p2', 'p1', ['p3']));
+  });
+
+  it('You pick someone still unpicked, never yourself', async () => {
+    await assertFails(pick(dev2(), 'p2', 'p2', ['p3', 'p1']));
+    await assertFails(pick(dev2(), 'p2', 'p9', ['p3', 'p1']));
+  });
+
+  it('Both players leave the running, and the rest keep their draft order', async () => {
+    await inRivalPicks(['p2', 'p4', 'p3', 'p1']);
+    await assertFails(pick(dev2(), 'p2', 'p4', ['p1', 'p3']));
+    await assertFails(pick(dev2(), 'p2', 'p4', ['p3']));
+    await assertSucceeds(pick(dev2(), 'p2', 'p4', ['p3', 'p1']));
+  });
+
+  it("Each pick starts the next pick's 2-minute clock", async () => {
+    await assertFails(pick(dev2(), 'p2', 'p3', ['p1'], inHours(-1)));
+  });
+
+  it('A pick is final', async () => {
+    await inRivalPicks(['p2', 'p3', 'p1', 'p4']);
+    await pick(dev2(), 'p2', 'p3', ['p1', 'p4']);
+    await assertFails(pick(dev2(), 'p2', 'p1', ['p4']));
+    await assertFails(dev1().doc(STATE).update({ 'picks.p2': 'p4', left: ['p1'], turnStartedAt: now() }));
+  });
+
+  it('Someone who has already picked can never pick again, even if a slip puts them back at the front of the line', async () => {
+    await inRivalPicks(['p2', 'p1'], { p2: 'p3' });
+    await assertFails(pick(dev2(), 'p2', 'p1', []));
+  });
+
+  it("When it is the commish's turn, they pick like everyone else", async () => {
+    await inRivalPicks(['p1', 'p2', 'p3']);
+    await assertSucceeds(pick(dev1(), 'p1', 'p3', ['p2']));
+  });
+
+  it('With one player left there is no pick to make: they face The House', async () => {
+    await inRivalPicks(['p1'], { p2: 'p3' });
+    await assertFails(pick(dev1(), 'p1', 'p2', []));
+  });
+
+  it('Picks happen only during the rival-pick step', async () => {
+    await asJob((db) => db.doc(STATE).update({ step: 'dares' }));
+    await assertFails(pick(dev2(), 'p2', 'p3', ['p1']));
+  });
+
+  it('A pick changes nothing else in the draft', async () => {
+    await assertFails(dev2().doc(STATE).update({ 'picks.p2': 'p3', left: ['p1'], turnStartedAt: now(), step: 'done' }));
+    await assertFails(dev2().doc(STATE).update({ 'picks.p2': 'p3', 'picks.p1': 'p2', left: ['p1'], turnStartedAt: now() }));
+  });
+
+  it('The commish can make a missed pick for a player, and it goes in the audit log', async () => {
+    const db = dev1();
+    const batch = db.batch();
+    batch.update(db.doc(STATE), { 'picks.p2': 'p3', left: ['p1'], turnStartedAt: now(), audit: 'a-missed' });
+    batch.set(db.doc(`${league}/audit/a-missed`), { ...auditEntry('draft.update', 'draft'), by: 'p1' });
+    await assertSucceeds(batch.commit());
+    // Without the audit entry, the commish can't pick for anyone else.
+    await inRivalPicks();
+    await assertFails(pick(dev1(), 'p2', 'p3', ['p1']));
   });
 });

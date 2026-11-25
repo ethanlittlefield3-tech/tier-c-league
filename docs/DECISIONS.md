@@ -142,6 +142,15 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 73. **A vote can be changed until the votes close.** Nobody votes on their own goal, the commish included.
 74. **A player who joins after the draft starts is not in the draft order.** Commish tools says so before the draft starts, while joining is open.
 
+**The draft, part 2: rival picks and the schedule** (new on 2026-11-25, not yet reviewed by the commish)
+
+75. **A missed pick is made at random by the commish's phone** once the 2-minute clock runs out, and it goes in the league log. GitHub's jobs can't run every 2 minutes, and letting the next player's phone make it would let that player steer it. Until it is made, the late player can still pick. Commish tools also has "Pick at random for…" for when the commish's phone is not on the draft.
+76. **Each pick's clock starts on the server's time,** and every phone counts down from it.
+77. **Anyone removed from the league after the order was drawn is skipped** when the rival picks start.
+78. **Dares wait until every rival pick is in.**
+79. **The schedule is built by the hourly season job once the commish finishes the draft,** and the season goes active then. The Draft screen shows Week 1 as soon as the picks are in, worked out by the same engine.
+80. **Until Phase 3, the scheduled group-play weeks are normal 1v1 weeks,** as PHASE1.md says, so they don't change the schedule yet.
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.

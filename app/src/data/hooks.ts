@@ -136,11 +136,12 @@ export function useAll<T>(path: string | null): { loading: boolean; docs: { id: 
 }
 
 /** The time now, updated twice a minute, so a day rolls over and locks on screen. */
-export function useNow(): number {
+export function useNow(every = 30_000): number {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 30_000);
+    setNow(Date.now());
+    const timer = setInterval(() => setNow(Date.now()), every);
     return () => clearInterval(timer);
-  }, []);
+  }, [every]);
   return now;
 }

@@ -1,9 +1,21 @@
+import { execFile } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { enterAsCommish, joinAs } from './helpers.ts';
-import { createLeague, draftUnderway, membersOf, readDoc, seasonInSetup, writeDoc, type TestLeague } from './league.ts';
+import { createLeague, draftUnderway, membersOf, quietPlayer, readDoc, rivalPicksUnderway, seasonInSetup, writeDoc, type TestLeague } from './league.ts';
 
 const button = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
+const tab = (page: Page, name: string) => page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name, exact: true });
 const HOUR = 3_600_000;
+const run = promisify(execFile);
+const scheduleJob = fileURLToPath(new URL('../../jobs/schedule.ts', import.meta.url));
+
+/** Runs the real schedule job against the local database, for one league. */
+async function runSchedule(league: TestLeague): Promise<string> {
+  const { stdout } = await run(process.execPath, [scheduleJob], { env: { ...process.env, FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080', GCLOUD_PROJECT: 'demo-tier-c', LEAGUE_ID: league.id } });
+  return stdout;
+}
 
 /** Opens Commish tools on the commish's phone. */
 async function openTools(page: Page) {
@@ -134,5 +146,76 @@ test.describe('The draft', () => {
     // Nobody vetoed, so Riley's goals stand.
     await expect(riley.phone.locator('.draft-vote[data-player] .draft-tally').first()).toHaveText('Approved: 0 approve, 0 veto');
     await riley.phone.context().close();
+  });
+
+  test('In draft order, each player picks a Week 1 rival on a 2-minute clock; the odd one out faces The House, and the schedule follows', async ({ page, request, browser }) => {
+    const league = await createLeague(request);
+    const season = await seasonInSetup(request, league);
+    const riley = await joins(browser, request, league, 'Riley');
+    await quietPlayer(request, league, 'sam', 'Sam');
+    await rivalPicksUnderway(request, season, [riley.player, league.commish, 'sam']);
+
+    // Riley picks first. Alex, the commish, watches: no choices on Alex's phone.
+    await enterAsCommish(page, league);
+    await button(page, 'Open the draft').click();
+    await expect(page.locator('.draft-rivals .draft-clock')).toContainText('Riley is picking.');
+    await expect(page.getByRole('group', { name: 'Your Week 1 rival' })).toHaveCount(0);
+
+    await button(riley.phone, 'Open the draft').click();
+    await expect(riley.phone.locator('.draft-your-pick')).toContainText('Your pick.');
+    await expect(riley.phone.locator('.draft-countdown')).toHaveText(/^[12]:[0-5][0-9]$/);
+    await riley.phone.getByRole('group', { name: 'Your Week 1 rival' }).getByRole('button', { name: 'Sam', exact: true }).click();
+
+    // Both leave the running. Alex is the odd one out, so Alex faces The House.
+    await expect.poll(async () => (await readDoc(request, `${season.path}/draft/state`))?.picks).toEqual({ [riley.player]: 'sam' });
+    expect((await readDoc(request, `${season.path}/draft/state`))?.left).toEqual([league.commish]);
+    await expect(riley.phone.locator('.draft-pairs li')).toHaveText(['You vs Sam', 'Alex vs The House']);
+    await expect(page.locator('.draft-pairs li')).toHaveText(['Riley vs Sam', 'You vs The House']);
+
+    // The commish finishes the draft.
+    await button(page, 'Back').click();
+    await openTools(page);
+    const panel = page.getByRole('region', { name: 'The draft' });
+    await panel.getByRole('button', { name: 'Move on to dares' }).click();
+    await expect.poll(async () => (await readDoc(request, `${season.path}/draft/state`))?.step).toBe('dares');
+    await panel.getByRole('button', { name: 'Finish the draft' }).click();
+    await expect.poll(async () => (await readDoc(request, `${season.path}/draft/state`))?.step).toBe('done');
+
+    // The schedule job builds every week from the picks, and the season goes active. Running it again changes nothing.
+    expect(await runSchedule(league)).toContain('6 weeks scheduled, season active');
+    expect((await readDoc(request, season.path))?.status).toBe('active');
+    expect((await readDoc(request, `${season.path}/weeks/w01`))?.pairs).toEqual([
+      { a: riley.player, b: 'sam' },
+      { a: league.commish, b: 'HOUSE' },
+    ]);
+    expect(await runSchedule(league)).toContain('left alone (not-in-draft)');
+
+    // Everyone sees the schedule in League.
+    await button(riley.phone, 'Back').click();
+    await tab(riley.phone, 'League').click();
+    await expect(riley.phone.locator('.result-week').first()).toContainText('Week 1');
+    await expect(riley.phone.locator('.result-week').first().locator('li')).toHaveText(['You vs Sam', 'Alex vs The House']);
+    await expect(riley.phone.locator('.result-week')).toHaveCount(6);
+    await riley.phone.context().close();
+  });
+
+  test("When a player's 2-minute clock runs out, the commish's phone makes the pick at random, and logs it", async ({ page, request }) => {
+    const league = await createLeague(request);
+    const season = await seasonInSetup(request, league);
+    await quietPlayer(request, league, 'sam', 'Sam');
+    await quietPlayer(request, league, 'jo', 'Jo');
+    await rivalPicksUnderway(request, season, ['sam', league.commish, 'jo']);
+
+    await enterAsCommish(page, league);
+    await button(page, 'Open the draft').click();
+    await expect(page.locator('.draft-rivals .draft-clock')).toContainText('Sam is picking.');
+
+    // Two minutes pass, and Sam never picks.
+    await page.clock.fastForward(125_000);
+    await expect.poll(async () => (await readDoc(request, `${season.path}/draft/state`))?.left, { timeout: 15_000 }).toHaveLength(1);
+    const state = await readDoc(request, `${season.path}/draft/state`);
+    expect([league.commish, 'jo']).toContain((state?.picks as Record<string, string>).sam);
+    expect(await readDoc(request, `leagues/${league.id}/audit/${String(state?.audit)}`)).toMatchObject({ action: 'draft.update', by: league.commish, reason: 'A missed pick, made at random' });
+    await expect(page.locator('.draft-pairs li')).toHaveCount(2);
   });
 });

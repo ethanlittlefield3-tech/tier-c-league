@@ -8,3 +8,9 @@ export function timeLeft(ms: number): string {
   if (hours === 0) return `${rest} m`;
   return rest === 0 ? `${hours} h` : `${hours} h ${rest} m`;
 }
+
+/** A countdown clock, minutes and seconds: "1:05", "0:09". It stops at "0:00". */
+export function countdown(ms: number): string {
+  const seconds = Math.max(0, Math.ceil(ms / 1000));
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+}

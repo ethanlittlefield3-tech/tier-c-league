@@ -189,12 +189,31 @@ export async function draftUnderway(request: APIRequestContext, season: { path: 
   await writeDoc(request, `${season.path}/draft/state`, {
     step: 'goals',
     order,
-    turn: 0,
     picks: {},
-    turnEndsAt: null,
+    turnStartedAt: null,
     startedAt: new Date(),
     votesCloseAt: new Date(Date.now() + 24 * 3_600_000),
   });
+}
+
+/** The draft at its rival picks, with nobody picked yet: the first pick's 2-minute clock starts now. */
+export async function rivalPicksUnderway(request: APIRequestContext, season: { path: string }, order: string[]): Promise<void> {
+  await patchDoc(request, season.path, { status: 'draft' });
+  await writeDoc(request, `${season.path}/draft/state`, {
+    step: 'rivals',
+    order,
+    left: order,
+    picks: {},
+    turnStartedAt: new Date(),
+    startedAt: new Date(),
+    votesCloseAt: new Date(Date.now() + 24 * 3_600_000),
+  });
+}
+
+/** A player who never opens the app: a profile and a place in the league. */
+export async function quietPlayer(request: APIRequestContext, league: TestLeague, id: string, name: string): Promise<void> {
+  await writeDoc(request, `leagues/${league.id}/players/${id}`, { displayName: name, joinedAt: new Date() });
+  await patchDoc(request, `leagues/${league.id}`, { [`members.${id}`]: true });
 }
 
 /** The players in a league, by id. */

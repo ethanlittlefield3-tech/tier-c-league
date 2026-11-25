@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 165 of 165 passing.
+- **Tests:** 177 of 177 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -257,6 +257,21 @@ The commish runs it, and every change goes in the audit log. Players set their o
 - The commish can close the votes sooner or give more time, and it goes in the audit log
 - The draft always says when its votes close
 - Everyone in the league can see the draft and the votes; nobody outside can
+
+**Rival picks**
+
+- In draft order, the first unpicked player picks a Week 1 rival from the others still unpicked
+- It has to be your turn: nobody picks out of turn, or for someone else
+- You pick someone still unpicked, never yourself
+- Both players leave the running, and the rest keep their draft order
+- Each pick starts the next pick's 2-minute clock
+- A pick is final
+- Someone who has already picked can never pick again, even if a slip puts them back at the front of the line
+- When it is the commish's turn, they pick like everyone else
+- With one player left there is no pick to make: they face The House
+- Picks happen only during the rival-pick step
+- A pick changes nothing else in the draft
+- The commish can make a missed pick for a player, and it goes in the audit log
 
 ## Standings
 
