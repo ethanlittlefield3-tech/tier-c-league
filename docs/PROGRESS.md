@@ -1,6 +1,6 @@
 # Tier C League: progress log
 
-Last updated 2026-11-25, after Step 2, the first push to GitHub and the first green CI run.
+Last updated 2026-11-25, after Step 2, the first push to GitHub, the first green CI run and the start of Step 3.
 
 ## Plan change (commish ruling, 2026-11-25)
 
@@ -29,16 +29,16 @@ Last updated 2026-11-25, after Step 2, the first push to GitHub and the first gr
 - **Six rulings from the commish** (R1 to R6) and 25 smaller calls reviewed without a veto: `docs/DECISIONS.md`.
 - **On GitHub** (2026-11-25). The repo is public, so before the first push every personal detail, private link and build-cost note was taken out of the files, example players got made-up names, and the saved history was rebuilt from the clean copy.
 - **CI** (2026-11-25): `.github/workflows/ci.yml` runs the type checks, the engine tests and the security-rule tests on GitHub for every push. The first run passed.
+- **Step 3 has started** (2026-11-25): `app/` is a Vite and Preact app with the theme colors and the title screen. The scene is layered vector art drawn by `scripts/art/title-scene.mjs`: about 340 shapes and 25 gradients, against about 40 shapes in the first concept.
 
 ## Waiting on the commish
 
-Nothing right now.
+1. **Art level.** A higher-detail title screen is built in the app (`app/src/screens/Title.tsx`, art from `npm run art`) and added to the concept-art canvas beside the old one. The commish approves that level, or asks for changes, before it is applied to the other screens.
 
 ## Next
 
 1. **Step 3: the app, against the local emulator.** Theme and intro, the install flow, then the screens: join or recover, Today, Match, Feed, League, Profile, Wheel, Commish and the mini draft.
 2. **Rules still to write, each with its screen and its tests:** receipts and proofs, roster and goal votes, the wall, dares, the Wheel, the draft, and the remaining commish tools (approve joins, settle or unlock a week, moderation). They are in DATA-MODEL.md and refused until then.
-3. First art task, from 2026-11-24: a higher-detail title screen for the commish to approve before that level is applied elsewhere.
 
 ## Questions for the commish, asked when each feature is built
 

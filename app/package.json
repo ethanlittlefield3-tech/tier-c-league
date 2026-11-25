@@ -1,0 +1,21 @@
+{
+  "name": "@tcl/app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The installable web app: Preact and Vite.",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host"
+  },
+  "dependencies": {
+    "@tcl/engine": "*",
+    "preact": "^11.2.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.0.0",
+    "@preact/preset-vite": "^2.10.6",
+    "vite": "^8.3.8"
+  }
+}

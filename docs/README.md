@@ -10,11 +10,12 @@ This file will grow into the plain-steps guide for running, deploying, backing u
 | --- | --- |
 | `docs/` | The spec (`SCOPE.md`), the build brief (`PHASE1.md`), the progress log, the decisions log and the checkpoint reports |
 | `engine/` | Every game rule as plain code: scoring, calendar, schedule, standings, awards, power-up timing and receipts |
+| `app/` | The phone app. So far: the theme and the title screen |
 | `firebase/` | The security rules, which decide what each phone may read and write |
 | `tests/rules/` | Tests that try to break those rules against a local copy of the database |
 | `scripts/` | Small tools, like the ones that build the checkpoint reports |
 
-Still to come: `app/` (the phone app), `jobs/` (the timed work) and phone-size flow tests.
+Still to come: the rest of the app's screens, `jobs/` (the timed work) and phone-size flow tests.
 
 ## Run the tests
 
@@ -59,3 +60,17 @@ npm run check
 ```
 
 That runs everything: the type checks, the engine tests and the security tests.
+
+## Run the app on your computer
+
+```bash
+npm run dev
+```
+
+That starts the app and prints two addresses. Open the "Local" one in a browser on the same computer. A phone on the same Wi-Fi can open the "Network" one.
+
+```bash
+npm run art
+```
+
+That redraws the title-screen scene from `scripts/art/title-scene.mjs`.

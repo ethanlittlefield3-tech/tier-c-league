@@ -5,7 +5,8 @@
   "type": "module",
   "description": "Tier C League: a free habit league for friends. A Nunchucks Production.",
   "workspaces": [
-    "engine"
+    "engine",
+    "app"
   ],
   "engines": {
     "node": ">=22.18"
@@ -15,10 +16,13 @@
     "test:rules": "firebase --config firebase/firebase.json emulators:exec --only firestore --project demo-tier-c \"vitest run --project rules --no-file-parallelism\"",
     "test:all": "npm test && npm run test:rules",
     "test:watch": "vitest --project engine",
-    "typecheck": "tsc -p engine/tsconfig.json && tsc -p scripts/tsconfig.json && tsc -p tests/tsconfig.json",
+    "typecheck": "tsc -p engine/tsconfig.json && tsc -p scripts/tsconfig.json && tsc -p tests/tsconfig.json && tsc -p app/tsconfig.json",
     "check": "npm run typecheck && npm run test:all",
     "checkpoint:a": "vitest run --project engine --reporter=json --outputFile=.vitest/results.json && node scripts/checkpoint-a.ts",
-    "checkpoint:b": "firebase --config firebase/firebase.json emulators:exec --only firestore --project demo-tier-c \"vitest run --project rules --no-file-parallelism --reporter=json --outputFile=.vitest/rules.json\" && node scripts/checkpoint-b.ts"
+    "checkpoint:b": "firebase --config firebase/firebase.json emulators:exec --only firestore --project demo-tier-c \"vitest run --project rules --no-file-parallelism --reporter=json --outputFile=.vitest/rules.json\" && node scripts/checkpoint-b.ts",
+    "dev": "npm run dev -w app",
+    "build": "npm run build -w app",
+    "art": "node scripts/art/title-scene.mjs"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^6.0.0",

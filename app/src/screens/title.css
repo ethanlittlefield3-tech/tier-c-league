@@ -1,0 +1,81 @@
+.title {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: var(--navy-900);
+}
+
+.title-scene {
+  position: absolute;
+  inset: 0;
+}
+
+.title-scene svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.title-stack {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: max(18px, env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.title-lockup {
+  display: block;
+  width: min(100%, 440px);
+  height: auto;
+  overflow: visible;
+}
+
+.title-enter {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 50px;
+  padding: 0 28px 0 32px;
+  border: 2px solid var(--orange);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #16275a, var(--navy-800));
+  box-shadow:
+    0 0 0 4px rgba(255, 138, 30, 0.14),
+    0 0 26px rgba(255, 138, 30, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  font: italic 800 17px/1 var(--display);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.title-enter:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.title-enter svg {
+  width: 16px;
+  height: 16px;
+}
+
+.title-credit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.title-credit svg {
+  width: 18px;
+  height: 18px;
+}
