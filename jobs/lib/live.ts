@@ -4,7 +4,8 @@
  * engine counts each player's week so far, with a Demolition counted only
  * once its day has locked, the same as Today and Match.
  */
-import { playerWeek, type CalendarTimes } from '../../engine/src/days.ts';
+import { playerWeek, rumbleWeek, type CalendarTimes } from '../../engine/src/days.ts';
+import type { RumbleItem } from '../../engine/src/rumble.ts';
 import { HOUSE } from '../../engine/src/schedule.ts';
 import type { Lane } from '../../engine/src/scoring.ts';
 import type { PlayerWeekData } from '../../engine/src/settlement.ts';
@@ -30,6 +31,42 @@ export function liveTotal(input: {
     adjustments: input.data.adjustments,
     now: input.now,
   }).totals.points;
+}
+
+/**
+ * Each player's points so far. In a Rumble week each 1v1's two weeks are
+ * scored together, with the items and the Boots revealed so far, as the
+ * phones show them.
+ */
+export function liveTotals(input: {
+  par: number;
+  days: CalendarTimes[];
+  pairs: { a: string; b: string }[];
+  data: Record<string, PlayerWeekData & { demolitionsOn: { date: string; lane: Lane; lock: number }[] }>;
+  now: number;
+  rumble?: { items: Readonly<Record<string, RumbleItem>>; boots: { player: string; target: string; date: string; lane: Lane }[] } | null;
+}): Record<string, number> {
+  const totals: Record<string, number> = {};
+  const weekInput = (player: string) => {
+    const data = input.data[player]!;
+    return { par: input.par, days: input.days, logs: data.logs, kit: data.kit, demolitionsOn: data.demolitionsOn.filter((hit) => input.now >= hit.lock).map(({ date, lane }) => ({ date, lane })), adjustments: data.adjustments, now: input.now };
+  };
+  if (input.rumble) {
+    const { items, boots } = input.rumble;
+    const dates = input.days.map((day) => day.date);
+    for (const { a, b } of input.pairs) {
+      if (a === HOUSE || b === HOUSE || !input.data[a] || !input.data[b]) continue;
+      const bootsOf = (by: string, on: string) => Object.fromEntries(boots.filter((boot) => boot.player === by && boot.target === on).map((boot) => [boot.date, boot.lane]));
+      const both = rumbleWeek(weekInput(a), weekInput(b), {
+        items: Object.fromEntries(dates.map((date) => [date, { a: items[`${date}_${a}`] ?? null, b: items[`${date}_${b}`] ?? null }])),
+        boots: { a: bootsOf(a, b), b: bootsOf(b, a) },
+      });
+      totals[a] = both.a.totals.points;
+      totals[b] = both.b.totals.points;
+    }
+  }
+  for (const player of Object.keys(input.data)) totals[player] ??= playerWeek(weekInput(player)).totals.points;
+  return totals;
 }
 
 /** Who leads each matchup, from each player's side. The House's matchups are left out. */

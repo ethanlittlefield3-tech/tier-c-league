@@ -24,7 +24,9 @@ import { alertsDue, timedChecks, type Alert, type AlertDay, type AlertInput } fr
 import { activityAlerts, type ActivePost } from './lib/activity.ts';
 import { deliver, type Device, type Push } from './lib/deliver.ts';
 import { fastClockOf } from './lib/fast.ts';
-import { closeAlerts, leadsOf, liveTotal, passedAlerts, type Lead } from './lib/live.ts';
+import { closeAlerts, leadsOf, liveTotals, passedAlerts, type Lead } from './lib/live.ts';
+import type { RumbleItem } from '../engine/src/rumble.ts';
+import type { Lane } from '../engine/src/scoring.ts';
 
 const MIN = 60_000;
 const HOUR = 60 * MIN;
@@ -77,18 +79,21 @@ async function send(pushes: Push[]): Promise<{ sent: number; gone: string[] }> {
  * "your opponent passed you" and "close finish". Only the players asked for
  * are read: about 17 documents each.
  */
-async function liveTotals(input: {
+async function weekTotals(input: {
   seasonRef: FirebaseFirestore.DocumentReference;
   period: string;
   days: { date: string; period: string; dayIndex: number; phase: string; start: number; lock: number }[];
   players: string[];
   /** Each player's opponent, whose Demolition is the only one that can hit them. */
   opponentOf: Record<string, string>;
+  /** The week's 1v1s, and its mode: a Rumble week's totals count the items. */
+  pairs: { a: string; b: string }[];
+  mode: string;
   par: number;
   now: number;
 }): Promise<Record<string, number>> {
   const { seasonRef, period, days, now } = input;
-  const totals: Record<string, number> = {};
+  const data: Record<string, PlayerWeekData & { demolitionsOn: { date: string; lane: Lane; lock: number }[] }> = {};
   for (const player of input.players) {
     const [logs, kit, ruleOnes, fixes, asked, sealed] = await Promise.all([
       db.getAll(...days.map((day) => seasonRef.collection('days').doc(`${player}_${day.date}`))),
@@ -98,19 +103,29 @@ async function liveTotals(input: {
       seasonRef.collection('receipts').where('target', '==', player).get(),
       input.opponentOf[player] ? seasonRef.collection('sealed').doc(`${period}_${input.opponentOf[player]}_demolition`).get() : null,
     ]);
-    const data: PlayerWeekData = {
+    data[player] = {
       logs: Object.fromEntries(logs.filter((log) => log.exists).map((log) => [String(log.get('date')), plain(log.data()!) as unknown as PlayerWeekData['logs'][string]])),
       kit: [...kit.docs, ...ruleOnes.docs].map((play) => plain(play.data()) as unknown as PlayerWeekData['kit'][number]),
       adjustments: [
         ...fixes.docs.map((fix) => plain(fix.data()) as unknown as PlayerWeekData['adjustments'][number]),
         ...receiptFixes(asked.docs.map((receipt) => plain(receipt.data()) as unknown as StoredReceipt), now),
       ],
+      demolitionsOn: [],
     };
     const hit = sealed?.exists && sealed.get('target') === player ? sealed : null;
     const lock = hit ? days.find((day) => day.date === hit.get('date'))?.lock : undefined;
-    totals[player] = liveTotal({ par: input.par, days, data, demolitionsOn: hit && lock !== undefined ? [{ date: String(hit.get('date')), lane: hit.get('lane'), lock }] : [], now });
+    if (hit && lock !== undefined) data[player]!.demolitionsOn.push({ date: String(hit.get('date')), lane: hit.get('lane'), lock });
   }
-  return totals;
+  // A Rumble week: the items out so far, and the Boots played, for each 1v1.
+  let rumble: Parameters<typeof liveTotals>[0]['rumble'] = null;
+  if (input.mode === 'rumble') {
+    const [items, boots] = await Promise.all([seasonRef.collection('rumble').where('period', '==', period).get(), seasonRef.collection('sealed').where('period', '==', period).where('kind', '==', 'boot').get()]);
+    rumble = {
+      items: Object.fromEntries(items.docs.filter((item) => now >= Number(ms(item.get('revealAt')))).map((item) => [item.id, item.get('item') as RumbleItem])),
+      boots: boots.docs.map((boot) => ({ player: String(boot.get('player')), target: String(boot.get('target')), date: String(boot.get('date')), lane: boot.get('lane') as Lane })),
+    };
+  }
+  return liveTotals({ par: input.par, days, pairs: input.pairs, data, now, rumble });
 }
 
 const only = process.env.LEAGUE_ID?.trim();
@@ -242,7 +257,7 @@ for (const league of leagues) {
       const periodDays = docs((await seasonRef.collection('calendar').where('period', '==', today.period).get()).docs) as unknown as { date: string; period: string; dayIndex: number; phase: string; start: number; lock: number }[];
       periodDays.sort((a, b) => a.start - b.start);
       const opponentOf: Record<string, string> = Object.fromEntries(pairs.flatMap((pair) => [[pair.a, pair.b], [pair.b, pair.a]]));
-      const totals = await liveTotals({ seasonRef, period: today.period, days: periodDays, players: [...new Set(livePairs.flatMap((pair) => [pair.a, pair.b]))], opponentOf, par: Number(season.get('par')), now });
+      const totals = await weekTotals({ seasonRef, period: today.period, days: periodDays, players: [...new Set(livePairs.flatMap((pair) => [pair.a, pair.b]))], opponentOf, pairs: livePairs, mode: String((thisWeek as { mode?: unknown } | undefined)?.mode ?? 'regular'), par: Number(season.get('par')), now });
       const weekEnds = periodDays.at(-1)?.lock ?? now + 24 * HOUR;
       alerts.push(...passedAlerts({ period: today.period, pairs: livePairs, before: leadsBefore, totals, names: players, now, expires: weekEnds }));
       leadsAfter = { ...leadsBefore, ...leadsOf(livePairs, totals) };

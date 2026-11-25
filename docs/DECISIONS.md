@@ -404,6 +404,7 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 234. **Rule One by either player cancels both items that day,** the way it cancels an Aerial and a Demolition.
 235. **A no-show or a blank rest day stays a flat −5 or −3:** goal and screen items can't change it, but Tornado, Punch, Spike and Magnet still take points from it, and a Swap still takes a hit from the other player.
 236. **A Boot left unpicked at noon does nothing.** Once picked it is final, hidden from the target until the day locks, and only then counts in either phone's score, like a Demolition.
+237. **Predictions and the live "passed you" and "close finish" alerts are for 1v1 weeks:** regular weeks, Rumble and Drop Shot. Team Week, 2v2, Bounty and Alley weeks have no matchups to pick, and Picks says so. In a Rumble week the live alerts count the items played, as the phones do.
 
 **Calendar**
 

@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { addDays, addRecords, pickFor, weekPeriod } from '@tcl/engine';
+import { MODE_NAMES, addDays, addRecords, isPairedMode, pickFor, weekPeriod, type GroupMode, type WeekMode } from '@tcl/engine';
 import { useDoc, useWhere } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
@@ -26,7 +26,7 @@ export function Picks(props: {
   me: Me;
   seasonId: string;
   today: { date: string; week: number; dayIndex: number };
-  weeks: { id: string; data: { week: number; pairs?: { a: string; b: string }[] } }[];
+  weeks: { id: string; data: { week: number; mode?: string; pairs?: { a: string; b: string }[] } }[];
   name: (player: string) => string;
   now: number;
 }) {
@@ -63,7 +63,11 @@ export function Picks(props: {
   return (
     <section class="panel league-panel" aria-labelledby="picks-title">
       <h2 id="picks-title">Your picks</h2>
-      {pairs.length === 0 || lockAt === null ? (
+      {next && !isPairedMode((next.data.mode ?? 'regular') as WeekMode) ? (
+        <p class="panel-text">
+          Week {next.data.week} is {MODE_NAMES[next.data.mode as GroupMode] ?? 'group play'}, with no 1v1s to pick. Picks are back the week after.
+        </p>
+      ) : pairs.length === 0 || lockAt === null ? (
         <p class="panel-text">Picks open for each week once its matchups are set, until the Sunday before it at 11:59 pm.</p>
       ) : (
         <>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { closeAlerts, leadsOf, liveTotal, passedAlerts } from '../lib/live.ts';
+import { closeAlerts, leadsOf, liveTotal, liveTotals, passedAlerts } from '../lib/live.ts';
 
 const H = 3_600_000;
 const T = Date.UTC(2027, 0, 11, 5); // Monday 12:00 am in New York
@@ -18,6 +18,15 @@ describe('Live matchup scores, for alerts', () => {
     // Before Tuesday locks, the Demolition on Tuesday is hidden; after, it counts.
     expect(liveTotal({ par: 3, days, data, demolitionsOn: [hit], now: tuesdayNoon })).toBe(plain);
     expect(liveTotal({ par: 3, days, data, demolitionsOn: [hit], now: T + 2.6 * 24 * H })).toBe(plain - 2);
+  });
+
+  it("In a Rumble week each 1v1's live totals count the items played, so a Tornado can decide who leads", () => {
+    const data = { logs: { '2027-01-11': full }, kit: [], adjustments: [], demolitionsOn: [] };
+    const monday = T + 10 * H;
+    const plain = liveTotals({ par: 3, days, pairs, data: { alex: data, maya: data }, now: monday });
+    expect(plain).toEqual({ alex: 6, maya: 6 });
+    const rumble = { items: { '2027-01-11_maya': 'tornado' as const }, boots: [] };
+    expect(liveTotals({ par: 3, days, pairs, data: { alex: data, maya: data }, now: monday, rumble })).toEqual({ alex: 4, maya: 8 });
   });
 
   it("Who leads each matchup, from each side; The House's matchups are left out", () => {
