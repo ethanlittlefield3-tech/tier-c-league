@@ -33,6 +33,7 @@ const AREAS: [file: string, heading: string, blurb: string][] = [
   ['commish', 'Commish powers and the audit log', 'Every commish change has to arrive with an audit entry, or it is refused.'],
   ['roster', 'Goals', "Everyone in the league can read every player's goals."],
   ['draft', 'The draft', "The commish runs it, and every change goes in the audit log. Players set their own goals and vote on everyone else's until the votes close."],
+  ['modes', 'The group-play vote', 'At its step of the live draft, each player ranks the six modes, once each, in their own name.'],
   ['standings', 'Standings', 'Everyone in the league can read them. Only the weekly job writes them.'],
   ['weeks', 'Weeks and dares', "If the weekly job runs late, the commish can post a finished week's results as provisional. The commish can also unlock a final week or take a dare off the Wheel. Every such change goes in the audit log."],
   ['receipts', 'Receipts', 'You ask in your own name, before the day locks, 3 times a week. Only the player asked can answer, and only before the deadline.'],

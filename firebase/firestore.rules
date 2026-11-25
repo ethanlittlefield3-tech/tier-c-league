@@ -577,7 +577,7 @@ service cloud.firestore {
           allow create, update: if isCommish(L)
             && doc == 'state'
             && request.resource.data.keys().hasOnly(['step', 'order', 'left', 'picks', 'turnStartedAt', 'startedAt', 'votesCloseAt', 'audit'])
-            && request.resource.data.step in ['goals', 'rivals', 'dares', 'done']
+            && request.resource.data.step in ['goals', 'modes', 'rivals', 'dares', 'done']
             && request.resource.data.order is list
             && request.resource.data.picks is map
             && request.resource.data.votesCloseAt is timestamp
@@ -662,8 +662,23 @@ service cloud.firestore {
           allow read: if isMember(L);
           allow create, update: if isPlayer(L, request.resource.data.voter)
             && request.resource.data.at == request.time
-            && request.resource.data.player != request.resource.data.voter
-            && (draftVote(V, request.resource.data) || proofVote(V, request.resource.data));
+            && (modeVote(V, request.resource.data)
+                || (request.resource.data.player != request.resource.data.voter
+                    && (draftVote(V, request.resource.data) || proofVote(V, request.resource.data))));
+        }
+
+        // The group-play vote (SCOPE.md, draft step 3): each player ranks the
+        // six modes, once each, while the live draft is at that step. A
+        // ranking can be changed until the commish moves on.
+        function modeVote(V, vote) {
+          return vote.kind == 'modes'
+            && vote.keys().hasOnly(['voter', 'kind', 'ranking', 'at'])
+            && V == vote.voter + '_modes'
+            && exists(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/draft/state)
+            && draft().step == 'modes'
+            && vote.ranking is list
+            && vote.ranking.size() == 6
+            && vote.ranking.toSet() == ['rumble', 'teamWeek', 'twoVTwo', 'bounty', 'dropShot', 'alley'].toSet();
         }
 
         // Approve or veto a goal or a dare at the draft, while its votes are open.

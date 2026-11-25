@@ -30,7 +30,17 @@ for (const league of leagues) {
     const season = await tx.get(seasonRef);
     if (!season.exists) return null;
     const draft = await tx.get(seasonRef.collection('draft').doc('state'));
-    const plan = scheduleDocs({ status: season.get('status'), regularWeeks: season.get('regularWeeks'), draft: draft.exists ? (draft.data() as DraftState) : null });
+    // The group-play vote, counted here, where no phone can change it.
+    const votes = await tx.get(seasonRef.collection('votes').where('kind', '==', 'modes'));
+    const rankings = Object.fromEntries(votes.docs.map((vote) => [String(vote.get('voter')), vote.get('ranking')]));
+    const plan = scheduleDocs({
+      status: season.get('status'),
+      regularWeeks: season.get('regularWeeks'),
+      draft: draft.exists ? (draft.data() as DraftState) : null,
+      groupWeeks: season.get('groupWeeks'),
+      rankings,
+      commish: typeof league.get('commish') === 'string' ? String(league.get('commish')) : null,
+    });
     if ('weeks' in plan) {
       for (const week of plan.weeks) tx.set(seasonRef.collection('weeks').doc(week.id), week.data, { merge: true });
       tx.update(seasonRef, { status: 'active', scheduledAt: FieldValue.serverTimestamp() });

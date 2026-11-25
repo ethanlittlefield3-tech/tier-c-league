@@ -14,13 +14,17 @@ const TROUBLE: Record<Trouble, string> = {
   refused: 'The league did not accept that.',
 };
 
-const NEXT: Record<string, { step: 'rivals' | 'dares' | 'done'; label: string; reason: string } | undefined> = {
+const NEXT: Record<string, { step: 'modes' | 'rivals' | 'dares' | 'done'; label: string; reason: string } | undefined> = {
   goals: { step: 'rivals', label: 'Move on to rival picks', reason: 'Moved the live draft on to rival picks' },
+  modes: { step: 'rivals', label: 'Close the vote and move on to rival picks', reason: 'Closed the group-play vote and moved on to rival picks' },
   rivals: { step: 'dares', label: 'Move on to dares', reason: 'Moved the live draft on to dares' },
   dares: { step: 'done', label: 'Finish the draft', reason: 'Finished the live draft' },
 };
 
-const STEP_NAME: Record<string, string> = { goals: 'goals and votes', rivals: 'rival picks', dares: 'dares', done: 'done' };
+const STEP_NAME: Record<string, string> = { goals: 'goals and votes', modes: 'the group-play vote', rivals: 'rival picks', dares: 'dares', done: 'done' };
+
+/** With group-play weeks, the group-play vote comes between goals and rival picks. */
+const VOTE_NEXT = { step: 'modes' as const, label: 'Move on to the group-play vote', reason: 'Moved the live draft on to the group-play vote' };
 
 type Api = Awaited<ReturnType<typeof loadData>>;
 
@@ -28,7 +32,7 @@ type Api = Awaited<ReturnType<typeof loadData>>;
  * The commish's draft controls: start it, move the live draft from step to
  * step, and close the goal votes sooner or give them more time.
  */
-export function DraftControls(props: { me: Me; seasonId: string; status: string; members: string[]; joiningOpen: boolean }) {
+export function DraftControls(props: { me: Me; seasonId: string; status: string; members: string[]; joiningOpen: boolean; groupWeeks?: number[] }) {
   const draft = useDoc<PickView & { step: string; votesCloseAt?: number }>(`leagues/${props.me.league}/seasons/${props.seasonId}/draft/state`);
   const players = useAll<{ displayName?: string }>(`leagues/${props.me.league}/players`);
   const now = useNow(draft.data?.step === 'rivals' ? 1000 : 30_000);
@@ -53,7 +57,7 @@ export function DraftControls(props: { me: Me; seasonId: string; status: string;
   };
 
   const state = draft.data;
-  const next = state ? NEXT[state.step] : undefined;
+  const next = state ? (state.step === 'goals' && (props.groupWeeks ?? []).length > 0 ? VOTE_NEXT : NEXT[state.step]) : undefined;
   const closeAt = state?.votesCloseAt ?? null;
   const votesOpen = closeAt !== null && now < closeAt;
   const moreTime = () => Math.max(closeAt ?? now, now) + REVOTE_HOURS * 3_600_000;

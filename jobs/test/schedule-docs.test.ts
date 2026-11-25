@@ -45,8 +45,17 @@ describe('Building the schedule after the draft', () => {
     for (const week of weeks) expect(week.data.pairs.filter((pair) => pair.b === 'HOUSE')).toHaveLength(1);
   });
 
-  it('Until Phase 3, every week is a normal 1v1 week, the scheduled group-play weeks included', () => {
-    const weeks = weeksOf(scheduleDocs({ status: 'draft', regularWeeks: 6, draft: done(['a', 'b', 'c', 'd'], { a: 'b', c: 'd' }) }));
+  it("The group-play vote's top modes fill the group-play weeks, the top one first; Rumble and Drop Shot keep the round-robin's pairs", () => {
+    const rankings = { a: ['dropShot', 'alley', 'rumble', 'teamWeek', 'twoVTwo', 'bounty'], b: ['dropShot', 'alley', 'rumble', 'teamWeek', 'twoVTwo', 'bounty'] };
+    const weeks = weeksOf(scheduleDocs({ status: 'draft', regularWeeks: 6, groupWeeks: [5, 3], rankings, commish: 'a', draft: done(['a', 'b', 'c', 'd'], { a: 'b', c: 'd' }) }));
+    expect(weeks.map((week) => week.data.mode)).toEqual(['regular', 'regular', 'dropShot', 'regular', 'alley', 'regular']);
+    expect(weeks[2]?.data.pairs).toHaveLength(2);
+    // Alley is the whole league at once: no pairs.
+    expect(weeks[4]?.data.pairs).toEqual([]);
+  });
+
+  it('Without group-play weeks, every week is a normal 1v1 week', () => {
+    const weeks = weeksOf(scheduleDocs({ status: 'draft', regularWeeks: 6, groupWeeks: [], draft: done(['a', 'b', 'c', 'd'], { a: 'b', c: 'd' }) }));
     expect(weeks).toHaveLength(6);
     expect(weeks.every((week) => week.data.mode === 'regular' && week.data.pairs.length === 2)).toBe(true);
     expect(weeks.map((week) => week.data.week)).toEqual([1, 2, 3, 4, 5, 6]);

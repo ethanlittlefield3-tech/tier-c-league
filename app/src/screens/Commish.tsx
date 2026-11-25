@@ -329,7 +329,7 @@ export function Commish(props: { me: Me; onBack: () => void }) {
           </p>
         )}
 
-        {league.data && seasonId && season.data && <DraftControls me={props.me} seasonId={seasonId} status={season.data.status} members={Object.keys(league.data.members ?? {})} joiningOpen={league.data.joining !== 'closed'} />}
+        {league.data && seasonId && season.data && <DraftControls me={props.me} seasonId={seasonId} status={season.data.status} members={Object.keys(league.data.members ?? {})} joiningOpen={league.data.joining !== 'closed'} groupWeeks={season.data.groupWeeks ?? []} />}
 
         {league.data && <CommishPlayers me={props.me} league={league.data} />}
         {league.data && seasonId && season.data && (

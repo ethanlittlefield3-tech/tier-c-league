@@ -35,6 +35,49 @@ async function joins(browser: Browser, request: Parameters<typeof readDoc>[0], l
 }
 
 test.describe('The draft', () => {
+  test("At the group-play vote, everyone ranks the six modes; the top-ranked fill the group-play weeks, the commish's ranking breaking a tie, and the schedule follows", async ({ page, request, browser }) => {
+    const league = await createLeague(request);
+    const season = await seasonInSetup(request, league);
+    const riley = await joins(browser, request, league, 'Riley');
+    await draftUnderway(request, season, [riley.player, league.commish]);
+
+    // The commish moves the live draft on to the group-play vote.
+    await enterAsCommish(page, league);
+    await openTools(page);
+    const panel = page.getByRole('region', { name: 'The draft' });
+    await panel.getByRole('button', { name: 'Move on to the group-play vote' }).click();
+    await expect.poll(async () => (await readDoc(request, `${season.path}/draft/state`))?.step).toBe('modes');
+
+    // Riley ranks Alley then Drop Shot; Alex, the commish, Drop Shot then Alley. 11 points each.
+    const top2 = async (voter: string) => ((await readDoc(request, `${season.path}/votes/${voter}_modes`))?.ranking as string[] | undefined)?.slice(0, 2);
+    await button(riley.phone, 'Open the draft').click();
+    const rileys = riley.phone.getByRole('list', { name: 'Your ranking' });
+    for (let step = 0; step < 5; step += 1) await rileys.getByRole('button', { name: 'Move Alley up' }).click();
+    for (let step = 0; step < 4; step += 1) await rileys.getByRole('button', { name: 'Move Drop Shot up' }).click();
+    await expect.poll(() => top2(riley.player)).toEqual(['alley', 'dropShot']);
+    await button(page, 'Back').click();
+    await button(page, 'Back').click();
+    await button(page, 'Open the draft').click();
+    const alexs = page.getByRole('list', { name: 'Your ranking' });
+    for (let step = 0; step < 4; step += 1) await alexs.getByRole('button', { name: 'Move Drop Shot up' }).click();
+    for (let step = 0; step < 4; step += 1) await alexs.getByRole('button', { name: 'Move Alley up' }).click();
+    await expect.poll(() => top2(league.commish)).toEqual(['dropShot', 'alley']);
+    // The tie goes to the commish's ranking: Drop Shot takes Week 3, then Alley Week 5.
+    await expect(riley.phone.getByRole('list', { name: 'Leading modes' }).getByRole('listitem')).toHaveText(['Week 3: Drop Shot', 'Week 5: Alley']);
+
+    // The commish closes the vote; the rest of the draft follows, and the schedule job counts the vote.
+    await button(page, 'Back').click();
+    await openTools(page);
+    await page.getByRole('region', { name: 'The draft' }).getByRole('button', { name: 'Close the vote and move on to rival picks' }).click();
+    await expect.poll(async () => (await readDoc(request, `${season.path}/draft/state`))?.step).toBe('rivals');
+    await patchDoc(request, `${season.path}/draft/state`, { step: 'done', left: [], picks: { [riley.player]: league.commish } });
+    expect(await runSchedule(league)).toContain('6 weeks scheduled, season active');
+    expect((await readDoc(request, `${season.path}/weeks/w03`))?.mode).toBe('dropShot');
+    expect((await readDoc(request, `${season.path}/weeks/w05`))?.mode).toBe('alley');
+    expect((await readDoc(request, `${season.path}/weeks/w04`))?.mode).toBe('regular');
+    await riley.phone.context().close();
+  });
+
   test("The commish starts the draft: the order is drawn from everyone in the league, goals and votes open for 24 hours, and the season's settings are fixed", async ({ page, request, browser }) => {
     const league = await createLeague(request, { name: 'Sunday Squad' });
     const season = await seasonInSetup(request, league);
@@ -119,7 +162,9 @@ test.describe('The draft', () => {
     await enterAsCommish(page, league);
     await openTools(page);
     const panel = page.getByRole('region', { name: 'The draft' });
-    await panel.getByRole('button', { name: 'Move on to rival picks' }).click();
+    // The season has group-play weeks, so the group-play vote comes next, then rival picks.
+    await panel.getByRole('button', { name: 'Move on to the group-play vote' }).click();
+    await panel.getByRole('button', { name: 'Close the vote and move on to rival picks' }).click();
     await expect.poll(async () => (await readDoc(request, `${season.path}/draft/state`))?.step).toBe('rivals');
 
     // Riley can still change goals and vote: the votes are open for 24 hours.

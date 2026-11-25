@@ -7,11 +7,12 @@ import { whyOf } from '../data/why.ts';
 import { Back, Field, Heading } from '../ui/parts.tsx';
 import { timeLeft } from '../ui/when.ts';
 import { Dares, type DareVote } from './Dares.tsx';
+import { GroupWeeks, ModeVote } from './ModeVote.tsx';
 import { RivalPicks } from './RivalPicks.tsx';
 import './draft.css';
 
 interface DraftState {
-  step: 'goals' | 'rivals' | 'dares' | 'done';
+  step: 'goals' | 'modes' | 'rivals' | 'dares' | 'done';
   order?: string[];
   left?: string[];
   picks?: Record<string, string>;
@@ -25,6 +26,7 @@ type Goals = Partial<Record<Lane, { text: string; version?: number }>>;
 interface Vote {
   voter: string;
   kind: string;
+  ranking?: string[];
   player: string;
   lane: Lane;
   version: number;
@@ -99,7 +101,7 @@ function Results(props: {
   );
 }
 
-const STEP: Record<DraftState['step'], string> = { goals: 'goals', rivals: 'rival picks', dares: 'dares', done: 'done' };
+const STEP: Record<DraftState['step'], string> = { goals: 'goals', modes: 'the group-play vote', rivals: 'rival picks', dares: 'dares', done: 'done' };
 
 /**
  * The draft (SCOPE.md, "Draft day agenda"). The live draft has three steps:
@@ -110,6 +112,7 @@ const STEP: Record<DraftState['step'], string> = { goals: 'goals', rivals: 'riva
 export function Draft(props: { me: Me; onBack: () => void }) {
   const leaguePath = `leagues/${props.me.league}`;
   const league = useDoc<{ season?: string | null; members?: Record<string, boolean>; commish?: string; coCommish?: string | null }>(leaguePath);
+  const seasonDoc = useDoc<{ groupWeeks?: number[] }>(league.data?.season ? `${leaguePath}/seasons/${league.data.season}` : null);
   const seasonId = league.data?.season ?? null;
   const seasonPath = seasonId ? `${leaguePath}/seasons/${seasonId}` : null;
   const draft = useDoc<DraftState>(seasonPath ? `${seasonPath}/draft/state` : null);
@@ -132,6 +135,9 @@ export function Draft(props: { me: Me; onBack: () => void }) {
   const isCommish = league.data?.commish === props.me.player || league.data?.coCommish === props.me.player;
   const name = (player: string) => players.docs.find((found) => found.id === player)?.data.displayName ?? 'Player';
   const allVotes = votes.docs.map((found) => found.data);
+  // The group-play vote's rankings, by voter.
+  const rankings = Object.fromEntries(allVotes.filter((found) => found.kind === 'modes').map((found) => [found.voter, found.ranking]));
+  const groupWeeks = seasonDoc.data?.groupWeeks ?? [];
 
   const saveGoals = (event: Event) => {
     event.preventDefault();
@@ -169,12 +175,21 @@ export function Draft(props: { me: Me; onBack: () => void }) {
             <p class="lead">
               {step === 'goals'
                 ? "Set your three goals, then vote on everyone else's. A goal vetoed by more than half the league needs new words."
+                : step === 'modes'
+                  ? 'Rank the group-play modes. Goals and their votes stay open meanwhile.'
                 : step === 'done'
                   ? 'The draft is done.'
                   : step === 'dares'
                     ? "Add one dare for the Wheel, and vote on everyone else's. A dare vetoed by more than half the league stays off the Wheel."
                     : `The live draft has moved on to ${STEP[step ?? 'goals']}.`}
             </p>
+            {step === 'modes' && seasonId && groupWeeks.length > 0 && <ModeVote me={props.me} seasonId={seasonId} groupWeeks={groupWeeks} rankings={rankings} commish={league.data?.commish ?? null} />}
+            {step !== 'goals' && step !== 'modes' && groupWeeks.length > 0 && Object.keys(rankings).length > 0 && (
+              <section class="panel" aria-labelledby="group-weeks-title">
+                <h2 id="group-weeks-title">Group play</h2>
+                <GroupWeeks groupWeeks={groupWeeks} rankings={rankings} commish={league.data?.commish ?? null} label="Group-play weeks" />
+              </section>
+            )}
             {draft.data.left && seasonId && <RivalPicks me={props.me} seasonId={seasonId} state={draft.data} name={name} isCommish={isCommish} />}
             {(step === 'dares' || step === 'done') && seasonId && (
               <Dares me={props.me} seasonId={seasonId} open={!closed} members={members} votes={votes.docs.map((found) => found.data as unknown as DareVote)} eligible={eligible} name={name} />

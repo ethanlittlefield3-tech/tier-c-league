@@ -149,7 +149,7 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 77. **Anyone removed from the league after the order was drawn is skipped** when the rival picks start.
 78. **Dares wait until every rival pick is in.**
 79. **The schedule is built by the hourly season job once the commish finishes the draft,** and the season goes active then. The Draft screen shows Week 1 as soon as the picks are in, worked out by the same engine.
-80. **Until Phase 3, the scheduled group-play weeks are normal 1v1 weeks,** as PHASE1.md says, so they don't change the schedule yet.
+80. **The scheduled group-play weeks get their modes from the group-play vote** (calls 204 to 206). Rumble and Drop Shot weeks are 1v1s that use the next round-robin pairing; the other modes have their own formats.
 
 **The draft, part 3: dares** (new on 2026-11-25, not yet reviewed by the commish)
 
@@ -356,6 +356,12 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 
 202. **The trophy case fills in once a season's last regular week is final,** in League, and keeps every season for good. The playoff trophies, Champion, Finalist and the Whiff Bowl, come with the playoffs in Phase 3.
 203. **How each trophy is decided:** Regular-Season Leader is the top of the final standings, tiebreaks and all. Screen Time King is the lowest average screen time over the days it was logged, to the minute, among players who logged it on at least half the season's days, so one good day can't win it. Iron Streak is the longest check-in streak in the season. Demolition Derby, Brewmaster and MVP of the Season go to the most of each, at least one. Prophet is the best predictions record (call 201). A tie shares the trophy, and a trophy nobody qualifies for stays empty that season.
+
+**Phase 3: the group-play vote** (new on 2026-11-25, not yet reviewed by the commish)
+
+204. **The group-play vote is a live step of the draft, between goals and rival picks,** only when the season has group-play weeks. Each player ranks the six modes, and can change their ranking until the commish moves on. Unlike goals, it doesn't stay open 24 hours: the schedule needs it before kickoff.
+205. **The vote is counted like a points race:** a ranking gives its first choice 6 points, down to 1 for its last. The top modes fill the group-play weeks in order, the top one first. "The commish breaks ties" is read as the commish's own ranking deciding any tie, then SCOPE.md's order. With more group-play weeks than modes, the order repeats; with no rankings at all, SCOPE.md's order fills them.
+206. **The schedule job counts the vote** when it builds the season, so no phone can change the result. The draft shows the leading modes live while the vote is open, and the result after.
 
 **Calendar**
 

@@ -51,7 +51,7 @@ export const startDraft = (me: Me, season: string, members: string[]) =>
   });
 
 /** Moves the draft on a step. */
-export const advanceDraft = (me: Me, season: string, step: 'goals' | 'rivals' | 'dares' | 'done', reason: string) =>
+export const advanceDraft = (me: Me, season: string, step: 'goals' | 'modes' | 'rivals' | 'dares' | 'done', reason: string) =>
   attempt(async (db) => {
     const league = doc(db, 'leagues', me.league);
     const state = doc(league, 'seasons', season, 'draft', 'state');
@@ -82,7 +82,7 @@ export const startRivalPicks = (me: Me, season: string, members: string[]) =>
     const audit = doc(collection(league, 'audit')).id;
     await runTransaction(db, async (tx) => {
       const state = (await tx.get(ref)).data() as { step?: string; order?: string[] } | undefined;
-      if (state?.step !== 'goals') throw refused('The draft is not at its goals step.');
+      if (state?.step !== 'goals' && state?.step !== 'modes') throw refused('The draft is not at its goals or group-play step.');
       const left = (state.order ?? []).filter((player) => members.includes(player));
       tx.update(ref, { step: 'rivals', left, picks: {}, turnStartedAt: serverTimestamp(), audit });
       tx.set(doc(league, 'audit', audit), entry(me, 'draft.update', 'draft', 'Moved the live draft on to rival picks'));
@@ -179,3 +179,7 @@ export const voteOnDare = (me: Me, season: string, input: { player: string; vers
     const id = `${me.player}_dare_${input.player}_${input.version}`;
     await setDoc(doc(db, 'leagues', me.league, 'seasons', season, 'votes', id), { voter: me.player, kind: 'dare', ...input, at: serverTimestamp() });
   });
+
+/** Your ranking of the six group-play modes, while the live draft is at the group-play vote. */
+export const voteModes = (me: Me, season: string, ranking: string[]) =>
+  attempt((db) => setDoc(doc(db, 'leagues', me.league, 'seasons', season, 'votes', `${me.player}_modes`), { voter: me.player, kind: 'modes', ranking, at: serverTimestamp() }));

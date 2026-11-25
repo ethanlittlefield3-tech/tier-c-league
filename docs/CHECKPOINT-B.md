@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 298 of 298 passing.
+- **Tests:** 302 of 302 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -309,6 +309,17 @@ The commish runs it, and every change goes in the audit log. Players set their o
 - Votes on dares close when the votes close
 - A dare vote has no lane, and is filed under its own name
 - Everyone in the league can see the dares; nobody outside can
+
+## The group-play vote
+
+At its step of the live draft, each player ranks the six modes, once each, in their own name.
+
+**The group-play vote**
+
+- At the group-play vote, each player ranks the six modes in their own name, and can change it
+- A ranking names each of the six modes exactly once, is stamped with the real time, and says nothing else
+- The vote is open only while the live draft is at its step
+- Everyone in the league can see the rankings; nobody outside it can
 
 ## Standings
 
