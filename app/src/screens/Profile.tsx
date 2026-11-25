@@ -7,7 +7,9 @@ import { loadData } from '../data/load.ts';
 import { whyOf } from '../data/why.ts';
 import { NAME_MAX, initialOf, nameProblem, tidyName } from '../join/name.ts';
 import { Back, Field, Heading } from '../ui/parts.tsx';
+import type { Rank } from '@tcl/engine';
 import { Alerts } from './Alerts.tsx';
+import { RankPanel, type RankEntry } from './Rank.tsx';
 import './profile.css';
 
 const TROUBLE: Record<Trouble, string> = {
@@ -24,6 +26,7 @@ const TROUBLE: Record<Trouble, string> = {
 export function Profile(props: { me: Me; onBack: () => void; onRenamed: (me: Me) => void; onSignedOut: () => void; onCommish: () => void; onLog: () => void }) {
   const league = useDoc<{ commish?: string; coCommish?: string | null }>(`leagues/${props.me.league}`);
   const isCommish = league.data !== null && (league.data.commish === props.me.player || league.data.coCommish === props.me.player);
+  const mine = useDoc<{ rank?: Rank; rankHistory?: RankEntry[] }>(`leagues/${props.me.league}/players/${props.me.player}`);
   const [name, setName] = useState(props.me.displayName);
   const [nameNote, setNameNote] = useState<{ error: boolean; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
@@ -171,6 +174,8 @@ export function Profile(props: { me: Me; onBack: () => void; onRenamed: (me: Me)
             {key !== null ? 'Hide my key' : fetchingKey ? 'Getting it' : 'Show my key'}
           </button>
         </section>
+
+        <RankPanel rank={mine.data?.rank ?? null} history={mine.data?.rankHistory ?? []} />
 
         <Alerts me={props.me} />
 

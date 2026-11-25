@@ -18,6 +18,7 @@ import { PROOF_DAYS, staleProofs } from './lib/proofs.ts';
 import { revealDemolitions, sameReveals } from './lib/reveals.ts';
 import { approvedDares, drawsDue, type Draw } from './lib/wheel.ts';
 import { settleDue, standingsFrom, type PlayerWeekData, type WeekLineStored } from './lib/settle.ts';
+import { withWeek, type RankEntry } from './lib/ranks.ts';
 import { weekReads } from './lib/week-reads.ts';
 
 const { app, emulator } = connect();
@@ -115,7 +116,17 @@ for (const league of leagues) {
       { merge: true },
     );
     settledWeeks += 1;
-    if (settled.status === 'final') addEarlier(settled.lines);
+    if (settled.status === 'final') {
+      addEarlier(settled.lines);
+      // Ranks update when results go final: each player's history gains the week (SCOPE.md, "Ranks and trophies").
+      for (const line of settled.lines) {
+        const profile = league.ref.collection('players').doc(line.player);
+        const found = await profile.get();
+        if (!found.exists) continue;
+        const ranked = withWeek((found.get('rankHistory') ?? []) as RankEntry[], { season: seasonId, period, points: line.points, par: Number(season.get('par')) });
+        await profile.set({ rank: ranked.rank, rankHistory: ranked.history }, { merge: true });
+      }
+    }
     console.log(`League ${league.id}, ${period}: ${settled.status}, ${settled.lines.length} players.`);
   }
 

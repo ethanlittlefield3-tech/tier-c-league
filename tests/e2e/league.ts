@@ -300,3 +300,14 @@ export async function setTargets(request: APIRequestContext, season: TestSeason,
   const { period } = thisWeek(season);
   await writeDoc(request, `${season.path}/weeks/${period}`, { week: 2, mode: 'regular', targets });
 }
+
+/** Week 1, moved wholly into the past, so it is final whatever day the test runs. Returns its dates. */
+export async function finishWeekOne(request: APIRequestContext, season: TestSeason): Promise<string[]> {
+  const monday = addDays(thisWeek(season).dates[0]!, -7);
+  const dates = [0, 1, 2, 3, 4, 5, 6].map((offset) => addDays(monday, offset));
+  for (const [index, date] of dates.entries()) {
+    const start = Date.now() - (9 - index) * 24 * 3_600_000;
+    await patchDoc(request, `${season.path}/calendar/${date}`, { start: new Date(start), lock: new Date(start + 36 * 3_600_000), nextEnd: new Date(start + 48 * 3_600_000) });
+  }
+  return dates;
+}

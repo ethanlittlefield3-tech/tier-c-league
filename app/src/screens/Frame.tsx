@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
+import type { Rank } from '@tcl/engine';
 import { PlayerBadge } from '../art/PlayerBadge.tsx';
 import { TAB_ICONS, type Tab } from '../art/tabIcons.tsx';
 import type { Me } from '../data/identity.ts';
+import { useDoc } from '../data/hooks.ts';
 import { loadData } from '../data/load.ts';
 import { initialOf } from '../join/name.ts';
 import { AuditLog } from './AuditLog.tsx';
@@ -11,6 +13,7 @@ import { Feed } from './Feed.tsx';
 import { League } from './League.tsx';
 import { Match } from './Match.tsx';
 import { PlayerDay } from './PlayerDay.tsx';
+import { RankUp, useRankScene } from './Rank.tsx';
 import { Profile } from './Profile.tsx';
 import { Today } from './Today.tsx';
 import { Wheel } from './Wheel.tsx';
@@ -64,6 +67,10 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
   const [backFromProfile, setBackFromProfile] = useState(false);
   const meButton = useRef<HTMLButtonElement>(null);
   const online = useOnline();
+  // A rank change since this phone last showed one plays its scene as the app
+  // opens: decided on the server's answer, not the phone's own older copy.
+  const profile = useDoc<{ rank?: Rank }>(`leagues/${props.me.league}/players/${props.me.player}`);
+  const rankScene = useRankScene(props.me.league, props.me.player, profile.loading || profile.fromCache ? undefined : (profile.data?.rank ?? null));
 
   // An alert opens the app at its screen: by a link when the app wasn't open,
   // or by a message from the service worker when it was.
@@ -97,6 +104,10 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
   useEffect(() => {
     if (!profileOpen && backFromProfile) meButton.current?.focus({ preventScroll: true });
   }, [profileOpen, backFromProfile]);
+
+  if (rankScene) {
+    return <RankUp from={rankScene.from} to={rankScene.to} onDone={rankScene.done} />;
+  }
 
   if (dayOf) {
     return <PlayerDay me={props.me} player={dayOf} onBack={() => setDayOf(null)} />;

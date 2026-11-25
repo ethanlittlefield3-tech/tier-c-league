@@ -1,30 +1,17 @@
 import { execFile } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
-import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
-import { addDays } from '../../engine/src/calendar.ts';
+import { expect, test, type Page } from '@playwright/test';
 import { enterAsCommish, joinAs } from './helpers.ts';
-import { createLeague, patchDoc, quietPlayer, readDoc, startSeason, thisWeek, writeDoc, type TestLeague, type TestSeason } from './league.ts';
+import { createLeague, finishWeekOne, quietPlayer, readDoc, startSeason, writeDoc, type TestLeague } from './league.ts';
 
 const run = promisify(execFile);
 const weeklyJob = fileURLToPath(new URL('../../jobs/weekly.ts', import.meta.url));
 const button = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
-const H = 3_600_000;
 
 async function runWeekly(league: TestLeague): Promise<string> {
   const { stdout } = await run(process.execPath, [weeklyJob], { env: { ...process.env, FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080', GCLOUD_PROJECT: 'demo-tier-c', LEAGUE_ID: league.id } });
   return stdout;
-}
-
-/** Week 1, moved wholly into the past, so it is final whatever day the test runs. Returns its dates. */
-async function finishWeekOne(request: APIRequestContext, season: TestSeason): Promise<string[]> {
-  const monday = addDays(thisWeek(season).dates[0]!, -7);
-  const dates = [0, 1, 2, 3, 4, 5, 6].map((offset) => addDays(monday, offset));
-  for (const [index, date] of dates.entries()) {
-    const start = Date.now() - (9 - index) * 24 * H;
-    await patchDoc(request, `${season.path}/calendar/${date}`, { start: new Date(start), lock: new Date(start + 36 * H), nextEnd: new Date(start + 48 * H) });
-  }
-  return dates;
 }
 
 /** Opens Commish tools on the commish's phone, at the Weeks and dares panel. */

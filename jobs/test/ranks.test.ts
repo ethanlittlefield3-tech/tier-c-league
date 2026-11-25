@@ -1,0 +1,28 @@
+import { describe, expect, it } from 'vitest';
+import { withWeek, type RankEntry } from '../lib/ranks.ts';
+
+describe('Ranks after a final week', () => {
+  it("A final week joins the player's rank history, and their rank is worked out again", () => {
+    const first = withWeek([], { season: 's1', period: 'w01', points: 20, par: 3 });
+    expect(first.rank).toBe('diamond');
+    expect(first.history).toEqual([{ season: 's1', period: 'w01', points: 20, max: 39, rank: 'diamond' }]);
+    const second = withWeek(first.history, { season: 's1', period: 'w02', points: 4, par: 3 });
+    // (20 + 4) / 2 = 12 of 39: Gold.
+    expect(second.rank).toBe('gold');
+    expect(second.history.map((entry) => entry.rank)).toEqual(['diamond', 'gold']);
+  });
+
+  it('A week counted again after the commish unlocks it replaces its old entry', () => {
+    const history: RankEntry[] = [{ season: 's1', period: 'w01', points: 20, max: 39, rank: 'diamond' }];
+    const again = withWeek(history, { season: 's1', period: 'w01', points: 32, par: 3 });
+    expect(again.history).toHaveLength(1);
+    expect(again.rank).toBe('grandChamp');
+  });
+
+  it('A new season goes on from the last: rank history carries across seasons', () => {
+    const history: RankEntry[] = [1, 2, 3, 4].map((n) => ({ season: 's1', period: `w0${n}`, points: 39, max: 39, rank: 'grandChamp' }));
+    const next = withWeek(history, { season: 's2', period: 'w01', points: 0, par: 4 });
+    // Three perfect weeks and one empty one: 75%, Champion.
+    expect(next.rank).toBe('champion');
+  });
+});

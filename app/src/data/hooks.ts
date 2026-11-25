@@ -14,18 +14,20 @@ export interface LiveDoc<T> {
   data: T | null;
   /** True while a save from this phone has not reached the server yet. */
   pending: boolean;
+  /** True while this is the phone's own copy, before the server has answered. */
+  fromCache: boolean;
   error: Trouble | null;
 }
 
 /** A live document at `path`, or nothing while `path` is `null`. */
 export function useDoc<T>(path: string | null): LiveDoc<T> {
-  const [state, setState] = useState<LiveDoc<T>>({ loading: path !== null, data: null, pending: false, error: null });
+  const [state, setState] = useState<LiveDoc<T>>({ loading: path !== null, data: null, pending: false, fromCache: path !== null, error: null });
   useEffect(() => {
     if (path === null) {
-      setState({ loading: false, data: null, pending: false, error: null });
+      setState({ loading: false, data: null, pending: false, fromCache: false, error: null });
       return undefined;
     }
-    setState({ loading: true, data: null, pending: false, error: null });
+    setState({ loading: true, data: null, pending: false, fromCache: true, error: null });
     let stop: (() => void) | null = null;
     let stopped = false;
     loadData().then(
@@ -33,7 +35,7 @@ export function useDoc<T>(path: string | null): LiveDoc<T> {
         if (stopped) return;
         stop = api.watchDoc(
           path,
-          (live) => setState({ loading: false, data: live.data as T | null, pending: live.pending, error: null }),
+          (live) => setState({ loading: false, data: live.data as T | null, pending: live.pending, fromCache: live.fromCache, error: null }),
           (why) => setState((before) => ({ ...before, loading: false, error: why })),
         );
       },

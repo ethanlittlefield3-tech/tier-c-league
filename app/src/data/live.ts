@@ -12,6 +12,8 @@ export interface Live {
   data: Record<string, unknown> | null;
   /** True while a save from this phone has not reached the server yet. */
   pending: boolean;
+  /** True while this is the phone's own copy, before the server has answered. */
+  fromCache: boolean;
 }
 
 /** Timestamps become plain milliseconds, so screens never need the database library. */
@@ -36,7 +38,7 @@ export function watchDoc(path: string, onChange: (live: Live) => void, onError: 
         { includeMetadataChanges: true },
         (snapshot) => {
           const data = snapshot.exists() ? (plain(snapshot.data({ serverTimestamps: 'estimate' })) as Record<string, unknown>) : null;
-          onChange({ data, pending: snapshot.metadata.hasPendingWrites });
+          onChange({ data, pending: snapshot.metadata.hasPendingWrites, fromCache: snapshot.metadata.fromCache });
         },
         (error) => onError(trouble(error).why),
       );

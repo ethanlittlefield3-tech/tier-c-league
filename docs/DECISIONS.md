@@ -267,6 +267,14 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 151. **Reactions and comments are bundled once an hour:** each author hears one count of what others added to their posts, like "3 reactions and 1 comment", and a newer count replaces the last one on the phone.
 152. **A reaction or a comment stamps its post with the server time,** so the job finds new activity with one look instead of reading every post. A stamp can't say anything but "now", and a reaction has to change something.
 
+**Phase 2: ranks** (new on 2026-11-25, not yet reviewed by the commish)
+
+153. **Each week counts as its share of the most its season's par allowed,** so rank history carries across seasons fairly even if the par changes. Within one par, this is exactly SCOPE.md's average of weekly points.
+154. **A week that is unlocked and counted again replaces its old entry** in each player's rank history, and the ranks after it are worked out again.
+155. **The rank-up scene plays as the app opens, for a change from a rank this phone has shown before.** A phone's first rank arrives quietly in Profile, so a new phone never replays old changes, and a rank that changes while the app is open waits for the next open. The phone waits for the server's answer, not its own older copy, before it decides.
+156. **Until the Garage ships, the scene shows the badges only:** a boost streak shatters the old badge, and the new one lands. A rank down sinks the old badge instead. Your car boosting through comes with the Garage.
+157. **The rank badges are drawn for this app:** a rounded hexagon in each tier's metal, with one to three chevrons, a gem or a star that grows with the tier.
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.

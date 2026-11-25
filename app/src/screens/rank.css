@@ -1,0 +1,227 @@
+/* ---- Rank, in Profile ------------------------------------------------------ */
+
+.rank-now {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 6px;
+}
+
+.rank-badge {
+  flex: 0 0 72px;
+  width: 72px;
+  height: 72px;
+}
+
+.rank-name {
+  margin: 0 0 4px;
+  font: italic 900 24px/1 var(--display);
+  color: var(--ink);
+}
+
+.rank-history {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rank-history li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.rank-history-badge {
+  flex: 0 0 26px;
+  width: 26px;
+  height: 26px;
+}
+
+.rank-history-name {
+  margin-left: auto;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* ---- The rank-up scene ------------------------------------------------------
+   The resting state of every rule here is the finished scene: the new badge
+   in place, the old one's shards gone. The animations start from the old. */
+
+.rankup {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: max(24px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+  background: radial-gradient(circle at 50% 42%, #142a66 0%, #0a1330 55%, #050914 100%);
+  text-align: center;
+  cursor: pointer;
+}
+
+.rankup-stage {
+  position: relative;
+  width: 200px;
+  height: 200px;
+}
+
+.rankup-old,
+.rankup-new {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.rankup-shard {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: translate(var(--dx), var(--dy)) rotate(var(--spin));
+  opacity: 0;
+}
+
+.rankup-streak {
+  position: absolute;
+  top: 46%;
+  left: -40%;
+  width: 180%;
+  height: 26px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(31, 139, 255, 0), #1f8bff 35%, #ff8a1e 75%, rgba(255, 138, 30, 0));
+  transform: translateX(120%) skewX(-18deg);
+  opacity: 0;
+}
+
+.rankup-kind {
+  margin: 18px 0 0;
+  font: italic 800 15px/1 var(--display);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.rankup[data-move='down'] .rankup-kind {
+  color: var(--ink-soft);
+}
+
+.rankup-name {
+  margin: 0;
+  font: italic 900 40px/1.05 var(--display);
+  color: var(--ink);
+}
+
+.rankup-hint {
+  margin: 18px 0 0;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .rankup[data-move='up'] .rankup-shard {
+    animation: rankup-shatter 1500ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  }
+
+  .rankup[data-move='up'] .rankup-streak {
+    animation: rankup-boost 1100ms cubic-bezier(0.4, 0, 0.2, 1) 250ms both;
+  }
+
+  .rankup[data-move='up'] .rankup-new {
+    animation: rankup-arrive 1500ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  .rankup[data-move='down'] .rankup-shard {
+    animation: rankup-sink 900ms ease-in both;
+  }
+
+  .rankup[data-move='down'] .rankup-new {
+    animation: rankup-fade 900ms ease-out 300ms both;
+  }
+
+  .rankup-kind,
+  .rankup-name,
+  .rankup-hint {
+    animation: rankup-fade 500ms ease-out 1100ms both;
+  }
+
+  .rankup[data-move='down'] .rankup-kind,
+  .rankup[data-move='down'] .rankup-name,
+  .rankup[data-move='down'] .rankup-hint {
+    animation-delay: 700ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rankup-new {
+    animation: rankup-fade 500ms ease-out both;
+  }
+}
+
+@keyframes rankup-shatter {
+  0%,
+  40% {
+    transform: none;
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--dx), var(--dy)) rotate(var(--spin));
+    opacity: 0;
+  }
+}
+
+@keyframes rankup-boost {
+  0% {
+    transform: translateX(-120%) skewX(-18deg);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(120%) skewX(-18deg);
+    opacity: 0;
+  }
+}
+
+@keyframes rankup-arrive {
+  0%,
+  45% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  75% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@keyframes rankup-sink {
+  0% {
+    transform: none;
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+}
+
+@keyframes rankup-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
