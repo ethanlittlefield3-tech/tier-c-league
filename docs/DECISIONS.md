@@ -314,6 +314,12 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 183. **The bar splits on the gap between the projections, against how far the days left can swing it** (about 3 points a day for each player). While a day is left it stays between 3% and 97%, never a sure thing. It says who's favored and by how much, or "Too close to call" between 45% and 55%, and it leaves once no day is left, when the lead says it all.
 184. **It sits under the scoreboard on Today,** as SCOPE.md's Today screen lists. Against The House there is no meter.
 
+**Phase 2: pokes** (new on 2026-11-25, not yet reviewed by the commish)
+
+185. **A poke goes to this week's opponent, once a day, any time that day,** and never to The House. The league files it under the day and the poker, so a second one that day is refused, and nobody changes or deletes one.
+186. **It arrives as "{name} poked you: You awake?" under Social, within about 10 minutes, and opens Today,** so they can log. It stays between the two of you: it isn't in the feed.
+187. **The Poke button is on Match, under your opponent's day,** where you can see whether they have logged.
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.

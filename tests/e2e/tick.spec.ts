@@ -40,6 +40,16 @@ const taunt = (request: APIRequestContext, league: TestLeague, text: string) =>
 const hourNow = () => Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hourCycle: 'h23', timeZone: 'America/New_York' }).format(new Date()));
 
 test.describe('Sending alerts', () => {
+  test('A poke reaches the phone of the player it is aimed at: "you awake?"', async ({ request }) => {
+    const league = await createLeague(request);
+    const season = await startSeason(request, league);
+    await quietPlayer(request, league, 'maya', 'Maya');
+    const device = await phoneWithAlerts(request, league);
+    await writeDoc(request, `${season.path}/pokes/${season.today}_maya`, { player: 'maya', to: league.commish, date: season.today, at: new Date() });
+    expect(await tick(league)).toEqual([expect.objectContaining({ device, title: 'Maya poked you', body: 'You awake?', screen: 'today' })]);
+    expect(await tick(league)).toEqual([]);
+  });
+
   test('A taunt reaches the phone of the player it is aimed at, once, with their name filled in', async ({ request }) => {
     const league = await createLeague(request);
     await startSeason(request, league);

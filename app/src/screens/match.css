@@ -296,3 +296,18 @@
   text-align: center;
   color: var(--ink-soft);
 }
+
+/* A poke: one "you awake?" a day. */
+.match-poke {
+  margin-top: 14px;
+  text-align: center;
+}
+
+.match-poke .btn {
+  width: 100%;
+}
+
+.match-poke .fine-print,
+.match-poke .field-error {
+  margin-top: 8px;
+}

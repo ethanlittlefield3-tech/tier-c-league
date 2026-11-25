@@ -721,6 +721,28 @@ service cloud.firestore {
             && (isOpen(resource.data.date) || fixingScreenForReceipt(resource.data, request.resource.data));
         }
 
+        // ---- Pokes (SCOPE.md, "Poke") -------------------------------------
+        // One "you awake?" push to this week's opponent a day. Filed under the
+        // day and the poker, so a second one that day is refused. Never changed.
+        match /pokes/{poke} {
+          allow read: if isMember(L);
+          allow create: if request.resource.data.keys().hasOnly(['player', 'to', 'date', 'at'])
+            && request.resource.data.date is string
+            && poke == request.resource.data.date + '_' + request.resource.data.player
+            && isPlayer(L, request.resource.data.player)
+            && request.resource.data.at == request.time
+            && isToday(request.resource.data.date)
+            && request.resource.data.to is string
+            && request.resource.data.to != 'HOUSE'
+            && request.resource.data.to in get(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/weeks/$(cal(request.resource.data.date).period)).data.targets[request.resource.data.player];
+        }
+
+        // The day is today: it has started and not yet ended.
+        function isToday(date) {
+          let day = cal(date);
+          return request.time >= day.start && request.time < day.end;
+        }
+
         // Ruling R6: while a receipt on screen time is open, the player can fix
         // the number before proving it, even after the day locks. Nothing else
         // on the day can change then.

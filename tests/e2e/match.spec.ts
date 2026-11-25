@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
-import { joinAs } from './helpers.ts';
+import { joinAs, tapToEnter } from './helpers.ts';
 import { addPlayer, createLeague, futureDays, patchDoc, readDoc, setGoals, setTargets, startSeason, thisWeek, writeDoc } from './league.ts';
 
 const button = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
@@ -32,6 +32,21 @@ const mayaLogs = (request: APIRequestContext, path: string, date: string, entry:
   writeDoc(request, `${path}/days/maya_${date}`, { player: 'maya', date, ...entry, firstAt: new Date(), updatedAt: new Date() });
 
 test.describe('Match', () => {
+  test('You can poke your opponent once a day, and the league keeps it', async ({ page, request }) => {
+    const { season, me } = await onMatch(page, request);
+    await button(page, 'Poke Maya').click();
+    await expect(button(page, 'Poked today')).toBeDisabled();
+    await expect(page.locator('.match-poke').getByRole('status')).toHaveText('Sent. Maya gets a "you awake?" alert, if their alerts are on.');
+    const poke = () => readDoc(request, `${season.path}/pokes/${season.today}_${me}`);
+    await expect.poll(async () => (await poke())?.to).toBe('maya');
+    expect(await poke()).toMatchObject({ player: me, to: 'maya', date: season.today });
+    // Still poked after the app opens again.
+    await page.reload();
+    await tapToEnter(page);
+    await tab(page, 'Match').click();
+    await expect(button(page, 'Poked today')).toBeDisabled();
+  });
+
   test('Your all-time record against your opponent shows on Match; whoever has beaten you most is your nemesis, with a skull here and in League', async ({ page, request }) => {
     const { league, me } = await onMatch(page, request);
     await expect(page.locator('.match-record')).toHaveText('All-time against Maya: 0–0–0');

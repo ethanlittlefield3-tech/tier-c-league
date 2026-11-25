@@ -91,6 +91,14 @@ describe('Alerts: things that happen', () => {
     expect(alertsDue(run(now, { wall })).map((alert) => [alert.player, alert.title, alert.body, alert.category])).toEqual([['alex', 'Maya', 'Your boost is empty, Alex.', 'social']]);
   });
 
+  it('A poke arrives at once, as "you awake?", and opens Today', () => {
+    const pokes = [
+      { id: '2027-01-13_maya', player: 'maya', to: 'alex', at: now - 60_000 },
+      { id: '2027-01-12_maya', player: 'maya', to: 'alex', at: now - 20 * H },
+    ];
+    expect(alertsDue(run(now, { pokes })).map((alert) => [alert.player, alert.title, alert.body, alert.category, alert.screen])).toEqual([['alex', 'Maya poked you', 'You awake?', 'social', 'today']]);
+  });
+
   it('Receipts asked of you arrive at once, and again an hour before the deadline unless answered', () => {
     const receipt = { id: 'alex_2027-01-13_body', target: 'alex', date: '2027-01-13', square: 'body', by: 'maya', requestedAt: now - 60_000, deadline: at('2027-01-14', 0), proofAt: null, backedDownAt: null };
     expect(alertsDue(run(now, { receipts: [receipt] })).map((alert) => [alert.player, alert.title, alert.body])).toEqual([['alex', 'Receipts, please', 'Maya wants proof of your Body goal on Wed Jan 13.']]);

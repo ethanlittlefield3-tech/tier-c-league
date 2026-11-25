@@ -78,7 +78,7 @@ Where everything lives in Firestore, who can write it and who can read it. It co
 | `votes/{voter}_proof_{draw}` | That voter, for 24 hours from the dare's proof. One vote each, which can be changed. | Members | 1, rules today | `voter`, `kind` (proof), `player` (the spinner), `draw`, `choice` (counts or doesntCount), `at`. The spinner does not vote. |
 | `draft/state` | The commish, with an audit entry. Each player makes their own rival pick when it is their turn. | Members | 1 and 3, rules today | `step` (goals, rivals, dares, done), `order` (drawn at random when the draft starts), `left` (who is still unpicked, in draft order), `picks` (each picker's rival), `turnStartedAt` (when the current pick's 2-minute clock started), `startedAt`, `votesCloseAt`, `audit`. Phase 3: captains' picks. |
 | `predictions/{period}_{player}` | That player, before Sunday 11:59 pm | That player; everyone after the deadline | 2 | `picks`, `at` |
-| `pokes/{date}_{player}` | That player, once a day | Members | 2 | `to`, `at` |
+| `pokes/{date}_{player}` | That player, once a day, dated today, to this week's opponent (not The House). Never changed. | Members | 2, rules today | `player`, `to`, `date`, `at` |
 | `rematches/{id}` | The challenger | Members | 2 | `from`, `to`, `period`, `status`, `winner` |
 
 ## Choices worth knowing

@@ -1,8 +1,11 @@
 import { LANES, nemesisOf, recordText, type Lane, type Rival } from '@tcl/engine';
 import { CarArt } from '../art/car/CarArt.tsx';
 import type { CarParts } from '../art/car/draw.ts';
+import { useState } from 'preact/hooks';
 import { useDoc, useNow } from '../data/hooks.ts';
-import type { Me } from '../data/identity.ts';
+import type { Me, Trouble } from '../data/identity.ts';
+import { loadData } from '../data/load.ts';
+import { whyOf } from '../data/why.ts';
 import { formatPoints, formatScreenShort, pointsChip } from '../today/model.ts';
 import type { DayCell } from '../today/week.ts';
 import { GoalMark } from './GoalMark.tsx';
@@ -19,6 +22,39 @@ const dayName = (date: string) => {
   const [year, month, day] = date.split('-').map(Number) as [number, number, number];
   return DAYS[(new Date(Date.UTC(year, month - 1, day)).getUTCDay() + 6) % 7] ?? date;
 };
+
+const POKE_TROUBLE: Record<Trouble, string> = {
+  'not-open': 'The league is not open yet.',
+  offline: 'No answer from the league. Check your signal and try again.',
+  refused: "The league said no: one poke a day, to this week's opponent.",
+};
+
+/** A poke (SCOPE.md, "Poke"): one "you awake?" push to your opponent a day. */
+function Poke(props: { me: Me; seasonId: string; date: string; to: string; name: string }) {
+  const sent = useDoc<{ to: string }>(`leagues/${props.me.league}/seasons/${props.seasonId}/pokes/${props.date}_${props.me.player}`);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const poked = Boolean(sent.data);
+  const send = () => {
+    if (busy || poked) return;
+    setBusy(true);
+    setError(null);
+    void loadData()
+      .then((api) => api.poke(props.me, props.seasonId, props.date, props.to))
+      .catch((failure: unknown) => setError(POKE_TROUBLE[whyOf(failure)]))
+      .finally(() => setBusy(false));
+  };
+  return (
+    <div class="match-poke">
+      <button type="button" class="btn btn-second" disabled={busy || poked || sent.loading} onClick={send}>
+        {poked ? 'Poked today' : busy ? 'Poking' : `Poke ${props.name}`}
+      </button>
+      <p class={error ? 'field-error' : 'fine-print'} role={error ? 'alert' : 'status'}>
+        {error ?? (poked ? `Sent. ${props.name} gets a "you awake?" alert, if their alerts are on.` : `Once a day, ${props.name} gets a "you awake?" alert.`)}
+      </p>
+    </div>
+  );
+}
 
 function Notice(props: { title: string; children: string }) {
   return (
@@ -145,6 +181,7 @@ export function Match(props: { me: Me }) {
         <p class="match-beers">
           Beers today: <strong>{log?.beers ?? 0}</strong>
         </p>
+        {todayDate && <Poke me={props.me} seasonId={match.seasonId} date={todayDate} to={them.id} name={them.name} />}
       </section>
 
       <ReceiptAsk

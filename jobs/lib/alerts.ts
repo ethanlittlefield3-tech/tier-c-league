@@ -56,6 +56,8 @@ export interface AlertInput {
   kit: { player: string; item: string; period?: string; date: string }[];
   /** How many Rule Ones each player has been handed so far. */
   ruleOnesIssued: number;
+  /** Pokes since the last run. */
+  pokes?: { id: string; player: string; to: string; at: number }[];
   /** Wall posts made since the last run. */
   wall: { id: string; by: string; kind: string; text: string; to: string | null; at: number; deleted?: boolean }[];
   /** Receipts asked for since the last run, or due within the hour. */
@@ -164,6 +166,12 @@ export function alertsDue(input: AlertInput): Alert[] {
   for (const post of input.wall) {
     if (!inWindow(post.at) || post.deleted || !post.to || post.to === post.by || !input.players[post.to] || (post.kind !== 'taunt' && post.kind !== 'quick')) continue;
     add({ player: post.to, category: 'social', key: `taunt-${post.id}`, title: name(post.by), body: post.text.split('{name}').join(name(post.to)), screen: 'feed', expires: post.at + 24 * HOUR });
+  }
+
+  // ---- Social: a poke, "you awake?" ----------------------------------------
+  for (const poke of input.pokes ?? []) {
+    if (!inWindow(poke.at) || !input.players[poke.to] || poke.to === poke.player) continue;
+    add({ player: poke.to, category: 'social', key: `poke-${poke.id}`, title: `${name(poke.player)} poked you`, body: 'You awake?', screen: 'today', expires: poke.at + 12 * HOUR });
   }
 
   // ---- Receipts: asked of you, an hour before they're due, and docks --------

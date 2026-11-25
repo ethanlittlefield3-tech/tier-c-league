@@ -8,6 +8,7 @@ export * from './garage.ts';
 export * from './identity.ts';
 export * from './kit.ts';
 export * from './live.ts';
+export * from './pokes.ts';
 export * from './season.ts';
 export * from './receipts.ts';
 export * from './wall.ts';
