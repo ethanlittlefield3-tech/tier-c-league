@@ -35,6 +35,7 @@ const AREAS: [file: string, heading: string, blurb: string][] = [
   ['draft', 'The draft', "The commish runs it, and every change goes in the audit log. Players set their own goals and vote on everyone else's until the votes close."],
   ['captains', "The captains' draft", 'Only the captain on turn picks, one player from the pool, in snake order.'],
   ['modes', 'The group-play vote', 'At its step of the live draft, each player ranks the six modes, once each, in their own name.'],
+  ['playoffs', 'The playoffs', 'Everyone in the league reads the bracket. Only the weekly job writes it.'],
   ['rumble', 'Rumble', 'The job draws and seals every item; each one opens to the league when its day starts. A Boot is played by its holder, by noon, at today\'s opponent, and stays sealed until the day locks.'],
   ['standings', 'Standings', 'Everyone in the league can read them. Only the weekly job writes them.'],
   ['weeks', 'Weeks and dares', "If the weekly job runs late, the commish can post a finished week's results as provisional. The commish can also unlock a final week, set a group-play week's settings before it starts, or take a dare off the Wheel. Every such change goes in the audit log."],

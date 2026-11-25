@@ -11,6 +11,9 @@ interface Case {
 /** "1 h 20m a day", "45 min a day". */
 const screen = (minutes: number) => (minutes >= 60 ? `${Math.floor(minutes / 60)} h ${minutes % 60}m a day` : `${minutes} min a day`);
 
+/** The trophies the playoffs decide. */
+const PLAYOFF_TROPHIES: TrophyId[] = ['champion', 'finalist', 'whiffBowl'];
+
 const VALUE: Record<TrophyId, (value: number) => string> = {
   champion: () => '',
   finalist: () => '',
@@ -37,9 +40,9 @@ function Cup() {
 
 /**
  * The trophy case (SCOPE.md, "Season trophy case"): every season's awards,
- * newest first, kept for good. The playoff trophies come with the playoffs.
+ * newest first, kept for good. The playoff trophies join once the playoffs decide them.
  */
-export function TrophyCase(props: { me: Me; name: (player: string) => string }) {
+export function TrophyCase(props: { me: Me; name: (player: string) => string; /** The season whose playoffs are still to come or under way. */ playoffsPending?: string | null }) {
   const seasons = useAll<Case>(`leagues/${props.me.league}/trophies`);
   const sorted = [...seasons.docs].sort((a, b) => Number(b.id.replace(/\D/g, '')) - Number(a.id.replace(/\D/g, '')));
   return (
@@ -59,7 +62,7 @@ export function TrophyCase(props: { me: Me; name: (player: string) => string }) 
                     <Cup />
                     <span class="trophy-name">{trophy.name}</span>
                     <span class="trophy-who">
-                      {won ? `${won.winners.map(props.name).join(' and ')}${VALUE[trophy.id](won.value) ? `, ${VALUE[trophy.id](won.value)}` : ''}` : trophy.later ? 'Comes with the playoffs' : 'Nobody this season'}
+                      {won ? `${won.winners.map(props.name).join(' and ')}${VALUE[trophy.id](won.value) ? `, ${VALUE[trophy.id](won.value)}` : ''}` : PLAYOFF_TROPHIES.includes(trophy.id) && props.playoffsPending === id ? 'Decided in the playoffs' : 'Nobody this season'}
                     </span>
                   </li>
                 );

@@ -83,8 +83,8 @@ export const BADGES: readonly Badge[] = [
   // Season and career
   { id: 'foundingMember', name: 'Founding Member', group: 'career', how: 'Played Season 1', unlocks: [part('decal', 'og', 'OG decal')] },
   { id: 'veteran', name: 'Veteran', group: 'career', how: 'Played 3 seasons', unlocks: [part('body', 'retro', 'Retro body')] },
-  { id: 'finalist', name: 'Finalist', group: 'career', how: 'Reached a final', unlocks: [part('paint', 'silver', 'Silver finish')], later: 'playoffs' },
-  { id: 'champion', name: 'Champion', group: 'career', how: 'Won a season', unlocks: [part('topper', 'trophy', 'Trophy topper'), part('explosion', 'golden', 'Golden goal explosion')], later: 'playoffs' },
+  { id: 'finalist', name: 'Finalist', group: 'career', how: 'Reached a final', unlocks: [part('paint', 'silver', 'Silver finish')] },
+  { id: 'champion', name: 'Champion', group: 'career', how: 'Won a season', unlocks: [part('topper', 'trophy', 'Trophy topper'), part('explosion', 'golden', 'Golden goal explosion')] },
   { id: 'mvpMagnet', name: 'MVP Magnet', group: 'career', how: '3 MVPs in a season', unlocks: [part('decal', 'mvp', 'MVP decal')] },
   { id: 'bustCollector', name: 'Bust Collector', group: 'career', how: '3 Busts in a season', unlocks: [part('decal', 'dumpsterFire', 'Dumpster-fire decal')], shame: true },
   { id: 'wheelSurvivor', name: 'Wheel Survivor', group: 'career', how: 'Completed 3 dares', unlocks: [part('paint', 'clown', 'Clown paint')] },

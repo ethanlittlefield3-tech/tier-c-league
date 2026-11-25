@@ -412,6 +412,12 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 239. **Top 2 is always one week:** the final Monday to Saturday and sudden death on Sunday. The 1-week or 2-week setting only changes a top-4 playoff.
 240. **The #1 seed's extra Full Boost in the semifinal is a second Full Boost of their own.** Both can be used, even on the same day on two different goals.
 241. **With fewer players than playoff seeds, a missing seed is a bye** into the next round.
+242. **Seeds are set from the standings as soon as the last regular week posts, at noon on Monday,** and hold even if a late fix changes the order. The semifinals started that midnight, but nothing is lost: Monday is safe (ruling R3), and every log counts once the matchups are set.
+243. **A round settles at 6 pm the day after its last day locks,** when its last receipts have closed, and the next round's matchups are set at once, before it starts: on the reset day in a top-4 playoff. Sudden death's day starts before the final's last day locks, so the two finalists play it whether or not it is needed.
+244. **The Whiff Bowl** ("Still open" item 8): everyone outside the playoffs, seeded by Season Points, the commish included. With a top 4, round one on the semifinal days pairs best against worst, an odd one out (the best seed) is safe, and each winner is safe; the losers race on the final days, and the fewest points is last, then the most beers, then the lower seed. With a top 2, everyone outside races on the final days. With fewer than two outside, there is no Whiff Bowl.
+245. **"Fewer beers in the round" in sudden death counts the final's days and the sudden-death day.** A no-show on the sudden-death day missed every goal.
+246. **Playoff results count in rivalry records and the 1v1 badges, as SCOPE.md says, but never in Season Points, ranks, the Bust or the Wheel.**
+247. **The champion's name goes on the league banner until the next champion,** with the Champion and Finalist badges and trophies, and the Whiff Bowl trophy for its loser. With no playoffs, the Season Points leader is champion once every regular week is final.
 
 **Calendar**
 
@@ -430,6 +436,8 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 6. **Bounty and Alley edge cases. Built provisionally:** a screen-time target is broken by logging exactly the limit or by not logging screen time that day (call 214); a missed count target spins its lowest contributors (call 217); and an Alley tie goes to fewer beers, then shares the place and its full bonus (call 218).
 
 7. **Rumble's item rules. Built provisionally (calls 228 to 236):** equal odds; the order goals, then screen time and beers, then points; Swap's lane order; Freeze doubling "not logged" too; Magnet moving points but not the beer count; Spike not giving the point to you; rest days protecting both players from Boot, Spike and Swap; Rule One cancelling both items; flat no-show days; and no Boot when none is picked by noon. Each is one place in `engine/src/rumble.ts`.
+
+8. **The Whiff Bowl's shape and the playoff tie readings. Built provisionally (calls 242 to 245):** SCOPE.md says the Whiff Bowl is "a mini bracket on the same days, for 'not last'", but not how it pairs players or what decides its last round; it is built as round-one pairs, then a race among the losers. Seeds are fixed when the last week first posts.
 
 The receipts question that was here is now ruling R6.
 

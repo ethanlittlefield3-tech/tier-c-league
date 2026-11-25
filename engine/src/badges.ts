@@ -5,7 +5,7 @@
  * ones and never takes any away.
  *
  * Badges from features still to come (group play, predictions, rematches
- * and playoffs) are never earned here yet.
+ * and playoffs) are earned once their feature ships.
  */
 import type { StreakMark } from './streaks.ts';
 
@@ -109,6 +109,9 @@ export interface BadgeFacts {
   reactionsReceived: number;
   daresCompleted: number;
   reachedGrandChamp: boolean;
+  /** This season's playoffs: reached the final, and won the season (with no playoffs, the Season Points leader). */
+  reachedFinal?: boolean;
+  wonSeason?: boolean;
   /** Rematch challenges won this season. */
   rematchesWon?: number;
   /** Had the season's best predictions record, once the season is over. */
@@ -242,6 +245,8 @@ export function earnedBadges(facts: BadgeFacts): string[] {
   earn('bustCollector', perSeason((week) => week.bust));
   earn('wheelSurvivor', facts.daresCompleted >= 3);
   earn('grandChamp', facts.reachedGrandChamp);
+  earn('finalist', facts.reachedFinal === true);
+  earn('champion', facts.wonSeason === true);
   earn('commish', facts.commishSeasons > 0);
 
   return [...earned].sort();

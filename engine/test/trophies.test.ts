@@ -6,9 +6,9 @@ const player = (days: TrophyPlayer['days'], weeks: TrophyPlayer['weeks'] = []): 
 const none = { players: [], right: 0 };
 
 describe('The season trophy case', () => {
-  it("SCOPE.md's ten trophies, the three playoff ones coming with the playoffs", () => {
+  it("SCOPE.md's ten trophies, all awarded now that the playoffs are built", () => {
     expect(TROPHIES.map((trophy) => trophy.name)).toEqual(['Champion', 'Finalist', 'Regular-Season Leader', 'Screen Time King', 'Iron Streak', 'Demolition Derby', 'Brewmaster', 'Prophet', 'MVP of the Season', 'Whiff Bowl']);
-    expect(TROPHIES.filter((trophy) => trophy.later).map((trophy) => trophy.id)).toEqual(['champion', 'finalist', 'whiffBowl']);
+    expect(TROPHIES.filter((trophy) => trophy.later)).toEqual([]);
   });
 
   it('Regular-Season Leader is the top of the final standings, and Prophet the best predictions record', () => {

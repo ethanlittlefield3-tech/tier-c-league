@@ -1193,6 +1193,12 @@ service cloud.firestore {
             && !isRestDay(play.period, play.target, play.date, day);
         }
 
+        // ---- The playoffs -------------------------------------------------
+        // The bracket: everyone in the league reads it; only the weekly job writes it.
+        match /playoffs/{doc} {
+          allow read: if isMember(L);
+        }
+
         // ---- Rumble items -------------------------------------------------
         // Drawn in advance and sealed by the weekly job. Each is readable by
         // everyone in the league from the moment its day starts, by the

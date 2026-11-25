@@ -23,6 +23,10 @@ import { reactionCount } from './lib/activity.ts';
 import { matchupOf, withWeek, type RankEntry } from './lib/ranks.ts';
 import { weekReads } from './lib/week-reads.ts';
 import { drawDuos } from './lib/duos.ts';
+import { playoffDue, roundDoc, roundResults } from './lib/playoff-docs.ts';
+import { seedBracket, settleFinal, settleSemis, settleSuddenDeath, type Bracket, type PlayoffPeriod, type PlayoffSettings, type RoundTotals } from '../engine/src/playoffs.ts';
+import { playerWeek } from '../engine/src/days.ts';
+import { LANES } from '../engine/src/scoring.ts';
 import { rumbleDraws } from './lib/rumble-draws.ts';
 import { RUMBLE_ITEMS, type RumbleItem } from '../engine/src/rumble.ts';
 import type { Lane } from '../engine/src/scoring.ts';
@@ -69,8 +73,10 @@ for (const league of leagues) {
       roster: week.get('roster') ?? null,
     };
     if (weekPlayers({ ...group, pairs }).length === 0) continue;
+    // A playoff round settles in the playoff step, below; here it only has its Demolitions revealed.
+    const playoff = week.get('phase') === 'playoff';
     if (week.get('status') === 'final') {
-      addEarlier((week.get('lines') ?? []) as WeekLineStored[]);
+      if (!playoff) addEarlier((week.get('lines') ?? []) as WeekLineStored[]);
       continue;
     }
     const period = week.id;
@@ -127,6 +133,8 @@ for (const league of leagues) {
       await week.ref.set({ reveals }, { merge: true });
       console.log(`League ${league.id}, ${period}: ${reveals.length} Demolition${reveals.length === 1 ? '' : 's'} revealed.`);
     }
+
+    if (playoff) continue;
 
     // A Rumble week plays its items and Boots.
     if (mode === 'rumble' && reads.settle) {
@@ -314,6 +322,12 @@ for (const league of leagues) {
     if (stale.length > 0) console.log(`League ${league.id}: ${stale.length} ${kind === 'proofs' ? 'receipt' : 'dare'} photo${stale.length === 1 ? '' : 's'} deleted after ${PROOF_DAYS} days.`);
   }
 
+  // A playoff round settled on the last run: its results count for badges and rivalry records.
+  if (season.get('badgesDue') === true) {
+    wentFinal = true;
+    await seasonRef.update({ badgesDue: FieldValue.delete() });
+  }
+
   // The trophy case's facts, once the regular season is over (see below).
   type TrophyFacts = { players: Record<string, TrophyPlayer>; prophets: { players: string[]; right: number } };
   let trophyFacts: TrophyFacts | null = null;
@@ -411,6 +425,8 @@ for (const league of leagues) {
           reachedGrandChamp: ((found.get('rankHistory') ?? []) as RankEntry[]).some((entry) => entry.rank === 'grandChamp'),
           rematchesWon: rematchWins[player] ?? 0,
           bestPicker: over && prophets.includes(player),
+          reachedFinal: season.get('finalists')?.includes?.(player) === true,
+          wonSeason: season.get('champion') === player,
         });
         if (update.fresh.length === 0) continue;
         await profile.set({ badges: Object.fromEntries(update.fresh.map((badge) => [badge, { at: FieldValue.serverTimestamp(), season: seasonId }])) }, { merge: true });
@@ -451,7 +467,8 @@ for (const league of leagues) {
 
   // The standings, from every week with results. Each player's sealed coin
   // for the last tiebreak is drawn once, here, with real randomness.
-  const settledDocs = (await seasonRef.collection('weeks').get()).docs.filter((week) => week.get('results'));
+  // Playoff points never count as Season Points.
+  const settledDocs = (await seasonRef.collection('weeks').get()).docs.filter((week) => week.get('results') && week.get('phase') !== 'playoff');
   const coins: Record<string, number> = {};
   for (const player of members) {
     const coinRef = seasonRef.collection('sealed').doc(`coin_${player}`);
@@ -475,16 +492,148 @@ for (const league of leagues) {
     .set({ rows: rows.map(({ coin: _coin, ...row }) => row), asOf: FieldValue.serverTimestamp() });
   console.log(`League ${league.id}, season ${seasonId}: standings for ${rows.length} players.`);
 
+  // The playoffs (SCOPE.md, "Playoffs"): seeded from the standings once the
+  // last regular week posts, then each round settled at 6 pm the day after
+  // its last day locks, when its receipts are closed. With no playoffs, the
+  // Season Points leader is champion once the regular season is final.
+  const playoffTrophies = await playoffStep(league, seasonRef, season, seasonId, calendar, weeks, rows.map((row) => row.player));
+
   // The trophy case (SCOPE.md, "Season trophy case"): once every regular
   // week is final, the regular season's trophies, kept for good.
   // Set inside the badge step's closure, which TypeScript can't follow.
   const facts = trophyFacts as TrophyFacts | null;
   if (facts) {
     const top = rows[0];
-    const trophies = seasonTrophies({ ...facts, leader: top ? { player: top.player, points: top.seasonPoints } : null });
+    const trophies = { ...seasonTrophies({ ...facts, leader: top ? { player: top.player, points: top.seasonPoints } : null }), ...playoffTrophies };
     await league.ref.collection('trophies').doc(seasonId).set({ season: seasonId, name: String(season.get('name') ?? seasonId), at: FieldValue.serverTimestamp(), trophies });
     console.log(`League ${league.id}, season ${seasonId}: ${Object.keys(trophies).length} trophies awarded.`);
   }
 }
 
 console.log(`Done: ${settledWeeks} week${settledWeeks === 1 ? '' : 's'} settled${emulator ? ' in the local emulator' : ''}.`);
+
+/** Each player's points and beers across a playoff round's days, and for sudden death whether they missed a goal. */
+async function roundTotals(seasonRef: FirebaseFirestore.DocumentReference, par: number, period: string, days: Parameters<typeof playerWeek>[0]['days'], players: string[], now: number): Promise<RoundTotals> {
+  const totals: RoundTotals = {};
+  const sealed = await seasonRef.collection('sealed').where('period', '==', period).get();
+  const demolitions = sealed.docs.filter((item) => item.get('kind') === 'demolition').map((item) => ({ target: String(item.get('target')), date: String(item.get('date')), lane: item.get('lane') as Lane }));
+  for (const player of players) {
+    const [logs, kit, fixes, asked] = await Promise.all([
+      db.getAll(...days.map((day) => seasonRef.collection('days').doc(`${player}_${day.date}`))),
+      seasonRef.collection('kit').where('player', '==', player).where('period', '==', period).get(),
+      seasonRef.collection('adjustments').where('player', '==', player).get(),
+      seasonRef.collection('receipts').where('target', '==', player).get(),
+    ]);
+    const week = playerWeek({
+      par,
+      days,
+      logs: Object.fromEntries(logs.filter((log) => log.exists).map((log) => [String(log.get('date')), plain(log.data()!) as unknown as PlayerWeekData['logs'][string]])),
+      kit: kit.docs.map((play) => plain(play.data()) as unknown as PlayerWeekData['kit'][number]),
+      demolitionsOn: demolitions.filter((hit) => hit.target === player).map(({ date, lane }) => ({ date, lane })),
+      adjustments: [
+        ...fixes.docs.map((fix) => plain(fix.data()) as unknown as PlayerWeekData['adjustments'][number]),
+        ...receiptFixes(asked.docs.map((receipt) => plain(receipt.data()) as unknown as StoredReceipt), now),
+      ],
+      now,
+    });
+    // Sudden death: the first to miss any goal loses; a no-show missed them all.
+    const missed = week.cells.some((cell) => cell.score !== null && (cell.score.kind === 'noShow' || LANES.some((lane) => !['hit', 'boosted', 'swappedIn'].includes(cell.score!.goals[lane]))));
+    totals[player] = { points: week.totals.points, beers: week.totals.beers, missed };
+  }
+  return totals;
+}
+
+/** The playoff step: seed, settle the round that is due, and crown the champion. Returns the playoff trophies so far. */
+async function playoffStep(
+  league: FirebaseFirestore.DocumentSnapshot,
+  seasonRef: FirebaseFirestore.DocumentReference,
+  season: FirebaseFirestore.DocumentSnapshot,
+  seasonId: string,
+  calendar: Record<string, unknown>[],
+  weeks: FirebaseFirestore.QueryDocumentSnapshot[],
+  ranked: string[],
+): Promise<Record<string, { winners: string[]; value: number }>> {
+  const settings: PlayoffSettings = { playoffs: ['oneWeek', 'twoWeeks'].includes(season.get('playoffs')) ? season.get('playoffs') : 'none', playoffSize: season.get('playoffSize') === 2 ? 2 : 4 };
+  const regularWeeks = Number(season.get('regularWeeks'));
+  const regular = weeks.filter((week) => week.get('phase') !== 'playoff');
+  const crowned = (champion: string | null, finalist: string | null, whiffLoser: string | null) => ({
+    ...(champion ? { champion: { winners: [champion], value: 0 } } : {}),
+    ...(finalist ? { finalist: { winners: [finalist], value: 0 } } : {}),
+    ...(whiffLoser ? { whiffBowl: { winners: [whiffLoser], value: 0 } } : {}),
+  });
+
+  // No playoffs: the Season Points leader is champion once every regular week is final.
+  if (settings.playoffs === 'none') {
+    const over = regular.length >= regularWeeks && regular.every((week) => week.get('status') === 'final');
+    const leader = over ? (ranked[0] ?? null) : null;
+    if (leader && season.get('champion') !== leader) {
+      await seasonRef.update({ champion: leader, badgesDue: true });
+      await league.ref.update({ banner: { player: leader, season: seasonId } });
+      console.log(`League ${league.id}, season ${seasonId}: champion crowned, with no playoffs.`);
+    }
+    return crowned(leader, null, null);
+  }
+
+  const bracketRef = seasonRef.collection('playoffs').doc('bracket');
+  const found = await bracketRef.get();
+  let bracket = found.exists ? (found.data() as Bracket) : null;
+  const days = calendar.filter((day) => day.phase === 'playoff') as unknown as (Parameters<typeof playerWeek>[0]['days'][number] & { kind: string; week: number })[];
+  const roundDays = (period: string) => days.filter((day) => day.period === period && day.kind === 'play').sort((a, b) => a.start - b.start);
+  const locks = Object.fromEntries((['p1', 'p2', 'p3'] as const).filter((period) => roundDays(period).length > 0).map((period) => [period, roundDays(period).at(-1)!.lock]));
+  const weekOf = (period: string) => Number(roundDays(period)[0]?.week ?? regularWeeks + 1);
+  const lastRegular = regular.find((week) => Number(week.get('week')) === regularWeeks);
+  const step = playoffDue({ bracket, regularDone: Boolean(lastRegular?.get('results')), locks, now });
+  if (!step) return bracket ? crowned(bracket.champion, bracket.finalist, bracket.whiff?.loser ?? null) : {};
+
+  const par = Number(season.get('par'));
+  const batch = db.batch();
+  const writeRound = (period: PlayoffPeriod) => batch.set(seasonRef.collection('weeks').doc(period), roundDoc(bracket!, period, weekOf(period)), { merge: true });
+  if (step === 'seed') {
+    bracket = seedBracket(ranked, settings);
+    if (!bracket) return {};
+    if (bracket.size === 4) writeRound('p1');
+    else {
+      writeRound('p2');
+      writeRound('p3');
+    }
+    console.log(`League ${league.id}, season ${seasonId}: playoffs seeded, ${bracket.seeds.length} in and ${bracket.outside.length} in the Whiff Bowl.`);
+  } else if (step === 'semis') {
+    const players = [...bracket!.semis, ...(bracket!.whiff?.pairs ?? [])].flatMap((game) => [game.a, game.b]).filter((player): player is string => player !== null);
+    const totals = await roundTotals(seasonRef, par, 'p1', roundDays('p1'), players, now);
+    bracket = settleSemis(bracket!, totals);
+    batch.set(seasonRef.collection('weeks').doc('p1'), { status: 'final', results: roundResults([...bracket.semis, ...(bracket.whiff?.pairs ?? [])], totals), finalAt: FieldValue.serverTimestamp() }, { merge: true });
+    writeRound('p2');
+    writeRound('p3');
+    console.log(`League ${league.id}, season ${seasonId}: semifinals settled.`);
+  } else if (step === 'final') {
+    const final = bracket!.final!;
+    const players = [final.a, ...(final.b ? [final.b] : []), ...(bracket!.whiff?.loser ? [] : (bracket!.whiff?.racers ?? []))];
+    const totals = await roundTotals(seasonRef, par, 'p2', roundDays('p2'), players, now);
+    bracket = settleFinal(bracket!, totals);
+    batch.set(seasonRef.collection('weeks').doc('p2'), { status: 'final', results: bracket.champion ? roundResults([bracket.final!], totals) : {}, totals, finalAt: FieldValue.serverTimestamp() }, { merge: true });
+    console.log(`League ${league.id}, season ${seasonId}: final ${bracket.suddenDeath ? 'level: sudden death' : 'settled'}.`);
+  } else {
+    const final = bracket!.final!;
+    const pair = [final.a, final.b!];
+    const day = await roundTotals(seasonRef, par, 'p3', roundDays('p3'), pair, now);
+    const before = await roundTotals(seasonRef, par, 'p2', roundDays('p2'), pair, now);
+    const round = Object.fromEntries(pair.map((player) => [player, { points: before[player]!.points, beers: before[player]!.beers + day[player]!.beers }]));
+    bracket = settleSuddenDeath(bracket!, day, round);
+    batch.set(seasonRef.collection('weeks').doc('p3'), { status: 'final', results: roundResults([bracket.final!], day), finalAt: FieldValue.serverTimestamp() }, { merge: true });
+    console.log(`League ${league.id}, season ${seasonId}: sudden death settled.`);
+  }
+  batch.set(bracketRef, bracket);
+  if (step !== 'seed') batch.update(seasonRef, { badgesDue: true });
+  if (bracket.champion) {
+    batch.update(seasonRef, { champion: bracket.champion, finalists: [bracket.champion, ...(bracket.finalist ? [bracket.finalist] : [])] });
+    batch.update(league.ref, { banner: { player: bracket.champion, season: seasonId } });
+    batch.set(league.ref.collection('feed').doc(`champion_${seasonId}`), { at: FieldValue.serverTimestamp(), kind: 'champion', player: bracket.champion, data: { season: seasonId, finalist: bracket.finalist, whiffLoser: bracket.whiff?.loser ?? null } });
+  }
+  await batch.commit();
+  if (bracket.champion) {
+    // The playoff trophies join the season's trophy case.
+    await league.ref.collection('trophies').doc(seasonId).set({ season: seasonId, trophies: crowned(bracket.champion, bracket.finalist, bracket.whiff?.loser ?? null) }, { merge: true });
+    console.log(`League ${league.id}, season ${seasonId}: champion crowned.`);
+  }
+  return crowned(bracket.champion, bracket.finalist, bracket.whiff?.loser ?? null);
+}

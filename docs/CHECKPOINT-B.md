@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 317 of 317 passing.
+- **Tests:** 319 of 319 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -331,6 +331,15 @@ At its step of the live draft, each player ranks the six modes, once each, in th
 - A ranking names each of the six modes exactly once, is stamped with the real time, and says nothing else
 - The vote is open only while the live draft is at its step
 - Everyone in the league can see the rankings; nobody outside it can
+
+## The playoffs
+
+Everyone in the league reads the bracket. Only the weekly job writes it.
+
+**The playoff bracket**
+
+- Everyone in the league reads it, and nobody outside it
+- Only the weekly job writes it: no phone, not even the commish
 
 ## Rumble
 

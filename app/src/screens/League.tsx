@@ -75,7 +75,8 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
   const league = useDoc<{ season?: string | null }>(leaguePath);
   const seasonId = league.data?.season ?? null;
   const seasonPath = seasonId ? `${leaguePath}/seasons/${seasonId}` : null;
-  const season = useDoc<{ timeZone: string; regularWeeks: number }>(seasonPath);
+  const season = useDoc<{ timeZone: string; regularWeeks: number; playoffs?: string }>(seasonPath);
+  const bracket = useDoc<{ champion?: string | null }>(seasonPath ? `${seasonPath}/playoffs/bracket` : null);
   const standings = useDoc<{ rows?: Row[] }>(seasonPath ? `${seasonPath}/standings/current` : null);
   const weeks = useAll<WeekDoc>(seasonPath ? `${seasonPath}/weeks` : null);
   const players = useAll<{ displayName?: string; car?: Partial<CarParts>; rivals?: Record<string, Rival>; stickers?: Partial<Record<string, { until?: unknown }>> }>(`${leaguePath}/players`);
@@ -276,7 +277,7 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
         />
       )}
 
-      <TrophyCase me={props.me} name={name} />
+      <TrophyCase me={props.me} name={name} playoffsPending={season.data && season.data.playoffs !== 'none' && !bracket.data?.champion ? seasonId : null} />
 
       <section class="panel league-panel" aria-labelledby="rivals-title">
         <h2 id="rivals-title">Your rivalries</h2>

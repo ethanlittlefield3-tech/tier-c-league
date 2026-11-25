@@ -137,3 +137,127 @@ export function whiffRoundOne(outside: readonly string[]): { pairs: { a: string;
 export function whiffLoser(racers: readonly (Contender & { player: string })[]): string {
   return [...racers].sort((x, y) => x.points - y.points || y.beers - x.beers || y.seed - x.seed)[0]!.player;
 }
+
+// ---- The bracket ----------------------------------------------------------
+
+/** A playoff or Whiff Bowl game, and how it went once settled. */
+export interface BracketGame {
+  a: string;
+  /** `null` is a bye: `a` goes through. */
+  b: string | null;
+  winner?: string;
+  /** What settled it: points, fewer beers, the higher seed, a bye, or sudden death. */
+  decidedBy?: 'points' | 'beers' | 'seed' | 'bye' | 'suddenDeath';
+}
+
+/** The season's playoffs, as the weekly job keeps them in `playoffs/bracket`. */
+export interface Bracket {
+  size: 2 | 4;
+  /** The playoff seeds, best first. */
+  seeds: string[];
+  /** Everyone else, seeded the same way: the Whiff Bowl. */
+  outside: string[];
+  semis: BracketGame[];
+  final: BracketGame | null;
+  /** The final was level: sudden death decides it. */
+  suddenDeath: boolean;
+  whiff: {
+    /** Round one, on the semifinal days, with a top 4. */
+    pairs: BracketGame[];
+    safe: string[];
+    /** The last round's racers, for "not last". */
+    racers: string[];
+    loser: string | null;
+  } | null;
+  champion: string | null;
+  finalist: string | null;
+}
+
+/** Each player's round so far: points, beers, and for sudden death whether any goal was missed. */
+export type RoundTotals = Record<string, { points: number; beers: number; missed?: boolean }>;
+
+const seedOf = (bracket: Bracket, player: string) => {
+  const at = bracket.seeds.indexOf(player);
+  return at >= 0 ? at + 1 : bracket.seeds.length + 1 + bracket.outside.indexOf(player);
+};
+
+/**
+ * The bracket, from the standings once the last regular week posts: the top
+ * 4 (or 2) by Season Points, and everyone else in the Whiff Bowl. With fewer
+ * than two outside there is no Whiff Bowl.
+ */
+export function seedBracket(ranked: readonly string[], settings: PlayoffSettings): Bracket | null {
+  if (settings.playoffs === 'none' || ranked.length < 2) return null;
+  const size = settings.playoffSize;
+  const seeds = ranked.slice(0, size);
+  const outside = ranked.slice(size);
+  const whiff = outside.length < 2 ? null : size === 4 ? { ...whiffRoundOne(outside), racers: [], loser: null } : { pairs: [], safe: [], racers: [...outside], loser: null };
+  const bracket: Bracket = {
+    size,
+    seeds,
+    outside,
+    semis: size === 4 ? semifinalPairs(seeds) : [],
+    final: size === 2 ? { a: seeds[0]!, b: seeds[1] ?? null } : null,
+    suddenDeath: false,
+    whiff: whiff ? { pairs: whiff.pairs, safe: whiff.safe, racers: whiff.racers, loser: null } : null,
+    champion: null,
+    finalist: null,
+  };
+  return bracket;
+}
+
+function play(bracket: Bracket, game: BracketGame, totals: RoundTotals): BracketGame {
+  if (game.b === null) return { ...game, winner: game.a, decidedBy: 'bye' };
+  const side = (player: string) => ({ points: totals[player]?.points ?? 0, beers: totals[player]?.beers ?? 0, seed: seedOf(bracket, player) });
+  const a = side(game.a);
+  const b = side(game.b);
+  const winner = decideRound(a, b) === 'a' ? game.a : game.b;
+  const decidedBy = a.points !== b.points ? 'points' : a.beers !== b.beers ? 'beers' : 'seed';
+  return { ...game, winner, decidedBy };
+}
+
+/**
+ * The semifinals settled: each winner goes to the final, 1's half first, and
+ * the Whiff Bowl's round-one losers go on to race on the final days. A Whiff
+ * Bowl round one with a single loser makes them its loser.
+ */
+export function settleSemis(bracket: Bracket, totals: RoundTotals): Bracket {
+  const semis = bracket.semis.map((game) => play(bracket, game, totals));
+  const finalists = semis.map((game) => game.winner!);
+  let whiff = bracket.whiff;
+  if (whiff) {
+    const pairs = whiff.pairs.map((game) => play(bracket, game, totals));
+    const losers = pairs.map((game) => (game.winner === game.a ? game.b! : game.a));
+    whiff = { ...whiff, pairs, racers: losers, loser: losers.length === 1 ? losers[0]! : null };
+  }
+  return { ...bracket, semis, final: { a: finalists[0]!, b: finalists[1] ?? null }, whiff };
+}
+
+/**
+ * The final settled: more points wins, or level points go to sudden death.
+ * The Whiff Bowl's racers settle the same days: the fewest points is last.
+ */
+export function settleFinal(bracket: Bracket, totals: RoundTotals): Bracket {
+  const final = bracket.final!;
+  let whiff = bracket.whiff;
+  if (whiff && !whiff.loser && whiff.racers.length > 0) {
+    whiff = { ...whiff, loser: whiffLoser(whiff.racers.map((player) => ({ player, points: totals[player]?.points ?? 0, beers: totals[player]?.beers ?? 0, seed: seedOf(bracket, player) }))) };
+  }
+  if (final.b === null) return { ...bracket, final: { ...final, winner: final.a, decidedBy: 'bye' }, champion: final.a, finalist: null, whiff };
+  const winner = decideFinal({ points: totals[final.a]?.points ?? 0 }, { points: totals[final.b]?.points ?? 0 });
+  if (winner === null) return { ...bracket, suddenDeath: true, whiff };
+  const champion = winner === 'a' ? final.a : final.b;
+  return { ...bracket, final: { ...final, winner: champion, decidedBy: 'points' }, champion, finalist: champion === final.a ? final.b : final.a, whiff };
+}
+
+/**
+ * Sudden death settled, from its day: `day` is each finalist's sudden-death
+ * day (points, and whether a goal was missed), `round` their beers across the
+ * final and sudden death.
+ */
+export function settleSuddenDeath(bracket: Bracket, day: RoundTotals, round: RoundTotals): Bracket {
+  const final = bracket.final!;
+  const side = (player: string) => ({ missed: day[player]?.missed ?? true, points: day[player]?.points ?? 0, beers: round[player]?.beers ?? 0, seed: seedOf(bracket, player) });
+  const champion = decideSuddenDeath(side(final.a), side(final.b!)) === 'a' ? final.a : final.b!;
+  return { ...bracket, final: { ...final, winner: champion, decidedBy: 'suddenDeath' }, champion, finalist: champion === final.a ? final.b : final.a };
+}

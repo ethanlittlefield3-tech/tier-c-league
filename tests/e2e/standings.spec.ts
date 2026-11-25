@@ -143,7 +143,8 @@ test.describe('Settling a week, and the League tab', () => {
     const list = page.getByRole('list', { name: 'Season 1 trophies' });
     await expect(list.getByRole('listitem').filter({ hasText: 'Regular-Season Leader' })).toContainText('You, 38 Season Points');
     await expect(list.getByRole('listitem').filter({ hasText: 'Brewmaster' })).toContainText('Maya, 12 beers');
-    await expect(list.getByRole('listitem').filter({ hasText: 'Champion' })).toContainText('Comes with the playoffs');
+    // This season has a one-week playoff still to come.
+    await expect(list.getByRole('listitem').filter({ hasText: 'Champion' })).toContainText('Decided in the playoffs');
   });
 
   test('Before any week settles, League says when the standings start', async ({ page, request }) => {

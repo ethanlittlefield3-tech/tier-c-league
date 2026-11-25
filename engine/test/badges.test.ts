@@ -226,6 +226,15 @@ describe('Badges: power-ups, social and career', () => {
     expect(has({ bestPicker: true }, 'prophet')).toBe(true);
   });
 
+  it('Finalist: reached a final; Champion: won the season, which a finalist who wins earns too', () => {
+    expect(earnedBadges(facts({ reachedFinal: true }))).toContain('finalist');
+    expect(earnedBadges(facts({ reachedFinal: true }))).not.toContain('champion');
+    expect(earnedBadges(facts({ reachedFinal: true, wonSeason: true }))).toEqual(expect.arrayContaining(['finalist', 'champion']));
+    // With no playoffs the Season Points leader is champion, with no final.
+    expect(earnedBadges(facts({ wonSeason: true }))).toEqual(expect.arrayContaining(['champion']));
+    expect(earnedBadges(facts({ wonSeason: true }))).not.toContain('finalist');
+  });
+
   it('Badges from features still to come are never earned yet', () => {
     const everything = facts({ days: days(140), weeks: [1, 2, 3, 4, 5].map((n) => week(n, { mvp: true, bust: true, demolitionsLanded: 3 })), tauntsSent: 999, reactionsReceived: 999, daresCompleted: 9, reachedGrandChamp: true, commishSeasons: 1 });
     const later = BADGES.filter((badge) => badge.later).map((badge) => badge.id);

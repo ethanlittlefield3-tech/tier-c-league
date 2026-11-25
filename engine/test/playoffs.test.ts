@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { decideFinal, decideRound, decideSuddenDeath, playoffCalendar, playoffRounds, semifinalPairs, whiffLoser, whiffRoundOne } from '../src/index.ts';
+import { decideFinal, decideRound, decideSuddenDeath, playoffCalendar, playoffRounds, seedBracket, semifinalPairs, settleFinal, settleSemis, settleSuddenDeath, whiffLoser, whiffRoundOne } from '../src/index.ts';
 import { utc } from './helpers.ts';
 
 const SEASON = { kickoff: '2027-01-04', regularWeeks: 6, timeZone: 'America/New_York' };
@@ -86,5 +86,46 @@ describe('The Whiff Bowl', () => {
     expect(whiffLoser([{ player: 'e', points: 12, beers: 0, seed: 5 }, { player: 'f', points: 9, beers: 0, seed: 6 }, { player: 'g', points: 15, beers: 3, seed: 7 }])).toBe('f');
     expect(whiffLoser([{ player: 'e', points: 9, beers: 1, seed: 5 }, { player: 'f', points: 9, beers: 3, seed: 6 }])).toBe('f');
     expect(whiffLoser([{ player: 'e', points: 9, beers: 1, seed: 5 }, { player: 'f', points: 9, beers: 1, seed: 6 }])).toBe('f');
+  });
+});
+
+describe('The bracket, round by round', () => {
+  const top4 = { playoffs: 'oneWeek' as const, playoffSize: 4 as const };
+  const totals = (points: Record<string, number>, beers: Record<string, number> = {}) => Object.fromEntries(Object.entries(points).map(([player, value]) => [player, { points: value, beers: beers[player] ?? 0 }]));
+
+  it('Seeding: the top 4 by Season Points play; everyone else is in the Whiff Bowl, and with fewer than 2 outside there is none', () => {
+    const bracket = seedBracket(['a', 'b', 'c', 'd', 'e', 'f', 'g'], top4)!;
+    expect(bracket.semis).toEqual([{ a: 'a', b: 'd' }, { a: 'b', b: 'c' }]);
+    expect(bracket.whiff).toMatchObject({ pairs: [{ a: 'f', b: 'g' }], safe: ['e'] });
+    expect(seedBracket(['a', 'b', 'c', 'd', 'e'], top4)!.whiff).toBeNull();
+    expect(seedBracket(['a', 'b', 'c'], { playoffs: 'none', playoffSize: 4 })).toBeNull();
+  });
+
+  it('Semifinal winners meet in the final, the 1-4 winner first; the Whiff Bowl losers race on the final days', () => {
+    const bracket = settleSemis(seedBracket(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'], top4)!, totals({ a: 10, d: 12, b: 15, c: 9, e: 8, h: 3, f: 6, g: 7 }));
+    expect(bracket.final).toEqual({ a: 'd', b: 'b' });
+    expect(bracket.semis.map((game) => [game.winner, game.decidedBy])).toEqual([['d', 'points'], ['b', 'points']]);
+    expect(bracket.whiff).toMatchObject({ racers: ['h', 'f'], loser: null });
+  });
+
+  it('A Whiff Bowl with one loser after its first round is settled then', () => {
+    const bracket = settleSemis(seedBracket(['a', 'b', 'c', 'd', 'e', 'f'], top4)!, totals({ a: 1, b: 1, c: 1, d: 1, e: 9, f: 4 }));
+    expect(bracket.whiff?.loser).toBe('f');
+  });
+
+  it('The final crowns a champion on points, and the Whiff Bowl racer with the fewest points is last; level points go to sudden death', () => {
+    const semis = settleSemis(seedBracket(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'], top4)!, totals({ a: 10, d: 12, b: 15, c: 9, e: 8, h: 3, f: 6, g: 7 }));
+    const done = settleFinal(semis, totals({ d: 20, b: 18, h: 5, f: 4 }));
+    expect(done).toMatchObject({ champion: 'd', finalist: 'b', suddenDeath: false, whiff: { loser: 'f' } });
+    const level = settleFinal(semis, totals({ d: 18, b: 18, h: 5, f: 4 }));
+    expect(level).toMatchObject({ champion: null, suddenDeath: true });
+    const decided = settleSuddenDeath(level, { d: { points: 6, beers: 0, missed: false }, b: { points: 4, beers: 0, missed: true } }, totals({ d: 18, b: 18 }));
+    expect(decided).toMatchObject({ champion: 'd', finalist: 'b', final: { winner: 'd', decidedBy: 'suddenDeath' } });
+  });
+
+  it('Top 2 is the final from the start, and everyone outside races for "not last" on its days', () => {
+    const bracket = seedBracket(['a', 'b', 'c', 'd', 'e'], { playoffs: 'twoWeeks', playoffSize: 2 })!;
+    expect(bracket).toMatchObject({ semis: [], final: { a: 'a', b: 'b' }, whiff: { racers: ['c', 'd', 'e'] } });
+    expect(settleFinal(bracket, totals({ a: 9, b: 12, c: 5, d: 5, e: 7 }, { c: 2, d: 1 }))).toMatchObject({ champion: 'b', whiff: { loser: 'c' } });
   });
 });

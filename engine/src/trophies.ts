@@ -16,8 +16,8 @@ export interface TrophyDef {
 }
 
 export const TROPHIES: readonly TrophyDef[] = [
-  { id: 'champion', name: 'Champion', goesTo: 'Playoff winner', later: 'playoffs' },
-  { id: 'finalist', name: 'Finalist', goesTo: 'Playoff runner-up', later: 'playoffs' },
+  { id: 'champion', name: 'Champion', goesTo: 'Playoff winner' },
+  { id: 'finalist', name: 'Finalist', goesTo: 'Playoff runner-up' },
   { id: 'leader', name: 'Regular-Season Leader', goesTo: 'Most Season Points' },
   { id: 'screenTimeKing', name: 'Screen Time King', goesTo: 'Lowest average screen time' },
   { id: 'ironStreak', name: 'Iron Streak', goesTo: 'Longest check-in streak' },
@@ -25,7 +25,7 @@ export const TROPHIES: readonly TrophyDef[] = [
   { id: 'brewmaster', name: 'Brewmaster', goesTo: 'Most beers' },
   { id: 'prophet', name: 'Prophet', goesTo: 'Best predictions record' },
   { id: 'mvp', name: 'MVP of the Season', goesTo: 'Most weekly MVPs' },
-  { id: 'whiffBowl', name: 'Whiff Bowl', goesTo: 'Consolation bracket loser', later: 'playoffs' },
+  { id: 'whiffBowl', name: 'Whiff Bowl', goesTo: 'Consolation bracket loser' },
 ];
 
 /** A player's regular season, day by day and week by week. */
