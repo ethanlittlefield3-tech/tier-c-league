@@ -10,11 +10,12 @@ This file will grow into the plain-steps guide for running, deploying, backing u
 | --- | --- |
 | `docs/` | The spec (`SCOPE.md`), the build brief (`PHASE1.md`), the progress log, the decisions log and the checkpoint reports |
 | `engine/` | Every game rule as plain code: scoring, calendar, schedule, standings, awards, power-up timing and receipts |
-| `app/` | The phone app. So far: the theme, the intro animation and the title screen |
+| `app/` | The phone app. So far: the theme, the install guide, the intro animation and the title screen |
 | `firebase/` | The security rules, which decide what each phone may read and write |
 | `tests/rules/` | Tests that try to break those rules against a local copy of the database |
 | `tests/e2e/` | Tests that tap through the app in a browser at iPhone size |
-| `scripts/` | Small tools, like the ones that build the checkpoint reports |
+| `scripts/` | Small tools: the ones that build the checkpoint reports, and the ones that draw the art and the icons |
+| `.github/workflows/` | What GitHub does on every push: run all the tests, then publish the app |
 
 Still to come: the rest of the app's screens and `jobs/` (the timed work).
 
@@ -66,7 +67,7 @@ That builds the app and taps through it in a browser at iPhone size.
 npm run check
 ```
 
-That runs the type checks, the engine tests and the security tests.
+That runs everything: the type checks, then all three sets of tests.
 
 ## Run the app on your computer
 
@@ -81,3 +82,23 @@ npm run art
 ```
 
 That redraws the title-screen scene from `scripts/art/title-scene.mjs`.
+
+## The app icon and launch pictures
+
+```bash
+npm run icons
+```
+
+That draws the icon and writes every size a phone asks for into `app/public/icons/`, plus the still picture an iPhone shows while the app loads into `app/public/launch/`. Don't edit those files by hand.
+
+To change the icon, open `scripts/art/icons.mjs`, change `CHOSEN` near the top to `'a'`, `'b'` or `'c'`, and run the command again. An iPhone keeps the icon from the day the app was added, so players re-add the app to see a new one. Their scores are not affected.
+
+```bash
+npm run icons -- --sheet options.png
+```
+
+That also saves one picture with the three options side by side.
+
+## Where the live app comes from
+
+Every push to the `main` branch runs all the tests on GitHub. If they pass, GitHub builds the app and publishes it to GitHub Pages. The address is on the repo's Settings, Pages screen. A failed test means nothing is published, and the last good version stays up.

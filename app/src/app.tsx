@@ -1,9 +1,34 @@
 import { useState } from 'preact/hooks';
+import { installState, shouldSuggestInstall, type Guide } from './install/state.ts';
+import { surroundings } from './install/surroundings.ts';
+import { deviceDay } from './intro/mode.ts';
 import { Home } from './screens/Home.tsx';
+import { Install } from './screens/Install.tsx';
 import { Title } from './screens/Title.tsx';
+import { recall, remember } from './storage.ts';
 
-/** The app shell: the intro and title first, then the app itself. */
+/** The day "Not now" was last tapped on Android's install steps. */
+const LATER_KEY = 'tcl.install.later';
+
+/**
+ * The app shell. A phone's browser gets the install guide. Everywhere else it
+ * is the intro and title first, then the app itself.
+ */
 export function App() {
+  const [install] = useState(() => installState(surroundings()));
+  const [guide, setGuide] = useState<Guide>(() => {
+    if (install.guide !== 'install') return install.guide;
+    // Android can carry on in the browser, so its steps step aside for a week after "Not now".
+    return shouldSuggestInstall({ skippedOn: recall(LATER_KEY), today: deviceDay(new Date()) }) ? 'install' : 'none';
+  });
   const [entered, setEntered] = useState(false);
+
+  if (guide !== 'none') {
+    const later = () => {
+      remember(LATER_KEY, deviceDay(new Date()));
+      setGuide('none');
+    };
+    return <Install device={install.device} guide={guide} onSkip={later} />;
+  }
   return entered ? <Home /> : <Title onEnter={() => setEntered(true)} />;
 }

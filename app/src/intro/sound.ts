@@ -5,14 +5,12 @@
  * from any game.
  */
 
+import { recall } from '../storage.ts';
+
 let context: AudioContext | undefined;
 
 export function soundIsOn(): boolean {
-  try {
-    return localStorage.getItem('tcl.sound') !== 'off';
-  } catch {
-    return true;
-  }
+  return recall('tcl.sound') !== 'off';
 }
 
 function audio(): AudioContext | undefined {

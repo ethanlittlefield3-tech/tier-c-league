@@ -64,6 +64,14 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 28. **On the title, a tap anywhere enters.** The tap that skipped the intro is ignored for a third of a second, so one tap can't both skip and enter.
 29. **Any key press skips the intro too,** for keyboards and switch controls.
 
+**Installing** (new on 2026-11-25, not yet reviewed by the commish)
+
+30. **On an iPhone or iPad the app only runs from the Home Screen.** Opened in Safari it shows the Add to Home Screen steps, with no "carry on in Safari" link. A Home Screen app keeps its own storage, so a profile made in Safari would not be there when the app is opened from its icon. Safari can also clear a website's saved data after a week without a visit, and it cannot send alerts.
+31. **Other iPhone browsers are sent to Safari,** with a button that copies the link. So is a page opened inside another app, such as a chat app's built-in browser. One set of steps that always works beats a set for each browser.
+32. **Android can skip the install with "Not now".** Its browser and its installed app share the same storage, so nothing is lost. The steps come back after 7 days.
+33. **A computer browser goes straight in.** There is nothing to install.
+34. **Icon A is the stand-in** until the commish picks from the three options.
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.
@@ -89,6 +97,10 @@ Nothing is open. The receipts question that was here is now ruling R6.
 - **Sealed items sit under the season,** not the league as SCOPE.md's sketch has them. Same protection, shorter names.
 - **The commish never edits a player's day.** A dock, void or correction is its own document with a reason, and it cannot be edited or deleted. Undoing one means entering the opposite correction.
 - **A day records when it was first logged,** so the Early Bird badge in Phase 2 needs no new data.
+
+- **The fonts are served by the app,** not fetched from a font website. The first screen waits on nobody else, the app can start with no signal once offline start is built, and no other company sees who opens the app. Both fonts are open (SIL Open Font License).
+- **Launch pictures are drawn for a list of screen sizes** (`app/launch-screens.ts`), because iOS only uses a picture that matches the screen exactly. A new iPhone size needs one new row and `npm run icons`. Until then that phone starts on a plain screen and everything else works.
+- **The installed app stays upright on Android.** iPhones and iPads decide for themselves and ignore the request.
 
 - **One engine, no build step.** `engine/` is plain TypeScript that the app, the jobs and the tests import as source, so there is one copy of every rule.
 - **Whole-number math.** Every score is an integer. Averages (The House, the Bust) are compared as fractions, so two equal values always compare as equal.

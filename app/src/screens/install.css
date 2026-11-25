@@ -1,0 +1,259 @@
+/* The install guide: what a phone sees when the app is opened in its browser
+   instead of from its own icon. A browser's bars take up a lot of the screen,
+   so this page scrolls and keeps the steps near the top. */
+
+.install {
+  position: relative;
+  min-height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  padding: 0 max(20px, env(safe-area-inset-right, 0px)) calc(28px + env(safe-area-inset-bottom, 0px))
+    max(20px, env(safe-area-inset-left, 0px));
+  background: var(--navy-900);
+  overflow-x: hidden;
+}
+
+/* The arena from the title screen, fading into the page. */
+.install-art {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 300px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.install-art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 33%;
+}
+
+.install-art::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* Fully dark by the logo's lower edge, so the logo never sits on top of the car. */
+  background: linear-gradient(180deg, rgba(5, 10, 26, 0.12) 0%, rgba(5, 10, 26, 0.4) 38%, rgba(5, 10, 26, 0.92) 62%, var(--navy-900) 70%);
+}
+
+.install-body {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  padding-top: 138px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.install-logo {
+  display: block;
+  width: 216px;
+  height: auto;
+  overflow: visible;
+  margin-bottom: 10px;
+}
+
+.install h1 {
+  margin: 0;
+  font: italic 900 27px/1.08 var(--display);
+  letter-spacing: 0.01em;
+  text-wrap: balance;
+}
+
+.install-lead {
+  margin: 8px 0 0;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+.install-how {
+  margin: 16px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* ---- The steps ----------------------------------------------------------- */
+
+.install-steps {
+  width: 100%;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+
+.install-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px 10px 14px;
+  border: 1px solid rgba(196, 216, 255, 0.14);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(17, 30, 73, 0.92), rgba(10, 19, 48, 0.92));
+}
+
+.install-step-n {
+  flex: none;
+  width: 22px;
+  font: italic 900 30px/1 var(--display);
+  color: var(--gold);
+  text-align: center;
+}
+
+.install-step-words {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.install-step-words strong {
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.install-step-words span {
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--ink-soft);
+}
+
+.install-step-picture {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: rgba(31, 139, 255, 0.16);
+  color: #9fd0ff;
+}
+
+.install-step-picture .glyph {
+  width: 26px;
+  height: 26px;
+}
+
+.install-step-picture img {
+  display: block;
+  width: 44px;
+  height: 44px;
+}
+
+/* A button's picture in the middle of a sentence. */
+.install-inline {
+  display: inline-flex;
+  vertical-align: -4px;
+  padding: 0 3px;
+  border-radius: 5px;
+  background: rgba(196, 216, 255, 0.14);
+  color: var(--ink);
+}
+
+.install-inline .glyph {
+  width: 18px;
+  height: 18px;
+}
+
+.install-help {
+  margin: 14px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+/* ---- Buttons and the link ------------------------------------------------ */
+
+.install-button {
+  min-width: 220px;
+  height: 52px;
+  margin-top: 18px;
+  padding: 0 30px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #3fa0ff, var(--blue-deep));
+  box-shadow:
+    0 0 24px rgba(31, 139, 255, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  font: italic 800 17px/1 var(--display);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.install-later {
+  min-height: 44px;
+  margin-top: 10px;
+  padding: 0 18px;
+  border: 0;
+  background: none;
+  font-size: 15px;
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.install-button:focus-visible,
+.install-later:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.install-link {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(196, 216, 255, 0.14);
+  border-radius: 12px;
+  background: rgba(10, 19, 48, 0.92);
+  font-size: 15px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  user-select: all;
+  -webkit-user-select: all;
+}
+
+.install-done {
+  margin-top: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.install-done img {
+  width: 72px;
+  height: 72px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .install-body {
+    animation: install-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+}
+
+/* The resting state is the finished screen: this only eases it in. */
+@keyframes install-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+}

@@ -23,15 +23,16 @@
     "dev": "npm run dev -w app",
     "build": "npm run build -w app",
     "art": "node scripts/art/title-scene.mjs",
-    "test:e2e": "playwright test -c tests/e2e/playwright.config.ts --trace off"
+    "test:e2e": "playwright test -c tests/e2e/playwright.config.ts --trace off",
+    "icons": "node scripts/art/icons.mjs"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^6.0.0",
+    "@playwright/test": "1.63.0",
     "@types/node": "^22.0.0",
     "firebase": "^13.4.0",
     "firebase-tools": "^15.37.0",
     "typescript": "^7.0.2",
-    "vitest": "^5.1.1",
-    "@playwright/test": "1.63.0"
+    "vitest": "^5.1.1"
   }
 }

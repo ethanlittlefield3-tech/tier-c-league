@@ -28,9 +28,11 @@ npm install           # once
 npm test              # the engine and app logic tests: fast, nothing else needed
 npm run test:rules    # the security-rule tests: starts the Firestore emulator (needs Java 21)
 npm run test:e2e      # builds the app and taps through it at iPhone size (Playwright)
-npm run check         # type checks, engine tests and security-rule tests
+npm run check         # everything: type checks, then all three sets of tests
 npm run checkpoint:a  # rebuild docs/CHECKPOINT-A.md from the engine tests
 npm run checkpoint:b  # rebuild docs/CHECKPOINT-B.md from the security-rule tests
+npm run art           # redraw the title-screen scene (scripts/art/title-scene.mjs)
+npm run icons         # redraw the app icon and launch pictures (scripts/art/icons.mjs)
 ```
 
 ## Conventions
@@ -42,4 +44,6 @@ npm run checkpoint:b  # rebuild docs/CHECKPOINT-B.md from the security-rule test
 - Security rules read time only from `calendar/` documents, never from a date string. Kit, sealed and week documents are filed by period (`w02`), not week number.
 - Job logs are public, because the repo is: log counts and IDs only, never names, recovery keys or photos.
 - Animations move whole layers and change only `transform` and `opacity`. The resting state of every CSS rule is the finished screen.
-- Flow tests freeze the clock (`page.clock`), so they never wait in real time.
+- Flow tests freeze the clock (`page.clock`), so they never wait in real time. A flow test that needs the app itself calls `fromHomeScreen(page)` first, because a phone's browser only gets the install guide.
+- `app/public/icons/` and `app/public/launch/` are drawn by `npm run icons`. Never edit them by hand. A new iPhone screen size is one row in `app/launch-screens.ts`.
+- The app loads nothing from another website: fonts and art are served by the app itself. A flow test fails if that changes.

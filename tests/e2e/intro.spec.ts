@@ -1,11 +1,16 @@
 import { expect, test, type Page } from '@playwright/test';
+import { fromHomeScreen } from './helpers.ts';
 
 const NOON = new Date('2027-01-04T12:00:00');
 const title = (page: Page) => page.locator('main.title');
 const enterButton = (page: Page) => page.getByRole('button', { name: 'Tap to enter' });
 
-/** Open the app with time frozen, so the intro only moves when the test says so. */
+/**
+ * Open the app from the Home Screen with time frozen, so the intro only moves
+ * when the test says so.
+ */
 async function open(page: Page, options: { playedToday?: boolean; playedOn?: string } = {}) {
+  await fromHomeScreen(page);
   await page.clock.install({ time: NOON });
   await page.clock.pauseAt(NOON);
   if (options.playedToday || options.playedOn) {

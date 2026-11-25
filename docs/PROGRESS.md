@@ -1,6 +1,6 @@
 # Tier C League: progress log
 
-Last updated 2026-11-25, after Step 2, the first push to GitHub, the first green CI run and the intro animation.
+Last updated 2026-11-25, after the app went live on GitHub Pages with its install flow.
 
 ## Plan change (commish ruling, 2026-11-25)
 
@@ -34,14 +34,32 @@ Last updated 2026-11-25, after Step 2, the first push to GitHub, the first green
 - **Intro animation** (2026-11-25): the Nunchucks card (2 s), the boost scene (2.5 s) and the title slam, exactly as SCOPE.md lists them. The full version plays on the first open each day and a 1-second version after that. A tap or a key skips it, sound starts only with Tap to enter, and Reduce Motion gets a fade. The scene is nine layers, and only whole layers move, which is what keeps it smooth on a phone.
 - **Phone-size flow tests** (2026-11-25): `tests/e2e/` runs the built app in a browser at iPhone size. 11 tests cover the intro. CI runs them on every push.
 - **The intro is approved, and GitHub Pages is on** (2026-11-25). `.github/workflows/deploy-pages.yml` publishes the app after the CI tests pass on main, so the commish can open every change on a phone.
+- **The app is live** (2026-11-25). The first deploy passed. The address is on the repo's Settings, Pages screen.
+- **Three icon options** (2026-11-25), drawn by `scripts/art/icons.mjs` at the approved art level:
+  - A: the gold C badge with a blue-to-orange boost streak, on navy.
+  - B: the same badge with crossed nunchucks behind it.
+  - C: a big C on a blue and orange split.
+  - A is in place until the commish picks. Switching is one line in that script and `npm run icons`.
+- **Install flow** (2026-11-25):
+  - The app has a name ("Tier C League"), a Home Screen label ("Tier C"), icons for iPhone, Android and browsers, and a launch picture for 21 iPhone and iPad screen sizes (30 pictures, because iPads also start on their side).
+  - Opened in Safari on an iPhone or iPad, it shows the three taps that add it to the Home Screen, and nothing else. The steps cover newer iPhones, where Share sits behind the three dots.
+  - Another iPhone browser, or a page opened inside another app, is sent to Safari with a copy-the-link button.
+  - Android gets install steps and a "Not now". A computer goes straight in.
+  - The fonts now come from the app itself, so the first screen waits on no other website and works offline later.
+  - 20 logic tests and 19 flow tests cover it. Breaking the install rules 11 different ways on purpose made a test fail every time.
 
 ## Waiting on the commish
 
-Nothing right now.
+Neither of these blocks the build.
+
+1. **Pick an icon: A, B or C.** A is in place. The sooner the better, because an iPhone keeps the icon from the day the app was added.
+2. **Phone check of the install.** On an iPhone: open the live address in Safari, follow the three taps, then open Tier C from the Home Screen. Things only a real phone can show: the icon and its label, the launch picture, whether the intro is smooth, and the sound on Tap to enter.
 
 ## Next
 
-1. **Step 3, continued.** The install flow and the three icon options, then the screens: join or recover, Today, Match, Feed, League, Profile, Wheel, Commish and the mini draft. The join screen is next.
+1. **Step 3, continued.** The screens: join or recover, Today, Match, Feed, League, Profile, Wheel, Commish and the mini draft. The join screen is next.
+   - **A decision is coming with the join screen.** The screens after it need a database. PHASE1.md planned for the commish to try them on a phone over Wi-Fi from a computer, but this build runs in a cloud workspace a phone cannot reach. So either the free Firebase project (Step 5, items 1 to 3) moves up, or the commish reviews those screens as pictures and clips until Step 5.
+   - **Offline start** comes with the offline step: a service worker that keeps the app's files on the phone, so it opens with no signal. Chrome on Android only offers its one-tap Install button once that exists. Until then Android installs from the browser menu, which the guide explains.
 2. **Rules still to write, each with its screen and its tests:** receipts and proofs, roster and goal votes, the wall, dares, the Wheel, the draft, and the remaining commish tools (approve joins, settle or unlock a week, moderation). They are in DATA-MODEL.md and refused until then.
 
 ## Questions for the commish, asked when each feature is built
