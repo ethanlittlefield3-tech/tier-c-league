@@ -1,0 +1,23 @@
+node_modules/
+dist/
+coverage/
+.vitest/
+*.log
+.DS_Store
+
+# Firebase local state
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Secrets never belong in this public repo (PHASE1.md, non-negotiable 2).
+# The service account key goes only into GitHub Secrets.
+.env
+.env.*
+*service-account*.json
+*serviceAccount*.json
+*-firebase-adminsdk-*.json
+
+# Local safety copies
+*.zip

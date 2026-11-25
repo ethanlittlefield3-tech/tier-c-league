@@ -1,0 +1,31 @@
+{
+  "name": "tier-c-league",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Tier C League: a free habit league for friends. A Nunchucks Production.",
+  "workspaces": [
+    "engine"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "test": "vitest run --project engine",
+    "test:rules": "firebase --config firebase/firebase.json emulators:exec --only firestore --project demo-tier-c \"vitest run --project rules --no-file-parallelism\"",
+    "test:all": "npm test && npm run test:rules",
+    "test:watch": "vitest --project engine",
+    "typecheck": "tsc -p engine/tsconfig.json && tsc -p scripts/tsconfig.json && tsc -p tests/tsconfig.json",
+    "check": "npm run typecheck && npm run test:all",
+    "checkpoint:a": "vitest run --project engine --reporter=json --outputFile=.vitest/results.json && node scripts/checkpoint-a.ts",
+    "checkpoint:b": "firebase --config firebase/firebase.json emulators:exec --only firestore --project demo-tier-c \"vitest run --project rules --no-file-parallelism --reporter=json --outputFile=.vitest/rules.json\" && node scripts/checkpoint-b.ts"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^6.0.0",
+    "@types/node": "^22.0.0",
+    "firebase": "^13.4.0",
+    "firebase-tools": "^15.37.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.1"
+  }
+}
