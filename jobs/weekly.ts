@@ -12,6 +12,7 @@
 import { randomInt } from 'node:crypto';
 import { FieldValue, Timestamp, getFirestore, type DocumentData } from 'firebase-admin/firestore';
 import { connect } from './admin.ts';
+import { revealDemolitions, sameReveals } from './lib/reveals.ts';
 import { settleDue, standingsFrom, type PlayerWeekData, type WeekLineStored } from './lib/settle.ts';
 
 const { app, emulator } = connect();
@@ -65,6 +66,13 @@ for (const league of leagues) {
     }
     const sealed = await seasonRef.collection('sealed').where('period', '==', period).get();
     const demolitions = sealed.docs.filter((item) => item.get('kind') === 'demolition').map((item) => plain(item.data()) as unknown as Parameters<typeof settleDue>[0]['demolitions'][number]);
+
+    // Demolitions whose day has locked, with how they went, for the feed.
+    const reveals = revealDemolitions({ par: season.get('par'), timeZone: season.get('timeZone'), days, players, demolitions, now });
+    if (!sameReveals(reveals, week.get('reveals'))) {
+      await week.ref.set({ reveals }, { merge: true });
+      console.log(`League ${league.id}, ${period}: ${reveals.length} Demolition${reveals.length === 1 ? '' : 's'} revealed.`);
+    }
 
     const settled = settleDue({
       week: Number(week.get('week')),

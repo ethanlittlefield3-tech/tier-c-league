@@ -1,6 +1,13 @@
+import { execFile } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 import { expect, test, type APIRequestContext, type Browser, type Page } from '@playwright/test';
+import { weekday } from '../../app/src/feed/events.ts';
 import { enterAsCommish, joinAs } from './helpers.ts';
-import { createLeague, listIds, readDoc, setTargets, startSeason, type TestLeague, type TestSeason } from './league.ts';
+import { createLeague, listIds, readDoc, setGoals, setTargets, setWindow, startSeason, thisWeek, writeDoc, type TestLeague, type TestSeason } from './league.ts';
+
+const run = promisify(execFile);
+const weeklyJob = fileURLToPath(new URL('../../jobs/weekly.ts', import.meta.url));
 
 const button = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
 const tab = (page: Page, name: string) => page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name, exact: true });
@@ -136,5 +143,72 @@ test.describe('Feed and the wall', () => {
     await expect(page.getByRole('heading', { name: 'Talk trash' })).toBeVisible();
     await expect(page.getByText('Taunts open once you have an opponent, after the draft.')).toBeVisible();
     await expect(page.getByText('Nothing on the wall yet. Start something.')).toBeVisible();
+  });
+
+  test('Check-ins, power-ups, docks, revealed Demolitions and results show in the feed as they happen', async ({ page, request, browser }) => {
+    const league = await createLeague(request);
+    const season = await startSeason(request, league);
+    const riley = await joins(browser, request, league, 'Riley');
+    await setGoals(request, season, riley.player, { mind: 'Read 20 pages', body: '10k steps', wildcard: 'No vaping' });
+    const { period, dates } = thisWeek(season);
+    await writeDoc(request, `${season.path}/weeks/${period}`, {
+      week: 2,
+      mode: 'regular',
+      pairs: [{ a: league.commish, b: riley.player }],
+      targets: { [league.commish]: [riley.player], [riley.player]: [league.commish] },
+    });
+    await enterAsCommish(page, league);
+    await tab(page, 'Feed').click();
+    const feed = page.getByRole('region', { name: 'The feed' });
+
+    // Riley logs today, on Riley's own phone: a check-in, live on Alex's.
+    await riley.phone.locator('.square-goal[data-lane="body"]').click();
+    await expect(feed.locator('.feed-event[data-kind="checkIn"]')).toContainText(`Riley logged ${weekday(season.today)}`);
+
+    // An Aerial, and a dock with its reason.
+    const aerialDay = dates.find((date) => date > season.today) ?? dates[6]!;
+    await writeDoc(request, `${season.path}/kit/${period}_${riley.player}_aerial`, { player: riley.player, item: 'aerial', period, date: aerialDay, at: new Date() });
+    await expect(feed.locator('.feed-event[data-kind="power"]')).toContainText(`Riley set an Aerial for ${weekday(aerialDay)}`);
+    await writeDoc(request, `${season.path}/adjustments/fix1`, { player: riley.player, date: season.today, amount: -1, void: null, reason: 'Logged after the lock', by: league.commish, at: new Date(), audit: 'a1' });
+    await expect(feed.locator('.feed-event[data-kind="dock"]')).toContainText('The commish docked Riley 1 point');
+    await expect(feed.locator('.feed-event[data-kind="dock"] .feed-event-detail')).toHaveText('Logged after the lock');
+
+    // Alex's Demolition on a day of this week that has locked, with nothing logged on it: the weekly job reveals it.
+    const lockedDay = dates.find((date) => date !== season.today && date !== season.yesterday) ?? dates[0]!;
+    await setWindow(request, season, lockedDay, { start: new Date(Date.now() - 40 * 3_600_000), lock: new Date(Date.now() - 4 * 3_600_000) });
+    await writeDoc(request, `${season.path}/sealed/${period}_${league.commish}_demolition`, {
+      kind: 'demolition',
+      player: league.commish,
+      period,
+      target: riley.player,
+      date: lockedDay,
+      lane: 'body',
+      revealAt: new Date(Date.now() - 4 * 3_600_000),
+      at: new Date(Date.now() - 50 * 3_600_000),
+    });
+    const { stdout } = await run(process.execPath, [weeklyJob], { env: { ...process.env, FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080', GCLOUD_PROJECT: 'demo-tier-c', LEAGUE_ID: league.id } });
+    expect(stdout).toContain('1 Demolition revealed');
+    await expect(feed.locator('.feed-event[data-kind="reveal"]')).toHaveText(new RegExp(`^Your Demolition on Riley's Body goal, ${weekday(lockedDay)}: Landed`));
+    await expect(riley.phone.getByRole('navigation', { name: 'Main' })).toBeVisible();
+    await tab(riley.phone, 'Feed').click();
+    await expect(riley.phone.locator('.feed-event[data-kind="reveal"]')).toContainText("Alex's Demolition on your Body goal");
+
+    // Last week's results.
+    await writeDoc(request, `${season.path}/weeks/w01`, {
+      week: 1,
+      mode: 'regular',
+      pairs: [{ a: league.commish, b: riley.player }],
+      status: 'provisional',
+      settledAt: new Date(),
+      results: {
+        [league.commish]: { opponent: riley.player, points: 30, opponentPoints: 24, outcome: 'win', seasonPoints: 35 },
+        [riley.player]: { opponent: league.commish, points: 24, opponentPoints: 30, outcome: 'loss', seasonPoints: 24 },
+      },
+      awards: { mvp: [league.commish], bust: [], wheel: [riley.player] },
+    });
+    const results = feed.locator('.feed-event[data-kind="results"]');
+    await expect(results.locator('.feed-event-text')).toContainText('Week 1 results are in');
+    await expect(results.locator('.feed-event-detail')).toHaveText(/You beat Riley 30–24\nMVP: You · Spins the Wheel: Riley/);
+    await riley.phone.context().close();
   });
 });

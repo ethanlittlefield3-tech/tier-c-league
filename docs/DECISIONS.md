@@ -167,6 +167,13 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 89. **Comments go on brags; taunts and quick chat take reactions only,** as SCOPE.md's table lists them.
 90. **The wall shows the newest 50 posts,** live. Older posts stay in the database, and paging back through them can come later.
 
+**Feed, part 2: the live feed** (new on 2026-11-25, not yet reviewed by the commish)
+
+91. **Each phone builds the live feed from the league's own data,** rather than a job writing feed entries: the newest 20 check-ins, 20 power-ups and 10 commish fixes, and each week's results. It moves the moment anything happens, as SCOPE.md asks, and costs about 50 reads to open. Badges, rank-ups and recaps join it in Phase 2.
+92. **Revealed Demolitions come from the hourly weekly job.** It already loads every player's week for settlement, so it keeps each Demolition's outcome on the week at no extra cost, and a reveal shows in the feed within the hour after noon. The target still sees it on Today at noon. Working it out on every phone instead would cost each one dozens of reads.
+93. **A check-in is the first log of a day;** changing it later doesn't post again. A moved rest day doesn't post.
+94. **The feed calls every fix "the commish",** even when the co-commish made it. The league log has who.
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.

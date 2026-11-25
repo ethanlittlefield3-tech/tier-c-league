@@ -227,3 +227,48 @@
   min-width: 0;
   padding: 0 18px;
 }
+
+/* Game events: a slim row between the posts. */
+.feed-event {
+  padding: 8px 14px;
+  border-left: 3px solid rgba(159, 208, 255, 0.35);
+}
+
+.feed-event[data-kind='reveal'] {
+  border-left-color: #ff5a66;
+}
+
+.feed-event[data-kind='dock'] {
+  border-left-color: #ff9aa2;
+}
+
+.feed-event[data-kind='results'] {
+  border-left-color: var(--gold);
+}
+
+.feed-event-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.feed-event-detail {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  white-space: pre-line;
+}
+
+.feed-outcome[data-outcome='landed'] {
+  color: #ff9aa2;
+}
+
+.feed-outcome[data-outcome='missed'] {
+  color: var(--ink-soft);
+}
+
+.feed-outcome[data-outcome='blocked'] {
+  color: #8fe3a8;
+}

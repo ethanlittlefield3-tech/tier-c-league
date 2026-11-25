@@ -1,6 +1,6 @@
 # Tier C League: progress log
 
-Last updated 2026-11-25, after Feed, part 1: the wall.
+Last updated 2026-11-25, after Feed, part 2: the live feed.
 
 ## Plan change (commish ruling, 2026-11-25)
 
@@ -173,6 +173,11 @@ Last updated 2026-11-25, after Feed, part 1: the wall.
   - The wall shows the newest 50 posts, live.
   - New rules: 20 rule tests, 209 in all. Weakening them 21 ways was caught 20 times, after one test was fixed to catch a post of an unknown kind. The 21st, a reaction missing a part, is still refused, because a missing part can't be checked as on or off.
   - 5 logic tests and 5 flow tests with two phones.
+- **Feed, part 2: the live feed** (2026-11-25). Mixed into the wall, newest first, live:
+  - Check-ins ("Maya logged Tue"), power-ups ("Maya set an Aerial for Thu", Full Boost, Rule One), and every commish fix with its reason (SCOPE.md: "Every dock shows in the feed with its reason").
+  - Revealed Demolitions: "Maya's Demolition on Jordan's Body goal, Tue: Landed", or Missed, or Blocked with the reason. The hourly weekly job works these out with the same engine as the score and keeps them on the week, so they show within the hour after noon.
+  - Each week's results with every matchup and the awards, and again when the week goes final.
+  - 7 logic tests, 5 job tests, and 1 flow test that runs the real weekly job and checks both phones.
 - **The shorter intro on reopening is on purpose:** the full intro plays on the first open each day, and a 1-second title after that (SCOPE.md, "Intro animation").
 
 ## Waiting on the commish
@@ -181,7 +186,7 @@ Last updated 2026-11-25, after Feed, part 1: the wall.
 
 ## Next
 
-1. **Step 3, continued.** Next: the live feed of game events (check-ins, power-ups, revealed Demolitions, docks and results), then receipts and the Wheel.
+1. **Step 3, continued.** Next: receipts with photo proof, then the Wheel.
    - **Still to add to joining:** the notifications step (with push alerts), a commish's "approve joins" switch, and a way to make a league. Leagues are made by a setup script, which is built with the jobs in Step 4.
    - **Offline start** comes with the offline step: a service worker that keeps the app's files on the phone, so it opens with no signal. Chrome on Android only offers its one-tap Install button once that exists. Until then Android installs from the browser menu, which the guide explains.
 2. **Before real players join:** limit the app's web key to the app's own address in the Google Cloud console, and look at App Check, which stops other programs from using the database's free daily allowance.

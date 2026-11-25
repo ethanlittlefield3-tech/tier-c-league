@@ -4,6 +4,7 @@ import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
 import type { PostKind, Reaction } from '../data/wall.ts';
 import { whyOf } from '../data/why.ts';
+import { feedEvents, type FeedEvent, type FeedInput } from '../feed/events.ts';
 import { POST_MAX, QUICK_CHAT, SAVED_TAUNTS_MAX, TAUNT_MAX, fillName } from '../feed/words.ts';
 import { Field } from '../ui/parts.tsx';
 import { ago } from '../ui/when.ts';
@@ -47,32 +48,70 @@ type Names = (player: string) => string;
 /**
  * Feed (SCOPE.md, "Live rivalry and social"): this week's opponent is one tap
  * from a taunt, brags get comments, and every post takes fire, skull and beer
- * reactions. The newest 50 posts, live.
+ * reactions. Mixed in, newest first: check-ins, power-ups, revealed
+ * Demolitions, docks and results, all live.
  */
 export function Feed(props: { me: Me }) {
   const now = useNow();
   const leaguePath = `leagues/${props.me.league}`;
-  const league = useDoc<{ commish?: string; coCommish?: string | null }>(leaguePath);
+  const league = useDoc<{ season?: string | null; commish?: string; coCommish?: string | null }>(leaguePath);
+  const seasonPath = league.data?.season ? `${leaguePath}/seasons/${league.data.season}` : null;
   const players = useAll<{ displayName?: string; taunts?: string[] }>(`${leaguePath}/players`);
   const posts = useLatest<Post>(`${leaguePath}/wall`, 'at', 50);
+  const checkIns = useLatest<FeedInput['checkIns'][number]['data']>(seasonPath ? `${seasonPath}/days` : null, 'firstAt', 20);
+  const kit = useLatest<FeedInput['kit'][number]['data']>(seasonPath ? `${seasonPath}/kit` : null, 'at', 20);
+  const docks = useLatest<FeedInput['adjustments'][number]['data']>(seasonPath ? `${seasonPath}/adjustments` : null, 'at', 10);
+  const weeks = useAll<FeedInput['weeks'][number]['data']>(seasonPath ? `${seasonPath}/weeks` : null);
   const opponent = useOpponent(props.me, now);
   const isCommish = league.data?.commish === props.me.player || league.data?.coCommish === props.me.player;
 
-  const realName: Names = (player) => players.docs.find((found) => found.id === player)?.data.displayName ?? 'a former player';
+  const realName: Names = (player) => (player === 'HOUSE' ? 'The House' : (players.docs.find((found) => found.id === player)?.data.displayName ?? 'a former player'));
   const name: Names = (player) => (player === props.me.player ? 'You' : realName(player));
   const saved = players.docs.find((found) => found.id === props.me.player)?.data.taunts ?? [];
-  const shown = posts.docs.filter((post) => !post.data.deleted);
+  const events = feedEvents({ name, checkIns: checkIns.docs, kit: kit.docs, adjustments: docks.docs, weeks: weeks.docs });
+  const timeline: ({ post: { id: string; data: Post }; at: number } | { event: FeedEvent; at: number })[] = [
+    ...posts.docs.filter((post) => !post.data.deleted).map((post) => ({ post, at: post.data.at ?? now })),
+    ...events.map((event) => ({ event, at: event.at })),
+  ]
+    .sort((a, b) => b.at - a.at)
+    .slice(0, 80);
 
   return (
     <div class="feed">
       <Talk me={props.me} opponent={opponent} saved={saved} />
       <Brag me={props.me} />
-      <section class="feed-wall" aria-label="The wall">
-        {shown.length === 0 && !posts.loading && <p class="fine-print">Nothing on the wall yet. Start something.</p>}
-        {shown.map((post) => (
-          <PostCard key={post.id} me={props.me} id={post.id} post={post.data} now={now} name={name} realName={realName} isCommish={isCommish} />
-        ))}
+      <section class="feed-wall" aria-label="The feed">
+        {timeline.length === 0 && !posts.loading && <p class="fine-print">Nothing on the wall yet. Start something.</p>}
+        {timeline.map((item) =>
+          'post' in item ? (
+            <PostCard key={item.post.id} me={props.me} id={item.post.id} post={item.post.data} now={now} name={name} realName={realName} isCommish={isCommish} />
+          ) : (
+            <EventRow key={item.event.id} event={item.event} now={now} />
+          ),
+        )}
       </section>
+    </div>
+  );
+}
+
+/** A game event in the feed: who did what, and when. */
+function EventRow(props: { event: FeedEvent; now: number }) {
+  const { event } = props;
+  return (
+    <div class="feed-event" data-kind={event.kind}>
+      <p class="feed-event-text">
+        {event.text}
+        {event.outcome && (
+          <>
+            {': '}
+            <strong class="feed-outcome" data-outcome={event.outcome.startsWith('Blocked') ? 'blocked' : event.outcome.toLowerCase()}>
+              {event.outcome}
+            </strong>
+          </>
+        )}
+        <span class="feed-meta"> · {ago(props.now - event.at)}</span>
+      </p>
+      {event.detail && <p class="feed-event-detail">{event.detail}</p>}
     </div>
   );
 }
