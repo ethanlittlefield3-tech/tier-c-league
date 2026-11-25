@@ -1,0 +1,482 @@
+rules_version = '2';
+
+// Tier C League security rules.
+//
+// Phones talk to the database directly, so these rules ARE the referee.
+// Three ideas run through all of them:
+//
+//   1. Identity. A device is in a league only while its claim holds the
+//      player's current recovery key. Rotate the key and every other device
+//      is out.
+//   2. The server's clock decides. Every deadline compares request.time with
+//      the start and lock times in the calendar documents, which only the
+//      jobs can write. A phone's own clock is never trusted.
+//   3. One fixed document per thing. "One Aerial a week" is true because the
+//      week has exactly one Aerial document a player is allowed to write.
+//
+// Anything not matched below is refused. The jobs use the Admin SDK, which
+// skips these rules.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function validKey(key) {
+      return key is string && key.matches('^TCL-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$');
+    }
+
+    // This device's claim in a league: which player it says it is, and the key it holds.
+    function claim(L) {
+      return get(/databases/$(database)/documents/leagues/$(L)/claims/$(request.auth.uid)).data;
+    }
+
+    function currentKey(L, P) {
+      return get(/databases/$(database)/documents/leagues/$(L)/keys/$(P)).data.key;
+    }
+
+    function isMember(L) {
+      let mine = claim(L);
+      return signedIn() && mine.key == currentKey(L, mine.player);
+    }
+
+    function isPlayer(L, P) {
+      let mine = claim(L);
+      return signedIn() && mine.player == P && mine.key == currentKey(L, P);
+    }
+
+    function isCommish(L) {
+      let mine = claim(L);
+      let league = get(/databases/$(database)/documents/leagues/$(L)).data;
+      return signedIn()
+        && mine.key == currentKey(L, mine.player)
+        && (league.commish == mine.player || league.coCommish == mine.player);
+    }
+
+    // Every commish change must arrive in the same save as a brand-new audit
+    // entry that names the change. The audit rule below checks who and when.
+    function audited(L, id, action, target) {
+      let entry = getAfter(/databases/$(database)/documents/leagues/$(L)/audit/$(id)).data;
+      return id is string
+        && !exists(/databases/$(database)/documents/leagues/$(L)/audit/$(id))
+        && entry.action == action
+        && entry.target == target;
+    }
+
+    // A period is one stretch of play with its own kit: 'w02' is regular-season
+    // Week 2, and each playoff round gets its own tag. Kit documents are named
+    // by period, so each period has exactly one of each item per player.
+    function validPeriod(period) {
+      return period is string && period.matches('^[a-z][0-9]{2}$');
+    }
+
+    // ---- League codes -------------------------------------------------------
+    // Knowing a code is what lets you find a league. Codes can be looked up one
+    // at a time by anyone signed in, and never listed.
+    match /codes/{code} {
+      allow get: if signedIn();
+    }
+
+    // ---- Push settings ------------------------------------------------------
+    match /devices/{device} {
+      allow read, write: if signedIn() && request.auth.uid == device;
+    }
+
+    match /leagues/{L} {
+      allow get: if isMember(L);
+      allow update: if joins() || leaves() || commishEdits();
+
+      // A new player adds exactly themselves to the member list, with the
+      // right league code, in the same save that creates their key and claim.
+      function joins() {
+        let before = resource.data;
+        let after = request.resource.data;
+        let mine = getAfter(/databases/$(database)/documents/leagues/$(L)/claims/$(request.auth.uid)).data;
+        let change = after.members.diff(before.members);
+        return signedIn()
+          && after.diff(before).affectedKeys().hasOnly(['members'])
+          && change.addedKeys().hasOnly([mine.player])
+          && change.addedKeys().hasAll([mine.player])
+          && change.removedKeys().size() == 0
+          && change.changedKeys().size() == 0
+          && after.members[mine.player] == true
+          && after.members.size() <= 12
+          && before.joining == 'open'
+          && mine.code == before.code
+          && mine.key == getAfter(/databases/$(database)/documents/leagues/$(L)/keys/$(mine.player)).data.key;
+      }
+
+      // A player removes exactly themselves. The commish hands the role over first.
+      function leaves() {
+        let before = resource.data;
+        let after = request.resource.data;
+        let me = claim(L).player;
+        let change = after.members.diff(before.members);
+        return isPlayer(L, me)
+          && after.diff(before).affectedKeys().hasOnly(['members'])
+          && change.removedKeys().hasOnly([me])
+          && change.removedKeys().hasAll([me])
+          && change.addedKeys().size() == 0
+          && change.changedKeys().size() == 0
+          && before.commish != me;
+      }
+
+      function commishEdits() {
+        let after = request.resource.data;
+        return isCommish(L)
+          && after.diff(resource.data).affectedKeys().hasOnly(['name', 'joining', 'commish', 'coCommish', 'members', 'season', 'audit'])
+          && audited(L, after.audit, 'league.settings', 'league')
+          && after.name is string && after.name.size() >= 1 && after.name.size() <= 40
+          && after.joining in ['open', 'approval', 'closed']
+          && after.members is map && after.members.size() >= 1 && after.members.size() <= 12
+          && after.commish is string && after.commish in after.members
+          && (after.coCommish == null || (after.coCommish is string && after.coCommish in after.members));
+      }
+
+      // ---- Players ----------------------------------------------------------
+      match /players/{P} {
+        allow read: if isMember(L);
+
+        // Created only while joining: the same save puts this player on the member list.
+        allow create: if signedIn()
+          && request.resource.data.keys().hasOnly(['displayName', 'car', 'joinedAt'])
+          && validProfile(request.resource.data)
+          && request.resource.data.joinedAt == request.time
+          && getAfter(/databases/$(database)/documents/leagues/$(L)/claims/$(request.auth.uid)).data.player == P
+          && joinsNow(P);
+
+        // Players edit their own name and car. Badges, ranks, stats and
+        // unlocked parts come from the jobs.
+        allow update: if isPlayer(L, P)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'car'])
+          && validProfile(request.resource.data);
+      }
+
+      function validProfile(profile) {
+        return profile.displayName is string
+          && profile.displayName.size() >= 1
+          && profile.displayName.size() <= 24
+          && (!('car' in profile) || profile.car is map);
+      }
+
+      // True when this save adds the player to the member list.
+      function joinsNow(P) {
+        return getAfter(/databases/$(database)/documents/leagues/$(L)).data.members[P] == true
+          && !(P in get(/databases/$(database)/documents/leagues/$(L)).data.members);
+      }
+
+      // ---- Recovery keys ----------------------------------------------------
+      match /keys/{P} {
+        allow get: if isPlayer(L, P) || isCommish(L);
+        allow list: if isCommish(L);
+
+        // A first key is only ever made while joining.
+        allow create: if signedIn()
+          && request.resource.data.keys().hasOnly(['key', 'rotatedAt'])
+          && validKey(request.resource.data.key)
+          && request.resource.data.rotatedAt == request.time
+          && !exists(/databases/$(database)/documents/leagues/$(L)/players/$(P))
+          && joinsNow(P)
+          && holdsAfter(P, request.resource.data.key);
+
+        allow update: if rotates(P) || reissues(P);
+      }
+
+      // After this save, this device's claim is for player P with this key.
+      function holdsAfter(P, key) {
+        let mine = getAfter(/databases/$(database)/documents/leagues/$(L)/claims/$(request.auth.uid)).data;
+        return mine.player == P && mine.key == key;
+      }
+
+      // Rotation: whoever knows the current key may replace it. Writing the old
+      // key into `prev` is the proof, because nobody else can read it. Every
+      // other device's claim stops matching, which signs it out.
+      function rotates(P) {
+        let after = request.resource.data;
+        return signedIn()
+          && after.diff(resource.data).affectedKeys().hasOnly(['key', 'prev', 'rotatedAt'])
+          && after.prev == resource.data.key
+          && validKey(after.key)
+          && after.key != resource.data.key
+          && after.rotatedAt == request.time
+          && holdsAfter(P, after.key);
+      }
+
+      // The commish can reissue a key, or blank it to remove a player. Logged.
+      function reissues(P) {
+        let after = request.resource.data;
+        return isCommish(L)
+          && after.diff(resource.data).affectedKeys().hasOnly(['key', 'prev', 'rotatedAt', 'audit'])
+          && (validKey(after.key) || after.key == '')
+          && after.rotatedAt == request.time
+          && audited(L, after.audit, 'key.reissue', 'keys/' + P);
+      }
+
+      // ---- Device claims ----------------------------------------------------
+      match /claims/{device} {
+        allow get: if (signedIn() && request.auth.uid == device) || isCommish(L);
+        allow list: if isCommish(L);
+
+        // A claim is only accepted with the key that player has once this save
+        // is done. Unless the key is being set in the same save (joining,
+        // recovery), that means knowing the current key.
+        allow create, update: if signedIn()
+          && request.auth.uid == device
+          && request.resource.data.keys().hasOnly(['player', 'key', 'code', 'at'])
+          && request.resource.data.player is string
+          && validKey(request.resource.data.key)
+          && request.resource.data.at == request.time
+          && request.resource.data.key
+            == getAfter(/databases/$(database)/documents/leagues/$(L)/keys/$(request.resource.data.player)).data.key;
+
+        allow delete: if signedIn() && request.auth.uid == device;
+      }
+
+      // ---- Audit log --------------------------------------------------------
+      // Readable by the whole league. Written only by the commish, stamped by
+      // the server, and never edited or deleted.
+      match /audit/{auditId} {
+        allow read: if isMember(L);
+        allow create: if isCommish(L)
+          && request.resource.data.keys().hasOnly(['by', 'at', 'action', 'target', 'reason'])
+          && request.resource.data.keys().hasAll(['by', 'at', 'action', 'target', 'reason'])
+          && request.resource.data.by == claim(L).player
+          && request.resource.data.at == request.time
+          && request.resource.data.action is string
+          && request.resource.data.action.size() >= 1 && request.resource.data.action.size() <= 60
+          && request.resource.data.target is string && request.resource.data.target.size() <= 200
+          && request.resource.data.reason is string && request.resource.data.reason.size() <= 500;
+      }
+
+      // ---- Seasons ----------------------------------------------------------
+      match /seasons/{S} {
+        allow read: if isMember(L);
+
+        allow create: if isCommish(L)
+          && request.resource.data.keys().hasOnly(settingFields())
+          && validSettings(request.resource.data)
+          && request.resource.data.status == 'setup'
+          && audited(L, request.resource.data.audit, 'season.settings', 'seasons/' + S);
+
+        // Settings can change until the season leaves setup. After that the
+        // par, the time zone, the dates and the length are fixed.
+        allow update: if isCommish(L)
+          && resource.data.status == 'setup'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(settingFields())
+          && validSettings(request.resource.data)
+          && audited(L, request.resource.data.audit, 'season.settings', 'seasons/' + S);
+
+        function settingFields() {
+          return ['name', 'status', 'regularWeeks', 'playoffs', 'playoffSize', 'par', 'groupWeeks',
+                  'timeZone', 'kickoff', 'draftAt', 'joinMidSeason', 'holidayEvents', 'updatedAt', 'audit'];
+        }
+
+        function validSettings(s) {
+          return s.name is string && s.name.size() >= 1 && s.name.size() <= 40
+            && s.status in ['setup', 'draft']
+            && s.regularWeeks is int && s.regularWeeks >= 3 && s.regularWeeks <= 12
+            && s.playoffs in ['none', 'oneWeek', 'twoWeeks']
+            && s.playoffSize in [2, 4]
+            && s.par is int && s.par >= 1 && s.par <= 6
+            && s.groupWeeks is list && s.groupWeeks.size() <= 11
+            && s.groupWeeks.hasOnly([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+            && s.timeZone is string && s.timeZone.size() >= 1 && s.timeZone.size() <= 64
+            && s.kickoff is string && s.kickoff.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+            && (s.draftAt == null || s.draftAt is timestamp)
+            && s.joinMidSeason is bool
+            && s.holidayEvents is bool
+            && s.updatedAt == request.time;
+        }
+
+        // The day's start and lock times. Only the jobs write these.
+        function cal(date) {
+          return get(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/calendar/$(date)).data;
+        }
+
+        function isOpen(date) {
+          let day = cal(date);
+          return request.time >= day.start && request.time < day.lock;
+        }
+
+        // A player's rest day is the one they moved it to, otherwise Sunday.
+        function isRestDay(period, player, date, day) {
+          let moved = get(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/kit/$(period + '_' + player + '_rest'));
+          return moved == null
+            ? (day.phase == 'regular' && day.dayIndex == 6)
+            : moved.data.date == date;
+        }
+
+        match /calendar/{date} {
+          allow read: if isMember(L);
+        }
+
+        match /weeks/{week} {
+          allow read: if isMember(L);
+        }
+
+        // ---- Daily logs -----------------------------------------------------
+        // Your own day, and only between its start and its lock.
+        match /days/{dayId} {
+          allow read: if isMember(L);
+
+          allow create: if validDay(request.resource.data)
+            && dayId == request.resource.data.player + '_' + request.resource.data.date
+            && request.resource.data.firstAt == request.time
+            && isPlayer(L, request.resource.data.player)
+            && isOpen(request.resource.data.date);
+
+          allow update: if validDay(request.resource.data)
+            && request.resource.data.player == resource.data.player
+            && request.resource.data.date == resource.data.date
+            && request.resource.data.firstAt == resource.data.firstAt
+            && isPlayer(L, resource.data.player)
+            && isOpen(resource.data.date);
+        }
+
+        function validDay(day) {
+          return day.keys().hasOnly(['player', 'date', 'goals', 'screenMinutes', 'beers', 'firstAt', 'updatedAt'])
+            && day.keys().hasAll(['player', 'date', 'goals', 'screenMinutes', 'beers', 'firstAt', 'updatedAt'])
+            && day.player is string
+            && day.date is string
+            && day.goals.keys().hasOnly(['mind', 'body', 'wildcard'])
+            && day.goals.keys().hasAll(['mind', 'body', 'wildcard'])
+            && day.goals.mind is bool && day.goals.body is bool && day.goals.wildcard is bool
+            && (day.screenMinutes == null
+                || (day.screenMinutes is int && day.screenMinutes >= 0
+                    && day.screenMinutes <= 1440 && day.screenMinutes % 15 == 0))
+            && day.beers is int && day.beers >= 0 && day.beers <= 30
+            && day.updatedAt == request.time;
+        }
+
+        // ---- Aerial, Full Boost, rest day and Rule One ----------------------
+        // Everyone can see these. Demolition is not here: it is sealed, below.
+        match /kit/{kitId} {
+          allow read: if isMember(L);
+
+          allow create: if validKit(kitId, request.resource.data)
+            && canPlay(request.resource.data);
+
+          // Moving one to another day: the old play must still be undoable.
+          allow update: if validKit(kitId, request.resource.data)
+            && request.resource.data.player == resource.data.player
+            && request.resource.data.item == resource.data.item
+            && canUndo(resource.data)
+            && canPlay(request.resource.data);
+
+          // Taking one back. A rest day is never deleted, only moved.
+          allow delete: if resource.data.item != 'rest'
+            && isPlayer(L, resource.data.player)
+            && canUndo(resource.data);
+        }
+
+        function validKit(id, play) {
+          return play.at == request.time
+            && play.player is string
+            && play.date is string
+            && (play.item == 'ruleOne' || validPeriod(play.period))
+            && ((play.item == 'aerial'
+                  && play.keys().hasOnly(['player', 'item', 'period', 'date', 'at'])
+                  && id == play.period + '_' + play.player + '_aerial')
+              || (play.item == 'fullBoost'
+                  && play.keys().hasOnly(['player', 'item', 'period', 'date', 'lane', 'at'])
+                  && play.lane in ['mind', 'body', 'wildcard']
+                  && id == play.period + '_' + play.player + '_fullBoost')
+              || (play.item == 'rest'
+                  && play.keys().hasOnly(['player', 'item', 'period', 'date', 'at'])
+                  && id == play.period + '_' + play.player + '_rest')
+              || (play.item == 'ruleOne'
+                  && play.keys().hasOnly(['player', 'item', 'number', 'date', 'at'])
+                  && play.number in [1, 2, 3]
+                  && id == 'ruleOne_' + play.player + '_' + string(play.number)));
+        }
+
+        // The timing of each play, by the server's clock.
+        function canPlay(play) {
+          let day = cal(play.date);
+          return isPlayer(L, play.player)
+            && (
+              // Aerial: after the period's kit refills, before the day starts.
+              (play.item == 'aerial'
+                && day.period == play.period && 'aerial' in day.kit
+                && request.time >= day.periodStart && request.time < day.start)
+              // Full Boost: while the day is open, and never on a rest day.
+              || (play.item == 'fullBoost'
+                && day.period == play.period && 'fullBoost' in day.kit
+                && request.time >= day.start && request.time < day.lock
+                && !isRestDay(play.period, play.player, play.date, day))
+              // Rest day: a day of the same week that has not started. The
+              // first move also needs the default Sunday to be still ahead.
+              || (play.item == 'rest'
+                && day.period == play.period && day.phase == 'regular'
+                && request.time < day.start && request.time >= day.restOpens
+                && (resource != null || request.time < day.sundayStart))
+              // Rule One: while the day is open, regular season, once issued.
+              || (play.item == 'ruleOne'
+                && day.phase == 'regular'
+                && request.time >= day.start && request.time < day.lock
+                && request.time >= get(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)).data.ruleOneIssue[play.number - 1])
+            );
+        }
+
+        // Whether an earlier play can still be changed or taken back.
+        function canUndo(old) {
+          let day = cal(old.date);
+          return ((old.item == 'aerial' || old.item == 'rest') && request.time < day.start)
+            || ((old.item == 'fullBoost' || old.item == 'ruleOne') && request.time < day.lock);
+        }
+
+        // ---- Sealed items ---------------------------------------------------
+        // A Demolition is readable only by the player who set it until its
+        // day locks. There is no exception for the commish. A document that
+        // does not exist is refused the same way, so nobody can probe for one.
+        match /sealed/{sealedId} {
+          allow get: if isMember(L)
+            && (resource.data.player == claim(L).player || request.time >= resource.data.revealAt);
+          allow list: if isMember(L) && resource.data.player == claim(L).player;
+          allow create: if validDemolition(sealedId, request.resource.data);
+        }
+
+        function validDemolition(id, play) {
+          let day = cal(play.date);
+          let week = get(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/weeks/$(play.period)).data;
+          return play.keys().hasOnly(['kind', 'player', 'period', 'target', 'date', 'lane', 'revealAt', 'at'])
+            && play.keys().hasAll(['kind', 'player', 'period', 'target', 'date', 'lane', 'revealAt', 'at'])
+            && validPeriod(play.period)
+            && play.kind == 'demolition'
+            && id == play.period + '_' + play.player + '_demolition'
+            && isPlayer(L, play.player)
+            && play.lane in ['mind', 'body', 'wildcard']
+            && play.target is string && play.target != 'HOUSE'
+            && play.target in week.targets[play.player]
+            && day.period == play.period && 'demolition' in day.kit
+            && request.time >= day.periodStart && request.time < day.start
+            && play.revealAt == day.lock
+            && play.at == request.time
+            && !isRestDay(play.period, play.target, play.date, day);
+        }
+
+        // ---- Docks, voids and corrections -----------------------------------
+        // The commish never edits a player's day. A score change is its own
+        // document with a reason, and it can't be edited or deleted later.
+        match /adjustments/{adjustmentId} {
+          allow read: if isMember(L);
+          allow create: if isCommish(L)
+            && request.resource.data.keys().hasOnly(['player', 'date', 'amount', 'void', 'reason', 'by', 'at', 'audit'])
+            && request.resource.data.player is string
+            && request.resource.data.date is string
+            && request.resource.data.amount is int
+            && request.resource.data.amount >= -20 && request.resource.data.amount <= 20
+            && (request.resource.data.void == null
+                || request.resource.data.void in ['screen', 'mind', 'body', 'wildcard'])
+            && request.resource.data.reason is string
+            && request.resource.data.reason.size() >= 1 && request.resource.data.reason.size() <= 300
+            && request.resource.data.by == claim(L).player
+            && request.resource.data.at == request.time
+            && audited(L, request.resource.data.audit, 'score.adjust', 'adjustments/' + adjustmentId);
+        }
+      }
+    }
+  }
+}
