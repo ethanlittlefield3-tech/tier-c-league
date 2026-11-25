@@ -3,6 +3,7 @@ import { PlayerBadge } from '../art/PlayerBadge.tsx';
 import { TAB_ICONS, type Tab } from '../art/tabIcons.tsx';
 import type { Me } from '../data/identity.ts';
 import { initialOf } from '../join/name.ts';
+import { AuditLog } from './AuditLog.tsx';
 import { Commish } from './Commish.tsx';
 import { Match } from './Match.tsx';
 import { Profile } from './Profile.tsx';
@@ -49,6 +50,7 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
   const [tab, setTab] = useState<Tab>('today');
   const [profileOpen, setProfileOpen] = useState(false);
   const [commishOpen, setCommishOpen] = useState(false);
+  const [logOpen, setLogOpen] = useState(false);
   const [backFromProfile, setBackFromProfile] = useState(false);
   const meButton = useRef<HTMLButtonElement>(null);
 
@@ -56,6 +58,10 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
   useEffect(() => {
     if (!profileOpen && backFromProfile) meButton.current?.focus({ preventScroll: true });
   }, [profileOpen, backFromProfile]);
+
+  if (logOpen) {
+    return <AuditLog me={props.me} onBack={() => setLogOpen(false)} />;
+  }
 
   if (commishOpen) {
     return <Commish me={props.me} onBack={() => setCommishOpen(false)} />;
@@ -65,6 +71,7 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
     return (
       <Profile
         onCommish={() => setCommishOpen(true)}
+        onLog={() => setLogOpen(true)}
         me={props.me}
         onBack={() => {
           setBackFromProfile(true);

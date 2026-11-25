@@ -376,3 +376,10 @@
 .today-status-error {
   color: #ff9aa2;
 }
+
+.today-fix {
+  margin: 6px 0 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ff9aa2;
+}

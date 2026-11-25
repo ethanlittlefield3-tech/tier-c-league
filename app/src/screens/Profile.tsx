@@ -20,7 +20,7 @@ const TROUBLE: Record<Trouble, string> = {
  * and signing this phone out. Badges, rank history, stats, notification
  * settings and "Suggest an idea" arrive with the features they belong to.
  */
-export function Profile(props: { me: Me; onBack: () => void; onRenamed: (me: Me) => void; onSignedOut: () => void; onCommish: () => void }) {
+export function Profile(props: { me: Me; onBack: () => void; onRenamed: (me: Me) => void; onSignedOut: () => void; onCommish: () => void; onLog: () => void }) {
   const league = useDoc<{ commish?: string; coCommish?: string | null }>(`leagues/${props.me.league}`);
   const isCommish = league.data !== null && (league.data.commish === props.me.player || league.data.coCommish === props.me.player);
   const [name, setName] = useState(props.me.displayName);
@@ -198,6 +198,14 @@ export function Profile(props: { me: Me; onBack: () => void; onRenamed: (me: Me)
               </button>
             </>
           )}
+        </section>
+
+        <section class="panel" aria-labelledby="profile-log-title">
+          <h2 id="profile-log-title">League log</h2>
+          <p class="panel-text">Everything the commish has done, with the reason.</p>
+          <button type="button" class="btn btn-second" onClick={props.onLog}>
+            Open the league log
+          </button>
         </section>
 
         <p class="profile-credit">

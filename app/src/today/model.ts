@@ -6,7 +6,7 @@
  * The phone's clock only decides what to show. Whether a save is accepted is
  * decided by the server, against the calendar (firebase/firestore.rules).
  */
-import { addDays, localDate, scoreDay, type DateStr, type DayLog, type DayScore, type Lane } from '@tcl/engine';
+import { addDays, localDate, scoreDay, type DateStr, type DayLog, type DayScore, type Lane, type Square } from '@tcl/engine';
 
 /** What a player has logged for a day: three yes-or-no goals, screen minutes (or none yet) and beers. */
 export interface DayEntry {
@@ -56,6 +56,9 @@ export function liveDayScore(input: {
   fullBoost?: Lane | null;
   ruleOne?: boolean;
   demolitions?: readonly Lane[];
+  /** Squares the commish voided, and docks or corrections, for this day. */
+  voided?: readonly Square[];
+  adjustments?: readonly number[];
 }): DayScore {
   return scoreDay(
     {
@@ -66,6 +69,8 @@ export function liveDayScore(input: {
       fullBoost: input.fullBoost ?? null,
       ruleOne: input.ruleOne === true,
       demolitions: input.demolitions ?? [],
+      voided: input.voided ?? [],
+      adjustments: input.adjustments ?? [],
     },
     { open: !input.locked },
   );

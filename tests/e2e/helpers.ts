@@ -63,3 +63,15 @@ export async function expectInApp(page: Page, name: string, leagueName: string):
   await expect(page.getByRole('button', { name: `Your profile, ${name}`, exact: true })).toBeVisible();
   await expect(page.locator('.frame-league')).toHaveText(leagueName);
 }
+
+/** The commish of a test league gets in on this phone with the key the league was made with. */
+export async function enterAsCommish(page: Page, league: TestLeague): Promise<void> {
+  const button = (label: string) => page.getByRole('button', { name: label, exact: true });
+  await enter(page);
+  await button("I'm already in a league").click();
+  await page.getByLabel('League code').fill(league.code);
+  await page.getByLabel('Recovery key').fill(league.commishKey);
+  await button('Find my profile').click();
+  await button("I've saved it").click();
+  await expect(page.getByRole('navigation', { name: 'Main' })).toBeVisible();
+}

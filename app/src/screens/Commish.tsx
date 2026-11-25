@@ -6,12 +6,18 @@ import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
 import { whyOf } from '../data/why.ts';
 import { Back, Field, Heading } from '../ui/parts.tsx';
+import { CommishPlayers } from './CommishPlayers.tsx';
+import { CommishScores } from './CommishScores.tsx';
 import './commish.css';
 
 interface LeagueDoc {
   name?: string;
   code?: string;
   season?: string | null;
+  commish?: string;
+  coCommish?: string | null;
+  members?: Record<string, boolean>;
+  joining?: string;
 }
 
 interface SeasonDoc extends Omit<SeasonSettings, 'draftAt'> {
@@ -319,6 +325,11 @@ export function Commish(props: { me: Me; onBack: () => void }) {
           <p class={note.error ? 'field-error setup-note' : 'panel-ok setup-note'} role="status">
             {note.text}
           </p>
+        )}
+
+        {league.data && <CommishPlayers me={props.me} league={league.data} />}
+        {league.data && seasonId && season.data && (
+          <CommishScores me={props.me} seasonId={seasonId} timeZone={season.data.timeZone} members={Object.keys(league.data.members ?? {})} />
         )}
       </div>
     </main>

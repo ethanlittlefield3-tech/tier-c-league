@@ -133,3 +133,122 @@
 .setup-fine {
   text-align: center;
 }
+
+/* ---- Players and keys ----------------------------------------------------- */
+
+.people {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.person {
+  width: 100%;
+  min-height: 50px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid rgba(196, 216, 255, 0.2);
+  border-radius: 12px;
+  background: rgba(17, 30, 73, 0.9);
+  font: 700 16px/1.2 var(--body);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.person[aria-expanded='true'] {
+  border-color: var(--blue);
+}
+
+.person:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.person-role {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(255, 207, 63, 0.16);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.person-tools {
+  padding: 4px 4px 8px;
+}
+
+.person-tools .btn {
+  width: 100%;
+  min-width: 0;
+  margin-top: 8px;
+}
+
+.person-actions {
+  display: flex;
+  flex-direction: column;
+}
+
+.person-remove {
+  align-self: center;
+  color: #ff9aa2;
+}
+
+.commish-key {
+  margin: 10px 0 0;
+  padding: 12px 10px;
+  border: 2px solid var(--gold);
+  border-radius: 12px;
+  font: italic 900 24px/1 var(--display);
+  letter-spacing: 0.08em;
+  text-align: center;
+  color: var(--gold);
+  user-select: all;
+  -webkit-user-select: all;
+}
+
+/* ---- The league log ------------------------------------------------------- */
+
+.log {
+  width: 100%;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+
+.log-entry {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(196, 216, 255, 0.14);
+  background: rgba(17, 30, 73, 0.9);
+}
+
+.log-what {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.log-why {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: var(--ink);
+  opacity: 0.85;
+}
+
+.log-when {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+}

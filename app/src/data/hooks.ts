@@ -105,6 +105,36 @@ export function usePeek<T>(path: string | null, again: number): T | null {
   return data;
 }
 
+/** Every document in a collection, live. Nothing while `path` is `null`. */
+export function useAll<T>(path: string | null): { loading: boolean; docs: { id: string; data: T }[]; error: Trouble | null } {
+  const [state, setState] = useState<{ loading: boolean; docs: { id: string; data: T }[]; error: Trouble | null }>({ loading: path !== null, docs: [], error: null });
+  useEffect(() => {
+    if (path === null) {
+      setState({ loading: false, docs: [], error: null });
+      return undefined;
+    }
+    setState({ loading: true, docs: [], error: null });
+    let stop: (() => void) | null = null;
+    let stopped = false;
+    loadData().then(
+      (api) => {
+        if (stopped) return;
+        stop = api.watchAll(
+          path,
+          (docs) => setState({ loading: false, docs: docs as { id: string; data: T }[], error: null }),
+          (why) => setState((before) => ({ ...before, loading: false, error: why })),
+        );
+      },
+      () => setState((before) => ({ ...before, loading: false, error: 'offline' })),
+    );
+    return () => {
+      stopped = true;
+      stop?.();
+    };
+  }, [path]);
+  return state;
+}
+
 /** The time now, updated twice a minute, so a day rolls over and locks on screen. */
 export function useNow(): number {
   const [now, setNow] = useState(() => Date.now());

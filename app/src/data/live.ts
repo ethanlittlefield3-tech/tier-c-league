@@ -90,3 +90,24 @@ export async function peekDoc(path: string): Promise<Record<string, unknown> | n
     return null;
   }
 }
+
+/** Every document in a collection, now and after every change. */
+export function watchAll(path: string, onChange: (docs: { id: string; data: Record<string, unknown> }[]) => void, onError: (why: Trouble) => void): () => void {
+  let stop: (() => void) | null = null;
+  let stopped = false;
+  connect().then(
+    ({ db }) => {
+      if (stopped) return;
+      stop = onSnapshot(
+        collection(db, path),
+        (snapshot) => onChange(snapshot.docs.map((found) => ({ id: found.id, data: plain(found.data({ serverTimestamps: 'estimate' })) as Record<string, unknown> }))),
+        (error) => onError(trouble(error).why),
+      );
+    },
+    (error: unknown) => onError(trouble(error).why),
+  );
+  return () => {
+    stopped = true;
+    stop?.();
+  };
+}

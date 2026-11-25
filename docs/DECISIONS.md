@@ -112,6 +112,13 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 55. **The tray plays into the week of today's date.** Yesterday's Full Boost, Aerial and rest day come from yesterday's own week, so Sunday's Full Boost still works on Monday morning (call 7).
 56. **A bye week against The House has no Demolition.** The tile says "Bye week". Before the schedule exists, it says "No opponent yet".
 
+**Commish tools** (new on 2026-11-26, not yet reviewed by the commish)
+
+65. **"Sign out a lost device" is the same button as "Reissue key".** This was one of the open questions; this is the proposal from PROGRESS.md, built. A new key signs out every phone that player is on, and they get back in with the new key. Signing out one phone at a time would need the commish to tell the phones apart.
+66. **Handing over the commish role makes the old commish the co-commish,** so nobody is locked out by a slip. The new commish can remove the co-commish afterwards.
+67. **A void also takes 1 point off,** as SCOPE.md says for fake proof. A plain dock is −1, and a correction is anything from −20 to +20 except 0.
+68. **The league log names people by their current display name,** and a removed player shows as "a former player".
+
 **Today's layout** (new on 2026-11-25, not yet reviewed by the commish)
 
 61. **The day total moved below the beers,** as in the mockup, so the four squares get the top of the screen. It now shows its parts: "Goals +2 · screen +1 · beers −1".

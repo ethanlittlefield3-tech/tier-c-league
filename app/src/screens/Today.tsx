@@ -211,7 +211,19 @@ export function Today(props: { me: Me }) {
   const boostLane = shownBoost && shownBoost.date === date ? (shownBoost.lane ?? null) : null;
   const aerialHere = shownAerial !== null && shownAerial.date === date;
   const ruleOneHere = ruleOnes.some((play) => play.date === date);
-  const score = liveDayScore({ par: season.data.par, entry, restDay, locked: dayWindow === 'locked', aerial: aerialHere, fullBoost: boostLane, ruleOne: ruleOneHere });
+  // Commish docks, corrections and voids on this day.
+  const fixes = myChanges.docs.map((found) => found.data).filter((change) => change.date === date);
+  const score = liveDayScore({
+    par: season.data.par,
+    entry,
+    restDay,
+    locked: dayWindow === 'locked',
+    aerial: aerialHere,
+    fullBoost: boostLane,
+    ruleOne: ruleOneHere,
+    voided: fixes.flatMap((change) => (change.void ? [change.void] : [])),
+    adjustments: fixes.map((change) => change.amount).filter((amount) => amount !== 0),
+  });
 
   const save = (next: DayEntry) => {
     if (!editable || !date || !seasonId) return;
@@ -353,6 +365,12 @@ export function Today(props: { me: Me }) {
         </p>
         {breakdown(score) && <p class="today-breakdown">{breakdown(score)}</p>}
         {ruleOneHere ? <p class="today-kit">Rule One: this day scores 0</p> : aerialHere ? <p class="today-kit">Aerial: this day counts double</p> : null}
+        {fixes.map((change) => (
+          <p class="today-fix">
+            Commish: {change.amount > 0 ? `+${change.amount}` : `\u2212${-change.amount}`}
+            {change.void ? `, ${change.void === 'screen' ? 'screen time' : change.void} voided` : ''}
+          </p>
+        ))}
       </section>
 
       <p class={error ? 'today-status today-status-error' : 'today-status'} role="status">
