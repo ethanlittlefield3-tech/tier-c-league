@@ -373,6 +373,18 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 
 210. **The draft's reveal is the Draft screen once the schedule is built:** the full schedule is in League, and a Season hype card button draws a picture of the season to share, like the highlight reel: the kickoff, the season's length, everyone's car, the group-play weeks and Week 1's matchups, by real names.
 
+**Phase 3: settling group play** (new on 2026-11-25, not yet reviewed by the commish). Scoring readings here are also in "Still open".
+
+211. **A group-play week counts like any week:** your own points plus the mode's bonus. Team Week and 2v2 results count in W–D–L. Bounty and Alley weeks count toward nobody's wins, draws or losses, since nobody faces anyone. Only a 1v1 against a player (a regular week, Rumble or Drop Shot) counts head-to-head, in rivalry records, in streak headlines and in the 1v1 badges.
+212. **Team Week and 2v2 sides compare average points per player, then average beers, fewer winning; still level is a draw.** Averages are compared as exact fractions, so 31 points across 3 players is level with 62 across 6. A draw adds no bonus ("Still open" item 5).
+213. **The 2v2 draw:** players pair off in a random order, and with an odd count the last three are a trio. With an odd number of duos, one duo of two (never the trio) faces a House duo, which scores the average of everyone else. "Frenemies" pairs each player with their Week 1 rival from the draft; players whose rival was The House, or has left, pair up with each other, and one left over joins a duo as its third.
+214. **Bounty targets come in SCOPE.md's three shapes:** goals hit in one lane, or any lane, across the league ("60 Body hits"); a day with no beers league-wide; and a day with everyone under a screen-time limit. A Full Boosted goal counts as a hit, as it does everywhere (call 3). "Under 2 hours" means less than 2 hours, so logging exactly 2 hours breaks it, and so does not logging screen time that day.
+215. **Rule One changes points, not what was logged.** A Rule One day's goals still count toward a Bounty, and its beers or screen time can still break one, the way its beers already count for tiebreaks (call 5).
+216. **"Targets assume one rest day per player" is read as how a count is sized:** the most a lane can reach is 6 days per player, so 60 Body hits is everything 10 players can do. If the commish sets no target before the week starts, it is 2 goals a day each in any lane, 12 per player.
+217. **A missed Bounty:** for a count target, the lowest contributors spin, every tied one; for a day target, everyone who broke it spins. A Bounty that is hit leaves the Wheel to the lowest points, as usual.
+218. **Alley race points are the week's points, with 2 off for each goal day with no goals hit, once that day locks.** A rest day or a Rule One day never hits the wall. A tie in the race goes to fewer beers, and players still level share the place and its bonus: two firsts get +5 each, and the next car is third. Everyone tied for last spins.
+219. **Drop Shot floors break tile by tile:** a hit cracks a tile and the next hit breaks it, so the tiles broken are half the hits landed, rounded down. Whichever order tiles break in, more hits always means at least as many tiles, so the winner is whoever lands the most hits. Against The House, its day is the average of everyone else's that day, and only a whole point of margin lands a hit.
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.
@@ -385,6 +397,9 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 2. **A goal still vetoed when the votes close.** For now the results list it for the commish to settle, for example by reopening the votes for 12 hours so the player can re-word it. Should something happen on its own instead?
 3. **The Wheel's 16 slices. Built provisionally.** SCOPE.md's pool (8 starters plus one dare per player) can reach 20, but the wheel holds 16. The wheel takes every dare from the draft that stands, then starter dares picked at random each week to fill it to 16. Changing it is one function, `wheelPool` in `engine/src/wheel.ts`.
 4. **A spinner who never taps Spin. Built provisionally.** Proof is due by 11:59 pm on the Sunday after the draw, whether or not they have spun, so not spinning is a dodge (−3 Season Points) once that Sunday ends. Changing it is one function, `dareDue`.
+
+5. **A draw in Team Week or 2v2. Built provisionally:** no bonus, since SCOPE.md gives +3 only to the winning side (call 212). The other reading is a draw bonus, like the 1v1's +2.
+6. **Bounty and Alley edge cases. Built provisionally:** a screen-time target is broken by logging exactly the limit or by not logging screen time that day (call 214); a missed count target spins its lowest contributors (call 217); and an Alley tie goes to fewer beers, then shares the place and its full bonus (call 218).
 
 The receipts question that was here is now ruling R6.
 

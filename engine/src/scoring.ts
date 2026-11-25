@@ -31,6 +31,18 @@ export const RULES = {
   receiptPenalty: -1,
   winBonus: 5,
   drawBonus: 2,
+  /** Team Week and 2v2: each player on the winning side. */
+  sideBonus: 3,
+  /** Bounty Week: everyone, when the target is hit. */
+  bountyBonus: 3,
+  /** Alley: 1st, 2nd and 3rd place. */
+  alleyBonus: [5, 3, 1],
+  /** Alley: a goal day with no goals hit costs race points, never Season Points. */
+  alleyWall: -2,
+  /** Drop Shot: tiles on each floor, hits to break a tile, and the most hits a day can land. */
+  dropShotTiles: 20,
+  dropShotHitsPerTile: 2,
+  dropShotDailyHits: 4,
   dareDodger: -3,
   parMin: 1,
   parMax: 6,

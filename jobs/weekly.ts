@@ -20,7 +20,7 @@ import { approvedDares, drawsDue, type Draw } from './lib/wheel.ts';
 import { settleDue, standingsFrom, type PlayerWeekData, type WeekLineStored } from './lib/settle.ts';
 import { badgeUpdate, seasonBadgeData } from './lib/badge-facts.ts';
 import { reactionCount } from './lib/activity.ts';
-import { withWeek, type RankEntry } from './lib/ranks.ts';
+import { matchupOf, withWeek, type RankEntry } from './lib/ranks.ts';
 import { weekReads } from './lib/week-reads.ts';
 
 const { app, emulator } = connect();
@@ -133,7 +133,7 @@ for (const league of leagues) {
           period,
           points: line.points,
           par: Number(season.get('par')),
-          ...(result ? { outcome: result.outcome, against: result.opponentPoints } : {}),
+          ...matchupOf(result),
         });
         await profile.set({ rank: ranked.rank, rankHistory: ranked.history }, { merge: true });
         // A rank change is news for the league feed.

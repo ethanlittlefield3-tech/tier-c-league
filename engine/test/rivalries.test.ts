@@ -30,6 +30,15 @@ describe('Rivalry records', () => {
     expect(records.HOUSE).toBeUndefined();
   });
 
+  it('Team Week, 2v2, Bounty and Alley weeks make no record; Rumble and Drop Shot are 1v1s, so they do', () => {
+    const records = rivalRecords([
+      { season: 's1', week: 2, results: { sam: { opponent: 'GROUP', outcome: 'win' }, maya: { opponent: 'GROUP', outcome: 'none' } } },
+      week('s1', 3, [['sam', 'maya', 'win']]),
+    ]);
+    expect(records.sam).toEqual({ maya: { win: 1, draw: 0, loss: 0, lastMet: { season: 's1', week: 3 } } });
+    expect(records.maya).toEqual({ sam: { win: 0, draw: 0, loss: 1, lastMet: { season: 's1', week: 3 } } });
+  });
+
   it('Season 10 comes after season 9, so the last meeting is the latest week', () => {
     const records = rivalRecords([week('s10', 1, [['maya', 'sam', 'win']]), week('s9', 12, [['maya', 'sam', 'loss']])]);
     expect(records.maya?.sam?.lastMet).toEqual({ season: 's10', week: 1 });

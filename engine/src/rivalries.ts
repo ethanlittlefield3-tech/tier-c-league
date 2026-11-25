@@ -3,7 +3,7 @@
  * every player's all-time head-to-head against each player they have met in
  * a 1v1 week, across seasons. Weeks against The House don't count.
  */
-import { HOUSE } from './schedule.ts';
+import { HOUSE, againstPlayer } from './schedule.ts';
 
 /** One player's all-time record against another, from their own side. */
 export interface Rival {
@@ -18,7 +18,7 @@ export interface Rival {
 export interface RivalWeek {
   season: string;
   week: number;
-  results: Record<string, { opponent: string; outcome: 'win' | 'draw' | 'loss' }>;
+  results: Record<string, { opponent: string; outcome: 'win' | 'draw' | 'loss' | 'none' }>;
 }
 
 /** "s3" is season 3. */
@@ -33,8 +33,8 @@ export function rivalRecords(weeks: readonly RivalWeek[]): Record<string, Record
   const inOrder = [...weeks].sort((a, b) => later({ season: a.season, week: a.week }, { season: b.season, week: b.week }));
   for (const week of inOrder) {
     for (const [player, result] of Object.entries(week.results)) {
-      // Only 1v1 weeks: not The House, and not a group-play week with no opponent.
-      if (player === HOUSE || typeof result.opponent !== 'string' || result.opponent === HOUSE) continue;
+      // Only 1v1 weeks against a player: not The House, and not a group-play week with no single opponent.
+      if (player === HOUSE || typeof result.opponent !== 'string' || !againstPlayer(result.opponent) || result.outcome === 'none') continue;
       const mine = (records[player] ??= {});
       const rival = (mine[result.opponent] ??= { win: 0, draw: 0, loss: 0, lastMet: { season: week.season, week: week.week } });
       rival[result.outcome] += 1;

@@ -37,3 +37,4 @@ export * from './predictions.ts';
 export * from './trophies.ts';
 export * from './modes.ts';
 export * from './captains.ts';
+export * from './group.ts';

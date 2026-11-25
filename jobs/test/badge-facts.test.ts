@@ -40,6 +40,12 @@ describe("A season's badge history", () => {
     expect(maya!.weeks[0]).toMatchObject({ opponent: 'alex', outcome: 'loss', trailedThursday: true });
   });
 
+  it("A group-play week with no single opponent isn't a 1v1, and a Bounty or Alley week is neither won nor lost", () => {
+    const group = season({ weeks: [{ period: 'w01', results: { alex: { ...result('GROUP', 30, 20, 'win'), outcome: 'none' }, maya: result('GROUP', 10, 0, 'loss') } }] });
+    expect(seasonBadgeData(group).alex!.weeks[0]).toMatchObject({ opponent: null, outcome: 'none', trailedThursday: false, beatLeader: false });
+    expect(seasonBadgeData(group).maya!.weeks[0]).toMatchObject({ opponent: null, outcome: 'loss' });
+  });
+
   it('Beating the player who led the standings going into the week counts as beating the leader', () => {
     const two = season({
       calendar: [...calendar, ...calendar.map((day) => ({ ...day, period: 'w02', date: day.date.replace('-0', '-1'), start: day.start + 7 * 24 * H, lock: day.lock + 7 * 24 * H }))],

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { withWeek, type RankEntry } from '../lib/ranks.ts';
+import { matchupOf, withWeek, type RankEntry } from '../lib/ranks.ts';
 
 describe('Ranks after a final week', () => {
   it("A final week joins the player's rank history, and their rank is worked out again", () => {
@@ -18,6 +18,15 @@ describe('Ranks after a final week', () => {
     // Counted again after an unlock: the new result replaces the old.
     const again = withWeek(won.history, { season: 's1', period: 'w01', points: 12, par: 3, outcome: 'loss', against: 14 });
     expect(again.history[0]).toMatchObject({ points: 12, outcome: 'loss', against: 14 });
+  });
+
+  it("In Team Week and 2v2 the matchup is the two sides' averages; a Bounty or Alley week has none", () => {
+    expect(matchupOf({ outcome: 'win', opponentPoints: 14 })).toEqual({ outcome: 'win', against: 14 });
+    expect(matchupOf({ outcome: 'win', opponentPoints: 30.5, side: { points: 33.5 }, against: { points: 30.5 } })).toEqual({ outcome: 'win', against: 30.5, ours: 33.5 });
+    expect(matchupOf({ outcome: 'none', opponentPoints: 0 })).toEqual({});
+    expect(matchupOf(undefined)).toEqual({});
+    const won = withWeek([], { season: 's1', period: 'w03', points: 39, par: 3, outcome: 'win', against: 30.5, ours: 33.5 });
+    expect(won.history[0]).toMatchObject({ outcome: 'win', against: 30.5, ours: 33.5 });
   });
 
   it('A week counted again after the commish unlocks it replaces its old entry', () => {

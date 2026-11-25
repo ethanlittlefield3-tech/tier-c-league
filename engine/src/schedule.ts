@@ -11,6 +11,17 @@
 /** The bye opponent. With an odd count, one player a week faces The House. */
 export const HOUSE = 'HOUSE';
 
+/**
+ * The opponent of a group-play result that wasn't a 1v1: a Team Week squad,
+ * a 2v2 duo, the Bounty or the Alley. The result says which.
+ */
+export const GROUP = 'GROUP';
+
+/** A result was a 1v1 against a real player: the only kind that counts head-to-head or in a rivalry. */
+export function againstPlayer(opponent: string): boolean {
+  return opponent !== HOUSE && opponent !== GROUP;
+}
+
 export type Pair = readonly [string, string];
 
 export const WEEK_MODES = [

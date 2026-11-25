@@ -7,7 +7,8 @@ import { weekName, type RankEntry } from './Rank.tsx';
 import './win.css';
 
 /** A score as the scene shows it, with a true minus sign. */
-const score = (points: number) => String(points).replace('-', '\u2212');
+/** A score, with a true minus sign; a Team Week or 2v2 average keeps one decimal place. */
+const score = (points: number) => (Number.isInteger(points) ? String(points) : points.toFixed(1)).replace('-', '\u2212');
 
 /**
  * The win scene (SCOPE.md, "Car parts": the goal explosion is played when you
@@ -37,7 +38,7 @@ export function WinScene(props: { week: RankEntry; car: Partial<CarParts> | null
         You won
       </h1>
       <p class="win-score">
-        {score(props.week.points)}–{score(props.week.against ?? 0)}
+        {score(props.week.ours ?? props.week.points)}–{score(props.week.against ?? 0)}
       </p>
       <p class="win-hint">Tap to carry on</p>
     </div>

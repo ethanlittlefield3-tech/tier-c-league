@@ -15,6 +15,8 @@ export interface RankEntry {
   /** How the week's matchup ended, and the other side's points. */
   outcome?: 'win' | 'draw' | 'loss';
   against?: number;
+  /** Team Week and 2v2: your side's average, which faced `against`. */
+  ours?: number;
 }
 
 /** "Week 3" from "w03". */

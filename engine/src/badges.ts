@@ -40,9 +40,10 @@ export interface BadgeDay {
 export interface BadgeWeek {
   season: string;
   period: string;
-  /** The opponent, or `null` against The House. */
+  /** The opponent, or `null` against The House or in group play with no single opponent. */
   opponent: string | null;
-  outcome: 'win' | 'draw' | 'loss';
+  /** `none` in a Bounty or Alley week, which nobody wins or loses. */
+  outcome: 'win' | 'draw' | 'loss' | 'none';
   /** Points minus the opponent's. */
   margin: number;
   /** Behind on points once Thursday locked. */

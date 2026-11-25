@@ -36,8 +36,11 @@ export type Outcome = 'win' | 'draw' | 'loss';
 export interface Decision {
   a: Outcome;
   b: Outcome;
-  /** What settled it: `points`, the fewer-`beers` tiebreak, or `none` for a draw. */
-  decidedBy: 'points' | 'beers' | 'none';
+  /**
+   * What settled it: `points`, the fewer-`beers` tiebreak, or `none` for a
+   * draw. Drop Shot is settled by `tiles`, then `hits`, before beers.
+   */
+  decidedBy: 'points' | 'beers' | 'none' | 'tiles' | 'hits';
 }
 
 /** Most points wins; a tie goes to fewer beers; still tied is a draw. */
@@ -77,19 +80,42 @@ export function houseSide(others: readonly Side[]): Side {
   return { points: points / others.length, beers: beers / others.length };
 }
 
+/** A Team Week squad or a 2v2 duo, by its average per player, which is never rounded. */
+export interface SideLine {
+  /** `blue` or `orange` in Team Week; `duo` in 2v2, or `house` for a House duo. */
+  name: string;
+  /** Who is on it: `[HOUSE]` for a House duo. */
+  players: string[];
+  points: number;
+  beers: number;
+}
+
 export interface MatchResult {
   player: string;
-  /** A player id, or HOUSE for the bye. */
+  /** A player id, HOUSE for the bye, or GROUP when the week wasn't a 1v1. */
   opponent: string;
   points: number;
   beers: number;
+  /** The opponent's, or the other side's average in Team Week and 2v2. */
   opponentPoints: number;
   opponentBeers: number;
-  outcome: Outcome;
+  /** `none` in Bounty Week and the Alley, which count toward nobody's wins, draws or losses. */
+  outcome: Outcome | 'none';
   decidedBy: Decision['decidedBy'];
   bonus: number;
   /** This week's Season Points: own points plus the bonus. */
   seasonPoints: number;
+  /** The group-play mode; left out for a regular 1v1. */
+  mode?: string;
+  /** Team Week and 2v2: the player's side and the one it faced. */
+  side?: SideLine;
+  against?: SideLine;
+  /** Drop Shot: hits landed on the other floor and the tiles they broke, each way. */
+  floor?: { hits: number; tiles: number; opponentHits: number; opponentTiles: number };
+  /** Alley: race points, walls hit and place. */
+  race?: { points: number; walls: number; place: number };
+  /** Bounty Week: what the player added to the target, and whether it was hit. */
+  bounty?: { counted: number; broke: boolean; hit: boolean };
 }
 
 export interface WeekSettlement {

@@ -62,4 +62,11 @@ describe('Season storylines', () => {
     expect(told.join()).not.toContain('maya has won');
     expect(storylines([week(1, [['maya', 'HOUSE', 40, 10]])], 1)).toEqual([]);
   });
+
+  it('Team Week, 2v2, Bounty and Alley weeks make no headlines, and neither count toward nor break a streak', () => {
+    const group: StoryWeek = { week: 3, results: { alex: { opponent: 'GROUP', outcome: 'win', points: 40, opponentPoints: 10 }, sam: { opponent: 'GROUP', outcome: 'none', points: 10, opponentPoints: 0 } } };
+    const weeks = [week(1, [['alex', 'sam', 30, 5]]), week(2, [['alex', 'sam', 30, 5]]), group, week(4, [['alex', 'sam', 30, 25]])];
+    expect(storylines(weeks, 3)).toEqual([]);
+    expect(headlines(weeks, 4)).toContain('alex has won 3 straight');
+  });
 });

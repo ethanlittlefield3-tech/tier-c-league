@@ -7,7 +7,7 @@
 import { earnedBadges, type BadgeDay, type BadgeFacts, type BadgeWeek } from '../../engine/src/badges.ts';
 import type { LeagueClock } from '../../engine/src/clock.ts';
 import { playerWeek, type CalendarTimes, type KitPlay } from '../../engine/src/days.ts';
-import { HOUSE } from '../../engine/src/schedule.ts';
+import { againstPlayer } from '../../engine/src/schedule.ts';
 import type { DayLog, Lane, Square } from '../../engine/src/scoring.ts';
 import { streakMark } from '../../engine/src/streaks.ts';
 import type { MatchResult } from '../../engine/src/week.ts';
@@ -83,7 +83,8 @@ export function seasonBadgeData(input: SeasonForBadges): Record<string, { days: 
           early: typeof firstAt === 'number' && input.clock.dateOf(firstAt) === cell.date && input.clock.hourOf(firstAt) < 9,
         });
       }
-      const opponent = result.opponent === HOUSE ? null : result.opponent;
+      // A 1v1 against a player; not The House, and not group play with no single opponent.
+      const opponent = againstPlayer(result.opponent) ? result.opponent : null;
       const thursday = (who: string) => (cells[who] ?? []).filter((cell) => cell.dayIndex <= 3).reduce((sum, cell) => sum + (cell.score?.total ?? 0), 0);
       mine.weeks.push({
         season: input.season,

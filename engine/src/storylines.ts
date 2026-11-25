@@ -1,13 +1,14 @@
 /**
  * Season storylines (SCOPE.md, "Live rivalry and social"): headlines worked
  * out from the season's results for a week's recap, like "Alex's 4-game win
- * streak snapped". Only 1v1 weeks make stories; The House doesn't.
+ * streak snapped". Only 1v1 weeks against a player make stories: not The
+ * House, and not group play with no single opponent.
  */
-import { HOUSE } from './schedule.ts';
+import { HOUSE, againstPlayer } from './schedule.ts';
 
 export interface StoryResult {
   opponent: string;
-  outcome: 'win' | 'draw' | 'loss';
+  outcome: 'win' | 'draw' | 'loss' | 'none';
   points: number;
   opponentPoints: number;
   seasonPoints?: number;
@@ -45,7 +46,8 @@ export function storylines(weeks: readonly StoryWeek[], week: number): Story[] {
   const now = inOrder.find((each) => each.week === week);
   if (!now) return [];
   const before = inOrder.filter((each) => each.week < week);
-  const oneOnOne = (result: StoryResult | undefined) => result !== undefined && result.opponent !== HOUSE;
+  // Only a 1v1 against a player: never The House, a squad, a duo, the Bounty or the Alley.
+  const oneOnOne = (result: StoryResult | undefined) => result !== undefined && againstPlayer(result.opponent) && result.outcome !== 'none';
 
   /** A player's 1v1 outcomes before this week, oldest first. */
   const pastOf = (player: string) => before.map((each) => each.results[player]).filter(oneOnOne).map((result) => result!.outcome);

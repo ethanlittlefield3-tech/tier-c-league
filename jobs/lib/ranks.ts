@@ -17,14 +17,29 @@ export interface RankEntry {
   /** How the week's matchup ended, and the other side's points: the phone plays the win scene from these. */
   outcome?: 'win' | 'draw' | 'loss';
   against?: number;
+  /** Team Week and 2v2: your side's average, which is what faced `against`. */
+  ours?: number;
+}
+
+/**
+ * A week's matchup, for the win scene: how it ended and the other side's
+ * points. In Team Week and 2v2 both sides are averages. A Bounty or Alley
+ * week has no matchup, so it has none.
+ */
+export function matchupOf(
+  result: { outcome: string; opponentPoints: number; side?: { points: number }; against?: { points: number } } | undefined,
+): { outcome?: 'win' | 'draw' | 'loss'; against?: number; ours?: number } {
+  if (!result || (result.outcome !== 'win' && result.outcome !== 'draw' && result.outcome !== 'loss')) return {};
+  if (result.side && result.against) return { outcome: result.outcome, against: result.against.points, ours: result.side.points };
+  return { outcome: result.outcome, against: result.opponentPoints };
 }
 
 export function withWeek(
   history: readonly RankEntry[],
-  week: { season: string; period: string; points: number; par: number; outcome?: 'win' | 'draw' | 'loss'; against?: number },
+  week: { season: string; period: string; points: number; par: number; outcome?: 'win' | 'draw' | 'loss'; against?: number; ours?: number },
 ): { history: RankEntry[]; rank: Rank } {
   const max = maxWeekPoints(week.par);
-  const result = week.outcome ? { outcome: week.outcome, against: week.against ?? 0 } : {};
+  const result = week.outcome ? { outcome: week.outcome, against: week.against ?? 0, ...(week.ours !== undefined ? { ours: week.ours } : {}) } : {};
   const at = history.findIndex((entry) => entry.season === week.season && entry.period === week.period);
   const weeks =
     at >= 0
