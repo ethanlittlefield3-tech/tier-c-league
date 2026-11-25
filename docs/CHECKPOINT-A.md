@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:a`. Do not edit by hand: the rule list comes from the test results and the worked weeks are run through the engine.
 
-- **Tests:** 196 of 196 passing.
+- **Tests:** 202 of 202 passing.
 - **Rulings and calls behind these rules:** `docs/DECISIONS.md`.
 
 ## Worked example weeks
@@ -379,6 +379,15 @@ Week 5, par 3. A draw worth +2 each, a Demolition that misses, one that fizzles 
 - Every day of 2027 and 2028 starts on its own date, right after the previous one ends, in 12 very different zones
 - Date arithmetic crosses months, years and leap days correctly
 - A normal league day is exactly 24 hours from start to start
+
+### A player's week, day by day
+
+- Days that have not started have no score yet; open days score live; locked days are final
+- Each logged day scores as the engine scores it, and the week adds them up with the beers
+- Aerial, Full Boost, Rule One and a moved rest day count on their own days
+- A Demolition counts only once its day has locked
+- Commish docks and voids land on their day
+- Marks today
 
 ### Document IDs: one fixed ID per thing, so the rules can allow exactly one
 

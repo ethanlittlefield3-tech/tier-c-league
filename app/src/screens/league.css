@@ -1,0 +1,119 @@
+/* League: the standings table, this week's matchups, results and the
+   schedule. Your own row and games are picked out in team blue. */
+
+.league {
+  max-width: 460px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.league .league-panel {
+  margin-top: 0;
+}
+
+.standings {
+  width: 100%;
+  margin-top: 12px;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+
+.standings th {
+  padding: 0 6px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--ink-soft);
+}
+
+.standings th abbr {
+  text-decoration: none;
+}
+
+.standings td {
+  padding: 10px 6px;
+  border-top: 1px solid rgba(196, 216, 255, 0.12);
+  vertical-align: top;
+}
+
+.standings .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.standings-rank {
+  width: 22px;
+  font: italic 900 18px/1.2 var(--display);
+  color: var(--gold);
+}
+
+.standings-points {
+  font: italic 900 18px/1.2 var(--display);
+}
+
+.standings tr[data-me='true'] td {
+  background: rgba(31, 139, 255, 0.14);
+}
+
+.standings-tie {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.pairs {
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pairs li {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(196, 216, 255, 0.14);
+  background: rgba(10, 19, 48, 0.6);
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.pairs li[data-me='true'] {
+  border-color: rgba(124, 196, 255, 0.6);
+}
+
+.pairs span {
+  color: var(--ink-soft);
+}
+
+.result-week + .result-week {
+  margin-top: 14px;
+}
+
+.result-head {
+  margin: 12px 0 0;
+  font: italic 900 17px/1.2 var(--display);
+}
+
+.result-head span {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(196, 216, 255, 0.14);
+  font: 700 11px/1.6 var(--body);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.result-awards {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--gold);
+}

@@ -30,11 +30,11 @@ test.describe('The app frame', () => {
 
   test('Tapping a tab opens it, and marks it as the one you are on', async ({ page, request }) => {
     await inTheApp(page, request);
-    await tab(page, 'League').click();
-    await expect(page.getByRole('heading', { name: 'League', level: 1 })).toBeVisible();
-    await expect(tab(page, 'League')).toHaveAttribute('aria-current', 'page');
+    await tab(page, 'Feed').click();
+    await expect(page.getByRole('heading', { name: 'Feed', level: 1 })).toBeVisible();
+    await expect(tab(page, 'Feed')).toHaveAttribute('aria-current', 'page');
     await expect(tab(page, 'Today')).not.toHaveAttribute('aria-current', 'page');
-    await expect(page.getByText('Standings, the schedule, results, the playoff bracket and the trophy case.')).toBeVisible();
+    await expect(page.getByText('The live feed and the wall: taunts, brags, comments and reactions.')).toBeVisible();
   });
 
   test('A tab that is not built yet says what it will hold', async ({ page, request }) => {

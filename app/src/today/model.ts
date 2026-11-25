@@ -76,11 +76,8 @@ export function liveDayScore(input: {
   );
 }
 
-/** A player's rest day is the day they moved it to, or else Sunday in the regular season. */
-export function isRestDay(input: { date: DateStr; calendar: { phase: string; dayIndex: number }; restDate: DateStr | null }): boolean {
-  if (input.restDate) return input.restDate === input.date;
-  return input.calendar.phase === 'regular' && input.calendar.dayIndex === 6;
-}
+/** A player's rest day: in the engine, shared with the weekly job. */
+export { isRestDay } from '@tcl/engine';
 
 export function formatScreen(minutes: number | null): string {
   if (minutes === null) return 'Not logged';

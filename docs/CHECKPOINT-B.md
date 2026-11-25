@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 138 of 138 passing.
+- **Tests:** 148 of 148 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -182,6 +182,9 @@ Every commish change has to arrive with an audit entry, or it is refused.
 **Season settings**
 
 - The commish can set up a season, and it lands in the audit log
+- The commish can start a new season and make it the league's current one in one save, with an audit entry for each
+- Starting a season needs both audit entries: the league cannot be pointed at it quietly
+- Nobody else can start a season
 - A player who is not the commish cannot change settings
 - The commish cannot change settings without an audit entry in the same save
 - An audit entry must describe the change it travels with

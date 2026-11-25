@@ -1,6 +1,6 @@
 # Tier C League: progress log
 
-Last updated 2026-11-26, after offline mode.
+Last updated 2026-11-26, after weekly settlement and the League tab.
 
 ## Plan change (commish ruling, 2026-11-25)
 
@@ -137,6 +137,14 @@ Last updated 2026-11-26, after offline mode.
   - If an unsent save could miss the noon lock (offline, something waiting, the lock within 3 hours), Today warns: "This day locks at 12:00 pm. Get a signal before then…"
   - Fixed on the way, a real bug: two quick taps could lose one, and a quick second tap on a brand-new day could be refused. Each tap now builds on the phone's last save, not on what the screen last showed. A test reproduces it, and fails with the old behavior.
   - 3 logic tests and 3 flow tests that cut the browser's connection.
+- **Weekly settlement and the League tab** (2026-11-26).
+  - "Settle the weeks" runs on GitHub every hour (`jobs/weekly.ts`). Once a week's Sunday locks (noon on Monday) its results post as provisional, and at midnight on Tuesday they are final. It decides each 1v1, The House for a bye, the bonuses, MVP, Bust and who spins the Wheel. Then it rebuilds the standings. It works everything out again from the logs each time, so it is safe to run any number of times.
+  - Each player gets a coin for the last tiebreak. It is drawn once, on the server, with real randomness, and kept sealed.
+  - A player's week is now scored by the engine (`engine/src/days.ts`), shared by the phone and the job, so the live score and the official one can't disagree. 6 engine tests.
+  - League: the standings (place, Season Points, win-draw-loss, beers, and which tiebreak set a place), this week's matchups, results with the awards, and the schedule.
+  - New rule: everyone in the league can read the standings, and no phone can write them (4 rule tests, 148 in all).
+  - 9 job tests and 2 flow tests. One runs the real job against a finished week, and checks League and a second run.
+  - Not yet: the weeks' pairings come from the schedule, which the draft builds. Until the draft exists, nothing has a pairing to settle.
 - **The shorter intro on reopening is on purpose:** the full intro plays on the first open each day, and a 1-second title after that (SCOPE.md, "Intro animation").
 
 ## Waiting on the commish
@@ -145,7 +153,7 @@ Last updated 2026-11-26, after offline mode.
 
 ## Next
 
-1. **Step 3, continued.** Next: the weekly settlement job and League (standings and the schedule), then Feed and the wall, receipts, the mini draft and the Wheel.
+1. **Step 3, continued.** Next: the mini draft (goals, rival picks and dares, which make the schedule), Feed and the wall, receipts, and the Wheel.
    - **Still to add to joining:** the notifications step (with push alerts), a commish's "approve joins" switch, and a way to make a league. Leagues are made by a setup script, which is built with the jobs in Step 4.
    - **Offline start** comes with the offline step: a service worker that keeps the app's files on the phone, so it opens with no signal. Chrome on Android only offers its one-tap Install button once that exists. Until then Android installs from the browser menu, which the guide explains.
 2. **Before real players join:** limit the app's web key to the app's own address in the Google Cloud console, and look at App Check, which stops other programs from using the database's free daily allowance.

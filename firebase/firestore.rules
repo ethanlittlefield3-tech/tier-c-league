@@ -352,6 +352,13 @@ service cloud.firestore {
           allow read: if isMember(L);
         }
 
+        // ---- Standings --------------------------------------------------------
+        // Written by the weekly job after each week settles. The whole league
+        // can read them; no phone can change them.
+        match /standings/{doc} {
+          allow read: if isMember(L);
+        }
+
         match /calendar/{date} {
           allow read: if isMember(L);
         }

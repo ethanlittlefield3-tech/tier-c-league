@@ -169,6 +169,8 @@ Nothing is open. The receipts question that was here is now ruling R6.
 - **After the keyboard closes, the page goes back to the top.** iOS can leave a Home Screen app scrolled up after typing.
 - **The phone keeps its own copy of the league's data** (Firestore's offline cache), so the app opens and logs with no signal. The server still decides: a save that arrives after the lock is refused.
 - **The late-sync warning starts 3 hours before the lock,** when the phone is offline with a save waiting.
+- **A week's pairings are stored as a list of pairs, `{ a, b }`,** because the database can't hold a list of lists. `HOUSE` stands for The House.
+- **Settlement runs every hour,** not at exactly 12:05 pm and 12:05 am, because GitHub's schedules can run late. Results post within the hour of noon on Monday, and go final within the hour of midnight on Tuesday.
 - **The fonts are served by the app,** not fetched from a font website. The first screen waits on nobody else, the app can start with no signal once offline start is built, and no other company sees who opens the app. Both fonts are open (SIL Open Font License).
 - **Launch pictures are drawn for a list of screen sizes** (`app/launch-screens.ts`), because iOS only uses a picture that matches the screen exactly. A new iPhone size needs one new row and `npm run icons`. Until then that phone starts on a plain screen and everything else works.
 - **The installed app stays upright on Android.** iPhones and iPads decide for themselves and ignore the request.
