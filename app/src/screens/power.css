@@ -1,0 +1,213 @@
+/* The power-up tray: four tiles, a panel for the one you open, and the
+   rest-day row. Each power-up has its own color: Aerial blue, Demolition red,
+   Full Boost orange, Rule One gold. */
+
+.power {
+  padding: 16px 14px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(196, 216, 255, 0.14);
+  background: linear-gradient(180deg, rgba(17, 30, 73, 0.95), rgba(10, 19, 48, 0.95));
+}
+
+.power h2 {
+  margin: 0 0 12px 2px;
+  font: italic 900 20px/1.1 var(--display);
+}
+
+.power-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.power-tile {
+  --tint: #7cc4ff;
+  min-height: 84px;
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    'glyph name'
+    'glyph status';
+  align-items: center;
+  column-gap: 10px;
+  text-align: left;
+  border: 1px solid rgba(196, 216, 255, 0.16);
+  border-radius: 14px;
+  background: linear-gradient(160deg, rgba(29, 58, 124, 0.55), rgba(10, 19, 48, 0.9));
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.power-tile[data-item='demolition'] {
+  --tint: #ff9aa2;
+}
+
+.power-tile[data-item='fullBoost'] {
+  --tint: #ffc47c;
+}
+
+.power-tile[data-item='ruleOne'] {
+  --tint: var(--gold);
+}
+
+.power-tile[aria-expanded='true'] {
+  border-color: var(--tint);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--tint) 35%, transparent);
+}
+
+.power-tile:focus-visible,
+.power-choice:focus-visible,
+.power-rest-row:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.power-glyph {
+  grid-area: glyph;
+  width: 30px;
+  height: 30px;
+  color: var(--tint, #7cc4ff);
+}
+
+.power-name {
+  grid-area: name;
+  font: italic 900 17px/1.1 var(--display);
+}
+
+.power-status {
+  grid-area: status;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.power-panel {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(5, 10, 26, 0.6);
+  border: 1px solid rgba(196, 216, 255, 0.1);
+}
+
+.power-panel p {
+  margin: 0 0 10px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+.power-panel .power-done {
+  color: var(--ink);
+}
+
+.power-panel .power-warn {
+  color: var(--ink);
+}
+
+.power-panel .btn {
+  width: 100%;
+  min-width: 0;
+  margin-top: 6px;
+}
+
+.power-panel .btn-quiet {
+  display: block;
+  margin: 4px auto 0;
+}
+
+.power-days,
+.power-lanes,
+.power-weeks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.power-choice {
+  min-width: 56px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid rgba(196, 216, 255, 0.24);
+  border-radius: 12px;
+  background: rgba(17, 30, 73, 0.9);
+  font: italic 800 15px/1 var(--display);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.power-choice[aria-pressed='true'] {
+  border-color: transparent;
+  background: linear-gradient(180deg, #3fa0ff, var(--blue-deep));
+  box-shadow: 0 0 14px rgba(31, 139, 255, 0.45);
+}
+
+.power-choice[disabled] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.power-lane {
+  flex: 1 1 30%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.power-lane small {
+  font: 500 12px/1.3 var(--body);
+  color: var(--ink-soft);
+}
+
+.power-day-name {
+  margin: 4px 0 6px;
+  font-weight: 700;
+}
+
+.power-rest {
+  margin-top: 10px;
+}
+
+.power-rest-row {
+  width: 100%;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 207, 63, 0.3);
+  border-radius: 14px;
+  background: rgba(255, 207, 63, 0.07);
+  color: var(--ink);
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.power-rest-row .power-glyph {
+  width: 24px;
+  height: 24px;
+  color: var(--gold);
+}
+
+.power-rest-row span:nth-of-type(1) {
+  flex: 1;
+}
+
+.power-rest-change {
+  font-size: 14px;
+  color: var(--gold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.power-error {
+  margin: 10px 0 0;
+  font-size: 14px;
+  color: #ff9aa2;
+}

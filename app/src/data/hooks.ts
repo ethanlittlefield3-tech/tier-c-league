@@ -47,6 +47,38 @@ export function useDoc<T>(path: string | null): LiveDoc<T> {
   return state;
 }
 
+/** Every document in a collection whose `field` equals `value`, live. Nothing while `path` is `null`. */
+export function useWhere<T>(path: string | null, field: string, value: string | null): { loading: boolean; docs: { id: string; data: T }[]; error: Trouble | null } {
+  const [state, setState] = useState<{ loading: boolean; docs: { id: string; data: T }[]; error: Trouble | null }>({ loading: path !== null, docs: [], error: null });
+  useEffect(() => {
+    if (path === null || value === null) {
+      setState({ loading: false, docs: [], error: null });
+      return undefined;
+    }
+    setState({ loading: true, docs: [], error: null });
+    let stop: (() => void) | null = null;
+    let stopped = false;
+    loadData().then(
+      (api) => {
+        if (stopped) return;
+        stop = api.watchWhere(
+          path,
+          field,
+          value,
+          (docs) => setState({ loading: false, docs: docs as { id: string; data: T }[], error: null }),
+          (why) => setState((before) => ({ ...before, loading: false, error: why })),
+        );
+      },
+      () => setState((before) => ({ ...before, loading: false, error: 'offline' })),
+    );
+    return () => {
+      stopped = true;
+      stop?.();
+    };
+  }, [path, field, value]);
+  return state;
+}
+
 /** The time now, updated twice a minute, so a day rolls over and locks on screen. */
 export function useNow(): number {
   const [now, setNow] = useState(() => Date.now());

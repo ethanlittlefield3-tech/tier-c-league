@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks';
-import { LANES, type Lane } from '@tcl/engine';
-import { useDoc, useNow } from '../data/hooks.ts';
+import { LANES, weekPeriod, type Lane } from '@tcl/engine';
+import { useDoc, useNow, useWhere } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
 import { whyOf } from '../data/why.ts';
@@ -16,6 +16,8 @@ import {
   windowOf,
   type DayEntry,
 } from '../today/model.ts';
+import type { CalDay } from '../today/kit.ts';
+import { PowerUps, type Play } from './PowerUps.tsx';
 import './today.css';
 
 interface LeagueDoc {
@@ -27,17 +29,14 @@ interface SeasonDoc {
   par: number;
   timeZone: string;
   kickoff: string;
+  ruleOneIssue?: number[];
 }
 
-interface CalendarDoc {
-  date: string;
-  period: string;
-  week: number;
-  dayIndex: number;
-  phase: string;
-  start: number;
-  lock: number;
+interface WeekDoc {
+  targets?: Record<string, string[]>;
 }
+
+type CalendarDoc = CalDay;
 
 interface RosterDoc {
   goals?: Partial<Record<Lane, { text?: string }>>;
@@ -100,9 +99,39 @@ export function Today(props: { me: Me }) {
   const date = dates ? dates[showing] : null;
   const cal = showing === 'today' ? todayCal.data : yesterdayCal.data;
 
-  const day = useDoc<DayEntry>(seasonPath && date ? `${seasonPath}/days/${props.me.player}_${date}` : null);
-  const roster = useDoc<RosterDoc>(seasonPath ? `${seasonPath}/roster/${props.me.player}` : null);
-  const rest = useDoc<{ date: string }>(seasonPath && cal ? `${seasonPath}/kit/${cal.period}_${props.me.player}_rest` : null);
+  const me = props.me.player;
+  const dayToday = useDoc<DayEntry>(seasonPath && dates ? `${seasonPath}/days/${me}_${dates.today}` : null);
+  const dayYesterday = useDoc<DayEntry>(seasonPath && dates ? `${seasonPath}/days/${me}_${dates.yesterday}` : null);
+  const day = showing === 'today' ? dayToday : dayYesterday;
+  const roster = useDoc<RosterDoc>(seasonPath ? `${seasonPath}/roster/${me}` : null);
+  const rest = useDoc<{ date: string }>(seasonPath && cal ? `${seasonPath}/kit/${cal.period}_${me}_rest` : null);
+
+  // This week is the week of today's calendar day. The tray plays into it.
+  const period = todayCal.data?.period ?? null;
+  const nextPeriod = todayCal.data ? weekPeriod(todayCal.data.week + 1) : null;
+  const week = useWhere<CalendarDoc>(seasonPath ? `${seasonPath}/calendar` : null, 'period', period);
+  const nextWeek = useWhere<CalendarDoc>(seasonPath ? `${seasonPath}/calendar` : null, 'period', nextPeriod);
+  const aerial = useDoc<Play>(seasonPath && period ? `${seasonPath}/kit/${period}_${me}_aerial` : null);
+  const fullBoost = useDoc<Play>(seasonPath && period ? `${seasonPath}/kit/${period}_${me}_fullBoost` : null);
+  // On a Monday morning, yesterday is last Sunday: it belongs to last week, and
+  // so do any power-ups played on it (DECISIONS.md, call 7).
+  const yesterdayPeriod = yesterdayCal.data?.period ?? null;
+  const lastPeriod = yesterdayPeriod && yesterdayPeriod !== period ? yesterdayPeriod : null;
+  const lastAerial = useDoc<Play>(seasonPath && lastPeriod ? `${seasonPath}/kit/${lastPeriod}_${me}_aerial` : null);
+  const lastBoost = useDoc<Play>(seasonPath && lastPeriod ? `${seasonPath}/kit/${lastPeriod}_${me}_fullBoost` : null);
+  const lastRest = useDoc<{ date: string }>(seasonPath && lastPeriod ? `${seasonPath}/kit/${lastPeriod}_${me}_rest` : null);
+  const weekRest = useDoc<{ date: string }>(seasonPath && period ? `${seasonPath}/kit/${period}_${me}_rest` : null);
+  const nextRest = useDoc<{ date: string }>(seasonPath && nextPeriod ? `${seasonPath}/kit/${nextPeriod}_${me}_rest` : null);
+  const ruleOne1 = useDoc<Play>(seasonPath ? `${seasonPath}/kit/ruleOne_${me}_1` : null);
+  const ruleOne2 = useDoc<Play>(seasonPath ? `${seasonPath}/kit/ruleOne_${me}_2` : null);
+  const ruleOne3 = useDoc<Play>(seasonPath ? `${seasonPath}/kit/ruleOne_${me}_3` : null);
+  const sealed = useWhere<Play & { period: string; target: string }>(seasonPath ? `${seasonPath}/sealed` : null, 'player', me);
+  const weekDoc = useDoc<WeekDoc>(seasonPath && period ? `${seasonPath}/weeks/${period}` : null);
+  const targets = weekDoc.data?.targets?.[me] ?? [];
+  const opponentId = targets.find((target) => target !== 'HOUSE') ?? null;
+  const opponentProfile = useDoc<{ displayName?: string }>(opponentId ? `${leaguePath}/players/${opponentId}` : null);
+  const opponentRoster = useDoc<RosterDoc>(seasonPath && opponentId ? `${seasonPath}/roster/${opponentId}` : null);
+  const opponentRest = useDoc<{ date: string }>(seasonPath && period && opponentId ? `${seasonPath}/kit/${period}_${opponentId}_rest` : null);
 
   if (league.loading || season.loading || (seasonPath && (todayCal.loading || yesterdayCal.loading))) {
     return (
@@ -129,7 +158,15 @@ export function Today(props: { me: Me }) {
   const editable = dayWindow === 'open';
   const entry: DayEntry = day.data ? { goals: { ...EMPTY.goals, ...day.data.goals }, screenMinutes: day.data.screenMinutes ?? null, beers: day.data.beers ?? 0 } : EMPTY;
   const restDay = cal ? isRestDay({ date: cal.date, calendar: cal, restDate: rest.data?.date ?? null }) : false;
-  const score = liveDayScore({ par: season.data.par, entry, restDay, locked: dayWindow === 'locked' });
+  const ruleOnes = [ruleOne1.data, ruleOne2.data, ruleOne3.data].filter((play): play is Play => play !== null);
+  // The power-ups of the week the shown day belongs to.
+  const shownLastWeek = cal !== null && lastPeriod !== null && cal.period === lastPeriod;
+  const shownBoost = shownLastWeek ? lastBoost.data : fullBoost.data;
+  const shownAerial = shownLastWeek ? lastAerial.data : aerial.data;
+  const boostLane = shownBoost && shownBoost.date === date ? (shownBoost.lane ?? null) : null;
+  const aerialHere = shownAerial !== null && shownAerial.date === date;
+  const ruleOneHere = ruleOnes.some((play) => play.date === date);
+  const score = liveDayScore({ par: season.data.par, entry, restDay, locked: dayWindow === 'locked', aerial: aerialHere, fullBoost: boostLane, ruleOne: ruleOneHere });
   const shownMinutes = draftMinutes ?? entry.screenMinutes;
 
   const save = (next: DayEntry) => {
@@ -176,6 +213,11 @@ export function Today(props: { me: Me }) {
           {formatPoints(score.total)}
         </p>
         <p class="today-note">{totalNote}</p>
+        {ruleOneHere ? (
+          <p class="today-kit">Rule One: this day scores 0</p>
+        ) : aerialHere ? (
+          <p class="today-kit">Aerial: this day counts double</p>
+        ) : null}
       </section>
 
       {dayWindow === 'locked' && <p class="today-locked">This day is locked. Its score is final once the week settles.</p>}
@@ -231,16 +273,16 @@ export function Today(props: { me: Me }) {
               data-lane={lane}
               data-state={state}
               aria-pressed={restDay ? undefined : hit}
-              aria-label={`${LANE_NAMES[lane]}: ${goal || 'goal not set yet'}${restDay ? ', rest day' : ''}`}
+              aria-label={`${LANE_NAMES[lane]}: ${goal || 'goal not set yet'}${restDay ? ', rest day' : state === 'boosted' ? ', counted by Full Boost' : ''}`}
               disabled={!editable || restDay || !goal}
               onClick={() => toggleGoal(lane)}
             >
               <span class="square-lane">{LANE_NAMES[lane]}</span>
               <span class="square-goal-text">{goal || 'Set at the draft'}</span>
               <span class="square-check" aria-hidden="true">
-                {restDay ? 'Rest' : hit ? '✓' : ''}
+                {restDay ? 'Rest' : state === 'boosted' ? 'Boost' : hit ? '✓' : ''}
               </span>
-              <span class="square-points">{restDay ? '0' : hit ? '+1' : '0'}</span>
+              <span class="square-points">{state === 'hit' || state === 'boosted' ? '+1' : '0'}</span>
             </button>
           );
         })}
@@ -269,6 +311,37 @@ export function Today(props: { me: Me }) {
       <p class={error ? 'today-status today-status-error' : 'today-status'} role="status">
         {status}
       </p>
+
+      {period && week.docs.length > 0 && (
+        <PowerUps
+          where={{ league: props.me.league, season: seasonId, player: me }}
+          now={now}
+          week={week.docs.map((found) => found.data)}
+          nextWeek={nextWeek.docs.map((found) => found.data)}
+          openDays={[yesterdayOpen ? yesterdayCal.data : null, todayCal.data].filter((found): found is CalendarDoc => found !== null && windowOf(found, now) === 'open')}
+          aerial={aerial.data ? { ...aerial.data, id: 'aerial' } : null}
+          fullBoost={fullBoost.data ? { ...fullBoost.data, id: 'fullBoost' } : null}
+          boosts={{ ...(period ? { [period]: fullBoost.data } : {}), ...(lastPeriod ? { [lastPeriod]: lastBoost.data } : {}) }}
+          restByPeriod={{ ...(period ? { [period]: weekRest.data?.date ?? null } : {}), ...(lastPeriod ? { [lastPeriod]: lastRest.data?.date ?? null } : {}) }}
+          rest={weekRest.data?.date ?? null}
+          nextRest={nextRest.data?.date ?? null}
+          ruleOnes={ruleOnes}
+          ruleOneIssue={season.data.ruleOneIssue ?? []}
+          demolition={sealed.docs.map((found) => found.data).find((play) => play.period === period) ?? null}
+          opponent={
+            opponentId
+              ? {
+                  id: opponentId,
+                  name: opponentProfile.data?.displayName ?? 'Your opponent',
+                  goals: Object.fromEntries(LANES.map((lane) => [lane, opponentRoster.data?.goals?.[lane]?.text ?? ''])) as Partial<Record<Lane, string>>,
+                  rest: opponentRest.data?.date ?? null,
+                }
+              : null
+          }
+          vsHouse={targets.includes('HOUSE')}
+          hitByDay={dates ? { [dates.today]: dayToday.data?.goals ?? {}, [dates.yesterday]: dayYesterday.data?.goals ?? {} } : {}}
+        />
+      )}
     </div>
   );
 }

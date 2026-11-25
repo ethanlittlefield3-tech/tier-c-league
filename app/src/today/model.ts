@@ -6,7 +6,7 @@
  * The phone's clock only decides what to show. Whether a save is accepted is
  * decided by the server, against the calendar (firebase/firestore.rules).
  */
-import { addDays, localDate, scoreDay, type DateStr, type DayLog, type DayScore } from '@tcl/engine';
+import { addDays, localDate, scoreDay, type DateStr, type DayLog, type DayScore, type Lane } from '@tcl/engine';
 
 /** What a player has logged for a day: three yes-or-no goals, screen minutes (or none yet) and beers. */
 export interface DayEntry {
@@ -42,9 +42,33 @@ function toLog(entry: DayEntry | null): DayLog | null {
   return entry ? { goals: entry.goals, screenMinutes: entry.screenMinutes, beers: entry.beers } : null;
 }
 
-/** The day's score as it stands. While the day is open, nothing logged shows 0 so far (DECISIONS.md, call 6). */
-export function liveDayScore(input: { par: number; entry: DayEntry | null; restDay: boolean; locked: boolean }): DayScore {
-  return scoreDay({ par: input.par, log: toLog(input.entry), restDay: input.restDay }, { open: !input.locked });
+/**
+ * The day's score as it stands, with your own power-ups on it. While the day
+ * is open, nothing logged shows 0 so far (DECISIONS.md, call 6). Demolitions
+ * aimed at you stay hidden until the day locks, so they are not in here.
+ */
+export function liveDayScore(input: {
+  par: number;
+  entry: DayEntry | null;
+  restDay: boolean;
+  locked: boolean;
+  aerial?: boolean;
+  fullBoost?: Lane | null;
+  ruleOne?: boolean;
+  demolitions?: readonly Lane[];
+}): DayScore {
+  return scoreDay(
+    {
+      par: input.par,
+      log: toLog(input.entry),
+      restDay: input.restDay,
+      aerial: input.aerial === true,
+      fullBoost: input.fullBoost ?? null,
+      ruleOne: input.ruleOne === true,
+      demolitions: input.demolitions ?? [],
+    },
+    { open: !input.locked },
+  );
 }
 
 /** A player's rest day is the day they moved it to, or else Sunday in the regular season. */

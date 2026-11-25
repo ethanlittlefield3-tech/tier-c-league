@@ -3,7 +3,7 @@
  * phone or anyone else's. A save made on this phone shows at once, marked as
  * pending until the server accepts it.
  */
-import { Timestamp, doc, onSnapshot } from 'firebase/firestore';
+import { Timestamp, collection, doc, onSnapshot, query, where } from 'firebase/firestore';
 import { connect } from './firebase.ts';
 import { trouble, type Trouble } from './identity.ts';
 
@@ -38,6 +38,33 @@ export function watchDoc(path: string, onChange: (live: Live) => void, onError: 
           const data = snapshot.exists() ? (plain(snapshot.data({ serverTimestamps: 'estimate' })) as Record<string, unknown>) : null;
           onChange({ data, pending: snapshot.metadata.hasPendingWrites });
         },
+        (error) => onError(trouble(error).why),
+      );
+    },
+    (error: unknown) => onError(trouble(error).why),
+  );
+  return () => {
+    stopped = true;
+    stop?.();
+  };
+}
+
+/** Every document in a collection whose `field` equals `value`, now and after every change. */
+export function watchWhere(
+  path: string,
+  field: string,
+  value: string,
+  onChange: (docs: { id: string; data: Record<string, unknown> }[]) => void,
+  onError: (why: Trouble) => void,
+): () => void {
+  let stop: (() => void) | null = null;
+  let stopped = false;
+  connect().then(
+    ({ db }) => {
+      if (stopped) return;
+      stop = onSnapshot(
+        query(collection(db, path), where(field, '==', value)),
+        (snapshot) => onChange(snapshot.docs.map((found) => ({ id: found.id, data: plain(found.data({ serverTimestamps: 'estimate' })) as Record<string, unknown> }))),
         (error) => onError(trouble(error).why),
       );
     },

@@ -103,6 +103,14 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 50. **A save shows on screen at once,** marked "Saving" until the server accepts it. With no signal it waits on the phone and goes through later. A save that arrives after the lock is refused.
 51. **A goal that isn't set yet can't be tapped.** It says "Set at the draft".
 
+**The power-up tray** (new on 2026-11-25, not yet reviewed by the commish)
+
+52. **Full Boost offers only the goals you haven't marked hit** that day.
+53. **Setting a Demolition asks once more,** "This is final", because it can't be changed or taken back.
+54. **Rule One uses the lowest-numbered grace day that has arrived and isn't used.** Taking it back frees that number again.
+55. **The tray plays into the week of today's date.** Yesterday's Full Boost, Aerial and rest day come from yesterday's own week, so Sunday's Full Boost still works on Monday morning (call 7).
+56. **A bye week against The House has no Demolition.** The tile says "Bye week". Before the schedule exists, it says "No opponent yet".
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.

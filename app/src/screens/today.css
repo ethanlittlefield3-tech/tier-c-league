@@ -143,6 +143,35 @@
   color: var(--ink-soft);
 }
 
+.today-kit {
+  margin: 6px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.square-goal[data-state='boosted'] {
+  border-color: rgba(255, 196, 124, 0.7);
+  box-shadow: 0 0 20px rgba(255, 138, 30, 0.25);
+}
+
+.square-goal[data-state='boosted'] .square-check {
+  width: auto;
+  padding: 0 8px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-color: transparent;
+  background: var(--orange);
+  color: #1a0d00;
+}
+
+.square-goal[data-state='boosted'] .square-points {
+  color: #ffc47c;
+}
+
 .today-locked,
 .today-notice p {
   margin: 0;

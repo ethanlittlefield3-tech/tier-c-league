@@ -1,6 +1,6 @@
 # Tier C League: progress log
 
-Last updated 2026-11-25, after Today's first part.
+Last updated 2026-11-25, after Today's power-up tray and the iPhone layout fix.
 
 ## Plan change (commish ruling, 2026-11-25)
 
@@ -89,6 +89,15 @@ Last updated 2026-11-25, after Today's first part.
   - The page itself can no longer scroll or bounce. Only the app's own content scrolls, and the title doesn't move at all.
   - When the keyboard closes, the page goes back to the top.
   - 5 flow tests guard the fixes, but the bug only shows on a real iPhone, so the commish's next phone check is the real test. iOS may only pick up the new status bar after the app is removed from the Home Screen and added again.
+- **Today, part 2: the power-up tray and the rest-day picker** (2026-11-25).
+  - Aerial: set on a day that hasn't started, move it, or cancel it until then. On the day, the score shows it doubled.
+  - Demolition: pick a day and one of your opponent's goals. It asks once more, because it's final, and it's sealed until noon the next day. It never offers the opponent's rest day, and says so in a bye week against The House.
+  - Full Boost: count a missed goal as hit, on today or yesterday until noon. It offers only the goals you missed, and can be taken back until the day locks.
+  - Rule One: shows how many have arrived; use one on an open day, or take it back until the day locks.
+  - Rest day: move it this week or set next week's, while both days are still ahead.
+  - Every choice comes from the same calendar times the security rules use, so what the phone offers is what the server accepts. No new rules were needed.
+  - Fixed on the way: on a Monday morning, yesterday belongs to last week, and so do its power-ups (call 7). A test now reproduces Monday morning on any day.
+  - 13 logic tests and 15 flow tests. 93 flow tests in all.
 - **The shorter intro on reopening is on purpose:** the full intro plays on the first open each day, and a 1-second title after that (SCOPE.md, "Intro animation").
 
 ## Waiting on the commish
@@ -97,7 +106,7 @@ Last updated 2026-11-25, after Today's first part.
 
 ## Next
 
-1. **Step 3, continued.** The screens: Today, Match, Feed, League, the rest of Profile, Wheel, Commish and the mini draft. Today is next. It needs a season and its calendar to log against, so the commish's season setup and the job that writes the calendar come with it.
+1. **Step 3, continued.** The screens: the rest of Today (the scoreboard against your opponent and the week bars), Match, Feed, League, the rest of Profile, Wheel, Commish and the mini draft. Next: the commish's season setup and the job that writes the calendar, so a real season can start, then the scoreboard.
    - **Still to add to joining:** the notifications step (with push alerts), a commish's "approve joins" switch, and a way to make a league. Leagues are made by a setup script, which is built with the jobs in Step 4.
    - **Offline start** comes with the offline step: a service worker that keeps the app's files on the phone, so it opens with no signal. Chrome on Android only offers its one-tap Install button once that exists. Until then Android installs from the browser menu, which the guide explains.
 2. **Before real players join:** limit the app's web key to the app's own address in the Google Cloud console, and look at App Check, which stops other programs from using the database's free daily allowance.

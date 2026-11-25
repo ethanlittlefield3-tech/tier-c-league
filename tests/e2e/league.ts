@@ -3,7 +3,9 @@
 // a league of its own, so tests can run side by side without tripping over
 // each other.
 import type { APIRequestContext } from '@playwright/test';
-import { addDays, localDate } from '../../engine/src/calendar.ts';
+import { addDays, localDate, weekStart } from '../../engine/src/calendar.ts';
+import { weekPeriod } from '../../engine/src/ids.ts';
+import { ruleOneIssueWeeks } from '../../engine/src/kit.ts';
 import { calendarDocs, mondayOf } from '../../jobs/lib/calendar-docs.ts';
 import { leagueSeed, newLeague } from '../../jobs/lib/league-seed.ts';
 
@@ -133,7 +135,7 @@ export async function startSeason(request: APIRequestContext, league: TestLeague
   const today = localDate(Date.now(), timeZone);
   const kickoff = addDays(mondayOf(today), -7);
   const path = `leagues/${league.id}/seasons/s1`;
-  const settings = {
+  const settings: { [key: string]: Plain } = {
     name: 'Season 1',
     status: 'active',
     regularWeeks: 6,
@@ -147,6 +149,8 @@ export async function startSeason(request: APIRequestContext, league: TestLeague
     joinMidSeason: false,
     holidayEvents: true,
   };
+  // Rule One arrives at the start of Weeks 1 and 5, as the season jobs will write it.
+  settings.ruleOneIssue = ruleOneIssueWeeks(6).map((week) => new Date(weekStart(kickoff, week, timeZone)));
   const calendar = calendarDocs({ kickoff, regularWeeks: 6, timeZone }).map((doc) => ({ path: `${path}/calendar/${doc.id}`, data: doc.data as { [key: string]: Plain } }));
   await writeDocs(request, [{ path, data: settings }, ...calendar]);
   await patchDoc(request, `leagues/${league.id}`, { season: 's1' });
@@ -162,4 +166,42 @@ export async function setGoals(request: APIRequestContext, season: TestSeason, p
 /** Moves a day's window: when it opened and when it locks. The app and the rules both read these. */
 export async function setWindow(request: APIRequestContext, season: TestSeason, date: string, window: { start: Date; lock: Date }): Promise<void> {
   await patchDoc(request, `${season.path}/calendar/${date}`, { start: window.start, lock: window.lock });
+}
+
+/** This week, as the app sees it: Week 2's period and its seven dates, Monday first. */
+export function thisWeek(season: TestSeason): { period: string; dates: string[] } {
+  const monday = mondayOf(season.today);
+  return { period: weekPeriod(2), dates: [0, 1, 2, 3, 4, 5, 6].map((offset) => addDays(monday, offset)) };
+}
+
+/**
+ * Two days of this week that are not today or yesterday, and not Sunday,
+ * moved into the future: they have not started yet, so power-ups can be set
+ * on them. The rules and the app only compare times, so this works any day.
+ */
+export async function futureDays(request: APIRequestContext, season: TestSeason): Promise<[string, string]> {
+  const { dates } = thisWeek(season);
+  const picks = dates.filter((date, index) => index !== 6 && date !== season.today && date !== season.yesterday).slice(0, 2);
+  for (const [n, date] of picks.entries()) {
+    const start = Date.now() + (2 + n) * 3_600_000;
+    await patchDoc(request, `${season.path}/calendar/${date}`, {
+      start: new Date(start),
+      lock: new Date(start + 36 * 3_600_000),
+      sundayStart: new Date(Date.now() + 200 * 3_600_000),
+    });
+  }
+  return [picks[0]!, picks[1]!];
+}
+
+/** Another player in the league, with a profile and goals, who never opens the app. */
+export async function addPlayer(request: APIRequestContext, league: TestLeague, season: TestSeason, id: string, name: string): Promise<void> {
+  await writeDoc(request, `leagues/${league.id}/players/${id}`, { displayName: name, joinedAt: new Date() });
+  await patchDoc(request, `leagues/${league.id}`, { [`members.${id}`]: true });
+  await setGoals(request, season, id, { mind: 'Study 1 hour', body: 'Gym', wildcard: 'Cook dinner' });
+}
+
+/** Who faces whom this week: each player, and the ones they may demolish. */
+export async function setTargets(request: APIRequestContext, season: TestSeason, targets: { [player: string]: string[] }): Promise<void> {
+  const { period } = thisWeek(season);
+  await writeDoc(request, `${season.path}/weeks/${period}`, { week: 2, mode: 'regular', targets });
 }
