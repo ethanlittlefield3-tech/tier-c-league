@@ -33,6 +33,7 @@ const { app, emulator } = connect();
 const db = getFirestore(app);
 const run = promisify(execFile);
 const weeklyJob = fileURLToPath(new URL('./weekly.ts', import.meta.url));
+const tickJob = fileURLToPath(new URL('./tick.ts', import.meta.url));
 const random = (bytes: number) => new Uint8Array(randomBytes(bytes));
 const ms = (value: unknown) => (value instanceof Timestamp ? value.toMillis() : value);
 const plain = (data: DocumentData) => Object.fromEntries(Object.entries(data).map(([key, value]) => [key, ms(value)]));
@@ -143,6 +144,12 @@ async function settle(league: string): Promise<void> {
   for (const line of stdout.split('\n')) if (/provisional|final|revealed|Wheel draw/.test(line)) console.log(line);
 }
 
+/** The alerts job, for this league only, so alerts keep pace with its fast clock. */
+async function alert(league: string): Promise<void> {
+  const { stdout } = await run(process.execPath, [tickJob], { env: { ...process.env, LEAGUE_ID: league } });
+  for (const line of stdout.split('\n')) if (/alerts,/.test(line)) console.log(line);
+}
+
 const given = process.env.LEAGUE_ID?.trim();
 if (mode === 'make') {
   await make();
@@ -159,6 +166,8 @@ if (mode === 'make') {
   let lastSettle = 0;
   while (Date.now() < end) {
     await turn(id, setup);
+    // Each fast day is a few minutes, so alerts go out on every turn.
+    await alert(id);
     if (Date.now() - lastSettle >= 2 * 60_000) {
       lastSettle = Date.now();
       await settle(id);

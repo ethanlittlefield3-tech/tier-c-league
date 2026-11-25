@@ -250,6 +250,16 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 140. **One service worker does two jobs:** it keeps the app's files on the phone, so the app opens with no signal once it has been opened before, and it shows alerts. A tap on an alert opens the app at its screen.
 141. **Alerts wait on one thing from the commish: the Cloud Messaging web push key.** Until it's in the app, Profile says alerts aren't switched on yet. The key is public by design, like the rest of the app's Firebase settings, so it can be pasted into the chat.
 
+**Alerts, part 2: sending them** (new on 2026-11-25, not yet reviewed by the commish)
+
+142. **A job works out and sends alerts every 10 minutes,** from what happened or came round since its last run, so alerts arrive within about 10 minutes, as SCOPE.md says. A quiet run reads about a dozen documents.
+143. **The alerts built so far:** log your day (9 pm); last call, Full Boost still unused and Rule One in hand (11 am, about yesterday); this week's rest day (Monday 9 am); last chance for Aerial (Saturday 8 pm); a taunt or quick-chat line aimed at you; receipts asked of you, and again an hour before they're due; docks; Demolitions as their day locks; the week's result; draft day; a Wheel spin to watch, and a dare proof to vote on.
+144. **Still to come: "your opponent passed you", "close finish", and bundled reactions and comments.** The first two need each matchup's live score, and the last needs each post's new activity, which the job can't yet see without many more reads. Badges, rank, Rumble items, group play and the offseason come with Phases 2 and 3.
+145. **Quiet hours hold alerts, and they arrive as one push when quiet hours end,** leaving out any that are no use by then, like "log your day" once the day has locked.
+146. **A week's result carries the recap:** "Week 3: you won. 14–9 against Maya. MVP: Maya." One push, not two, under Matchup.
+147. **A phone signed out by a new key gets nothing, and is taken off alerts;** so is a phone whose push token no longer works.
+148. **The job's memory between runs,** when it last ran and the alerts it is holding, is kept where no phone can read it.
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.

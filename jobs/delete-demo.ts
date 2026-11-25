@@ -28,4 +28,7 @@ if (league.get('demo') !== true) {
 const code = league.get('code');
 if (typeof code === 'string' && code.length > 0) await db.collection('codes').doc(code).delete();
 await db.recursiveDelete(league.ref);
+// The alerts job's memory of it, and any phone signed up for its alerts, go too.
+await db.collection('jobs').doc(`tick_${id}`).delete();
+for (const device of (await db.collection('devices').where('league', '==', id).get()).docs) await device.ref.delete();
 console.log(`Demo league ${id} deleted.`);

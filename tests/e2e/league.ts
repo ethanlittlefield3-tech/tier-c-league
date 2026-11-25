@@ -232,10 +232,19 @@ export async function daresUnderway(request: APIRequestContext, season: { path: 
   });
 }
 
+/**
+ * Puts a player on a league's member list. The whole list is written back:
+ * a field name with a dot in it would be a new field, not a place in the list.
+ */
+async function addMember(request: APIRequestContext, league: TestLeague, id: string): Promise<void> {
+  const members = ((await readDoc(request, `leagues/${league.id}`))?.members ?? {}) as { [player: string]: Plain };
+  await patchDoc(request, `leagues/${league.id}`, { members: { ...members, [id]: true } });
+}
+
 /** A player who never opens the app: a profile and a place in the league. */
 export async function quietPlayer(request: APIRequestContext, league: TestLeague, id: string, name: string): Promise<void> {
   await writeDoc(request, `leagues/${league.id}/players/${id}`, { displayName: name, joinedAt: new Date() });
-  await patchDoc(request, `leagues/${league.id}`, { [`members.${id}`]: true });
+  await addMember(request, league, id);
 }
 
 /** The players in a league, by id. */
@@ -282,7 +291,7 @@ export async function futureDays(request: APIRequestContext, season: TestSeason)
 /** Another player in the league, with a profile and goals, who never opens the app. */
 export async function addPlayer(request: APIRequestContext, league: TestLeague, season: TestSeason, id: string, name: string): Promise<void> {
   await writeDoc(request, `leagues/${league.id}/players/${id}`, { displayName: name, joinedAt: new Date() });
-  await patchDoc(request, `leagues/${league.id}`, { [`members.${id}`]: true });
+  await addMember(request, league, id);
   await setGoals(request, season, id, { mind: 'Study 1 hour', body: 'Gym', wildcard: 'Cook dinner' });
 }
 

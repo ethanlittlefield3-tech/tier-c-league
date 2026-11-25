@@ -140,6 +140,7 @@ A week in about an hour and a half: a demo league whose days last 8 minutes, wit
 | --- | --- | --- |
 | Keep the season calendar | Every hour | Writes the season's days and, once the draft is done, its schedule |
 | Settle the weeks | Every hour | Posts each week's results once its Sunday locks at noon on Monday, final at midnight on Tuesday; reveals Demolitions; draws the Wheel; keeps the standings; deletes proof photos after 14 days |
+| Send alerts | Every 10 minutes | Works out which alerts came due and sends them to each phone that turned them on, holding them through its quiet hours |
 | Back up the league | Every night | Copies every document to the private backups repo (see below) |
 | Keep the schedules running | Once a month | Records the date, because GitHub pauses scheduled jobs in a public repo after 60 days with no activity |
 

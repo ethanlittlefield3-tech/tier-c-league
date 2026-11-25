@@ -1,0 +1,55 @@
+name: Send alerts
+
+# Every 10 minutes, off the top of the hour: works out which alerts came due
+# since the last run (a taunt, receipts asked for, 9 pm "log your day", a
+# Demolition at noon, a week's result) and sends them to each phone that
+# wants them, holding them through its quiet hours. Nothing goes out until
+# phones have turned alerts on, which needs the web push key in the app. It
+# can also be started by hand from the Actions tab ("Run workflow").
+on:
+  schedule:
+    - cron: '3-59/10 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tick
+  cancel-in-progress: false
+
+jobs:
+  tick:
+    name: Send alerts
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Check that the league's key is in GitHub Secrets
+        id: key
+        env:
+          KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -n "$KEY" ]; then
+            echo "present=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "The FIREBASE_SERVICE_ACCOUNT secret is not set yet. Skipping."
+          fi
+
+      - uses: actions/checkout@v6
+        if: steps.key.outputs.present == 'yes'
+
+      - uses: actions/setup-node@v6
+        if: steps.key.outputs.present == 'yes'
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+        if: steps.key.outputs.present == 'yes'
+
+      # The key is handed to this step only.
+      - name: Work out and send the alerts
+        if: steps.key.outputs.present == 'yes'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node jobs/tick.ts
