@@ -1,4 +1,6 @@
 import { useState } from 'preact/hooks';
+import { CarArt } from '../art/car/CarArt.tsx';
+import type { CarParts } from '../art/car/draw.ts';
 import { useAll, useDoc, useLatest, useNow, useWhere } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
@@ -58,7 +60,7 @@ export function Feed(props: { me: Me; onWheel?: () => void }) {
   const leaguePath = `leagues/${props.me.league}`;
   const league = useDoc<{ season?: string | null; commish?: string; coCommish?: string | null; members?: Record<string, boolean> }>(leaguePath);
   const seasonPath = league.data?.season ? `${leaguePath}/seasons/${league.data.season}` : null;
-  const players = useAll<{ displayName?: string; taunts?: string[] }>(`${leaguePath}/players`);
+  const players = useAll<{ displayName?: string; taunts?: string[]; car?: Partial<CarParts> }>(`${leaguePath}/players`);
   const posts = useLatest<Post>(`${leaguePath}/wall`, 'at', 50);
   const checkIns = useLatest<FeedInput['checkIns'][number]['data']>(seasonPath ? `${seasonPath}/days` : null, 'firstAt', 20);
   const kit = useLatest<FeedInput['kit'][number]['data']>(seasonPath ? `${seasonPath}/kit` : null, 'at', 20);
@@ -74,6 +76,7 @@ export function Feed(props: { me: Me; onWheel?: () => void }) {
 
   const realName: Names = (player) => (player === 'HOUSE' ? 'The House' : (players.docs.find((found) => found.id === player)?.data.displayName ?? 'a former player'));
   const name: Names = (player) => (player === props.me.player ? 'You' : realName(player));
+  const carOf: Cars = (player) => players.docs.find((found) => found.id === player)?.data.car ?? null;
   const saved = players.docs.find((found) => found.id === props.me.player)?.data.taunts ?? [];
   const wheel = latestWheel(weeks.docs as { id: string; data: { week: number; wheel?: Record<string, Draw> } }[]);
   const events = feedEvents({
@@ -122,9 +125,9 @@ export function Feed(props: { me: Me; onWheel?: () => void }) {
         {timeline.length === 0 && !posts.loading && <p class="fine-print">Nothing on the wall yet. Start something.</p>}
         {timeline.map((item) =>
           'post' in item ? (
-            <PostCard key={item.post.id} me={props.me} id={item.post.id} post={item.post.data} now={now} name={name} realName={realName} isCommish={isCommish} />
+            <PostCard key={item.post.id} me={props.me} id={item.post.id} post={item.post.data} now={now} name={name} realName={realName} carOf={carOf} isCommish={isCommish} />
           ) : (
-            <EventRow key={item.event.id} event={item.event} now={now} />
+            <EventRow key={item.event.id} event={item.event} now={now} name={name} carOf={carOf} />
           ),
         )}
       </section>
@@ -132,8 +135,11 @@ export function Feed(props: { me: Me; onWheel?: () => void }) {
   );
 }
 
-/** A game event in the feed: who did what, and when. */
-function EventRow(props: { event: FeedEvent; now: number }) {
+/** A player's car, for their icon; `null` for someone with none saved yet (the starter car is drawn). */
+type Cars = (player: string) => Partial<CarParts> | null;
+
+/** A game event in the feed: who did what, and when. A week's results put its MVP and Bust in the spotlight. */
+function EventRow(props: { event: FeedEvent; now: number; name: Names; carOf: Cars }) {
   const { event } = props;
   return (
     <div class="feed-event" data-kind={event.kind}>
@@ -150,6 +156,17 @@ function EventRow(props: { event: FeedEvent; now: number }) {
         <span class="feed-meta"> · {ago(props.now - event.at)}</span>
       </p>
       {event.detail && <p class="feed-event-detail">{event.detail}</p>}
+      {event.spotlight && (
+        <ul class="feed-spotlight" aria-label="Spotlight">
+          {[...event.spotlight.mvp.map((player) => ({ player, award: 'MVP' })), ...event.spotlight.bust.map((player) => ({ player, award: 'Bust' }))].map(({ player, award }) => (
+            <li key={`${award}-${player}`} data-award={award}>
+              <CarArt parts={props.carOf(player)} class="feed-spotlight-car" />
+              <span class="feed-spotlight-award">{award}</span>
+              <span class="feed-spotlight-name">{props.name(player)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -311,7 +328,7 @@ function Brag(props: { me: Me }) {
 }
 
 /** One post on the wall: who, what, reactions, comments on a brag, and taking it down. */
-function PostCard(props: { me: Me; id: string; post: Post; now: number; name: Names; realName: Names; isCommish: boolean }) {
+function PostCard(props: { me: Me; id: string; post: Post; now: number; name: Names; realName: Names; carOf: Cars; isCommish: boolean }) {
   const { post } = props;
   const [open, setOpen] = useState(false);
   const [confirm, setConfirm] = useState(false);
@@ -337,6 +354,7 @@ function PostCard(props: { me: Me; id: string; post: Post; now: number; name: Na
     <article class="feed-post" data-kind={post.kind} aria-label={`${KIND[post.kind]} from ${props.name(post.by)}`}>
       <header class="feed-post-head">
         <span class="feed-who">
+          <CarArt parts={props.carOf(post.by)} bare class="feed-car" />
           {props.name(post.by)}
           {post.to && (
             <>

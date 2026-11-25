@@ -21,12 +21,3 @@ export function nameProblem(typed: string): 'empty' | 'too-long' | null {
   if (name.length > NAME_MAX) return 'too-long';
   return null;
 }
-
-/**
- * The first character of a name, as a capital, for a player's badge. Until
- * the garage ships in Phase 2, a player's car is a badge with this on it.
- */
-export function initialOf(name: string): string {
-  const [first] = [...tidyName(name)];
-  return first ? first.toLocaleUpperCase() : '?';
-}

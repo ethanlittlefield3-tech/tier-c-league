@@ -8,10 +8,18 @@
   margin-bottom: 6px;
 }
 
-.profile-badge {
-  width: 104px;
-  height: 104px;
-  margin-bottom: 8px;
+/* Your car is your icon: it stands over your name. */
+.profile-car {
+  display: block;
+  width: 200px;
+  max-width: 64%;
+  margin-bottom: 6px;
+}
+
+.profile-car svg {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 .profile-who h1 {

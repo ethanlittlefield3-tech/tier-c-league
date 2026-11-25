@@ -1,7 +1,10 @@
 /* Feed: the trash-talk panel, brags, and the wall. */
 
+/* One column, exactly the screen's width: a wide row inside, like the
+   quick-chat chips, swipes within its panel instead of widening the feed. */
 .feed {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
 }
 
@@ -95,6 +98,7 @@
 
 .feed-wall {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
 }
 
@@ -298,4 +302,73 @@
 
 .feed-event[data-kind='rank'] {
   border-left-color: #5fb4ff;
+}
+
+/* Each post's author, by their car. */
+.feed-car {
+  display: inline-block;
+  width: 38px;
+  margin-right: 6px;
+  vertical-align: -3px;
+}
+
+.feed-car svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* The week's MVP and Bust, spotlighted with their cars. */
+.feed-spotlight {
+  margin: 10px 0 2px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.feed-spotlight li {
+  flex: 1 1 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 6px 10px;
+  border-radius: 14px;
+  background: radial-gradient(ellipse at 50% 30%, rgba(255, 207, 63, 0.22), rgba(17, 30, 73, 0.6) 70%);
+  text-align: center;
+}
+
+.feed-spotlight li[data-award='Bust'] {
+  background: radial-gradient(ellipse at 50% 30%, rgba(255, 90, 102, 0.2), rgba(17, 30, 73, 0.6) 70%);
+}
+
+.feed-spotlight-car {
+  display: block;
+  width: 100%;
+  max-width: 120px;
+}
+
+.feed-spotlight-car svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.feed-spotlight-award {
+  font: italic 900 13px/1 var(--display);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.feed-spotlight li[data-award='Bust'] .feed-spotlight-award {
+  color: #ff9aa2;
+}
+
+.feed-spotlight-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink);
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { NAME_MAX, initialOf, nameProblem, tidyName } from '../src/join/name.ts';
+import { NAME_MAX, nameProblem, tidyName } from '../src/join/name.ts';
 
 describe('Display names', () => {
   it('A name is tidied: spaces at the ends go, and a run of spaces becomes one', () => {
@@ -30,13 +30,5 @@ describe('Display names', () => {
     expect(nameProblem('é'.repeat(25))).toBe('too-long');
     expect(nameProblem('\u{1F525}'.repeat(12))).toBeNull();
     expect(nameProblem('\u{1F525}'.repeat(13))).toBe('too-long');
-  });
-
-  it('The badge shows the first character of the name, as a capital', () => {
-    expect(initialOf('riley')).toBe('R');
-    expect(initialOf('  maya')).toBe('M');
-    expect(initialOf('élan')).toBe('É');
-    expect(initialOf('\u{1F525}Hot')).toBe('\u{1F525}');
-    expect(initialOf('')).toBe('?');
   });
 });

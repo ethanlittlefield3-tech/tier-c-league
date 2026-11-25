@@ -138,3 +138,17 @@
   gap: 8px;
   margin-top: 10px;
 }
+
+/* Each player's car, by their name. */
+.standings-car {
+  display: inline-block;
+  width: 40px;
+  margin-right: 8px;
+  vertical-align: -3px;
+}
+
+.standings-car svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}

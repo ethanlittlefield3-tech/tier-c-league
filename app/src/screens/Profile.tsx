@@ -1,11 +1,12 @@
 import { useState } from 'preact/hooks';
-import { PlayerBadge } from '../art/PlayerBadge.tsx';
+import { CarArt } from '../art/car/CarArt.tsx';
+import type { CarParts } from '../art/car/draw.ts';
 import { SmallNunchucks } from '../art/SmallNunchucks.tsx';
 import type { Me, Trouble } from '../data/identity.ts';
 import { useDoc } from '../data/hooks.ts';
 import { loadData } from '../data/load.ts';
 import { whyOf } from '../data/why.ts';
-import { NAME_MAX, initialOf, nameProblem, tidyName } from '../join/name.ts';
+import { NAME_MAX, nameProblem, tidyName } from '../join/name.ts';
 import { Back, Field, Heading } from '../ui/parts.tsx';
 import type { Rank } from '@tcl/engine';
 import { Alerts } from './Alerts.tsx';
@@ -27,7 +28,7 @@ const TROUBLE: Record<Trouble, string> = {
 export function Profile(props: { me: Me; onBack: () => void; onRenamed: (me: Me) => void; onSignedOut: () => void; onCommish: () => void; onLog: () => void }) {
   const league = useDoc<{ commish?: string; coCommish?: string | null }>(`leagues/${props.me.league}`);
   const isCommish = league.data !== null && (league.data.commish === props.me.player || league.data.coCommish === props.me.player);
-  const mine = useDoc<{ rank?: Rank; rankHistory?: RankEntry[]; badges?: Record<string, unknown> }>(`leagues/${props.me.league}/players/${props.me.player}`);
+  const mine = useDoc<{ rank?: Rank; rankHistory?: RankEntry[]; badges?: Record<string, unknown>; car?: Partial<CarParts> }>(`leagues/${props.me.league}/players/${props.me.player}`);
   const [name, setName] = useState(props.me.displayName);
   const [nameNote, setNameNote] = useState<{ error: boolean; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
@@ -112,7 +113,7 @@ export function Profile(props: { me: Me; onBack: () => void; onRenamed: (me: Me)
       <div class="screen-body">
         <Back onBack={props.onBack} />
         <div class="profile-who">
-          <PlayerBadge class="profile-badge" initial={initialOf(props.me.displayName)} />
+          <CarArt parts={mine.data?.car} class="profile-car" />
           <Heading>{props.me.displayName}</Heading>
           <p class="profile-league">{props.me.leagueName}</p>
         </div>

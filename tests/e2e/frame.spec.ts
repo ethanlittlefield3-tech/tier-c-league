@@ -98,14 +98,13 @@ test.describe('Profile', () => {
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(key);
   });
 
-  test('You can change your name, and the badge and the league see the new one', async ({ page, request }) => {
+  test('You can change your name, and the league sees the new one', async ({ page, request }) => {
     const { league, key } = await inTheApp(page, request);
     await profileButton(page, 'Riley').click();
     await page.getByLabel('Display name').fill('  Big   Riles ');
     await button(page, 'Save name').click();
     await expect(page.getByRole('status')).toHaveText('Saved.');
     await expect(page.getByRole('heading', { name: 'Big Riles', level: 1 })).toBeVisible();
-    await expect(page.locator('.profile-badge text')).toHaveText('B');
     const player = await playerOf(request, league, key);
     expect((await readDoc(request, `leagues/${league.id}/players/${player}`))?.displayName).toBe('Big Riles');
 

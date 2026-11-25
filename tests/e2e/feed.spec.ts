@@ -39,6 +39,17 @@ const wallPosts = async (request: APIRequestContext, league: TestLeague): Promis
   Promise.all((await listIds(request, `leagues/${league.id}/wall`)).map(async (id) => ({ id, ...((await readDoc(request, `leagues/${league.id}/wall/${id}`)) ?? {}) })));
 
 test.describe('Feed and the wall', () => {
+  test('The feed fits the phone: the quick-chat lines swipe sideways inside their panel', async ({ page, request, browser }) => {
+    const { riley } = await rivals(page, request, browser);
+    const chips = page.getByRole('group', { name: 'Quick chat' });
+    await expect(chips.getByRole('button')).toHaveCount(10);
+    const fit = await page.locator('.feed').evaluate((feed) => ({ feed: feed.getBoundingClientRect().width, page: window.innerWidth, chips: feed.querySelector('.feed-chips')!.scrollWidth, shown: feed.querySelector('.feed-chips')!.clientWidth }));
+    expect(fit.feed).toBeLessThanOrEqual(fit.page - 40);
+    // The row holds more than it shows, and swipes.
+    expect(fit.chips).toBeGreaterThan(fit.shown);
+    await riley.phone.context().close();
+  });
+
   test("A quick-chat line lands on both phones, with the opponent's name filled in", async ({ page, request, browser }) => {
     const { league, riley } = await rivals(page, request, browser);
     await expect(riley.phone.getByRole('heading', { name: 'Talk to Alex' })).toBeVisible();
@@ -78,7 +89,7 @@ test.describe('Feed and the wall', () => {
     await riley.phone.context().close();
   });
 
-  test('Brags take comments and fire, skull and beer reactions from everyone, live', async ({ page, request, browser }) => {
+  test("Brags show their author's car, and take comments and fire, skull and beer reactions from everyone, live", async ({ page, request, browser }) => {
     const { riley } = await rivals(page, request, browser);
     await riley.phone.getByLabel('Your brag').fill('Passed my cert exam');
     await button(riley.phone, 'Post it').click();
@@ -86,6 +97,7 @@ test.describe('Feed and the wall', () => {
 
     const onAlex = page.getByRole('article', { name: 'Brag from Riley' });
     await expect(onAlex.locator('.feed-text')).toHaveText('Passed my cert exam');
+    await expect(onAlex.locator('.feed-car')).toHaveAttribute('data-car', 'dart cobalt');
     await onAlex.getByRole('button', { name: 'Fire, 0' }).click();
     await expect(onAlex.getByRole('button', { name: 'Fire, 1' })).toHaveAttribute('aria-pressed', 'true');
 
@@ -145,7 +157,7 @@ test.describe('Feed and the wall', () => {
     await expect(page.getByText('Nothing on the wall yet. Start something.')).toBeVisible();
   });
 
-  test('Check-ins, power-ups, docks, revealed Demolitions and results show in the feed as they happen', async ({ page, request, browser }) => {
+  test("Check-ins, power-ups, docks, revealed Demolitions and results show in the feed as they happen, with the week's MVP and Bust spotlighted with their cars", async ({ page, request, browser }) => {
     const league = await createLeague(request);
     const season = await startSeason(request, league);
     const riley = await joins(browser, request, league, 'Riley');
@@ -204,11 +216,14 @@ test.describe('Feed and the wall', () => {
         [league.commish]: { opponent: riley.player, points: 30, opponentPoints: 24, outcome: 'win', seasonPoints: 35 },
         [riley.player]: { opponent: league.commish, points: 24, opponentPoints: 30, outcome: 'loss', seasonPoints: 24 },
       },
-      awards: { mvp: [league.commish], bust: [], wheel: [riley.player] },
+      awards: { mvp: [league.commish], bust: [riley.player], wheel: [riley.player] },
     });
     const results = feed.locator('.feed-event[data-kind="results"]');
     await expect(results.locator('.feed-event-text')).toContainText('Week 1 results are in');
-    await expect(results.locator('.feed-event-detail')).toHaveText(/You beat Riley 30–24\nMVP: You · Spins the Wheel: Riley/);
+    await expect(results.locator('.feed-event-detail')).toHaveText(/You beat Riley 30–24\nMVP: You · Bust: Riley · Spins the Wheel: Riley/);
+    const spotlight = results.getByRole('list', { name: 'Spotlight' }).getByRole('listitem');
+    await expect(spotlight).toHaveText(['MVPYou', 'BustRiley']);
+    await expect(spotlight.first().locator('.feed-spotlight-car')).toHaveAttribute('data-car', 'dart cobalt');
     await riley.phone.context().close();
   });
 });

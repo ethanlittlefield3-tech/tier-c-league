@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { joinAs } from './helpers.ts';
-import { addPlayer, createLeague, futureDays, readDoc, setGoals, setTargets, startSeason, thisWeek, writeDoc } from './league.ts';
+import { addPlayer, createLeague, futureDays, patchDoc, readDoc, setGoals, setTargets, startSeason, thisWeek, writeDoc } from './league.ts';
 
 const button = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
 const tab = (page: Page, name: string) => page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name, exact: true });
@@ -32,6 +32,16 @@ const mayaLogs = (request: APIRequestContext, path: string, date: string, entry:
   writeDoc(request, `${path}/days/maya_${date}`, { player: 'maya', date, ...entry, firstAt: new Date(), updatedAt: new Date() });
 
 test.describe('Match', () => {
+  test("Your car faces your opponent's across the score, each in its own paint, theirs on team orange", async ({ page, request }) => {
+    const { league } = await onMatch(page, request);
+    const car = (team: string) => page.locator(`.match-side[data-team="${team}"] .match-car`);
+    await expect(car('blue')).toHaveAttribute('data-car', 'dart cobalt');
+    await expect(car('orange')).toHaveAttribute('data-car', 'dart cobalt');
+    await patchDoc(request, `leagues/${league.id}/players/maya`, { car: { body: 'bruiser', paint: 'racingRed', decal: 'none', wheels: 'stock', boost: 'team', explosion: 'stock', topper: 'none' } });
+    await expect(car('orange')).toHaveAttribute('data-car', 'bruiser racingRed');
+    await expect(car('orange')).toHaveClass(/match-car-them/);
+  });
+
   test("Your opponent's day, live, in team orange: their goals, screen time and beers", async ({ page, request }) => {
     const { season } = await onMatch(page, request);
     await expect(page.getByRole('heading', { name: "Maya's day" })).toBeVisible();

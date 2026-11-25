@@ -32,9 +32,28 @@
   min-width: 0;
 }
 
-.match-badge {
-  width: 56px;
-  height: 56px;
+/* The two cars face each other across the VS. */
+.match-car {
+  display: block;
+  width: 100%;
+  max-width: 128px;
+}
+
+.match-car svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.match-car-them svg {
+  transform: scaleX(-1);
+}
+
+/* A decal's letters still read the right way round. */
+.match-car-them text {
+  transform: scaleX(-1);
+  transform-box: fill-box;
+  transform-origin: center;
 }
 
 .match-name {

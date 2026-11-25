@@ -297,7 +297,8 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 172. **A new player picks a starter body and paint while joining,** under their name (SCOPE.md, "Join or recover"), and gets the rest of the starter kit with it: no decal, stock wheels, a boost trail in their team color, the stock burst and no topper. A phone waiting for the commish's approval keeps the pick until it joins. The commish, and anyone who joined before the Garage, starts in a cobalt Dart. Your car takes the lettered badge's place on every step of joining and getting back in, since it is your icon now.
 173. **The league checks every car, not just the app:** each slot holds a part from the catalog, a starter part for anyone, and a badge's part only once that badge is earned. A rule test tries every part in the engine's catalog, so the rules and the catalog can't drift apart.
 174. **Your car in the header is drawn without its boost trail,** so it reads at icon size. Each part's tile in the Garage shows that part on your own car.
-175. **The goal-explosion slot's button says "Explosion",** so the seven slots fit four to a row on an iPhone. An explosion plays when you pick it, or with Watch it. Playing it when you win a week comes with your car in more places.
+175. **The goal-explosion slot's button says "Explosion",** so the seven slots fit four to a row on an iPhone. An explosion plays when you pick it, or with Watch it. Playing it when you win a week comes next.
+176. **Your car is your icon wherever a player shows:** Profile, the Match scoreboard, each post on the wall, the standings, and the week's results, which spotlight the MVP and the Bust with their cars (SCOPE.md, "MVP and Bust"). On Match your car faces your opponent's, which drives on team orange. Lists draw cars without boost trails, so they read at small sizes. The lettered badge from Phase 1 is gone.
 
 **Calendar**
 

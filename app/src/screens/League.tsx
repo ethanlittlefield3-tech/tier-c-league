@@ -1,3 +1,5 @@
+import { CarArt } from '../art/car/CarArt.tsx';
+import type { CarParts } from '../art/car/draw.ts';
 import { useAll, useDoc, useNow } from '../data/hooks.ts';
 import type { Me } from '../data/identity.ts';
 import { seasonDates } from '../today/model.ts';
@@ -62,7 +64,7 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
   const season = useDoc<{ timeZone: string; regularWeeks: number }>(seasonPath);
   const standings = useDoc<{ rows?: Row[] }>(seasonPath ? `${seasonPath}/standings/current` : null);
   const weeks = useAll<WeekDoc>(seasonPath ? `${seasonPath}/weeks` : null);
-  const players = useAll<{ displayName?: string }>(`${leaguePath}/players`);
+  const players = useAll<{ displayName?: string; car?: Partial<CarParts> }>(`${leaguePath}/players`);
   const dates = season.data ? seasonDates(now, season.data) : null;
   const today = useDoc<{ period: string }>(seasonPath && dates ? `${seasonPath}/calendar/${dates.today}` : null);
 
@@ -131,7 +133,8 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
               {rows.map((row) => (
                 <tr data-me={row.player === props.me.player}>
                   <td class="standings-rank">{row.rank}</td>
-                  <td>
+                  <td class="standings-who">
+                    <CarArt parts={players.docs.find((found) => found.id === row.player)?.data.car} bare class="standings-car" />
                     {row.player === props.me.player ? (
                       name(row.player)
                     ) : (

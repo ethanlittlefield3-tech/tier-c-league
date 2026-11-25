@@ -10,7 +10,7 @@ async function openGarage(page: Page) {
 }
 
 test.describe('The Garage', () => {
-  test('Your car sits on its turntable; a starter part goes on with a tap, and is saved on your profile', async ({ page, request }) => {
+  test('Your car sits on its turntable; a starter part goes on with a tap, is saved on your profile, and shows as your icon', async ({ page, request }) => {
     const league = await createLeague(request);
     await enterAsCommish(page, league);
     // Your car is your icon in the header.
@@ -21,6 +21,9 @@ test.describe('The Garage', () => {
     await expect(page.getByRole('status')).toHaveText('Racing Red is on your car.');
     await expect.poll(async () => ((await readDoc(request, `leagues/${league.id}/players/${league.commish}`))?.car as { paint?: string } | undefined)?.paint).toBe('racingRed');
     await expect(page.getByRole('list', { name: 'Paint' }).getByRole('button', { name: 'Racing Red', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('.frame-me .frame-car')).toHaveAttribute('data-car', 'dart racingRed');
+    await page.getByRole('button', { name: 'Your profile, Alex', exact: true }).click();
+    await expect(page.locator('.profile-car')).toHaveAttribute('data-car', 'dart racingRed');
   });
 
   test('A locked part shows the badge that unlocks it, and goes on once that badge is earned', async ({ page, request }) => {

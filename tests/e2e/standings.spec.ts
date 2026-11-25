@@ -39,7 +39,7 @@ const logged = (player: string, date: string, goals: { mind: boolean; body: bool
 });
 
 test.describe('Settling a week, and the League tab', () => {
-  test('After a week ends, the job settles it: results, Season Points and the standings show in League', async ({ page, request }) => {
+  test("After a week ends, the job settles it: results, Season Points and the standings show in League, by each player's car", async ({ page, request }) => {
     const league = await createLeague(request, { name: 'Sunday Squad' });
     const season = await startSeason(request, league);
     const key = await joinAs(page, league, 'Riley');
@@ -65,6 +65,9 @@ test.describe('Settling a week, and the League tab', () => {
     const first = page.locator('.standings tbody tr').first();
     await expect(first).toContainText('You');
     await expect(first.locator('.standings-points')).toHaveText('38');
+    // One car a row: the commish, Riley and Maya.
+    await expect(page.locator('.standings tbody .standings-car')).toHaveCount(3);
+    await expect(first.locator('.standings-car')).toHaveAttribute('data-car', 'dart cobalt');
     await expect(first).toContainText('1–0–0');
     await expect(page.locator('.result-head').first()).toContainText('Week 1');
     await expect(page.locator('.result-head').first()).toContainText('Final');

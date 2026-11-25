@@ -63,7 +63,7 @@ describe('The live feed', () => {
     ]);
   });
 
-  it("A week's results post with every matchup and the awards, then again when they go final", () => {
+  it("A week's results post with every matchup and the awards, the MVP and the Bust in the spotlight, then again when they go final", () => {
     const events = feedEvents({
       ...none,
       name,
@@ -93,6 +93,7 @@ describe('The live feed', () => {
         kind: 'results',
         text: 'Week 2 results are in',
         detail: 'Maya beat Jordan 39–33\nYou drew with Sam 20–20\nMVP: Maya · Bust: Jordan · Spins the Wheel: Jordan',
+        spotlight: { mvp: ['maya'], bust: ['jordan'] },
       },
     ]);
   });

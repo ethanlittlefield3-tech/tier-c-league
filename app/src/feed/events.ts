@@ -15,6 +15,8 @@ export interface FeedEvent {
   detail?: string;
   /** How a revealed Demolition went. */
   outcome?: string;
+  /** The week's MVP and Bust, shown with their cars (SCOPE.md, "MVP and Bust"). */
+  spotlight?: { mvp: string[]; bust: string[] };
 }
 
 interface Result {
@@ -148,7 +150,8 @@ export function feedEvents(input: FeedInput): FeedEvent[] {
         awards?.wheel.length ? `Spins the Wheel: ${list(awards.wheel, name)}` : '',
       ].filter(Boolean);
       if (honors.length > 0) lines.push(honors.join(' · '));
-      events.push({ id: `results-${id}`, at: data.settledAt, kind: 'results', text: `Week ${data.week} results are in`, detail: lines.join('\n') });
+      const spotlight = awards && (awards.mvp.length > 0 || awards.bust.length > 0) ? { spotlight: { mvp: awards.mvp, bust: awards.bust } } : {};
+      events.push({ id: `results-${id}`, at: data.settledAt, kind: 'results', text: `Week ${data.week} results are in`, detail: lines.join('\n'), ...spotlight });
     }
     if (typeof data.finalAt === 'number') {
       events.push({ id: `final-${id}`, at: data.finalAt, kind: 'results', text: `Week ${data.week} is final` });

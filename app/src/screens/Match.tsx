@@ -1,8 +1,8 @@
 import { LANES, type Lane } from '@tcl/engine';
-import { PlayerBadge } from '../art/PlayerBadge.tsx';
-import { useNow } from '../data/hooks.ts';
+import { CarArt } from '../art/car/CarArt.tsx';
+import type { CarParts } from '../art/car/draw.ts';
+import { useDoc, useNow } from '../data/hooks.ts';
 import type { Me } from '../data/identity.ts';
-import { initialOf } from '../join/name.ts';
 import { formatPoints, formatScreenShort, pointsChip } from '../today/model.ts';
 import type { DayCell } from '../today/week.ts';
 import { GoalMark } from './GoalMark.tsx';
@@ -58,6 +58,7 @@ function WeekRow(props: { who: string; team: 'blue' | 'orange'; cells: DayCell[]
 export function Match(props: { me: Me }) {
   const now = useNow();
   const match = useMatchup(props.me, now);
+  const mine = useDoc<{ car?: Partial<CarParts> }>(`leagues/${props.me.league}/players/${props.me.player}`);
 
   if (match.loading) {
     return (
@@ -85,7 +86,7 @@ export function Match(props: { me: Me }) {
     <div class="match">
       <section class="match-board" aria-label="This week's score">
         <div class="match-side" data-team="blue">
-          <PlayerBadge class="match-badge" initial={initialOf(props.me.displayName)} team="blue" />
+          <CarArt parts={mine.data?.car} team="blue" class="match-car" />
           <span class="match-name">You</span>
           <span class="match-points">{formatPoints(match.myWeek.totals.points)}</span>
         </div>
@@ -93,7 +94,7 @@ export function Match(props: { me: Me }) {
           VS
         </span>
         <div class="match-side" data-team="orange">
-          <PlayerBadge class="match-badge" initial={initialOf(them.name)} team="orange" />
+          <CarArt parts={them.car} team="orange" class="match-car match-car-them" />
           <span class="match-name">{them.name}</span>
           <span class="match-points">{formatPoints(match.theirWeek.totals.points)}</span>
         </div>

@@ -3,6 +3,7 @@
  * the week, your opponent, and both players' weeks scored by the engine.
  * Match uses it; Today gathers the same things for itself.
  */
+import type { CarParts } from '../art/car/draw.ts';
 import { receiptFixes, type Lane, type Square, type StoredReceipt } from '@tcl/engine';
 import { useDoc, usePeek, useWhere } from '../data/hooks.ts';
 import type { Me } from '../data/identity.ts';
@@ -36,7 +37,7 @@ export function useMatchup(me: Me, now: number) {
   const weekDoc = useDoc<{ targets?: Record<string, string[]> }>(seasonPath && period ? `${seasonPath}/weeks/${period}` : null);
   const targets = weekDoc.data?.targets?.[me.player] ?? [];
   const opponentId = targets.find((target) => target !== 'HOUSE') ?? null;
-  const profile = useDoc<{ displayName?: string }>(opponentId ? `${leaguePath}/players/${opponentId}` : null);
+  const profile = useDoc<{ displayName?: string; car?: Partial<CarParts> }>(opponentId ? `${leaguePath}/players/${opponentId}` : null);
   const roster = useDoc<{ goals?: Partial<Record<Lane, { text?: string }>> }>(seasonPath && opponentId ? `${seasonPath}/roster/${opponentId}` : null);
 
   const myDays = useWhere<Logged>(seasonPath ? `${seasonPath}/days` : null, 'player', me.player);
@@ -100,6 +101,7 @@ export function useMatchup(me: Me, now: number) {
       ? {
           id: opponentId,
           name: profile.data?.displayName ?? 'Your opponent',
+          car: profile.data?.car ?? null,
           goals: roster.data?.goals ?? {},
           kit: theirKit.docs.map((found) => found.data),
           log: dates ? (theirDays.docs.find((found) => found.data.date === dates.today)?.data ?? null) : null,
