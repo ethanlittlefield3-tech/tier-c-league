@@ -344,6 +344,14 @@ service cloud.firestore {
             : moved.data.date == date;
         }
 
+        // ---- Goals ----------------------------------------------------------
+        // Each player's Mind, Body and Wildcard goals for the season. The
+        // whole league can see them. Proposing and approving them comes with
+        // the draft, so for now only the jobs write them.
+        match /roster/{P} {
+          allow read: if isMember(L);
+        }
+
         match /calendar/{date} {
           allow read: if isMember(L);
         }

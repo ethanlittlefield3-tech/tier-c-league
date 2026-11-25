@@ -39,7 +39,6 @@ test.describe('The app frame', () => {
 
   test('A tab that is not built yet says what it will hold', async ({ page, request }) => {
     await inTheApp(page, request);
-    await expect(page.getByText('Being built now')).toBeVisible();
     await tab(page, 'Garage').click();
     await expect(page.getByText('Coming soon')).toBeVisible();
     await expect(page.getByText('Build your car on a turntable. Every badge you earn unlocks a part.')).toBeVisible();

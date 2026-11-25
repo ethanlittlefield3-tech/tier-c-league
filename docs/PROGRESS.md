@@ -1,6 +1,6 @@
 # Tier C League: progress log
 
-Last updated 2026-11-25, after the app's frame and the first Profile screen.
+Last updated 2026-11-25, after Today's first part.
 
 ## Plan change (commish ruling, 2026-11-25)
 
@@ -77,6 +77,12 @@ Last updated 2026-11-25, after the app's frame and the first Profile screen.
   - Profile: change your display name, show or hide your recovery key and copy it, and sign this phone out (it asks first). It also carries the "A Nunchucks Production" credit.
   - No new security rules were needed: renaming, reading your own key and signing out were already allowed and tested.
   - 16 new flow tests, 60 in all. They caught one real problem on the way: the name card and its text box both answered to "Display name" for a screen reader.
+
+- **Today, part 1: logging your day** (2026-11-25). The day's total on a slanted scoreboard, the three goals, screen time in 15-minute steps, beers, and yesterday until it locks at noon. Scores come from the engine, so the phone shows what the official result will be. A rest day takes the goals off. A locked day shows its final score and can't be changed.
+  - The commish confirmed on a real iPhone that installing, joining and Profile work.
+  - New rule: everyone in the league can read every player's goals (3 tests, 141 rule tests in all). Goals are still written only by jobs until the draft is built.
+  - The flow tests start a season with its whole calendar from the same code the season job will use, and can open or lock any day, so they pass at any hour. 15 new flow tests, 75 in all. 13 new logic tests.
+  - Still to come on Today: the scoreboard against your opponent, the power-up tray, the rest-day picker and the week bars.
 
 ## Waiting on the commish
 

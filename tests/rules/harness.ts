@@ -186,6 +186,13 @@ export async function seedLeague(): Promise<void> {
     batch.set(db.doc(`${season}/calendar/${PLAYOFF_DAY}`), calendarDay(9, 0, { date: PLAYOFF_DAY, phase: 'playoff', ...openNow }));
     batch.set(db.doc(`${season}/calendar/${NO_KIT_DAY}`), calendarDay(9, 1, { date: NO_KIT_DAY, kit: [], start: stamp(20 * HOUR), lock: stamp(56 * HOUR), periodStart: stamp(-HOUR) }));
     batch.set(db.doc(`${season}/calendar/${PLAYOFF_TOMORROW}`), calendarDay(9, 2, { date: PLAYOFF_TOMORROW, phase: 'playoff', start: stamp(20 * HOUR), lock: stamp(56 * HOUR), periodStart: stamp(-HOUR), sundayStart: stamp(100 * HOUR), restOpens: stamp(-HOUR) }));
+    // Each player's three approved goals for the season.
+    const goals = (mind: string, body: string, wildcard: string) => ({
+      goals: { mind: { text: mind, status: 'approved' }, body: { text: body, status: 'approved' }, wildcard: { text: wildcard, status: 'approved' } },
+    });
+    batch.set(db.doc(`${season}/roster/p1`), goals('Study 1 hour', 'Gym', 'Cook dinner'));
+    batch.set(db.doc(`${season}/roster/p2`), goals('Read 20 pages', '10k steps', 'No vaping'));
+    batch.set(db.doc(`${season}/roster/p3`), goals('A course lesson', 'A run', 'Call family'));
     // This week p1 plays p2 and p3 has the bye. Next week p1 plays p3.
     batch.set(db.doc(`${season}/weeks/w02`), { week: 2, mode: 'regular', targets: { p1: ['p2'], p2: ['p1'], p3: ['HOUSE'] } });
     batch.set(db.doc(`${season}/weeks/w03`), { week: 3, mode: 'regular', targets: { p1: ['p3'], p3: ['p1'], p2: ['HOUSE'] } });

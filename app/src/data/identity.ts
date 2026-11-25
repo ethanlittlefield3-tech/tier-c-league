@@ -46,7 +46,7 @@ function freshKey(): string {
 }
 
 /** Turns anything that went wrong into one of the three kinds of trouble. */
-function trouble(error: unknown): Failed {
+export function trouble(error: unknown): Failed {
   if (error instanceof Failed) return error;
   if (error instanceof NoBackend) return new Failed('not-open');
   // The database's errors carry a code. This one means the security rules said no.

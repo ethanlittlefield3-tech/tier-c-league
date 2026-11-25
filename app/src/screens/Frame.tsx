@@ -4,6 +4,7 @@ import { TAB_ICONS, type Tab } from '../art/tabIcons.tsx';
 import type { Me } from '../data/identity.ts';
 import { initialOf } from '../join/name.ts';
 import { Profile } from './Profile.tsx';
+import { Today } from './Today.tsx';
 import './frame.css';
 
 interface TabInfo {
@@ -11,13 +12,11 @@ interface TabInfo {
   label: string;
   /** What the tab will hold, in a line, until it is built. */
   soon: string;
-  /** The tab being built right now. */
-  next?: boolean;
 }
 
 // SCOPE.md, "Screens": five bottom tabs cover the whole game.
 const TABS: readonly TabInfo[] = [
-  { id: 'today', label: 'Today', soon: 'Your scoreboard, the four squares, beers, your power-ups and the day total.', next: true },
+  { id: 'today', label: 'Today', soon: 'Your scoreboard, the four squares, beers, your power-ups and the day total.' },
   { id: 'match', label: 'Match', soon: "This week's matchup: your opponent's live day, and the group-play modes." },
   { id: 'feed', label: 'Feed', soon: 'The live feed and the wall: taunts, brags, comments and reactions.' },
   { id: 'league', label: 'League', soon: 'Standings, the schedule, results, the playoff bracket and the trophy case.' },
@@ -32,7 +31,7 @@ function Soon(props: { tab: TabInfo }) {
       <div class="soon-icon">
         <Icon />
       </div>
-      <p class={props.tab.next ? 'soon-chip soon-chip-next' : 'soon-chip'}>{props.tab.next ? 'Being built now' : 'Coming soon'}</p>
+      <p class="soon-chip">Coming soon</p>
       <h2 id="soon-title">{props.tab.label}</h2>
       <p class="soon-text">{props.tab.soon}</p>
     </section>
@@ -82,7 +81,7 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
         </button>
       </header>
       <main class="frame-body" key={tab}>
-        <Soon tab={current} />
+        {tab === 'today' ? <Today me={props.me} /> : <Soon tab={current} />}
       </main>
       <nav class="frame-tabs" aria-label="Main">
         {TABS.map((info) => {

@@ -189,11 +189,6 @@
   color: var(--ink-soft);
 }
 
-.soon-chip-next {
-  background: rgba(255, 207, 63, 0.16);
-  color: var(--gold);
-}
-
 .soon h2 {
   margin: 4px 0 0;
   font: italic 900 26px/1.1 var(--display);

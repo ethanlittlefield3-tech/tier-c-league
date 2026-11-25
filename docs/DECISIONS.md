@@ -96,6 +96,13 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 46. **"Sign out of this phone" asks first, and signs out only this phone.** Your profile, your key and your other phones are untouched. Getting back in takes the recovery key.
 47. **Profile starts small:** your name, your key, signing out and the credit. Badges, rank history, stats, notification settings and "Suggest an idea" arrive with the features they belong to.
 
+**Today** (new on 2026-11-25, not yet reviewed by the commish)
+
+48. **The screen-time slider covers 0 to 8 hours,** where nearly every day falls, so each 15-minute step is wide enough to hit. The + button goes on to 24 hours.
+49. **"Clear" sets screen time back to not logged.** While the day is open that counts 0 so far; the −3 lands at the lock, as call 6 says.
+50. **A save shows on screen at once,** marked "Saving" until the server accepts it. With no signal it waits on the phone and goes through later. A save that arrives after the lock is refused.
+51. **A goal that isn't set yet can't be tapped.** It says "Set at the draft".
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.

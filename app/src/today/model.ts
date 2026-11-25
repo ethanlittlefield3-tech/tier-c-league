@@ -1,0 +1,75 @@
+/**
+ * The rules of the Today screen that are not drawing: which day is today, when
+ * a day can be logged, and the live score. Scores come from the engine, so the
+ * phone shows exactly what the official result will be.
+ *
+ * The phone's clock only decides what to show. Whether a save is accepted is
+ * decided by the server, against the calendar (firebase/firestore.rules).
+ */
+import { addDays, localDate, scoreDay, type DateStr, type DayLog, type DayScore } from '@tcl/engine';
+
+/** What a player has logged for a day: three yes-or-no goals, screen minutes (or none yet) and beers. */
+export interface DayEntry {
+  goals: { mind: boolean; body: boolean; wildcard: boolean };
+  screenMinutes: number | null;
+  beers: number;
+}
+
+export const SCREEN_MAX = 1440;
+export const SCREEN_STEP = 15;
+export const BEERS_MAX = 30;
+
+export function leagueDates(now: number, timeZone: string): { today: DateStr; yesterday: DateStr } {
+  const today = localDate(now, timeZone);
+  return { today, yesterday: addDays(today, -1) };
+}
+
+/**
+ * - `none`: no calendar entry, so no logging that day.
+ * - `before`: the day has not started.
+ * - `open`: it can be logged, until noon the next day.
+ * - `locked`: done.
+ */
+export type DayWindow = 'none' | 'before' | 'open' | 'locked';
+
+export function windowOf(calendar: { start: number; lock: number } | null, now: number): DayWindow {
+  if (!calendar) return 'none';
+  if (now < calendar.start) return 'before';
+  return now < calendar.lock ? 'open' : 'locked';
+}
+
+function toLog(entry: DayEntry | null): DayLog | null {
+  return entry ? { goals: entry.goals, screenMinutes: entry.screenMinutes, beers: entry.beers } : null;
+}
+
+/** The day's score as it stands. While the day is open, nothing logged shows 0 so far (DECISIONS.md, call 6). */
+export function liveDayScore(input: { par: number; entry: DayEntry | null; restDay: boolean; locked: boolean }): DayScore {
+  return scoreDay({ par: input.par, log: toLog(input.entry), restDay: input.restDay }, { open: !input.locked });
+}
+
+/** A player's rest day is the day they moved it to, or else Sunday in the regular season. */
+export function isRestDay(input: { date: DateStr; calendar: { phase: string; dayIndex: number }; restDate: DateStr | null }): boolean {
+  if (input.restDate) return input.restDate === input.date;
+  return input.calendar.phase === 'regular' && input.calendar.dayIndex === 6;
+}
+
+export function formatScreen(minutes: number | null): string {
+  if (minutes === null) return 'Not logged';
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (hours === 0) return `${rest} min`;
+  return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`;
+}
+
+/** Screen time after a step, kept to 15-minute marks between 0 and 24 hours. Not logged yet starts from 0. */
+export function stepScreen(minutes: number | null, delta: number): number {
+  const next = Math.floor(((minutes ?? 0) + delta) / SCREEN_STEP) * SCREEN_STEP;
+  return Math.min(SCREEN_MAX, Math.max(0, next));
+}
+
+/** "+3", "0" or "−2", with a true minus sign. */
+export function formatPoints(points: number): string {
+  if (points > 0) return `+${points}`;
+  if (points < 0) return `−${-points}`;
+  return '0';
+}
