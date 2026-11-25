@@ -39,7 +39,7 @@ Last updated 2026-11-25, after the join and recovery screens.
   - A: the gold C badge with a blue-to-orange boost streak, on navy.
   - B: the same badge with crossed nunchucks behind it.
   - C: a big C on a blue and orange split.
-  - A is in place until the commish picks. Switching is one line in that script and `npm run icons`.
+  - The commish picked A (ruling R8). Switching later is one line in that script and `npm run icons`.
 - **Install flow** (2026-11-25):
   - The app has a name ("Tier C League"), a Home Screen label ("Tier C"), icons for iPhone, Android and browsers, and a launch picture for 21 iPhone and iPad screen sizes (30 pictures, because iPads also start on their side).
   - Opened in Safari on an iPhone or iPad, it shows the three taps that add it to the Home Screen, and nothing else. The steps cover newer iPhones, where Share sits behind the three dots.
@@ -62,14 +62,8 @@ Last updated 2026-11-25, after the join and recovery screens.
 
 ## Waiting on the commish
 
-None of these blocks the build.
-
-1. **Pick an icon: A, B or C.** A is in place. The sooner the better, because an iPhone keeps the icon from the day the app was added.
-2. **Phone check of the install.** On an iPhone: open the live address in Safari, follow the three taps, then open Tier C from the Home Screen. Things only a real phone can show: the icon and its label, the launch picture, whether the intro is smooth, and the sound on Tap to enter.
-
-3. **Decide when the database gets set up.** Every screen from here on needs one. PHASE1.md planned for the commish to try them on a phone over Wi-Fi from a computer, but this build runs in a cloud workspace a phone cannot reach. Two ways forward:
-   - **Set up the free Firebase project now** (Step 5, items 1 to 3, moved up). About 10 minutes of clicking, one step at a time. After that every new screen works on the commish's phone the day it is built. Recommended.
-   - **Wait until Step 5.** Until then the commish reviews screens as pictures, and the live site stops at "The league is not open yet."
+1. **Firebase setup, one step at a time** (ruling R9). In order: create the project, add a web app, turn on anonymous sign-in, create the database, and put the service account key into GitHub Secrets. Then a "Create a league" button on GitHub makes a test league.
+2. **Phone check of the install.** On an iPhone: open the live address in Safari, follow the three taps, then open Tier C from the Home Screen. Things only a real phone can show: the icon and its label, the launch picture, whether the intro is smooth, and the sound on Tap to enter. This does not block the build.
 
 ## Next
 

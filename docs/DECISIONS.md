@@ -13,6 +13,8 @@ Every rule that had to be interpreted, and who decided it. SCOPE.md is still the
 | R5 | 2026-11-25 | **Penalties survive Rule One.** Rule One zeroes the day's play (goals, screen time, beers, Aerial, Demolition), but a failed receipt's −1 and commish docks still count. | SCOPE.md's order of operations read as if Rule One wiped everything, which would let a player caught lying burn Rule One to erase it. |
 | R6 | 2026-11-25 | **Receipts on screen time: prove it, or back down to "not logged".** The player can upload the screenshot, fixing the number first for free. Or they can back down, which makes screen time not logged (−3) with no extra point. A new number with no screenshot does not close the request. | Follow-up to R4. A number that could change without proof could be nudged by 15 minutes every time it was challenged, and never proven. |
 | R7 | 2026-11-25 | **The new title screen sets the level of art for the whole app,** including the gold C badge in the logo. | The commish asked for more complex graphics on 2026-11-24. A higher-detail title screen was built, and the commish approved it. |
+| R8 | 2026-11-25 | **The app icon is option A:** the gold C badge with a blue-to-orange boost streak, on navy. | Three options were drawn, as PHASE1.md asks. The launch pictures match it. |
+| R9 | 2026-11-25 | **The Firebase project is set up now, not at Step 5.** | PHASE1.md saved the accounts for last and planned for the commish to try screens from a computer on Wi-Fi. This build runs in a cloud workspace a phone cannot reach, so without a database the commish could only review screens as pictures. |
 
 ## Calls I made to close gaps (veto any)
 
@@ -70,7 +72,7 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 31. **Other iPhone browsers are sent to Safari,** with a button that copies the link. So is a page opened inside another app, such as a chat app's built-in browser. One set of steps that always works beats a set for each browser.
 32. **Android can skip the install with "Not now".** Its browser and its installed app share the same storage, so nothing is lost. The steps come back after 7 days.
 33. **A computer browser goes straight in.** There is nothing to install.
-34. **Icon A is the stand-in** until the commish picks from the three options.
+34. *(Settled by ruling R8: the icon is option A.)*
 
 **Joining and getting back in** (new on 2026-11-25, not yet reviewed by the commish)
 
