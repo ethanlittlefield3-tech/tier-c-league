@@ -272,7 +272,7 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 153. **Each week counts as its share of the most its season's par allowed,** so rank history carries across seasons fairly even if the par changes. Within one par, this is exactly SCOPE.md's average of weekly points.
 154. **A week that is unlocked and counted again replaces its old entry** in each player's rank history, and the ranks after it are worked out again.
 155. **The rank-up scene plays as the app opens, for a change from a rank this phone has shown before.** A phone's first rank arrives quietly in Profile, so a new phone never replays old changes, and a rank that changes while the app is open waits for the next open. The phone waits for the server's answer, not its own older copy, before it decides.
-156. **Until the Garage ships, the scene shows the badges only:** a boost streak shatters the old badge, and the new one lands. A rank down sinks the old badge instead. Your car boosting through comes with the Garage.
+156. **In a rank up, your car boosts through the old badge, which shatters into the new one** (SCOPE.md, "Rank-up animation"). A rank down sinks the old badge instead, with no car.
 157. **The rank badges are drawn for this app:** a rounded hexagon in each tier's metal, with one to three chevrons, a gem or a star that grows with the tier.
 
 **Phase 2: badges** (new on 2026-11-25, not yet reviewed by the commish). Badges don't change any score; these are the readings that needed a call.
@@ -297,8 +297,10 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 172. **A new player picks a starter body and paint while joining,** under their name (SCOPE.md, "Join or recover"), and gets the rest of the starter kit with it: no decal, stock wheels, a boost trail in their team color, the stock burst and no topper. A phone waiting for the commish's approval keeps the pick until it joins. The commish, and anyone who joined before the Garage, starts in a cobalt Dart. Your car takes the lettered badge's place on every step of joining and getting back in, since it is your icon now.
 173. **The league checks every car, not just the app:** each slot holds a part from the catalog, a starter part for anyone, and a badge's part only once that badge is earned. A rule test tries every part in the engine's catalog, so the rules and the catalog can't drift apart.
 174. **Your car in the header is drawn without its boost trail,** so it reads at icon size. Each part's tile in the Garage shows that part on your own car.
-175. **The goal-explosion slot's button says "Explosion",** so the seven slots fit four to a row on an iPhone. An explosion plays when you pick it, or with Watch it. Playing it when you win a week comes next.
+175. **The goal-explosion slot's button says "Explosion",** so the seven slots fit four to a row on an iPhone. An explosion plays when you pick it, or with Watch it, and when you win a week (call 177).
 176. **Your car is your icon wherever a player shows:** Profile, the Match scoreboard, each post on the wall, the standings, and the week's results, which spotlight the MVP and the Bust with their cars (SCOPE.md, "MVP and Bust"). On Match your car faces your opponent's, which drives on team orange. Lists draw cars without boost trails, so they read at small sizes. The lettered badge from Phase 1 is gone.
+177. **Your goal explosion plays the next time you open the app after a week you won goes final:** your car drives onto a stage, the explosion bursts over it, and the score shows. It plays once per week on each phone, before a rank change from the same week. A draw or a loss plays nothing. A phone that joins with weeks already final plays nothing old, but a phone in use before Week 1 does play a Week 1 win.
+178. **Each week in a player's rank history also keeps how the matchup ended and the other side's points,** so the phone needs no extra read to know a week was won.
 
 **Calendar**
 

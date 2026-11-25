@@ -1,0 +1,135 @@
+/* ---- The win scene -----------------------------------------------------------
+   The resting state of every rule here is the finished scene: your car on its
+   stage, the burst over, the score showing. The animations start from before. */
+
+.win {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: max(24px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+  background: radial-gradient(circle at 50% 40%, #1c3a8a 0%, #0a1330 58%, #050914 100%);
+  text-align: center;
+  cursor: pointer;
+}
+
+.win-stage {
+  position: relative;
+  width: 300px;
+  max-width: 100%;
+  height: 200px;
+}
+
+.win-platform {
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  width: 260px;
+  height: 260px;
+  margin-left: -130px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 207, 63, 0.4) 0%, rgba(31, 139, 255, 0.25) 45%, rgba(10, 19, 48, 0) 70%);
+  transform: scaleY(0.16);
+  transform-origin: 50% 100%;
+}
+
+.win-car {
+  position: absolute;
+  left: 50%;
+  bottom: 20px;
+  width: 240px;
+  margin-left: -120px;
+}
+
+.win-car svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.win-boom {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 280px;
+  height: 280px;
+  margin: -150px 0 0 -140px;
+  pointer-events: none;
+}
+
+.win-boom svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.win-kind {
+  margin: 14px 0 0;
+  font: italic 800 15px/1 var(--display);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.win-title {
+  margin: 0;
+  font: italic 900 44px/1.05 var(--display);
+  color: var(--ink);
+}
+
+.win-score {
+  margin: 4px 0 0;
+  font: italic 900 30px/1 var(--display);
+  color: var(--gold);
+}
+
+.win-hint {
+  margin: 18px 0 0;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .win-car {
+    animation: win-arrive 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  /* The burst waits for the car, then plays: hidden until then. */
+  .win-boom {
+    animation: win-boom-on 1ms linear 650ms both;
+  }
+
+  .win-kind,
+  .win-title,
+  .win-score,
+  .win-hint {
+    animation: win-fade 500ms ease-out 900ms both;
+  }
+}
+
+@keyframes win-arrive {
+  from {
+    transform: translateX(-120vw);
+  }
+}
+
+@keyframes win-boom-on {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes win-fade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}

@@ -12,6 +12,14 @@ describe('Ranks after a final week', () => {
     expect(second.history.map((entry) => entry.rank)).toEqual(['diamond', 'gold']);
   });
 
+  it("Each week keeps how the matchup ended and the other side's points, so a phone can celebrate a win", () => {
+    const won = withWeek([], { season: 's1', period: 'w01', points: 20, par: 3, outcome: 'win', against: 14 });
+    expect(won.history).toEqual([{ season: 's1', period: 'w01', points: 20, max: 39, rank: 'diamond', outcome: 'win', against: 14 }]);
+    // Counted again after an unlock: the new result replaces the old.
+    const again = withWeek(won.history, { season: 's1', period: 'w01', points: 12, par: 3, outcome: 'loss', against: 14 });
+    expect(again.history[0]).toMatchObject({ points: 12, outcome: 'loss', against: 14 });
+  });
+
   it('A week counted again after the commish unlocks it replaces its old entry', () => {
     const history: RankEntry[] = [{ season: 's1', period: 'w01', points: 20, max: 39, rank: 'diamond' }];
     const again = withWeek(history, { season: 's1', period: 'w01', points: 32, par: 3 });

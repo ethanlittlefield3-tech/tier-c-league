@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { RANK_NAMES, RANK_WEEKS, rankMove, type Rank } from '@tcl/engine';
 import { RankBadge } from '../art/RankBadge.tsx';
+import { CarArt } from '../art/car/CarArt.tsx';
+import type { CarParts } from '../art/car/draw.ts';
 import { recall, remember } from '../storage.ts';
 import './rank.css';
 
@@ -10,10 +12,13 @@ export interface RankEntry {
   points: number;
   max: number;
   rank: Rank;
+  /** How the week's matchup ended, and the other side's points. */
+  outcome?: 'win' | 'draw' | 'loss';
+  against?: number;
 }
 
 /** "Week 3" from "w03". */
-const weekName = (period: string) => `Week ${Number(period.slice(1))}`;
+export const weekName = (period: string) => `Week ${Number(period.slice(1))}`;
 
 /**
  * Your rank, in Profile (SCOPE.md, "Ranks and trophies"): your form over the
@@ -75,11 +80,11 @@ const CORNERS = [
 
 /**
  * The rank-up scene (SCOPE.md, "Rank-up animation"): the next time you open
- * the app after your rank changes, a boost streak shatters the old badge into
- * the new one. A rank-down gets a short, sad version. With Reduce Motion, the
- * new badge simply fades in. A tap closes it.
+ * the app after your rank changes, your car boosts through the old badge,
+ * which shatters into the new one. A rank-down gets a short, sad version. With
+ * Reduce Motion, the new badge simply fades in. A tap closes it.
  */
-export function RankUp(props: { from: Rank | null; to: Rank; onDone: () => void }) {
+export function RankUp(props: { from: Rank | null; to: Rank; car?: Partial<CarParts> | null; onDone: () => void }) {
   const move = rankMove(props.from, props.to);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -112,6 +117,7 @@ export function RankUp(props: { from: Rank | null; to: Rank; onDone: () => void 
         )}
         <div class="rankup-streak" aria-hidden="true" />
         <RankBadge rank={props.to} class="rankup-new" />
+        {move === 'up' && <CarArt parts={props.car} class="rankup-car" />}
       </div>
       <p class="rankup-kind">{move === 'down' ? 'Rank down' : 'Rank up'}</p>
       <h1 id="rankup-title" class="rankup-name">

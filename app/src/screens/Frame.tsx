@@ -14,7 +14,8 @@ import { Garage } from './Garage.tsx';
 import { League } from './League.tsx';
 import { Match } from './Match.tsx';
 import { PlayerDay } from './PlayerDay.tsx';
-import { RankUp, useRankScene } from './Rank.tsx';
+import { RankUp, useRankScene, type RankEntry } from './Rank.tsx';
+import { WinScene, useWinScene } from './Win.tsx';
 import { Profile } from './Profile.tsx';
 import { Today } from './Today.tsx';
 import { Wheel } from './Wheel.tsx';
@@ -70,8 +71,11 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
   const online = useOnline();
   // A rank change since this phone last showed one plays its scene as the app
   // opens: decided on the server's answer, not the phone's own older copy.
-  const profile = useDoc<{ rank?: Rank; car?: Partial<CarParts> }>(`leagues/${props.me.league}/players/${props.me.player}`);
-  const rankScene = useRankScene(props.me.league, props.me.player, profile.loading || profile.fromCache ? undefined : (profile.data?.rank ?? null));
+  const profile = useDoc<{ rank?: Rank; rankHistory?: RankEntry[]; car?: Partial<CarParts> }>(`leagues/${props.me.league}/players/${props.me.player}`);
+  const settled = !profile.loading && !profile.fromCache;
+  const rankScene = useRankScene(props.me.league, props.me.player, settled ? (profile.data?.rank ?? null) : undefined);
+  // A week you won, since this phone last looked, plays your goal explosion first.
+  const winScene = useWinScene(props.me.league, props.me.player, settled ? (profile.data?.rankHistory?.at(-1) ?? null) : undefined);
 
   // An alert opens the app at its screen: by a link when the app wasn't open,
   // or by a message from the service worker when it was.
@@ -106,8 +110,12 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
     if (!profileOpen && backFromProfile) meButton.current?.focus({ preventScroll: true });
   }, [profileOpen, backFromProfile]);
 
+  if (winScene) {
+    return <WinScene week={winScene.week} car={profile.data?.car} onDone={winScene.done} />;
+  }
+
   if (rankScene) {
-    return <RankUp from={rankScene.from} to={rankScene.to} onDone={rankScene.done} />;
+    return <RankUp from={rankScene.from} to={rankScene.to} car={profile.data?.car} onDone={rankScene.done} />;
   }
 
   if (dayOf) {

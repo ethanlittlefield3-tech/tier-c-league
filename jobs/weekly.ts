@@ -126,7 +126,14 @@ for (const league of leagues) {
         const profile = league.ref.collection('players').doc(line.player);
         const found = await profile.get();
         if (!found.exists) continue;
-        const ranked = withWeek((found.get('rankHistory') ?? []) as RankEntry[], { season: seasonId, period, points: line.points, par: Number(season.get('par')) });
+        const result = settled.results[line.player];
+        const ranked = withWeek((found.get('rankHistory') ?? []) as RankEntry[], {
+          season: seasonId,
+          period,
+          points: line.points,
+          par: Number(season.get('par')),
+          ...(result ? { outcome: result.outcome, against: result.opponentPoints } : {}),
+        });
         await profile.set({ rank: ranked.rank, rankHistory: ranked.history }, { merge: true });
         // A rank change is news for the league feed.
         const before = found.get('rank') as string | undefined;

@@ -230,6 +230,8 @@ Last updated 2026-11-25, after taking starter dares off the Wheel.
 - **Alerts, part 1: on the phone** (2026-11-25). Profile has an Alerts panel: turn them on with a tap, switch each of the 7 kinds on or off, and set quiet hours. A new player is offered alerts right under their recovery key. A service worker shows the alerts, opens the app at the right screen when one is tapped, and keeps the app's files on the phone so it opens with no signal. The push token is fetched again on every open.
   - New rules for devices: a phone signs up only as the player its claim holds. 4 new rule tests and 1 rewritten. Weakening the rule 14 ways was caught 13 times; the other is still refused by the checks on each field. 3 engine tests and 5 flow tests.
   - Sending them is next: the tick job, every 10 minutes. Alerts also wait on the Cloud Messaging web push key from the commish.
+- **Your goal explosion when you win a week, and your car in the rank-up scene** (2026-11-25, Phase 2). The next time you open the app after a week you won goes final, your car drives onto a stage, your goal explosion bursts over it, and the score shows. A rank up now has your car boosting through the old badge. Each week in a player's rank history also keeps how the matchup ended (DECISIONS.md, calls 177 and 178).
+  - 1 job test, and 1 new flow test; the rank flow tests check the car and the stored result.
 - **Your car across the app** (2026-11-25, Phase 2). Profile, the Match scoreboard, every post on the wall, the standings, and the week's results, which spotlight the MVP and the Bust with their cars. On Match your car faces your opponent's, which drives on team orange. The lettered badge from Phase 1 is gone (DECISIONS.md, call 176).
   - Fixed on the way: with an opponent set, the quick-chat row made every Feed panel about 2,000 points wide, cut off on the right. The row swipes inside its panel again, and a flow test checks the Feed fits the phone.
   - 2 new flow tests, and 4 more check the cars.
@@ -267,7 +269,7 @@ Last updated 2026-11-25, after taking starter dares off the Wheel.
 2. **Before real players join:** limit the app's web key to the app's own address in the Google Cloud console, and look at App Check, which stops other programs from using the database's free daily allowance.
    - **Step 5 items still to come, each with the feature that needs it:** the Cloud Messaging web push key (notifications), and the private backups repo with its token (the backup job is built and waits on them).
 3. **Rules still to write, each with its screen and its tests:** marking a player as left, once the mid-season question is answered. Phase 2 and 3 collections are in DATA-MODEL.md and refused until then.
-4. **Phase 2, continued:** the goal explosion when you win a week, and your car in the rank-up scene. Then rivalry records, nemesis, the win meter, poke and rematch; the highlight reel with sharing, predictions, storylines and the suggestion box; and the trophy case. Phase 3 after that.
+4. **Phase 2, continued:** rivalry records, nemesis, the win meter, poke and rematch; the highlight reel with sharing, predictions, storylines and the suggestion box; and the trophy case. Phase 3 after that.
 
 ## Questions for the commish, asked when each feature is built
 

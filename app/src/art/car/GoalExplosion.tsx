@@ -46,7 +46,7 @@ function piece(kind: Kind['piece'], color: string) {
   }
 }
 
-export function GoalExplosion(props: { kind: string; class?: string }) {
+export function GoalExplosion(props: { kind: string; class?: string; /** Holds the burst back, in milliseconds. */ delay?: number }) {
   const kind = KINDS[props.kind] ?? KINDS.stock!;
   return (
     <svg class={`boom ${props.class ?? ''}`} data-kind={props.kind} viewBox="-100 -100 200 200" aria-hidden="true">
@@ -58,7 +58,7 @@ export function GoalExplosion(props: { kind: string; class?: string }) {
         const spin = kind.piece === 'ray' ? Math.round((turn * 180) / Math.PI + 90) : (index % 2 ? 1 : -1) * (90 + index * 20);
         const scale = kind.piece === 'ring' ? 1 + index * 0.9 : 1;
         return (
-          <g key={index} class="boom-bit" style={{ '--x': `${x}px`, '--y': `${y}px`, '--r': `${spin}deg`, '--s': scale, animationDelay: `${index * (kind.piece === 'ring' ? 140 : 12)}ms` }}>
+          <g key={index} class="boom-bit" style={{ '--x': `${x}px`, '--y': `${y}px`, '--r': `${spin}deg`, '--s': scale, animationDelay: `${(props.delay ?? 0) + index * (kind.piece === 'ring' ? 140 : 12)}ms` }}>
             {piece(kind.piece, kind.colors[index % kind.colors.length]!)}
           </g>
         );

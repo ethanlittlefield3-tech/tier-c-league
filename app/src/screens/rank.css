@@ -55,6 +55,7 @@
 .rankup {
   position: fixed;
   inset: 0;
+  overflow: hidden;
   z-index: 50;
   display: flex;
   flex-direction: column;
@@ -100,6 +101,23 @@
   opacity: 0;
 }
 
+/* Your car boosts through the old badge. At rest it has gone off to the right. */
+.rankup-car {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 170px;
+  margin: -34px 0 0 -85px;
+  transform: translateX(380px);
+  opacity: 0;
+}
+
+.rankup-car svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 .rankup-kind {
   margin: 18px 0 0;
   font: italic 800 15px/1 var(--display);
@@ -135,6 +153,10 @@
 
   .rankup[data-move='up'] .rankup-new {
     animation: rankup-arrive 1500ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  .rankup[data-move='up'] .rankup-car {
+    animation: rankup-drive 1100ms cubic-bezier(0.45, 0, 0.3, 1) 250ms both;
   }
 
   .rankup[data-move='down'] .rankup-shard {
@@ -186,6 +208,20 @@
   }
   100% {
     transform: translateX(120%) skewX(-18deg);
+    opacity: 0;
+  }
+}
+
+@keyframes rankup-drive {
+  0% {
+    transform: translateX(-380px);
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(380px);
     opacity: 0;
   }
 }
