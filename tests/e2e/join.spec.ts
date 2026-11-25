@@ -45,16 +45,21 @@ test.describe('Joining a league', () => {
     await expectInApp(page, 'Riley', 'Sunday Squad');
   });
 
-  test("The badge shows the first letter of the name as it is typed", async ({ page, request }) => {
+  test('A new player picks a starter car while joining, a body and one of 15 paints, and it is on their profile', async ({ page, request }) => {
     const league = await createLeague(request);
     await enter(page);
     await button(page, 'Join a league').click();
     await page.getByLabel('League code').fill(league.code);
     await button(page, 'Next').click();
-    const badge = page.locator('.join-badge text');
-    await expect(badge).toHaveText('?');
-    await page.getByLabel('Display name').fill('maya');
-    await expect(badge).toHaveText('M');
+    await page.getByLabel('Display name').fill('Riley');
+    await expect(page.getByRole('list', { name: 'Paint' }).getByRole('button')).toHaveCount(15);
+    await page.getByRole('group', { name: 'Body' }).getByRole('button', { name: 'Bruiser', exact: true }).click();
+    await page.getByRole('list', { name: 'Paint' }).getByRole('button', { name: 'Racing Red', exact: true }).click();
+    await expect(page.getByText('Racing Red Bruiser.')).toBeVisible();
+    await button(page, 'Join the league').click();
+    await expect(heading(page, 'Save your recovery key')).toBeVisible();
+    const player = await playerOf(request, league, (await page.locator('.join-key').textContent()) ?? '');
+    expect((await readDoc(request, `leagues/${league.id}/players/${player}`))?.car).toEqual({ body: 'bruiser', paint: 'racingRed', decal: 'none', wheels: 'stock', boost: 'team', explosion: 'stock', topper: 'none' });
   });
 
   test('A code that is too short, or has a look-alike character, is caught before anything is sent', async ({ page }) => {
@@ -242,13 +247,14 @@ test.describe('Getting back in with a recovery key', () => {
 });
 
 test.describe("Joining with the commish's approval", () => {
-  /** A new player types the code and a name, which asks the commish to let them in. */
+  /** A new player types the code and a name, and picks a teal car, which asks the commish to let them in. */
   async function askToJoin(page: Page, league: TestLeague, name: string) {
     await enter(page);
     await button(page, 'Join a league').click();
     await page.getByLabel('League code').fill(league.code);
     await button(page, 'Next').click();
     await page.getByLabel('Display name').fill(name);
+    await page.getByRole('list', { name: 'Paint' }).getByRole('button', { name: 'Teal', exact: true }).click();
     await button(page, 'Join the league').click();
     await expect(heading(page, 'Asked to join')).toBeVisible();
   }
@@ -262,7 +268,7 @@ test.describe("Joining with the commish's approval", () => {
     return phone;
   }
 
-  test('A new player asks to join, waits, and gets in with a recovery key once the commish lets them in', async ({ page, request, browser }) => {
+  test('A new player asks to join, waits, and gets in with a recovery key, and the car they picked, once the commish lets them in', async ({ page, request, browser }) => {
     const league = await createLeague(request, { name: 'Sunday Squad', joining: 'approval' });
     await askToJoin(page, league, 'Riley');
     await expect(page.getByRole('status')).toContainText('Your commish lets new players in to Sunday Squad.');
@@ -279,7 +285,9 @@ test.describe("Joining with the commish's approval", () => {
     const key = (await page.locator('.join-key').textContent()) ?? '';
     expect(key).toMatch(KEY_SHAPE);
     const player = await playerOf(request, league, key);
-    expect((await readDoc(request, `leagues/${league.id}/players/${player}`))?.displayName).toBe('Riley');
+    const profile = await readDoc(request, `leagues/${league.id}/players/${player}`);
+    expect(profile?.displayName).toBe('Riley');
+    expect((profile?.car as { paint?: string } | undefined)?.paint).toBe('teal');
     await button(page, "I've saved it").click();
     await expectInApp(page, 'Riley', 'Sunday Squad');
 

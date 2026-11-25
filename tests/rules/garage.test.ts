@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 import { BADGES, STARTER_PARTS } from '../../engine/src/index.ts';
-import { asJob, assertFails, assertSucceeds, dev2, dev3, league, seedLeague, startEmulator, stopEmulator } from './harness.ts';
+import { CODE, NEW_KEY, asJob, assertFails, assertSucceeds, dev2, dev3, league, now, seedLeague, startEmulator, stopEmulator, stranger } from './harness.ts';
 
 beforeAll(startEmulator);
 afterAll(stopEmulator);
@@ -9,6 +9,17 @@ beforeEach(seedLeague);
 const profile = `${league}/players/p2`;
 const starter = { body: 'dart', paint: 'cobalt', decal: 'none', wheels: 'stock', boost: 'team', explosion: 'stock', topper: 'none' };
 const setCar = (car: Record<string, unknown>) => dev2().doc(profile).update({ car });
+/** A new player joins in this car, the way the join screen saves it. */
+function joinIn(car: Record<string, unknown>) {
+  const db = stranger();
+  const batch = db.batch();
+  batch.update(db.doc(league), { 'members.p9': true });
+  batch.set(db.doc(`${league}/players/p9`), { displayName: 'Riley', car, joinedAt: now() });
+  batch.set(db.doc(`${league}/keys/p9`), { key: NEW_KEY, rotatedAt: now() });
+  batch.set(db.doc(`${league}/lookup/${NEW_KEY}`), { player: 'p9' });
+  batch.set(db.doc(`${league}/claims/dev9`), { player: 'p9', key: NEW_KEY, code: CODE, at: now() });
+  return batch.commit();
+}
 const giveBadges = (badges: string[]) => asJob((db) => db.doc(profile).update({ badges: Object.fromEntries(badges.map((badge) => [badge, { at: new Date(), season: 's1' }])) }));
 
 describe('The Garage', () => {
@@ -32,6 +43,12 @@ describe('The Garage', () => {
     const { topper: _topper, ...noTopper } = starter;
     await assertFails(setCar(noTopper));
     await assertFails(setCar({ ...starter, horn: 'loud' }));
+  });
+
+  it('A new player joins in a starter car they picked, but not in a part a badge unlocks', async () => {
+    await assertFails(joinIn({ ...starter, paint: 'chrome' }));
+    await assertFails(joinIn({ ...starter, topper: 'trophy' }));
+    await assertSucceeds(joinIn({ ...starter, body: 'bruiser', paint: 'racingRed' }));
   });
 
   it("Nobody changes someone else's car", async () => {

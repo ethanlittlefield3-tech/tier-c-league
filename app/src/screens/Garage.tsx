@@ -2,7 +2,8 @@ import { useRef, useState } from 'preact/hooks';
 import { BADGES, STARTER_PARTS, type Badge, type Part, type PartSlot } from '@tcl/engine';
 import { CarArt } from '../art/car/CarArt.tsx';
 import { BurstIcon, GoalExplosion } from '../art/car/GoalExplosion.tsx';
-import { STARTER_CAR, paintColors, type CarParts } from '../art/car/draw.ts';
+import { STARTER_CAR, type CarParts } from '../art/car/draw.ts';
+import { Swatch } from '../art/car/Swatch.tsx';
 import { useDoc } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
@@ -31,23 +32,6 @@ function partsFor(slot: PartSlot): { part: Part; badge: Badge | null }[] {
     ...STARTER_PARTS.filter((part) => part.slot === slot).map((part) => ({ part, badge: null })),
     ...BADGES.flatMap((badge) => badge.unlocks.filter((part) => part.slot === slot).map((part) => ({ part, badge }))),
   ];
-}
-
-function Swatch(props: { paint: string }) {
-  const tones = paintColors(props.paint);
-  return (
-    <svg viewBox="0 0 40 40" aria-hidden="true">
-      <defs>
-        <linearGradient id={`swatch-${props.paint}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color={tones.light} />
-          <stop offset="0.5" stop-color={tones.mid} />
-          <stop offset="1" stop-color={tones.dark} />
-        </linearGradient>
-      </defs>
-      <circle cx="20" cy="20" r="16" fill={`url(#swatch-${props.paint})`} stroke="#050914" stroke-width="2.5" />
-      <path d="M10 14Q14 8 21 7" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.7" />
-    </svg>
-  );
 }
 
 /** How far a drag turns the car: degrees for each pixel. */

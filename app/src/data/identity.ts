@@ -7,6 +7,7 @@
  */
 import { makeRecoveryKey } from '@tcl/engine';
 import { collection, deleteDoc, doc, getDoc, onSnapshot, serverTimestamp, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import type { CarParts } from '../art/car/draw.ts';
 import { clearWaiting, saveWaiting, type Waiting } from '../join/waiting.ts';
 import { forget, recall, remember } from '../storage.ts';
 import { NoBackend, connect } from './firebase.ts';
@@ -104,7 +105,7 @@ export async function findLeague(code: string): Promise<{ league: string; name: 
  * Joins a league as a new player. Resolves to the player and their new
  * recovery key, which the app must show before going on.
  */
-export async function join(input: { league: string; leagueName: string; code: string; displayName: string }): Promise<{ me: Me; key: string }> {
+export async function join(input: { league: string; leagueName: string; code: string; displayName: string; car?: CarParts }): Promise<{ me: Me; key: string }> {
   return patiently(
     (async () => {
       const { db, device } = await connect();
@@ -114,7 +115,7 @@ export async function join(input: { league: string; leagueName: string; code: st
 
       const save = writeBatch(db);
       save.update(league, { [`members.${player}`]: true });
-      save.set(doc(league, 'players', player), { displayName: input.displayName, joinedAt: serverTimestamp() });
+      save.set(doc(league, 'players', player), { displayName: input.displayName, ...(input.car ? { car: input.car } : {}), joinedAt: serverTimestamp() });
       save.set(doc(league, 'keys', player), { key, rotatedAt: serverTimestamp() });
       save.set(doc(league, 'lookup', key), { player });
       save.set(doc(league, 'claims', device), { player, key, code: input.code, at: serverTimestamp() });
@@ -183,7 +184,7 @@ export async function withdrawJoin(league: string): Promise<void> {
  * same save, which signs every other device out. Resolves to `null` if the key
  * belongs to nobody in this league.
  */
-export async function recover(input: { league: string; leagueName: string; code: string; key: string }): Promise<{ me: Me; key: string } | null> {
+export async function recover(input: { league: string; leagueName: string; code: string; key: string }): Promise<{ me: Me; key: string; car?: Partial<CarParts> } | null> {
   return patiently(
     (async () => {
       const { db, device } = await connect();
@@ -203,7 +204,7 @@ export async function recover(input: { league: string; leagueName: string; code:
       const profile = (await getDoc(doc(league, 'players', player))).data();
       const me: Me = { league: input.league, leagueName: input.leagueName, code: input.code, player, displayName: String(profile?.displayName ?? '') };
       saveMe(me);
-      return { me, key };
+      return { me, key, car: (profile?.car as Partial<CarParts> | undefined) ?? undefined };
     })(),
   );
 }

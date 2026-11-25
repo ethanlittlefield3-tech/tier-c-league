@@ -72,10 +72,9 @@
   margin-top: 12px;
 }
 
-.join-badge {
-  width: 96px;
-  height: 96px;
-  margin-top: 18px;
+/* Your car, at the top of the last steps: it is your icon now. */
+.join .join-me {
+  margin: 18px auto 0;
 }
 
 /* The last step has no Back button. This keeps its heading level with the other steps'. */
@@ -83,8 +82,8 @@
   padding-top: 26px;
 }
 
-.join[data-step='key'] .join-badge {
-  margin: 0 0 14px;
+.join[data-step='key'] .join-me {
+  margin: 0 auto 14px;
 }
 
 /* The recovery key, big enough to read across a room. */
@@ -136,5 +135,79 @@
 }
 
 .join-alerts .btn {
+  margin-top: 10px;
+}
+
+/* The starter car, picked under the name: a body and one of 15 paints. */
+.join-car {
+  width: 100%;
+  min-width: 0;
+  margin: 22px 0 18px;
+  padding: 0;
+  border: 0;
+}
+
+.join-car-title {
+  padding: 0;
+  margin: 0 auto 4px;
+  font: italic 800 17px/1.2 var(--display);
+  color: var(--ink);
+}
+
+.join-car-art {
+  display: block;
+  width: 230px;
+  max-width: 72%;
+  margin: 0 auto 12px;
+}
+
+.join-car-art svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.join-bodies .choice-option {
+  min-width: 0;
+}
+
+.join-paints {
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.join-paint {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  max-height: 64px;
+  padding: 5px;
+  border: 2px solid rgba(196, 216, 255, 0.16);
+  border-radius: 14px;
+  background: rgba(17, 30, 73, 0.7);
+  cursor: pointer;
+}
+
+.join-paint[aria-pressed='true'] {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(31, 139, 255, 0.25);
+}
+
+.join-paint:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.join-paint svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.join-car-note {
   margin-top: 10px;
 }

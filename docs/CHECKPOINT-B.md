@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 275 of 275 passing.
+- **Tests:** 276 of 276 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -462,4 +462,5 @@ You change only your own car, and only to parts from the catalog, each in its ow
 - A player puts any starter part on their car: 3 bodies, 15 paints, and the rest of the starter kit
 - A part a badge unlocks goes on only once that badge is earned, for every part in the catalog
 - A part from another slot, a made-up part or a missing slot is refused
+- A new player joins in a starter car they picked, but not in a part a badge unlocks
 - Nobody changes someone else's car

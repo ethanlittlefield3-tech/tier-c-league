@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { formatLeagueCode } from '@tcl/engine';
+import { STARTER_PARTS, formatLeagueCode } from '@tcl/engine';
+import { CarArt } from '../art/car/CarArt.tsx';
+import { Swatch } from '../art/car/Swatch.tsx';
+import { STARTER_CAR, type CarParts } from '../art/car/draw.ts';
 import { Lockup } from '../art/Lockup.tsx';
-import { PlayerBadge } from '../art/PlayerBadge.tsx';
 import scene from '../art/title-scene.svg';
 import { DEFAULT_ALERTS, type AlertSettings } from '@tcl/engine';
 import type { AlertState } from '../data/alerts.ts';
 import type { JoinAnswer, Me, Trouble } from '../data/identity.ts';
 import { whyOf } from '../data/why.ts';
 import { readCode, readKey, type EntryProblem } from '../join/entry.ts';
-import { NAME_MAX, initialOf, nameProblem, tidyName } from '../join/name.ts';
+import { NAME_MAX, nameProblem, tidyName } from '../join/name.ts';
 import type { Waiting } from '../join/waiting.ts';
 import { Back, Field, Heading } from '../ui/parts.tsx';
 import './join.css';
@@ -16,8 +18,8 @@ import './join.css';
 /** The database calls this screen makes. The app loads them in the background and hands them in. */
 export interface JoinApi {
   findLeague(code: string): Promise<{ league: string; name: string } | null>;
-  join(input: { league: string; leagueName: string; code: string; displayName: string }): Promise<{ me: Me; key: string }>;
-  recover(input: { league: string; leagueName: string; code: string; key: string }): Promise<{ me: Me; key: string } | null>;
+  join(input: { league: string; leagueName: string; code: string; displayName: string; car?: CarParts }): Promise<{ me: Me; key: string }>;
+  recover(input: { league: string; leagueName: string; code: string; key: string }): Promise<{ me: Me; key: string; car?: Partial<CarParts> } | null>;
   askToJoin(input: Waiting): Promise<void>;
   watchJoinRequest(league: string, onChange: (answer: JoinAnswer) => void): () => void;
   withdrawJoin(league: string): Promise<void>;
@@ -30,7 +32,7 @@ type Step =
   | { at: 'code' }
   | { at: 'name'; league: string; leagueName: string; code: string }
   | { at: 'recover' }
-  | { at: 'key'; me: Me; key: string; returning: boolean }
+  | { at: 'key'; me: Me; key: string; returning: boolean; car: Partial<CarParts> | null }
   | { at: 'waiting'; waiting: Waiting };
 
 const TROUBLE: Record<Trouble, string> = {
@@ -51,6 +53,10 @@ const KEY_PROBLEM: Record<EntryProblem, string> = {
   lookalike: 'Recovery keys never use 0, O, 1 or I. Check for a look-alike.',
 };
 
+/** The starter bodies and paints (SCOPE.md, "Car parts"). The rest of the starter kit comes with every car. */
+const BODIES = STARTER_PARTS.filter((part) => part.slot === 'body');
+const PAINTS = STARTER_PARTS.filter((part) => part.slot === 'paint');
+
 /** The way in: join with a league code, or get back in with a recovery key. */
 export function Join(props: {
   api: JoinApi;
@@ -69,6 +75,7 @@ export function Join(props: {
   const [step, setStep] = useState<Step>(props.waiting ? { at: 'waiting', waiting: props.waiting } : props.start === 'recover' ? { at: 'recover' } : { at: 'welcome' });
   const [code, setCode] = useState(props.code ? formatLeagueCode(props.code) : '');
   const [name, setName] = useState('');
+  const [car, setCar] = useState<CarParts>(STARTER_CAR);
   const [key, setKey] = useState('');
   const [error, setError] = useState<{ on: 'code' | 'name' | 'key'; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -111,10 +118,10 @@ export function Join(props: {
     if (problem === 'empty') return setError({ on: 'name', text: 'Type a name first.' });
     if (problem === 'too-long') return setError({ on: 'name', text: `That is too long. A name can be up to ${NAME_MAX} characters.` });
     void attempt('name', async () => {
-      const input = { league: step.league, leagueName: step.leagueName, code: step.code, displayName: tidyName(name) };
+      const input = { league: step.league, leagueName: step.leagueName, code: step.code, displayName: tidyName(name), car };
       try {
         const joined = await props.api.join(input);
-        go({ at: 'key', me: joined.me, key: joined.key, returning: false });
+        go({ at: 'key', me: joined.me, key: joined.key, returning: false, car });
       } catch (failure) {
         if (whyOf(failure) !== 'refused') throw failure;
         // A league that lets players in with the commish's approval takes a request instead.
@@ -139,7 +146,7 @@ export function Join(props: {
       if (!found) return setError({ on: 'code', text: 'No league has that code. Check it with your commish.' });
       const back = await props.api.recover({ league: found.league, leagueName: found.name, code: readC.code, key: readK.key });
       if (!back) return setError({ on: 'key', text: 'That key does not match a player in this league. Check it, or ask your commish to look it up.' });
-      go({ at: 'key', me: back.me, key: back.key, returning: true });
+      go({ at: 'key', me: back.me, key: back.key, returning: true, car: back.car ?? null });
     });
   };
 
@@ -205,12 +212,34 @@ export function Join(props: {
       <main class="screen join" data-step="name">
         <form class="screen-body" onSubmit={submitName} noValidate>
           <Back onBack={() => go({ at: 'code' })} />
-          <Heading>Pick your name</Heading>
+          <Heading>Pick your name and car</Heading>
           <p class="lead">
             You are joining <strong>{step.leagueName}</strong>.
           </p>
-          <PlayerBadge class="join-badge" initial={initialOf(name)} />
           <Field id="join-name" label="Display name" value={name} onInput={setName} maxLength={40} autoFocus error={errorOn('name')} help={`Up to ${NAME_MAX} characters. You can change it later.`} />
+          <fieldset class="join-car">
+            <legend class="join-car-title">Your starter car</legend>
+            <CarArt parts={car} class="join-car-art" />
+            <div class="choice join-bodies" role="group" aria-label="Body">
+              {BODIES.map((part) => (
+                <button key={part.id} type="button" class="choice-option" aria-pressed={car.body === part.id} onClick={() => setCar({ ...car, body: part.id })}>
+                  {part.name}
+                </button>
+              ))}
+            </div>
+            <ul class="join-paints" aria-label="Paint">
+              {PAINTS.map((part) => (
+                <li key={part.id}>
+                  <button type="button" class="join-paint" aria-label={part.name} aria-pressed={car.paint === part.id} onClick={() => setCar({ ...car, paint: part.id })}>
+                    <Swatch paint={part.id} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <p class="fine-print join-car-note">
+              {PAINTS.find((part) => part.id === car.paint)?.name} {BODIES.find((part) => part.id === car.body)?.name}. Badges unlock more parts in the Garage.
+            </p>
+          </fieldset>
           <button class="btn" type="submit" disabled={busy}>
             {busy ? 'Joining' : 'Join the league'}
           </button>
@@ -224,7 +253,7 @@ export function Join(props: {
       <WaitingToJoin
         api={props.api}
         waiting={step.waiting}
-        onJoined={(me, key) => go({ at: 'key', me, key, returning: false })}
+        onJoined={(me, key) => go({ at: 'key', me, key, returning: false, car: step.waiting.car ?? null })}
         onStartOver={() => go({ at: 'welcome' })}
       />
     );
@@ -257,7 +286,7 @@ export function Join(props: {
   return (
     <main class="screen join" data-step="key">
       <div class="screen-body">
-        <PlayerBadge class="join-badge" initial={initialOf(step.me.displayName)} />
+        <CarArt parts={step.car} class="join-car-art join-me" />
         <Heading>{step.returning ? `Welcome back, ${step.me.displayName}` : 'Save your recovery key'}</Heading>
         <p class="lead">
           {step.returning
@@ -320,7 +349,7 @@ function WaitingToJoin(props: { api: JoinApi; waiting: Waiting; onJoined: (me: M
   return (
     <main class="screen join" data-step="waiting">
       <div class="screen-body">
-        <PlayerBadge class="join-badge" initial={initialOf(waiting.displayName)} />
+        <CarArt parts={waiting.car} class="join-car-art join-me" />
         <Heading>{answer === 'declined' ? 'Not this time' : answer === 'approved' ? "You're in" : 'Asked to join'}</Heading>
         <p class="lead" role="status">
           {answer === 'declined'
