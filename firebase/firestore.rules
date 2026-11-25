@@ -384,6 +384,13 @@ service cloud.firestore {
         }
       }
 
+      // ---- The league feed ------------------------------------------------
+      // News only the jobs make, like a badge earned or a rank changed.
+      // Everyone in the league reads it; no phone writes it.
+      match /feed/{event} {
+        allow read: if isMember(L);
+      }
+
       function wallPost(post) {
         return get(/databases/$(database)/documents/leagues/$(L)/wall/$(post)).data;
       }

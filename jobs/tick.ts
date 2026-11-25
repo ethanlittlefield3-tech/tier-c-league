@@ -144,7 +144,7 @@ for (const league of leagues) {
   const activitySince = typeof ms(state.activitySince) === 'number' ? Number(ms(state.activitySince)) : now - HOUR;
   // Reactions and comments are bundled: their posts are looked at once an hour.
   const activityDue = now - activitySince >= 55 * MIN;
-  const [wall, asked, dueSoon, docks, spun, proven, changed, active] = await Promise.all([
+  const [wall, asked, dueSoon, docks, spun, proven, changed, active, news] = await Promise.all([
     league.ref.collection('wall').where('at', '>', after).get(),
     seasonRef.collection('receipts').where('requestedAt', '>', after).get(),
     seasonRef.collection('receipts').where('deadline', '>', stamp(since + HOUR)).where('deadline', '<=', stamp(now + HOUR)).get(),
@@ -153,6 +153,7 @@ for (const league of leagues) {
     seasonRef.collection('spins').where('proofAt', '>', after).get(),
     seasonRef.collection('days').where('updatedAt', '>', after).get(),
     activityDue ? league.ref.collection('wall').where('activityAt', '>', stamp(activitySince)).get() : null,
+    league.ref.collection('feed').where('at', '>', after).get(),
   ]);
   const today = calendar.find((day) => day.date === clock.dateOf(now)) ?? calendar.at(-1);
   const weekIds = today ? [today.week, today.week - 1].filter((week) => week >= 1).map(weekPeriod) : [];
@@ -177,7 +178,7 @@ for (const league of leagues) {
   const passedPairs = pairs.filter((pair) => moved.has(pair.a) || moved.has(pair.b));
   const closeNow = checks.some((check) => check.kind === 'close' && check.day.period === today?.period);
   const anything =
-    checks.length > 0 || !wall.empty || !asked.empty || !dueSoon.empty || !docks.empty || !spun.empty || !proven.empty || newReveals.length > 0 || finalNow || draftNow || passedPairs.length > 0 || (active !== null && !active.empty) || Object.keys(held).length > 0;
+    checks.length > 0 || !wall.empty || !asked.empty || !dueSoon.empty || !docks.empty || !spun.empty || !proven.empty || newReveals.length > 0 || finalNow || draftNow || passedPairs.length > 0 || (active !== null && !active.empty) || !news.empty || Object.keys(held).length > 0;
   let leadsAfter: Record<string, Lead> = leadsBefore;
   let closeSent = (state.closeSent as { period?: string; players?: string[] } | undefined)?.period === today?.period ? ((state.closeSent as { players?: string[] }).players ?? []) : [];
   let seen = (state.seen ?? {}) as Record<string, number>;
@@ -219,6 +220,7 @@ for (const league of leagues) {
       revealed,
       spins: [...new Map([...spun.docs, ...proven.docs].map((spin) => [spin.id, { id: spin.id, ...plain(spin.data()) }])).values()].map((spin) => ({ proofAt: null, ...spin })) as unknown as AlertInput['spins'],
       draftAt,
+      news: news.docs.map((item) => ({ id: item.id, ...plain(item.data()) })) as unknown as AlertInput['news'],
     };
     alerts = alertsDue(input);
 

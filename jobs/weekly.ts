@@ -12,12 +12,14 @@
 import { randomInt } from 'node:crypto';
 import { FieldValue, Timestamp, getFirestore, type DocumentData } from 'firebase-admin/firestore';
 import { connect } from './admin.ts';
-import { DODGE_PENALTY, STARTER_DARES, dareStatus, fastDareDue, receiptFixes, wheelPool, type StoredReceipt } from '../engine/src/index.ts';
+import { DODGE_PENALTY, STARTER_DARES, dareStatus, fastDareDue, fastLeagueClock, receiptFixes, wheelPool, zoneClock, type StoredReceipt } from '../engine/src/index.ts';
 import { fastClockOf } from './lib/fast.ts';
 import { PROOF_DAYS, staleProofs } from './lib/proofs.ts';
 import { revealDemolitions, sameReveals } from './lib/reveals.ts';
 import { approvedDares, drawsDue, type Draw } from './lib/wheel.ts';
 import { settleDue, standingsFrom, type PlayerWeekData, type WeekLineStored } from './lib/settle.ts';
+import { badgeUpdate, seasonBadgeData } from './lib/badge-facts.ts';
+import { reactionCount } from './lib/activity.ts';
 import { withWeek, type RankEntry } from './lib/ranks.ts';
 import { weekReads } from './lib/week-reads.ts';
 
@@ -48,6 +50,7 @@ for (const league of leagues) {
     for (const line of lines) (earlier[line.player] ??= []).push(line.points);
   };
 
+  let wentFinal = false;
   for (const week of weeks) {
     const pairs = week.get('pairs') as { a: string; b: string }[] | undefined;
     if (!Array.isArray(pairs) || pairs.length === 0) continue;
@@ -125,7 +128,13 @@ for (const league of leagues) {
         if (!found.exists) continue;
         const ranked = withWeek((found.get('rankHistory') ?? []) as RankEntry[], { season: seasonId, period, points: line.points, par: Number(season.get('par')) });
         await profile.set({ rank: ranked.rank, rankHistory: ranked.history }, { merge: true });
+        // A rank change is news for the league feed.
+        const before = found.get('rank') as string | undefined;
+        if (before !== ranked.rank) {
+          await league.ref.collection('feed').doc(`rank_${line.player}_${seasonId}_${period}`).set({ at: FieldValue.serverTimestamp(), kind: 'rank', player: line.player, data: { rank: ranked.rank, from: before ?? null } });
+        }
       }
+      wentFinal = true;
     }
     console.log(`League ${league.id}, ${period}: ${settled.status}, ${settled.lines.length} players.`);
   }
@@ -136,6 +145,7 @@ for (const league of leagues) {
   const finalWeeks = (await seasonRef.collection('weeks').get()).docs.filter((week) => week.get('status') === 'final' && Array.isArray(week.get('awards')?.wheel));
   // Each dodged dare (no proof by the deadline) takes 3 Season Points off.
   const penalties: Record<string, number> = {};
+  const daresDone: Record<string, number> = {};
   if (finalWeeks.length > 0) {
     const spins = await seasonRef.collection('spins').get();
     const proofVotes = (await seasonRef.collection('votes').where('kind', '==', 'proof').get()).docs.map((vote) => vote.data());
@@ -171,6 +181,7 @@ for (const league of leagues) {
       });
       for (const { draw, status } of statuses) {
         if (status === 'dodged') penalties[draw.player] = (penalties[draw.player] ?? 0) + DODGE_PENALTY;
+        if (status === 'counted') daresDone[draw.player] = (daresDone[draw.player] ?? 0) + 1;
       }
       const redo = statuses.filter(({ status }) => status === 'redo').map(({ draw }) => draw.id);
       const spinners = (week.get('awards').wheel as string[]).filter((player) => player !== 'HOUSE');
@@ -206,6 +217,81 @@ for (const league of leagues) {
       await batch.commit();
     }
     if (stale.length > 0) console.log(`League ${league.id}: ${stale.length} ${kind === 'proofs' ? 'receipt' : 'dare'} photo${stale.length === 1 ? '' : 's'} deleted after ${PROOF_DAYS} days.`);
+  }
+
+  // Badges (SCOPE.md, "Garage and achievements"): once a week goes final,
+  // each player's season is checked again. What is newly earned is kept for
+  // good and announced in the league feed. One read of the season a week.
+  if (wentFinal) {
+    const fresh = await (async () => {
+      const [allWeeks, days, kit, fixes, asked, sealed, wall] = await Promise.all([
+        seasonRef.collection('weeks').get(),
+        seasonRef.collection('days').get(),
+        seasonRef.collection('kit').get(),
+        seasonRef.collection('adjustments').get(),
+        seasonRef.collection('receipts').get(),
+        seasonRef.collection('sealed').where('kind', '==', 'demolition').get(),
+        league.ref.collection('wall').get(),
+      ]);
+      const finals = allWeeks.docs.filter((week) => week.get('status') === 'final' && week.get('results')).sort((a, b) => Number(a.get('week')) - Number(b.get('week')));
+      const fast = fastClockOf({ demo: league.get('demo') }, { fast: plain(season.get('fast') ?? {}) });
+      const clock = fast ? fastLeagueClock(String(season.get('kickoff')), fast) : zoneClock(String(season.get('timeZone')));
+      const lockOf = (date: string) => calendar.find((day) => day.date === date)?.lock as number | undefined;
+      const players: Parameters<typeof seasonBadgeData>[0]['players'] = {};
+      const mineOf = (player: string) => (players[player] ??= { logs: {}, kit: [], adjustments: [], demolitionsOn: [] });
+      for (const log of days.docs) mineOf(String(log.get('player'))).logs[String(log.get('date'))] = plain(log.data()) as never;
+      for (const play of kit.docs) mineOf(String(play.get('player'))).kit.push(plain(play.data()) as never);
+      for (const fix of fixes.docs) mineOf(String(fix.get('player'))).adjustments.push(plain(fix.data()) as never);
+      const receiptsBy: Record<string, StoredReceipt[]> = {};
+      for (const receipt of asked.docs) (receiptsBy[String(receipt.get('target'))] ??= []).push(plain(receipt.data()) as unknown as StoredReceipt);
+      for (const [player, list] of Object.entries(receiptsBy)) mineOf(player).adjustments.push(...receiptFixes(list, now));
+      for (const hit of sealed.docs) {
+        const lock = lockOf(String(hit.get('date')));
+        if (lock !== undefined && now >= lock) mineOf(String(hit.get('target'))).demolitionsOn.push({ date: String(hit.get('date')), lane: hit.get('lane') });
+      }
+      const history = seasonBadgeData({
+        season: seasonId,
+        par: Number(season.get('par')),
+        clock,
+        calendar: calendar as never,
+        weeks: finals.map((week) => ({ period: week.id, results: week.get('results'), awards: week.get('awards'), reveals: week.get('reveals') ?? [] })),
+        players,
+      });
+      // The season is over once every regular week is final: then the most beers is a shame badge.
+      const regular = Number(season.get('regularWeeks'));
+      const over = finals.length >= regular && regular > 0;
+      const beers: Record<string, number> = {};
+      for (const week of finals) for (const line of (week.get('lines') ?? []) as WeekLineStored[]) beers[line.player] = (beers[line.player] ?? 0) + line.beers;
+      const mostBeers = Math.max(0, ...Object.values(beers));
+      const posts = wall.docs.map((post) => ({ id: post.id, ...plain(post.data()) })) as unknown as (Parameters<typeof reactionCount>[0] & { kind: string; deleted?: boolean })[];
+      const news: { player: string; badge: string }[] = [];
+      for (const player of members) {
+        const profile = league.ref.collection('players').doc(player);
+        const found = await profile.get();
+        if (!found.exists) continue;
+        const mine = posts.filter((post) => post.by === player && !post.deleted);
+        const had = Object.keys((found.get('badges') ?? {}) as Record<string, unknown>);
+        const update = badgeUpdate(had, {
+          days: history[player]?.days ?? [],
+          weeks: history[player]?.weeks ?? [],
+          finishedSeasons: over ? [{ id: seasonId, mostBeers: mostBeers > 0 && beers[player] === mostBeers }] : [],
+          commishSeasons: league.get('commish') === player && finals.length > 0 ? 1 : 0,
+          tauntsSent: mine.filter((post) => post.kind === 'taunt' || post.kind === 'quick').length,
+          bragReactions: mine.filter((post) => post.kind === 'brag').map(reactionCount),
+          reactionsReceived: mine.reduce((sum, post) => sum + reactionCount(post), 0),
+          daresCompleted: daresDone[player] ?? 0,
+          reachedGrandChamp: ((found.get('rankHistory') ?? []) as RankEntry[]).some((entry) => entry.rank === 'grandChamp'),
+        });
+        if (update.fresh.length === 0) continue;
+        await profile.set({ badges: Object.fromEntries(update.fresh.map((badge) => [badge, { at: FieldValue.serverTimestamp(), season: seasonId }])) }, { merge: true });
+        for (const badge of update.fresh) {
+          await league.ref.collection('feed').doc(`badge_${player}_${badge}`).set({ at: FieldValue.serverTimestamp(), kind: 'badge', player, data: { badge } });
+          news.push({ player, badge });
+        }
+      }
+      return news.length;
+    })();
+    if (fresh > 0) console.log(`League ${league.id}: ${fresh} badge${fresh === 1 ? '' : 's'} earned.`);
   }
 
   // The standings, from every week with results. Each player's sealed coin

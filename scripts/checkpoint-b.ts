@@ -38,6 +38,7 @@ const AREAS: [file: string, heading: string, blurb: string][] = [
   ['receipts', 'Receipts', 'You ask in your own name, before the day locks, 3 times a week. Only the player asked can answer, and only before the deadline.'],
   ['wheel', 'The Wheel of Shame', 'The job seals each draw. Nobody reads it until its spinner taps Spin, once.'],
   ['wall', 'The wall', 'Everyone in the league reads it. You post, comment and react in your own name. Nobody edits a post, and only its author or the commish takes it down.'],
+  ['feed', 'The league feed', "The jobs' news, like a badge earned or a rank changed. Everyone in the league reads it; no phone writes it."],
 ];
 
 const lines: string[] = [];

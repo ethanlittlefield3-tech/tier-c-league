@@ -32,6 +32,7 @@ function run(now: number, extra: Partial<AlertInput> = {}): AlertInput {
     revealed: [],
     spins: [],
     draftAt: null,
+    news: [],
     ...extra,
   };
 }
@@ -138,6 +139,18 @@ describe('Alerts: things that happen', () => {
     const draftAt = at('2027-01-13', 19);
     expect(alertsDue(run(at('2027-01-13', 18, 5), { draftAt })).map((alert) => alert.title)).toEqual(['Draft day', 'Draft day']);
     expect(alertsDue(run(at('2027-01-13', 19, 5), { draftAt })).map((alert) => alert.title)).toEqual(['The draft is starting', 'The draft is starting']);
+  });
+
+  it('A badge earned, or a rank change, goes to its player under Progress', () => {
+    const news: AlertInput['news'] = [
+      { id: 'badge_alex_hatTrick', kind: 'badge', player: 'alex', at: now - 60_000, data: { badge: 'hatTrick' } },
+      { id: 'rank_maya', kind: 'rank', player: 'maya', at: now - 60_000, data: { rank: 'platinum', from: 'gold' } },
+      { id: 'rank_old', kind: 'rank', player: 'maya', at: now - 5 * H, data: { rank: 'gold', from: 'silver' } },
+    ];
+    expect(alertsDue(run(now, { news })).map((alert) => [alert.player, alert.category, alert.title, alert.body])).toEqual([
+      ['alex', 'progress', 'Badge unlocked: Hat Trick', 'The Flame decal is yours to put on your car.'],
+      ['maya', 'progress', 'Rank up: Platinum', 'Your last 4 weeks, in Profile.'],
+    ]);
   });
 
   it('Nothing goes to a player who has left the league', () => {

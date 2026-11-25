@@ -26,3 +26,5 @@ export * from './fast.ts';
 export * from './alerts.ts';
 export * from './clock.ts';
 export * from './ranks.ts';
+export * from './achievements.ts';
+export * from './badges.ts';

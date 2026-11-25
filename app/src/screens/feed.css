@@ -290,3 +290,12 @@
 .feed-outcome[data-outcome="doesn't"] {
   color: #ff9aa2;
 }
+
+/* The jobs' news: a badge earned, a rank changed. */
+.feed-event[data-kind='badge'] {
+  border-left-color: #b58cff;
+}
+
+.feed-event[data-kind='rank'] {
+  border-left-color: #5fb4ff;
+}

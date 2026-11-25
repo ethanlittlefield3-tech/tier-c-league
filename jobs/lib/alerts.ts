@@ -8,9 +8,11 @@
  * league gets its own 9 pm and noon. An alert that is no use any more, like
  * "log your day" once the day has locked, carries the time it expires.
  */
+import { BADGES } from '../../engine/src/achievements.ts';
 import type { Category } from '../../engine/src/alerts.ts';
 import { WEEKDAYS, addDays, weekdayIndex } from '../../engine/src/calendar.ts';
 import type { LeagueClock } from '../../engine/src/clock.ts';
+import { RANK_NAMES, rankMove, type Rank } from '../../engine/src/ranks.ts';
 import { HOUSE } from '../../engine/src/schedule.ts';
 
 export type Screen = 'today' | 'match' | 'feed' | 'league' | 'wheel' | 'draft';
@@ -76,6 +78,8 @@ export interface AlertInput {
   spins: { id: string; player: string; at: number; proofAt: number | null }[];
   /** When the live draft starts, if it is set. */
   draftAt: number | null;
+  /** The jobs' news since the last run: badges earned and rank changes. */
+  news: { id: string; kind: string; player: string; at: number; data?: { badge?: string; rank?: Rank; from?: Rank | null } }[];
 }
 
 const HOUR = 3_600_000;
@@ -226,6 +230,20 @@ export function alertsDue(input: AlertInput): Alert[] {
       if (player === spin.player) continue;
       if (inWindow(spin.at)) add({ player, category: 'league', key: `spin-${spin.id}`, title: `${name(spin.player)} is spinning the Wheel of Shame`, body: 'Watch where it lands.', screen: 'wheel', expires: spin.at + HOUR });
       if (inWindow(spin.proofAt)) add({ player, category: 'league', key: `proof-${spin.id}`, title: `${name(spin.player)}'s dare proof is up`, body: 'Does it count? Vote.', screen: 'wheel', expires: (spin.proofAt ?? now) + 24 * HOUR });
+    }
+  }
+  // ---- Progress: a badge earned, a rank changed -----------------------------
+  for (const item of input.news) {
+    if (!inWindow(item.at) || !input.players[item.player]) continue;
+    if (item.kind === 'badge') {
+      const badge = BADGES.find((found) => found.id === item.data?.badge);
+      if (!badge) continue;
+      const parts = badge.unlocks.map((part) => `the ${part.name}`).join(' and ');
+      add({ player: item.player, category: 'progress', key: `badge-${badge.id}`, title: `Badge unlocked: ${badge.name}`, body: `${parts.charAt(0).toUpperCase()}${parts.slice(1)} ${badge.unlocks.length > 1 ? 'are' : 'is'} yours to put on your car.`, screen: 'feed', expires: item.at + 7 * 24 * HOUR });
+    }
+    if (item.kind === 'rank' && item.data?.rank) {
+      const down = rankMove(item.data.from ?? null, item.data.rank) === 'down';
+      add({ player: item.player, category: 'progress', key: 'rank', title: `${down ? 'Rank down' : 'Rank up'}: ${RANK_NAMES[item.data.rank]}`, body: 'Your last 4 weeks, in Profile.', screen: 'feed', expires: item.at + 7 * 24 * HOUR });
     }
   }
   return alerts;

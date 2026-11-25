@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 269 of 269 passing.
+- **Tests:** 271 of 271 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -443,3 +443,12 @@ Everyone in the league reads it. You post, comment and react in your own name. N
 
 - A player keeps up to 10 custom taunts on their profile
 - Nobody can change someone else's saved taunts
+
+## The league feed
+
+The jobs' news, like a badge earned or a rank changed. Everyone in the league reads it; no phone writes it.
+
+**The league feed**
+
+- Everyone in the league reads the jobs' news of badges and rank changes; nobody outside can
+- Only the jobs write it: nobody in the league can add, change or remove news, the commish included

@@ -275,6 +275,22 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 156. **Until the Garage ships, the scene shows the badges only:** a boost streak shatters the old badge, and the new one lands. A rank down sinks the old badge instead. Your car boosting through comes with the Garage.
 157. **The rank badges are drawn for this app:** a rounded hexagon in each tier's metal, with one to three chevrons, a gem or a star that grows with the tier.
 
+**Phase 2: badges** (new on 2026-11-25, not yet reviewed by the commish). Badges don't change any score; these are the readings that needed a call.
+
+158. **Badges are checked whenever a week goes final,** from the whole season so far, and kept for good: a badge is never taken away, even if a week is unlocked and counted again.
+159. **Rest days:** a rest day neither counts nor breaks Hat Trick, and Perfect Week and the lane badges (Scholar, Gym Rat, Wild One) need all 6 goal days.
+160. **Dry Week needs every day of the week logged,** or a week nobody logged would count. Dry Month is 4 such weeks running, and Designated Driver needs Friday and Saturday both logged with 0 beers.
+161. **Clean Sheet: a no-show covered by Rule One is still a no-show.**
+162. **"1v1" leaves out weeks against The House:** they neither count nor break Win Streak, and they don't count for First Blood, Sweep or Rivalry King. Clutch counts any week won, The House's included.
+163. **Early Bird: the day's first log saved before 9 am that same day,** in league time, 7 days straight.
+164. **Giant Killer: beating whoever had the most Season Points going into the week.** Nobody leads before Week 1.
+165. **Trash Talker counts taunts and quick-chat lines aimed at someone.** Show-Off and Fan Favorite count each reaction from others (a fire, a skull and a beer are three).
+166. **Recovering Addict: the week's average logged screen time lower than the week before, 3 weeks in a row.**
+167. **Commish: whoever is the commish (not the co-commish) when a week of a season goes final.** Brewmaster and Sweep are decided once every regular week of the season is final.
+168. **Badges from features still to come** (group play, predictions, rematches and the playoffs) are listed in Profile with "Comes with…", and earned once those features ship.
+169. **Each new badge, and each rank change, is news in the league feed,** made by the weekly job. The alerts job sends it to its player under Progress.
+170. **The parts each badge unlocks are listed now. The Garage, where they go on your car, comes next.**
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.

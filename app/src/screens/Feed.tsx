@@ -65,6 +65,8 @@ export function Feed(props: { me: Me; onWheel?: () => void }) {
   const docks = useLatest<FeedInput['adjustments'][number]['data']>(seasonPath ? `${seasonPath}/adjustments` : null, 'at', 10);
   const weeks = useAll<FeedInput['weeks'][number]['data']>(seasonPath ? `${seasonPath}/weeks` : null);
   const receipts = useLatest<NonNullable<FeedInput['receipts']>[number]['data']>(seasonPath ? `${seasonPath}/receipts` : null, 'requestedAt', 20);
+  // The jobs' news: badges earned and rank changes.
+  const news = useLatest<NonNullable<FeedInput['news']>[number]['data']>(`${leaguePath}/feed`, 'at', 20);
   const spins = useAll<Spin>(seasonPath ? `${seasonPath}/spins` : null);
   const proofVotes = useWhere<ProofVote & { at?: number | null }>(seasonPath ? `${seasonPath}/votes` : null, 'kind', 'proof');
   const opponent = useOpponent(props.me, now);
@@ -81,6 +83,7 @@ export function Feed(props: { me: Me; onWheel?: () => void }) {
     adjustments: docks.docs,
     weeks: weeks.docs,
     receipts: receipts.docs,
+    news: news.docs,
     now,
     wheel: wheel
       ? {

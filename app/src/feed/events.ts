@@ -2,14 +2,14 @@
  * The live feed (SCOPE.md, "Live rivalry and social"): check-ins,
  * power-ups, revealed Demolitions, docks and results, worked out on the phone
  * from the league's own data, so it moves the moment anything happens.
- * Badges, rank-ups and recaps join it in Phase 2.
+ * Badges earned and rank changes come from the jobs' news in `feed/`.
  */
-import { DODGE_PENALTY, PROOF_VOTE_HOURS, dareStatus, type DemolitionOutcome, type Lane, type Square } from '@tcl/engine';
+import { BADGES, DODGE_PENALTY, PROOF_VOTE_HOURS, RANK_NAMES, dareStatus, rankMove, type DemolitionOutcome, type Lane, type Rank, type Square } from '@tcl/engine';
 
 export interface FeedEvent {
   id: string;
   at: number;
-  kind: 'checkIn' | 'power' | 'dock' | 'reveal' | 'results' | 'receipt' | 'wheel';
+  kind: 'checkIn' | 'power' | 'dock' | 'reveal' | 'results' | 'receipt' | 'wheel' | 'badge' | 'rank';
   text: string;
   /** A second line: a dock's reason, or a week's scores and awards. */
   detail?: string;
@@ -48,6 +48,8 @@ export interface FeedInput {
   }[];
   /** The time now, to tell a receipt or a dare left past its deadline. */
   now?: number;
+  /** The jobs' news: badges earned and rank changes. */
+  news?: { id: string; data: { kind: string; player: string; at?: number | null; data?: { badge?: string; rank?: Rank; from?: Rank | null } } }[];
   /** The Wheel of Shame's latest draws, their spins and the votes on their proof. */
   wheel?: {
     eligible: number;
@@ -201,6 +203,21 @@ export function feedEvents(input: FeedInput): FeedEvent[] {
         });
       }
       if (status === 'dodged') events.push({ id: `dodged-${draw.id}`, at: draw.dueAt, kind: 'wheel', text: `${who} dodged the dare: ${signed(DODGE_PENALTY)} Season Points` });
+    }
+  }
+
+  for (const { id, data } of input.news ?? []) {
+    if (typeof data.at !== 'number') continue;
+    const who = name(data.player);
+    if (data.kind === 'badge') {
+      const badge = BADGES.find((found) => found.id === data.data?.badge);
+      if (!badge) continue;
+      events.push({ id: `news-${id}`, at: data.at, kind: 'badge', text: `${who} earned ${badge.name}${badge.shame ? ' (shame)' : ''}`, detail: `${badge.how}. Unlocks: ${badge.unlocks.map((part) => part.name).join(' and ')}.` });
+    }
+    if (data.kind === 'rank' && data.data?.rank) {
+      const move = rankMove(data.data.from ?? null, data.data.rank);
+      const text = data.data.from ? `${who} ${move === 'down' ? 'dropped to' : 'ranked up to'} ${RANK_NAMES[data.data.rank]}` : `${who} ${who === 'You' ? 'are' : 'is'} ranked ${RANK_NAMES[data.data.rank]}`;
+      events.push({ id: `news-${id}`, at: data.at, kind: 'rank', text });
     }
   }
 

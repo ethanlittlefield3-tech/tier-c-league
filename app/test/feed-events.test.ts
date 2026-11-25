@@ -168,4 +168,25 @@ describe('The live feed', () => {
       [1, 'Maya spun the Wheel of Shame', null],
     ]);
   });
+
+  it("The jobs' news: a badge earned, with what it unlocks, and rank changes up, down and first", () => {
+    const events = feedEvents({
+      ...none,
+      name,
+      news: [
+        { id: 'badge_maya_hatTrick', data: { kind: 'badge', player: 'maya', at: 5, data: { badge: 'hatTrick' } } },
+        { id: 'badge_me_happyHour', data: { kind: 'badge', player: 'me', at: 4, data: { badge: 'happyHour' } } },
+        { id: 'rank_sam', data: { kind: 'rank', player: 'sam', at: 3, data: { rank: 'platinum', from: 'gold' } } },
+        { id: 'rank_jordan', data: { kind: 'rank', player: 'jordan', at: 2, data: { rank: 'silver', from: 'gold' } } },
+        { id: 'rank_me', data: { kind: 'rank', player: 'me', at: 1, data: { rank: 'gold', from: null } } },
+      ],
+    });
+    expect(events.map((event) => [event.kind, event.text, event.detail ?? null])).toEqual([
+      ['badge', 'Maya earned Hat Trick', '3 perfect days in a row, rest days skipped. Unlocks: Flame decal.'],
+      ['badge', 'You earned Happy Hour (shame)', '10 or more beers in one week. Unlocks: Party hat topper.'],
+      ['rank', 'Sam ranked up to Platinum', null],
+      ['rank', 'Jordan dropped to Silver', null],
+      ['rank', 'You are ranked Gold', null],
+    ]);
+  });
 });
