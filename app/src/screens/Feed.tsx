@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { useAll, useDoc, useLatest, useNow } from '../data/hooks.ts';
+import { useAll, useDoc, useLatest, useNow, useWhere } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
 import type { PostKind, Reaction } from '../data/wall.ts';
@@ -9,7 +9,7 @@ import { POST_MAX, QUICK_CHAT, SAVED_TAUNTS_MAX, TAUNT_MAX, fillName } from '../
 import { Field } from '../ui/parts.tsx';
 import { ago } from '../ui/when.ts';
 import { useOpponent } from './useOpponent.ts';
-import { latestWheel, type Draw, type Spin } from './Wheel.tsx';
+import { latestWheel, type Draw, type ProofVote, type Spin } from './Wheel.tsx';
 import './wheel.css';
 import './feed.css';
 
@@ -56,7 +56,7 @@ type Names = (player: string) => string;
 export function Feed(props: { me: Me; onWheel?: () => void }) {
   const now = useNow();
   const leaguePath = `leagues/${props.me.league}`;
-  const league = useDoc<{ season?: string | null; commish?: string; coCommish?: string | null }>(leaguePath);
+  const league = useDoc<{ season?: string | null; commish?: string; coCommish?: string | null; members?: Record<string, boolean> }>(leaguePath);
   const seasonPath = league.data?.season ? `${leaguePath}/seasons/${league.data.season}` : null;
   const players = useAll<{ displayName?: string; taunts?: string[] }>(`${leaguePath}/players`);
   const posts = useLatest<Post>(`${leaguePath}/wall`, 'at', 50);
@@ -66,13 +66,31 @@ export function Feed(props: { me: Me; onWheel?: () => void }) {
   const weeks = useAll<FeedInput['weeks'][number]['data']>(seasonPath ? `${seasonPath}/weeks` : null);
   const receipts = useLatest<NonNullable<FeedInput['receipts']>[number]['data']>(seasonPath ? `${seasonPath}/receipts` : null, 'requestedAt', 20);
   const spins = useAll<Spin>(seasonPath ? `${seasonPath}/spins` : null);
+  const proofVotes = useWhere<ProofVote & { at?: number | null }>(seasonPath ? `${seasonPath}/votes` : null, 'kind', 'proof');
   const opponent = useOpponent(props.me, now);
   const isCommish = league.data?.commish === props.me.player || league.data?.coCommish === props.me.player;
 
   const realName: Names = (player) => (player === 'HOUSE' ? 'The House' : (players.docs.find((found) => found.id === player)?.data.displayName ?? 'a former player'));
   const name: Names = (player) => (player === props.me.player ? 'You' : realName(player));
   const saved = players.docs.find((found) => found.id === props.me.player)?.data.taunts ?? [];
-  const events = feedEvents({ name, checkIns: checkIns.docs, kit: kit.docs, adjustments: docks.docs, weeks: weeks.docs, receipts: receipts.docs, now });
+  const wheel = latestWheel(weeks.docs as { id: string; data: { week: number; wheel?: Record<string, Draw> } }[]);
+  const events = feedEvents({
+    name,
+    checkIns: checkIns.docs,
+    kit: kit.docs,
+    adjustments: docks.docs,
+    weeks: weeks.docs,
+    receipts: receipts.docs,
+    now,
+    wheel: wheel
+      ? {
+          eligible: Math.max(0, Object.keys(league.data?.members ?? {}).length - 1),
+          draws: wheel.draws,
+          spins: Object.fromEntries(spins.docs.map((found) => [found.id, { at: found.data.at, proofAt: found.data.proofAt }])),
+          votes: proofVotes.docs.map((found) => found.data),
+        }
+      : undefined,
+  });
   const timeline: ({ post: { id: string; data: Post }; at: number } | { event: FeedEvent; at: number })[] = [
     ...posts.docs.filter((post) => !post.data.deleted).map((post) => ({ post, at: post.data.at ?? now })),
     ...events.map((event) => ({ event, at: event.at })),
@@ -81,7 +99,6 @@ export function Feed(props: { me: Me; onWheel?: () => void }) {
     .slice(0, 80);
 
   // The Wheel of Shame, while its dares are still due.
-  const wheel = latestWheel(weeks.docs as { id: string; data: { week: number; wheel?: Record<string, Draw> } }[]);
   const wheelLive = wheel !== null && wheel.draws.some((draw) => now < draw.dueAt);
   const waiting = wheel ? wheel.draws.filter((draw) => !spins.docs.some((spin) => spin.id === draw.id)).map((draw) => name(draw.player)) : [];
 

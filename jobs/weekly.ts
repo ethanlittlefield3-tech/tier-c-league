@@ -12,7 +12,7 @@
 import { randomInt } from 'node:crypto';
 import { FieldValue, Timestamp, getFirestore, type DocumentData } from 'firebase-admin/firestore';
 import { connect } from './admin.ts';
-import { STARTER_DARES, dareStatus, receiptFixes, wheelPool, type StoredReceipt } from '../engine/src/index.ts';
+import { DODGE_PENALTY, STARTER_DARES, dareStatus, receiptFixes, wheelPool, type StoredReceipt } from '../engine/src/index.ts';
 import { PROOF_DAYS, staleProofs } from './lib/proofs.ts';
 import { revealDemolitions, sameReveals } from './lib/reveals.ts';
 import { approvedDares, drawsDue, type Draw } from './lib/wheel.ts';
@@ -117,6 +117,8 @@ for (const league of leagues) {
   // spinners, and a new one when a dare's proof is voted down. The pool is the
   // draft's dares that stand, then starter dares in a random order.
   const finalWeeks = (await seasonRef.collection('weeks').get()).docs.filter((week) => week.get('status') === 'final' && Array.isArray(week.get('awards')?.wheel));
+  // Each dodged dare (no proof by the deadline) takes 3 Season Points off.
+  const penalties: Record<string, number> = {};
   if (finalWeeks.length > 0) {
     const spins = await seasonRef.collection('spins').get();
     const proofVotes = (await seasonRef.collection('votes').where('kind', '==', 'proof').get()).docs.map((vote) => vote.data());
@@ -131,22 +133,24 @@ for (const league of leagues) {
     };
     for (const week of finalWeeks) {
       const existing = (week.get('wheel') ?? {}) as Record<string, Draw>;
-      const redo = Object.values(existing)
-        .filter((draw) => {
-          const spin = spins.docs.find((found) => found.id === draw.id);
-          const votes = proofVotes.filter((vote) => vote.draw === draw.id);
-          const status = dareStatus({
-            spunAt: spin ? Number(ms(spin.get('at'))) : null,
-            proofAt: spin?.get('proofAt') ? Number(ms(spin.get('proofAt'))) : null,
-            dueAt: draw.dueAt,
-            now,
-            eligible: Math.max(0, members.length - 1),
-            counts: votes.filter((vote) => vote.choice === 'counts').length,
-            doesntCount: votes.filter((vote) => vote.choice === 'doesntCount').length,
-          });
-          return status === 'redo';
-        })
-        .map((draw) => draw.id);
+      const statuses = Object.values(existing).map((draw) => {
+        const spin = spins.docs.find((found) => found.id === draw.id);
+        const votes = proofVotes.filter((vote) => vote.draw === draw.id);
+        const status = dareStatus({
+          spunAt: spin ? Number(ms(spin.get('at'))) : null,
+          proofAt: spin?.get('proofAt') ? Number(ms(spin.get('proofAt'))) : null,
+          dueAt: Number(ms(draw.dueAt)),
+          now,
+          eligible: Math.max(0, members.length - 1),
+          counts: votes.filter((vote) => vote.choice === 'counts').length,
+          doesntCount: votes.filter((vote) => vote.choice === 'doesntCount').length,
+        });
+        return { draw, status };
+      });
+      for (const { draw, status } of statuses) {
+        if (status === 'dodged') penalties[draw.player] = (penalties[draw.player] ?? 0) + DODGE_PENALTY;
+      }
+      const redo = statuses.filter(({ status }) => status === 'redo').map(({ draw }) => draw.id);
       const spinners = (week.get('awards').wheel as string[]).filter((player) => player !== 'HOUSE');
       const needsDraw = spinners.some((player) => !existing[`${week.id}_${player}_1`]) || redo.length > 0;
       if (!needsDraw) continue;
@@ -155,25 +159,29 @@ for (const league of leagues) {
       const batch = db.batch();
       for (const { draw, slice } of due) {
         batch.set(seasonRef.collection('sealed').doc(`wheel_${draw.id}`), { kind: 'wheel', draw: draw.id, slice, dare: draw.pool[slice] });
-        batch.set(week.ref, { wheel: { [draw.id]: draw } }, { merge: true });
+        // Times are stored as timestamps: the security rules compare the deadline with the server's clock.
+        batch.set(week.ref, { wheel: { [draw.id]: { ...draw, drawnAt: Timestamp.fromMillis(draw.drawnAt), dueAt: Timestamp.fromMillis(draw.dueAt) } } }, { merge: true });
       }
       await batch.commit();
       console.log(`League ${league.id}, ${week.id}: ${due.length} Wheel draw${due.length === 1 ? '' : 's'} sealed.`);
     }
   }
 
-  // Proof photos go after 14 days. Only their times are read, never the photos.
-  const proofs = await seasonRef.collection('proofs').select('at').get();
-  const stale = staleProofs(
-    proofs.docs.map((proof) => ({ id: proof.id, at: Number(ms(proof.get('at'))) })),
-    now,
-  );
-  for (let start = 0; start < stale.length; start += 400) {
-    const batch = db.batch();
-    for (const id of stale.slice(start, start + 400)) batch.delete(seasonRef.collection('proofs').doc(id));
-    await batch.commit();
+  // Proof photos go after 14 days, for receipts and Wheel dares alike. Only
+  // their times are read, never the photos.
+  for (const kind of ['proofs', 'dareProofs']) {
+    const proofs = await seasonRef.collection(kind).select('at').get();
+    const stale = staleProofs(
+      proofs.docs.map((proof) => ({ id: proof.id, at: Number(ms(proof.get('at'))) })),
+      now,
+    );
+    for (let start = 0; start < stale.length; start += 400) {
+      const batch = db.batch();
+      for (const id of stale.slice(start, start + 400)) batch.delete(seasonRef.collection(kind).doc(id));
+      await batch.commit();
+    }
+    if (stale.length > 0) console.log(`League ${league.id}: ${stale.length} ${kind === 'proofs' ? 'receipt' : 'dare'} photo${stale.length === 1 ? '' : 's'} deleted after ${PROOF_DAYS} days.`);
   }
-  if (stale.length > 0) console.log(`League ${league.id}: ${stale.length} proof photo${stale.length === 1 ? '' : 's'} deleted after ${PROOF_DAYS} days.`);
 
   // The standings, from every week with results. Each player's sealed coin
   // for the last tiebreak is drawn once, here, with real randomness.
@@ -193,6 +201,7 @@ for (const league of leagues) {
     members,
     weeks: settledDocs.map((week) => ({ results: week.get('results'), lines: week.get('lines') ?? [] })),
     coins,
+    penalties,
   });
   await seasonRef
     .collection('standings')

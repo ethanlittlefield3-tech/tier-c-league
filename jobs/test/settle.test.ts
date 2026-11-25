@@ -99,6 +99,24 @@ describe('The standings', () => {
     ]);
   });
 
+  it('A dodged Wheel dare takes 3 Season Points off', () => {
+    const rows = standingsFrom({
+      members: ['p1', 'p2'],
+      weeks: [
+        {
+          results: { p1: { player: 'p1', opponent: 'p2', seasonPoints: 44, outcome: 'win', beers: 0 }, p2: { player: 'p2', opponent: 'p1', seasonPoints: 33, outcome: 'loss', beers: 0 } },
+          lines: [line('p1', 39), line('p2', 33)],
+        },
+      ],
+      coins: { p1: 0.5, p2: 0.2 },
+      penalties: { p2: -3 },
+    });
+    expect(rows.map((row) => [row.player, row.seasonPoints])).toEqual([
+      ['p1', 44],
+      ['p2', 30],
+    ]);
+  });
+
   it('A tie on Season Points goes to the head-to-head result first', () => {
     const rows = standingsFrom({
       members: ['p1', 'p2'],

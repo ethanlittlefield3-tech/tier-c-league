@@ -137,4 +137,35 @@ describe('The live feed', () => {
     });
     expect(events.map((event) => event.text)).toEqual(['Maya asked Sam for receipts: Mind goal, Tue']);
   });
+
+  it('The Wheel shows when it is spun, when proof is posted, and how the vote or the deadline ended it', () => {
+    const H = 3_600_000;
+    const draw = (player: string, dueAt: number) => ({ id: `w02_${player}_1`, player, n: 1, pool: [], drawnAt: 0, dueAt });
+    const events = feedEvents({
+      ...none,
+      name,
+      now: 100 * H,
+      wheel: {
+        eligible: 2,
+        draws: [draw('maya', 200 * H), draw('sam', 50 * H), draw('jordan', 200 * H)],
+        spins: { w02_maya_1: { at: 1 * H, proofAt: 10 * H }, w02_sam_1: { at: 2 * H, proofAt: null }, w02_jordan_1: { at: 3 * H, proofAt: 20 * H } },
+        votes: [
+          { voter: 'jordan', player: 'maya', draw: 'w02_maya_1', choice: 'counts', at: 11 * H },
+          { voter: 'me', player: 'jordan', draw: 'w02_jordan_1', choice: 'doesntCount', at: 21 * H },
+          { voter: 'maya', player: 'jordan', draw: 'w02_jordan_1', choice: 'doesntCount', at: 22 * H },
+        ],
+      },
+    });
+    expect(events.filter((event) => event.kind === 'wheel').map((event) => [event.at / H, event.text, event.outcome ?? null])).toEqual([
+      [50, 'Sam dodged the dare: −3 Season Points', null],
+      // Two can vote: Jordan's second "doesn't count" settled it, and once Maya had one "counts" a veto was out of reach.
+      [22, "Jordan's dare proof", "Doesn't count: spins again"],
+      [20, 'Jordan posted dare proof: vote now', null],
+      [11, "Maya's dare proof", 'Counts'],
+      [10, 'Maya posted dare proof: vote now', null],
+      [3, 'Jordan spun the Wheel of Shame', null],
+      [2, 'Sam spun the Wheel of Shame', null],
+      [1, 'Maya spun the Wheel of Shame', null],
+    ]);
+  });
 });

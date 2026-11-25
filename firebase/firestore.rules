@@ -516,12 +516,29 @@ service cloud.firestore {
         match /votes/{V} {
           allow read: if isMember(L);
           allow create, update: if isPlayer(L, request.resource.data.voter)
-            && request.resource.data.choice in ['approve', 'veto']
             && request.resource.data.at == request.time
             && request.resource.data.player != request.resource.data.voter
-            && request.resource.data.version is int
+            && (draftVote(V, request.resource.data) || proofVote(V, request.resource.data));
+        }
+
+        // Approve or veto a goal or a dare at the draft, while its votes are open.
+        function draftVote(V, vote) {
+          return vote.kind in ['goal', 'dare']
+            && vote.choice in ['approve', 'veto']
+            && vote.version is int
             && votesOpen()
-            && (goalVote(V, request.resource.data) || dareVote(V, request.resource.data));
+            && (goalVote(V, vote) || dareVote(V, vote));
+        }
+
+        // Counts or Doesn't count on a Wheel dare's proof, for 24 hours from the proof.
+        function proofVote(V, vote) {
+          return vote.kind == 'proof'
+            && vote.keys().hasOnly(['voter', 'kind', 'player', 'draw', 'choice', 'at'])
+            && vote.choice in ['counts', 'doesntCount']
+            && V == vote.voter + '_proof_' + vote.draw
+            && spinOf(vote.draw).player == vote.player
+            && spinOf(vote.draw).proofAt != null
+            && request.time < spinOf(vote.draw).proofAt + duration.value(24, 'h');
         }
 
         function goalVote(V, vote) {
@@ -596,6 +613,37 @@ service cloud.firestore {
             && request.resource.data.at == request.time
             && request.resource.data.proofAt == null
             && wheelDraw(request.resource.data.period, drawId).player == request.resource.data.player;
+          // Proof of the dare: the spinner, before the deadline, with the photo in the same save.
+          allow update: if isPlayer(L, resource.data.player)
+            && resource.data.proofAt == null
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['proofAt'])
+            && request.resource.data.proofAt == request.time
+            && request.time < wheelDraw(resource.data.period, drawId).dueAt
+            && existsAfter(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/dareProofs/$(drawId));
+        }
+
+        // A Wheel dare's proof photo, saved by its spinner in the same save that
+        // marks the spin proven. The jobs delete it after 14 days.
+        match /dareProofs/{drawId} {
+          allow read: if isMember(L);
+          allow create: if isPlayer(L, spinOf(drawId).player)
+            && request.resource.data.keys().hasOnly(['photo', 'at'])
+            && request.resource.data.at == request.time
+            && validPhoto(request.resource.data.photo)
+            && spinOf(drawId).proofAt == null
+            && request.time < wheelDraw(spinOf(drawId).period, drawId).dueAt
+            && getAfter(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/spins/$(drawId)).data.proofAt == request.time;
+        }
+
+        function spinOf(drawId) {
+          return get(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/spins/$(drawId)).data;
+        }
+
+        // A photo of up to 300 KB, shrunk to a JPEG on the phone and saved as text.
+        function validPhoto(photo) {
+          return photo is string
+            && photo.size() <= 420000
+            && photo.matches('data:image/jpeg;base64,.*');
         }
 
         function wheelDraw(period, drawId) {
@@ -660,9 +708,7 @@ service cloud.firestore {
           allow create: if isPlayer(L, receiptOf(receiptId).target)
             && request.resource.data.keys().hasOnly(['photo', 'at'])
             && request.resource.data.at == request.time
-            && request.resource.data.photo is string
-            && request.resource.data.photo.size() <= 420000
-            && request.resource.data.photo.matches('data:image/jpeg;base64,.*')
+            && validPhoto(request.resource.data.photo)
             && request.time < receiptOf(receiptId).deadline
             && receiptOf(receiptId).proofAt == null
             && getAfter(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/receipts/$(receiptId)).data.proofAt == request.time;
@@ -769,12 +815,14 @@ service cloud.firestore {
         // day locks. There is no exception for the commish. A document that
         // does not exist is refused the same way, so nobody can probe for one.
         match /sealed/{sealedId} {
-          // A Wheel draw is revealed by its spin, to everyone at once. Anything
-          // else sealed is seen by its author, and by everyone from its reveal time.
+          // A Wheel draw is revealed by its spin, to everyone at once. A tiebreak
+          // coin is never shown, not even to its player. Anything else sealed is
+          // seen by its author, and by everyone from its reveal time.
           allow get: if isMember(L)
             && (resource.data.kind == 'wheel'
                   ? exists(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/spins/$(resource.data.draw))
-                  : (resource.data.player == claim(L).player || request.time >= resource.data.revealAt));
+                  : (resource.data.kind != 'coin'
+                      && (resource.data.player == claim(L).player || request.time >= resource.data.revealAt)));
           allow list: if isMember(L) && resource.data.player == claim(L).player;
           allow create: if validDemolition(sealedId, request.resource.data);
         }

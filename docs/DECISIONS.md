@@ -192,6 +192,14 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 105. **The spinner's Today has a card for the spin,** and Feed has a banner for everyone while the dares are due.
 106. **The wheel is drawn for this app:** one slice per dare in team blue and orange, a gold pointer, and a 5-second spin that turns the whole disc. With Reduce Motion on, it lands at once.
 
+**The Wheel of Shame, part 2** (new on 2026-11-25, not yet reviewed by the commish)
+
+107. **Dare proof works like receipts:** a photo of up to 300 KB, in the same save that marks the spin proven, before the Sunday deadline. Dare photos are deleted after 14 days too.
+108. **The proof vote uses the draft's majority** (provisional, "Still open" item 1): "Doesn't count" needs more than half of everyone but the spinner. A vote is settled as soon as the outcome can't change, or else when the 24 hours close.
+109. **A new spin after "doesn't count" comes from the hourly weekly job,** within the hour, sealed like the first, with its own deadline: the Sunday after that draw.
+110. **Each dodged dare takes 3 Season Points off in the standings.** It is worked out from the clock, like a receipt, and shows within the hour after the deadline. The "Dare Dodger" sticker comes with the cars in the Garage.
+111. **Tiebreak coins are sealed from their own player too.** Before this, the sealed-item rule let a player read their own coin's number.
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.

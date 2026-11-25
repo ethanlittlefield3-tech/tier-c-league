@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 232 of 232 passing.
+- **Tests:** 243 of 243 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -339,8 +339,25 @@ The job seals each draw. Nobody reads it until its spinner taps Spin, once.
 - The spinner taps Spin once, at the server time, and everyone in the league sees the result
 - Nobody else can spin for them
 - A spin needs a draw, at the right week, and the server time, and carries nothing else
-- Coin flips stay sealed from everyone
+- Tiebreak coins stay sealed from everyone, their own player included
 - Everyone in the league can see the spins; nobody outside can
+
+**Proving a Wheel dare**
+
+- The spinner posts a photo of up to 300 KB before the deadline
+- A dare is proven once, and only with the photo in the same save
+- Once proven, the proof time is fixed, so the vote window cannot be restarted
+- Proving changes nothing else on the spin
+- After the deadline no proof is taken: the dare is dodged
+- Everyone in the league can see the proof; nobody outside can
+
+**Voting on Wheel dare proof**
+
+- Everyone else votes Counts or Doesn't count, and can change their vote
+- The spinner does not vote on their own dare
+- Votes stay open for 24 hours from the proof
+- A vote is yours, filed under its own name, and only Counts or Doesn't count
+- No proof, no vote
 
 ## The wall
 

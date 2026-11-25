@@ -1,6 +1,6 @@
 # Tier C League: progress log
 
-Last updated 2026-11-25, after the Wheel of Shame, part 1.
+Last updated 2026-11-25, after the Wheel of Shame, part 2.
 
 ## Plan change (commish ruling, 2026-11-25)
 
@@ -193,6 +193,16 @@ Last updated 2026-11-25, after the Wheel of Shame, part 1.
   - Tapping Spin reveals the sealed result to everyone at once: the wheel turns for 5 seconds on every phone watching and lands on the dare. Proof is due by 11:59 pm that Sunday.
   - New rules: 6 rule tests, 232 in all. Weakening them 7 ways was caught 7 times.
   - 5 engine tests, 4 job tests, 4 logic tests, and 1 flow test that runs the real weekly job, spins on one phone and watches on another.
+- **The Wheel of Shame, part 2: dare proof, the vote, and dodges** (2026-11-25).
+  - After the spin, the spinner uploads a photo before the Sunday deadline. Everyone else sees it and votes "Counts" or "Doesn't count" for 24 hours, with live tallies.
+  - More than half saying "Doesn't count" means a new sealed spin, which the hourly job draws, and the spinner spins again.
+  - No proof by the deadline is a dodge: 3 Season Points off in the standings.
+  - The feed shows each spin, each proof, how its vote ended, and each dodge.
+  - The weekly job deletes dare photos after 14 days, like receipt photos.
+  - Fixed on the way: a tiebreak coin could be read by its own player. Now nobody can.
+  - Fixed on the way, found by a flow test: the job stored each draw's deadline as a plain number, which the rules could not compare with the clock. It is a timestamp now.
+  - New rules: 11 rule tests, 243 in all. Weakening them 16 ways was caught 10 times, after 2 missing tests were added. The other 6 are still refused because the proof and the spin's "proven" mark must arrive in one save, and each rule checks the other.
+  - 1 job test, 1 logic test, and 2 flow tests: a vote that sends the spinner back to the wheel, and a dodge that comes off the standings.
 - **The shorter intro on reopening is on purpose:** the full intro plays on the first open each day, and a 1-second title after that (SCOPE.md, "Intro animation").
 
 ## Waiting on the commish
@@ -201,12 +211,13 @@ Last updated 2026-11-25, after the Wheel of Shame, part 1.
 
 ## Next
 
-1. **Step 3, continued.** Next: the Wheel, part 2: dare proof, the 24-hour Counts or Doesn't count vote, a new spin when it doesn't count, and the −3 for a dodged dare.
+1. **Step 3, continued.** Every Phase 1 screen now exists. Next: the rest of Commish tools (approve joins, settle or unlock a week, and removing a dare), then the commish's phone check of every screen (Checkpoint C).
+   - **Push alerts** wait on one thing from the commish: a Cloud Messaging web push key, made in the Firebase console. The app will ask for it one step at a time when that feature is next.
    - **Still to add to joining:** the notifications step (with push alerts), a commish's "approve joins" switch, and a way to make a league. Leagues are made by a setup script, which is built with the jobs in Step 4.
    - **Offline start** comes with the offline step: a service worker that keeps the app's files on the phone, so it opens with no signal. Chrome on Android only offers its one-tap Install button once that exists. Until then Android installs from the browser menu, which the guide explains.
 2. **Before real players join:** limit the app's web key to the app's own address in the Google Cloud console, and look at App Check, which stops other programs from using the database's free daily allowance.
    - **Step 5 items still to come, each with the feature that needs it:** the Cloud Messaging web push key (notifications), and the private backups repo with its token (the backup job).
-3. **Rules still to write, each with its screen and its tests:** the Wheel and dare proof, and the remaining commish tools (approve joins, settle or unlock a week, moderation). They are in DATA-MODEL.md and refused until then.
+3. **Rules still to write, each with its screen and its tests:** the remaining commish tools (approve joins, settle or unlock a week, moderation). They are in DATA-MODEL.md and refused until then.
 
 ## Questions for the commish, asked when each feature is built
 

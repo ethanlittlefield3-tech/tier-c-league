@@ -4,12 +4,12 @@
  * from the league's own data, so it moves the moment anything happens.
  * Badges, rank-ups and recaps join it in Phase 2.
  */
-import type { DemolitionOutcome, Lane, Square } from '@tcl/engine';
+import { DODGE_PENALTY, PROOF_VOTE_HOURS, dareStatus, type DemolitionOutcome, type Lane, type Square } from '@tcl/engine';
 
 export interface FeedEvent {
   id: string;
   at: number;
-  kind: 'checkIn' | 'power' | 'dock' | 'reveal' | 'results' | 'receipt';
+  kind: 'checkIn' | 'power' | 'dock' | 'reveal' | 'results' | 'receipt' | 'wheel';
   text: string;
   /** A second line: a dock's reason, or a week's scores and awards. */
   detail?: string;
@@ -46,8 +46,15 @@ export interface FeedInput {
     id: string;
     data: { by: string; target: string; date: string; square: Square; requestedAt?: number | null; deadline: number; proofAt: number | null; backedDownAt: number | null };
   }[];
-  /** The time now, to tell a receipt left past its deadline. */
+  /** The time now, to tell a receipt or a dare left past its deadline. */
   now?: number;
+  /** The Wheel of Shame's latest draws, their spins and the votes on their proof. */
+  wheel?: {
+    eligible: number;
+    draws: { id: string; player: string; dueAt: number }[];
+    spins: Record<string, { at: number | null; proofAt: number | null }>;
+    votes: { voter: string; player?: string; draw: string; choice: string; at?: number | null }[];
+  };
 }
 
 const DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -158,6 +165,42 @@ export function feedEvents(input: FeedInput): FeedEvent[] {
       events.push({ id: `backed-${id}`, at: data.backedDownAt, kind: 'receipt', text: `${who} backed down: ${what}`, outcome: 'Voided' });
     } else if (input.now !== undefined && input.now >= data.deadline) {
       events.push({ id: `failed-${id}`, at: data.deadline, kind: 'receipt', text: `No proof from ${object(who)} in time: ${what}`, outcome: 'Voided, −1' });
+    }
+  }
+
+  if (input.wheel && input.now !== undefined) {
+    const now = input.now;
+    for (const draw of input.wheel.draws) {
+      const spin = input.wheel.spins[draw.id] ?? null;
+      const votes = input.wheel.votes.filter((vote) => vote.draw === draw.id);
+      const who = name(draw.player);
+      if (spin && typeof spin.at === 'number') events.push({ id: `spun-${draw.id}`, at: spin.at, kind: 'wheel', text: `${who} spun the Wheel of Shame` });
+      if (spin && typeof spin.proofAt === 'number') events.push({ id: `proof-${draw.id}`, at: spin.proofAt, kind: 'wheel', text: `${who} posted dare proof: vote now` });
+      const statusAt = (when: number) =>
+        dareStatus({
+          spunAt: spin?.at ?? null,
+          proofAt: spin?.proofAt ?? null,
+          dueAt: draw.dueAt,
+          now: when,
+          eligible: input.wheel!.eligible,
+          counts: votes.filter((vote) => vote.choice === 'counts').length,
+          doesntCount: votes.filter((vote) => vote.choice === 'doesntCount').length,
+        });
+      const status = statusAt(now);
+      if ((status === 'counted' || status === 'redo') && typeof spin?.proofAt === 'number') {
+        // Decided by the votes as they came in, or else when the 24 hours closed.
+        const closesAt = spin.proofAt + PROOF_VOTE_HOURS * 3_600_000;
+        const lastVote = Math.max(0, ...votes.map((vote) => vote.at ?? 0));
+        const early = lastVote > 0 && lastVote < closesAt && statusAt(lastVote) === status;
+        events.push({
+          id: `decided-${draw.id}`,
+          at: early ? lastVote : closesAt,
+          kind: 'wheel',
+          text: `${cap(possessive(who))} dare proof`,
+          outcome: status === 'counted' ? 'Counts' : "Doesn't count: spins again",
+        });
+      }
+      if (status === 'dodged') events.push({ id: `dodged-${draw.id}`, at: draw.dueAt, kind: 'wheel', text: `${who} dodged the dare: ${signed(DODGE_PENALTY)} Season Points` });
     }
   }
 

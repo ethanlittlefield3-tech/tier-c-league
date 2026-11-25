@@ -278,3 +278,15 @@
 .feed-event[data-kind='receipt'] {
   border-left-color: var(--gold);
 }
+
+.feed-event[data-kind='wheel'] {
+  border-left-color: #ff7a2f;
+}
+
+.feed-outcome[data-outcome='counts'] {
+  color: #8fe3a8;
+}
+
+.feed-outcome[data-outcome="doesn't"] {
+  color: #ff9aa2;
+}

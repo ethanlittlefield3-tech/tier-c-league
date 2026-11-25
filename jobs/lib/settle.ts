@@ -93,6 +93,8 @@ export function standingsFrom(input: {
   members: string[];
   weeks: { results: Record<string, Pick<MatchResult, 'player' | 'opponent' | 'seasonPoints' | 'outcome' | 'beers'>>; lines: WeekLineStored[] }[];
   coins: Record<string, number>;
+  /** Season Points taken off, such as 3 for each dodged Wheel dare. */
+  penalties?: Record<string, number>;
 }): RankedRow[] {
   const rows = input.members.map((player) => {
     let seasonPoints = 0;
@@ -106,7 +108,7 @@ export function standingsFrom(input: {
       }
       perfectDays += week.lines.find((line) => line.player === player)?.perfectDays ?? 0;
     }
-    return { player, seasonPoints, beers, perfectDays, coin: input.coins[player] ?? 1 };
+    return { player, seasonPoints: seasonPoints + (input.penalties?.[player] ?? 0), beers, perfectDays, coin: input.coins[player] ?? 1 };
   });
 
   const games: Game[] = [];

@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'preact/hooks';
-import { useAll, useDoc, useNow, usePeek } from '../data/hooks.ts';
+import { DODGE_PENALTY, PROOF_VOTE_HOURS, dareStatus } from '@tcl/engine';
+import { useAll, useDoc, useNow, usePeek, useWhere } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
 import { whyOf } from '../data/why.ts';
+import { shrinkPhoto } from '../receipts/photo.ts';
 import { Back, Heading } from '../ui/parts.tsx';
+import { timeLeft } from '../ui/when.ts';
 import { WheelArt } from '../wheel/WheelArt.tsx';
+import './draft.css';
+import './receipts.css';
 import './wheel.css';
 
 export interface Draw {
@@ -21,6 +26,13 @@ export interface Spin {
   period: string;
   at: number | null;
   proofAt: number | null;
+}
+
+export interface ProofVote {
+  voter: string;
+  player: string;
+  draw: string;
+  choice: 'counts' | 'doesntCount';
 }
 
 const TROUBLE: Record<Trouble, string> = {
@@ -51,12 +63,14 @@ export function latestWheel(weeks: { id: string; data: { week: number; wheel?: R
  */
 export function Wheel(props: { me: Me; onBack: () => void }) {
   const leaguePath = `leagues/${props.me.league}`;
-  const league = useDoc<{ season?: string | null }>(leaguePath);
+  const league = useDoc<{ season?: string | null; members?: Record<string, boolean> }>(leaguePath);
   const seasonPath = league.data?.season ? `${leaguePath}/seasons/${league.data.season}` : null;
   const season = useDoc<{ timeZone: string }>(seasonPath);
   const weeks = useAll<{ week: number; wheel?: Record<string, Draw> }>(seasonPath ? `${seasonPath}/weeks` : null);
   const spins = useAll<Spin>(seasonPath ? `${seasonPath}/spins` : null);
+  const proofVotes = useWhere<ProofVote>(seasonPath ? `${seasonPath}/votes` : null, 'kind', 'proof');
   const players = useAll<{ displayName?: string }>(`${leaguePath}/players`);
+  const eligible = Math.max(0, Object.keys(league.data?.members ?? {}).length - 1);
   const name = (player: string) => players.docs.find((found) => found.id === player)?.data.displayName ?? 'A former player';
   const wheel = latestWheel(weeks.docs);
 
@@ -79,6 +93,8 @@ export function Wheel(props: { me: Me; onBack: () => void }) {
                 period={wheel.period}
                 draw={draw}
                 spin={spins.docs.find((found) => found.id === draw.id)?.data ?? null}
+                votes={proofVotes.docs.map((found) => found.data).filter((vote) => vote.draw === draw.id)}
+                eligible={eligible}
                 name={name}
                 timeZone={season.data?.timeZone ?? 'America/New_York'}
               />
@@ -90,7 +106,24 @@ export function Wheel(props: { me: Me; onBack: () => void }) {
   );
 }
 
-function DrawCard(props: { me: Me; seasonId: string; seasonPath: string; period: string; draw: Draw; spin: Spin | null; name: (player: string) => string; timeZone: string }) {
+const PROOF_TROUBLE: Record<Trouble, string> = {
+  'not-open': 'The league is not open yet.',
+  offline: 'No answer from the league. Check your signal and try again.',
+  refused: 'That was not accepted. The deadline may have passed.',
+};
+
+function DrawCard(props: {
+  me: Me;
+  seasonId: string;
+  seasonPath: string;
+  period: string;
+  draw: Draw;
+  spin: Spin | null;
+  votes: ProofVote[];
+  eligible: number;
+  name: (player: string) => string;
+  timeZone: string;
+}) {
   const now = useNow();
   const spun = props.spin !== null;
   const mine = props.draw.player === props.me.player;
@@ -119,6 +152,30 @@ function DrawCard(props: { me: Me; seasonId: string; seasonPath: string; period:
 
   const who = mine ? 'You' : props.name(props.draw.player);
   const landed = result?.slice ?? null;
+  const counts = props.votes.filter((vote) => vote.choice === 'counts').length;
+  const doesntCount = props.votes.filter((vote) => vote.choice === 'doesntCount').length;
+  const status = dareStatus({ spunAt: props.spin?.at ?? null, proofAt: props.spin?.proofAt ?? null, dueAt: props.draw.dueAt, now, eligible: props.eligible, counts, doesntCount });
+  const myVote = props.votes.find((vote) => vote.voter === props.me.player)?.choice ?? null;
+  const proofPhoto = usePeek<{ photo: string }>(props.spin?.proofAt ? `${props.seasonPath}/dareProofs/${props.draw.id}` : null, props.spin?.proofAt ?? 0);
+
+  const upload = (event: Event) => {
+    const input = event.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file || busy) return;
+    setBusy(true);
+    setError(null);
+    void shrinkPhoto(file)
+      .then((photo) => loadData().then((api) => api.proveDare(props.me, props.seasonId, props.draw.id, photo)))
+      .catch((failure: unknown) => setError(failure instanceof Error && !('why' in failure) ? failure.message : PROOF_TROUBLE[whyOf(failure)]))
+      .finally(() => setBusy(false));
+  };
+
+  const vote = (choice: 'counts' | 'doesntCount') => {
+    void loadData()
+      .then((api) => api.voteOnProof(props.me, props.seasonId, { player: props.draw.player, draw: props.draw.id, choice }))
+      .catch((failure: unknown) => setError(PROOF_TROUBLE[whyOf(failure)]));
+  };
   return (
     <section class="panel wheel-card" aria-labelledby={`spin-${props.draw.id}`}>
       <h2 id={`spin-${props.draw.id}`}>
@@ -141,10 +198,44 @@ function DrawCard(props: { me: Me; seasonId: string; seasonPath: string; period:
       ) : (
         <p class="panel-text">Revealing…</p>
       )}
-      <p class="panel-text">
-        Proof is due by {dueText(props.draw.dueAt, props.timeZone)}
-        {now >= props.draw.dueAt ? ', and the time is up.' : '.'}
-      </p>
+      {status === 'spun' && (
+        <>
+          <p class="panel-text">
+            Proof is due by {dueText(props.draw.dueAt, props.timeZone)}, in {timeLeft(props.draw.dueAt - now)}. Then everyone else votes for {PROOF_VOTE_HOURS} hours.
+          </p>
+          {mine && (
+            <label class="btn receipt-upload wheel-proof-upload" data-busy={busy}>
+              Upload proof
+              <input type="file" accept="image/*" class="sr-only" disabled={busy} onChange={upload} />
+            </label>
+          )}
+        </>
+      )}
+      {status === 'unspun' && <p class="panel-text">Proof is due by {dueText(props.draw.dueAt, props.timeZone)}, spun or not.</p>}
+      {(status === 'voting' || status === 'counted' || status === 'redo') && (
+        <div class="wheel-proof">
+          {proofPhoto ? <img src={proofPhoto.photo} alt={`${mine ? 'Your' : `${who}'s`} dare proof`} /> : <p class="panel-text">Getting the photo…</p>}
+          <p class="draft-tally" data-outcome={status === 'counted' ? 'approved' : status === 'redo' ? 'vetoed' : 'open'}>
+            {status === 'counted' ? 'It counts. Dare done.' : status === 'redo' ? `It doesn't count: ${mine ? 'you spin' : `${who} spins`} again.` : 'Voting'}: {counts} counts, {doesntCount} doesn't
+          </p>
+          {status === 'voting' && !mine && (
+            <div class="draft-vote-buttons" role="group" aria-label="Your vote on the proof">
+              <button type="button" class="choice-option" aria-pressed={myVote === 'counts'} onClick={() => vote('counts')}>
+                Counts
+              </button>
+              <button type="button" class="choice-option draft-veto" aria-pressed={myVote === 'doesntCount'} onClick={() => vote('doesntCount')}>
+                Doesn't count
+              </button>
+            </div>
+          )}
+          {status === 'voting' && mine && <p class="panel-text">Everyone else votes for {PROOF_VOTE_HOURS} hours from when you posted it.</p>}
+        </div>
+      )}
+      {status === 'dodged' && (
+        <p class="wheel-dodged">
+          No proof by the deadline: {mine ? 'you lose' : `${who} loses`} {-DODGE_PENALTY} Season Points.
+        </p>
+      )}
       {error && (
         <p class="field-error" role="alert">
           {error}
