@@ -62,13 +62,14 @@ export function Feed(props: { me: Me }) {
   const kit = useLatest<FeedInput['kit'][number]['data']>(seasonPath ? `${seasonPath}/kit` : null, 'at', 20);
   const docks = useLatest<FeedInput['adjustments'][number]['data']>(seasonPath ? `${seasonPath}/adjustments` : null, 'at', 10);
   const weeks = useAll<FeedInput['weeks'][number]['data']>(seasonPath ? `${seasonPath}/weeks` : null);
+  const receipts = useLatest<NonNullable<FeedInput['receipts']>[number]['data']>(seasonPath ? `${seasonPath}/receipts` : null, 'requestedAt', 20);
   const opponent = useOpponent(props.me, now);
   const isCommish = league.data?.commish === props.me.player || league.data?.coCommish === props.me.player;
 
   const realName: Names = (player) => (player === 'HOUSE' ? 'The House' : (players.docs.find((found) => found.id === player)?.data.displayName ?? 'a former player'));
   const name: Names = (player) => (player === props.me.player ? 'You' : realName(player));
   const saved = players.docs.find((found) => found.id === props.me.player)?.data.taunts ?? [];
-  const events = feedEvents({ name, checkIns: checkIns.docs, kit: kit.docs, adjustments: docks.docs, weeks: weeks.docs });
+  const events = feedEvents({ name, checkIns: checkIns.docs, kit: kit.docs, adjustments: docks.docs, weeks: weeks.docs, receipts: receipts.docs, now });
   const timeline: ({ post: { id: string; data: Post }; at: number } | { event: FeedEvent; at: number })[] = [
     ...posts.docs.filter((post) => !post.data.deleted).map((post) => ({ post, at: post.data.at ?? now })),
     ...events.map((event) => ({ event, at: event.at })),
@@ -104,7 +105,7 @@ function EventRow(props: { event: FeedEvent; now: number }) {
         {event.outcome && (
           <>
             {': '}
-            <strong class="feed-outcome" data-outcome={event.outcome.startsWith('Blocked') ? 'blocked' : event.outcome.toLowerCase()}>
+            <strong class="feed-outcome" data-outcome={(event.outcome.split(/[ :,]/)[0] ?? '').toLowerCase()}>
               {event.outcome}
             </strong>
           </>

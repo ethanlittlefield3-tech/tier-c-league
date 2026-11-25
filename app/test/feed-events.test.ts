@@ -105,4 +105,36 @@ describe('The live feed', () => {
     });
     expect(events[0]?.detail).toBe('Sam lost to The House 25–30\nSpins the Wheel: Sam');
   });
+
+  it('Receipts show when asked, and again when proven, backed down from, or left past the deadline', () => {
+    const base = { by: 'maya', date: '2027-01-12', square: 'body' as const, requestedAt: 1, deadline: 100, proofAt: null, backedDownAt: null };
+    const events = feedEvents({
+      ...none,
+      name,
+      now: 200,
+      receipts: [
+        { id: 'r1', data: { ...base, target: 'jordan', proofAt: 50 } },
+        { id: 'r2', data: { ...base, target: 'me', square: 'screen', backedDownAt: 60 } },
+        { id: 'r3', data: { ...base, target: 'sam', square: 'mind' } },
+      ],
+    });
+    expect(events.filter((event) => event.kind === 'receipt').map((event) => [event.text, event.outcome ?? null])).toEqual([
+      ["No proof from Sam in time: Mind goal, Tue", 'Voided, −1'],
+      ['You backed down: Screen time, Tue', 'Voided'],
+      ['Jordan proved it: Body goal, Tue', 'Proven'],
+      ['Maya asked Jordan for receipts: Body goal, Tue', null],
+      ['Maya asked you for receipts: Screen time, Tue', null],
+      ['Maya asked Sam for receipts: Mind goal, Tue', null],
+    ]);
+  });
+
+  it('A receipt still open shows only that it was asked', () => {
+    const events = feedEvents({
+      ...none,
+      name,
+      now: 50,
+      receipts: [{ id: 'r4', data: { by: 'maya', target: 'sam', date: '2027-01-12', square: 'mind', requestedAt: 1, deadline: 100, proofAt: null, backedDownAt: null } }],
+    });
+    expect(events.map((event) => event.text)).toEqual(['Maya asked Sam for receipts: Mind goal, Tue']);
+  });
 });

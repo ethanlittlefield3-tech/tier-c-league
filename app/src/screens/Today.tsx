@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { LANES, weekPeriod, type Lane, type Square } from '@tcl/engine';
+import { LANES, receiptFixes, receiptStatus, weekPeriod, type Lane, type Square, type StoredReceipt } from '@tcl/engine';
 import { useDoc, useNow, usePeek, useWhere } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
@@ -20,6 +20,7 @@ import {
 import type { CalDay } from '../today/kit.ts';
 import { playerWeek, type KitPlay } from '../today/week.ts';
 import { PowerUps, type Play } from './PowerUps.tsx';
+import { ReceiptsDue } from './ReceiptsDue.tsx';
 import { GoalMark } from './GoalMark.tsx';
 import { ScreenSheet } from './ScreenSheet.tsx';
 import { WeekStrip } from './WeekStrip.tsx';
@@ -131,8 +132,14 @@ export function Today(props: { me: Me; onDraft?: () => void }) {
 
   const todayCal = useDoc<CalendarDoc>(seasonPath && dates ? `${seasonPath}/calendar/${dates.today}` : null);
   const yesterdayCal = useDoc<CalendarDoc>(seasonPath && dates ? `${seasonPath}/calendar/${dates.yesterday}` : null);
+  // Receipts asked of you. They count like the commish's fixes once backed down from, or failed.
+  const myReceipts = useWhere<StoredReceipt>(seasonPath ? `${seasonPath}/receipts` : null, 'target', props.me.player);
+  // Ruling R6: while a receipt on a day's screen time is open, that number can still be fixed, even after the day locks.
+  const screenFixOn = (day: string | null) =>
+    day !== null && myReceipts.docs.some((found) => found.data.date === day && found.data.square === 'screen' && receiptStatus({ ...found.data, now }) === 'pending');
   const yesterdayOpen = windowOf(yesterdayCal.data, now) === 'open';
-  const showing = picked === 'yesterday' && yesterdayOpen ? 'yesterday' : 'today';
+  const yesterdayShown = yesterdayOpen || (yesterdayCal.data !== null && screenFixOn(dates?.yesterday ?? null));
+  const showing = picked === 'yesterday' && yesterdayShown ? 'yesterday' : 'today';
   const date = dates ? dates[showing] : null;
   const cal = showing === 'today' ? todayCal.data : yesterdayCal.data;
 
@@ -172,13 +179,16 @@ export function Today(props: { me: Me; onDraft?: () => void }) {
   const draftState = useDoc<{ step: string; votesCloseAt?: number }>(seasonPath ? `${seasonPath}/draft/state` : null);
 
   // Both sides of this week, for the week strip and the scoreboard.
-  type Change = { date: string; amount: number; void: Square | null };
+  type Change = { date: string; amount: number; void: Square | null; receipt?: boolean };
   const myDays = useWhere<DayEntry & { date: string }>(seasonPath ? `${seasonPath}/days` : null, 'player', me);
   const myKit = useWhere<KitPlay>(seasonPath ? `${seasonPath}/kit` : null, 'player', me);
   const myChanges = useWhere<Change>(seasonPath ? `${seasonPath}/adjustments` : null, 'player', me);
   const theirDays = useWhere<DayEntry & { date: string }>(seasonPath ? `${seasonPath}/days` : null, 'player', opponentId);
   const theirKit = useWhere<KitPlay>(seasonPath ? `${seasonPath}/kit` : null, 'player', opponentId);
   const theirChanges = useWhere<Change>(seasonPath ? `${seasonPath}/adjustments` : null, 'player', opponentId);
+  const theirReceipts = useWhere<StoredReceipt>(seasonPath ? `${seasonPath}/receipts` : null, 'target', opponentId);
+  const myFixes: Change[] = [...myChanges.docs.map((found) => found.data), ...receiptFixes(myReceipts.docs.map((found) => found.data), now).map((fix) => ({ ...fix, receipt: true }))];
+  const theirFixes: Change[] = [...theirChanges.docs.map((found) => found.data), ...receiptFixes(theirReceipts.docs.map((found) => found.data), now)];
   // A Demolition aimed at you is sealed until its day locks at noon, so look once after each noon.
   const lockedSoFar = week.docs.filter((found) => now >= found.data.lock).length;
   const demolitionOnMe = usePeek<{ target: string; date: string; lane: Lane }>(
@@ -245,6 +255,7 @@ export function Today(props: { me: Me; onDraft?: () => void }) {
 
   const dayWindow = windowOf(cal, now);
   const editable = dayWindow === 'open';
+  const screenFix = screenFixOn(date);
   const entry: DayEntry = day.data ? { goals: { ...EMPTY.goals, ...day.data.goals }, screenMinutes: day.data.screenMinutes ?? null, beers: day.data.beers ?? 0 } : EMPTY;
   const restDay = cal ? isRestDay({ date: cal.date, calendar: cal, restDate: rest.data?.date ?? null }) : false;
   const ruleOnes = [ruleOne1.data, ruleOne2.data, ruleOne3.data].filter((play): play is Play => play !== null);
@@ -256,7 +267,7 @@ export function Today(props: { me: Me; onDraft?: () => void }) {
   const aerialHere = shownAerial !== null && shownAerial.date === date;
   const ruleOneHere = ruleOnes.some((play) => play.date === date);
   // Commish docks, corrections and voids on this day.
-  const fixes = myChanges.docs.map((found) => found.data).filter((change) => change.date === date);
+  const fixes = myFixes.filter((change) => change.date === date);
   const score = liveDayScore({
     par: season.data.par,
     entry,
@@ -272,8 +283,8 @@ export function Today(props: { me: Me; onDraft?: () => void }) {
   /** What the next save starts from: this phone's last save for the day, if the screen hasn't caught up with it yet. */
   const base = (): DayEntry => (lastSaved.current && lastSaved.current.date === date ? lastSaved.current.entry : entry);
 
-  const save = (next: DayEntry) => {
-    if (!editable || !date || !seasonId) return;
+  const save = (next: DayEntry, screenOnly = false) => {
+    if (!(editable || (screenOnly && screenFix)) || !date || !seasonId) return;
     // A day is new only if neither the server nor this phone has saved it yet.
     const isNew = !day.data && !(lastSaved.current && lastSaved.current.date === date);
     lastSaved.current = { date, entry: next };
@@ -309,7 +320,7 @@ export function Today(props: { me: Me; onDraft?: () => void }) {
     logs: logsOf(myDays.docs),
     kit: myKit.docs.map((found) => found.data),
     demolitionsOn: demolitionOnMe && demolitionOnMe.target === me ? [{ date: demolitionOnMe.date, lane: demolitionOnMe.lane }] : [],
-    adjustments: myChanges.docs.map((found) => found.data),
+    adjustments: myFixes,
     now,
     timeZone: season.data.timeZone,
   });
@@ -320,7 +331,7 @@ export function Today(props: { me: Me; onDraft?: () => void }) {
         logs: logsOf(theirDays.docs),
         kit: theirKit.docs.map((found) => found.data),
         demolitionsOn: myDemolition && myDemolition.lane ? [{ date: myDemolition.date, lane: myDemolition.lane }] : [],
-        adjustments: theirChanges.docs.map((found) => found.data),
+        adjustments: theirFixes,
         now,
         timeZone: season.data.timeZone,
       })
@@ -330,16 +341,17 @@ export function Today(props: { me: Me; onDraft?: () => void }) {
   return (
     <div class="today" data-window={dayWindow}>
       {draftCard}
+      <ReceiptsDue me={props.me} seasonId={seasonId} now={now} receipts={myReceipts.docs} />
       <div class="today-days" role="group" aria-label="Which day">
         <button type="button" class="today-day" aria-pressed={showing === 'today'} onClick={() => setPicked('today')}>
           Today {'\u00b7'} {shortDate(dates.today)}
         </button>
-        {yesterdayOpen && (
+        {yesterdayShown && (
           <button
             type="button"
             class="today-day"
             aria-pressed={showing === 'yesterday'}
-            aria-label={`Yesterday \u00b7 ${shortDate(dates.yesterday)}, fix until 12:00 pm`}
+            aria-label={yesterdayOpen ? `Yesterday \u00b7 ${shortDate(dates.yesterday)}, fix until 12:00 pm` : `Yesterday \u00b7 ${shortDate(dates.yesterday)}, screen time can still be fixed for receipts`}
             onClick={() => setPicked('yesterday')}
           >
             Yesterday {'\u00b7'} {shortDate(dates.yesterday)}
@@ -423,12 +435,19 @@ export function Today(props: { me: Me; onDraft?: () => void }) {
         </p>
         {breakdown(score) && <p class="today-breakdown">{breakdown(score)}</p>}
         {ruleOneHere ? <p class="today-kit">Rule One: this day scores 0</p> : aerialHere ? <p class="today-kit">Aerial: this day counts double</p> : null}
-        {fixes.map((change) => (
-          <p class="today-fix">
-            Commish: {change.amount > 0 ? `+${change.amount}` : `\u2212${-change.amount}`}
-            {change.void ? `, ${change.void === 'screen' ? 'screen time' : change.void} voided` : ''}
-          </p>
-        ))}
+        {fixes.map((change) =>
+          change.receipt ? (
+            <p class="today-fix">
+              {change.amount < 0 ? 'Receipts: no proof in time' : 'Receipts: backed down'}, {change.void === 'screen' ? 'screen time' : change.void} voided
+              {change.amount < 0 ? `, \u2212${-change.amount}` : ''}
+            </p>
+          ) : (
+            <p class="today-fix">
+              Commish: {change.amount > 0 ? `+${change.amount}` : `\u2212${-change.amount}`}
+              {change.void ? `, ${change.void === 'screen' ? 'screen time' : change.void} voided` : ''}
+            </p>
+          ),
+        )}
       </section>
 
       {lateRisk && (
@@ -488,9 +507,9 @@ export function Today(props: { me: Me; onDraft?: () => void }) {
           dateLabel={sheetDate(date)}
           minutes={entry.screenMinutes}
           par={season.data.par}
-          editable={editable}
+          editable={editable || screenFix}
           onSave={(minutes) => {
-            save({ ...base(), screenMinutes: minutes });
+            save({ ...base(), screenMinutes: minutes }, true);
             closeSheet();
           }}
           onClose={closeSheet}

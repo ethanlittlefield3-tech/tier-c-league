@@ -7,6 +7,7 @@ import { formatPoints, formatScreenShort, pointsChip } from '../today/model.ts';
 import type { DayCell } from '../today/week.ts';
 import { GoalMark } from './GoalMark.tsx';
 import { useMatchup } from './useMatchup.ts';
+import { ReceiptAsk } from './ReceiptAsk.tsx';
 import { leadText } from './WeekStrip.tsx';
 import './match.css';
 
@@ -133,6 +134,19 @@ export function Match(props: { me: Me }) {
           Beers today: <strong>{log?.beers ?? 0}</strong>
         </p>
       </section>
+
+      <ReceiptAsk
+        me={props.me}
+        seasonId={match.seasonId}
+        now={now}
+        timeZone={match.season.timeZone}
+        today={todayDate}
+        them={them}
+        days={match.receiptDays}
+        logs={match.theirLogs}
+        theirReceipts={match.theirReceipts}
+        myRequests={match.myRequests}
+      />
 
       <section class="week match-week" aria-labelledby="match-week-title">
         <h2 id="match-week-title">This week</h2>

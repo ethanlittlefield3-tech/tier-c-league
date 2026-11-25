@@ -261,7 +261,8 @@
   white-space: pre-line;
 }
 
-.feed-outcome[data-outcome='landed'] {
+.feed-outcome[data-outcome='landed'],
+.feed-outcome[data-outcome='voided'] {
   color: #ff9aa2;
 }
 
@@ -269,6 +270,11 @@
   color: var(--ink-soft);
 }
 
-.feed-outcome[data-outcome='blocked'] {
+.feed-outcome[data-outcome='blocked'],
+.feed-outcome[data-outcome='proven'] {
   color: #8fe3a8;
+}
+
+.feed-event[data-kind='receipt'] {
+  border-left-color: var(--gold);
 }

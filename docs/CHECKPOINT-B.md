@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 209 of 209 passing.
+- **Tests:** 226 of 226 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -298,6 +298,36 @@ Everyone in the league can read them. Only the weekly job writes them.
 - Nobody outside the league can
 - Only the weekly job writes them: no phone can, the commish included
 - A week's results can be read by everyone in the league and written by no phone
+
+## Receipts
+
+You ask in your own name, before the day locks, 3 times a week. Only the player asked can answer, and only before the deadline.
+
+**Asking for receipts**
+
+- Anyone in the league can ask for receipts on a square someone else claimed, until that day locks
+- You can't ask yourself, or ask on a square with nothing claimed
+- On a rest day, receipts cover screen time only
+- Proof is due by the end of that day, or by the end of the next day when asked after 6 pm
+- A request always takes one of your slots, and nobody can take a slot of yours
+- Each player has 3 requests a week
+- Each square takes one request
+- A request is filed under the square's own name, in your name, at the server time
+
+**Answering a receipt**
+
+- The player can back down before the deadline, for free
+- A receipt is proven only with the photo, in the same save
+- Or prove it with a photo of up to 300 KB before the deadline
+- Once proven or backed down, it stays that way
+- After the deadline, nothing changes: the square is voided and costs 1 more point
+- Nobody can change a request's facts, the commish included
+- Everyone in the league can see receipts and proof; nobody outside can
+
+**Fixing screen time for a receipt (ruling R6)**
+
+- While a screen-time receipt is open, the player can still fix the number, even after the day locks, and nothing else
+- Once the receipt is answered or its deadline passes, the number is fixed
 
 ## The wall
 

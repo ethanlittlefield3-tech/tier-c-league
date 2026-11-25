@@ -6,6 +6,7 @@ import {
   proofDeadline,
   provisionalAt,
   receiptEffect,
+  receiptFixes,
   receiptStatus,
   weekStart,
   type ReceiptRequest,
@@ -129,5 +130,23 @@ describe('6. Receipts: how a request ends', () => {
     const late = deadline + MINUTE;
     expect(receiptStatus({ deadline, now: late, proofAt: late, backedDownAt: null })).toBe('failed');
     expect(receiptStatus({ deadline, now: late, proofAt: null, backedDownAt: late })).toBe('failed');
+  });
+
+  it("A player's receipts become fixes to their days, the same shape as the commish's: free when backed down, 1 point when failed, nothing while open or proven", () => {
+    const base = { date: MON, deadline, proofAt: null, backedDownAt: null };
+    const receipts = [
+      { ...base, square: 'mind' as const, backedDownAt: at(MON, '20:00') },
+      { ...base, square: 'body' as const },
+      { ...base, square: 'wildcard' as const, proofAt: at(MON, '21:00') },
+      { ...base, square: 'screen' as const },
+    ];
+    // Before the deadline only the back-down counts.
+    expect(receiptFixes(receipts, deadline - MINUTE)).toEqual([{ date: MON, amount: 0, void: 'mind' }]);
+    // After it, the unanswered ones have failed.
+    expect(receiptFixes(receipts, deadline)).toEqual([
+      { date: MON, amount: 0, void: 'mind' },
+      { date: MON, amount: -1, void: 'body' },
+      { date: MON, amount: -1, void: 'screen' },
+    ]);
   });
 });

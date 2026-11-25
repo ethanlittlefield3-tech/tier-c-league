@@ -12,6 +12,8 @@
 import { randomInt } from 'node:crypto';
 import { FieldValue, Timestamp, getFirestore, type DocumentData } from 'firebase-admin/firestore';
 import { connect } from './admin.ts';
+import { receiptFixes, type StoredReceipt } from '../engine/src/index.ts';
+import { PROOF_DAYS, staleProofs } from './lib/proofs.ts';
 import { revealDemolitions, sameReveals } from './lib/reveals.ts';
 import { settleDue, standingsFrom, type PlayerWeekData, type WeekLineStored } from './lib/settle.ts';
 
@@ -58,10 +60,15 @@ for (const league of leagues) {
       const logs = await db.getAll(...days.map((day) => seasonRef.collection('days').doc(`${player}_${day.date}`)));
       const kit = await seasonRef.collection('kit').where('player', '==', player).get();
       const fixes = await seasonRef.collection('adjustments').where('player', '==', player).get();
+      // Receipts count like the commish's fixes: backed down, or failed once the deadline passes.
+      const asked = await seasonRef.collection('receipts').where('target', '==', player).get();
       players[player] = {
         logs: Object.fromEntries(logs.filter((log) => log.exists).map((log) => [log.get('date'), plain(log.data()!) as unknown as PlayerWeekData['logs'][string]])),
         kit: kit.docs.map((play) => plain(play.data()) as unknown as PlayerWeekData['kit'][number]),
-        adjustments: fixes.docs.map((fix) => plain(fix.data()) as unknown as PlayerWeekData['adjustments'][number]),
+        adjustments: [
+          ...fixes.docs.map((fix) => plain(fix.data()) as unknown as PlayerWeekData['adjustments'][number]),
+          ...receiptFixes(asked.docs.map((receipt) => plain(receipt.data()) as unknown as StoredReceipt), now),
+        ],
       };
     }
     const sealed = await seasonRef.collection('sealed').where('period', '==', period).get();
@@ -104,6 +111,19 @@ for (const league of leagues) {
     if (settled.status === 'final') addEarlier(settled.lines);
     console.log(`League ${league.id}, ${period}: ${settled.status}, ${settled.lines.length} players.`);
   }
+
+  // Proof photos go after 14 days. Only their times are read, never the photos.
+  const proofs = await seasonRef.collection('proofs').select('at').get();
+  const stale = staleProofs(
+    proofs.docs.map((proof) => ({ id: proof.id, at: Number(ms(proof.get('at'))) })),
+    now,
+  );
+  for (let start = 0; start < stale.length; start += 400) {
+    const batch = db.batch();
+    for (const id of stale.slice(start, start + 400)) batch.delete(seasonRef.collection('proofs').doc(id));
+    await batch.commit();
+  }
+  if (stale.length > 0) console.log(`League ${league.id}: ${stale.length} proof photo${stale.length === 1 ? '' : 's'} deleted after ${PROOF_DAYS} days.`);
 
   // The standings, from every week with results. Each player's sealed coin
   // for the last tiebreak is drawn once, here, with real randomness.

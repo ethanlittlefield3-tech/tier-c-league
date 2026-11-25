@@ -571,7 +571,89 @@ service cloud.firestore {
             && request.resource.data.date == resource.data.date
             && request.resource.data.firstAt == resource.data.firstAt
             && isPlayer(L, resource.data.player)
-            && isOpen(resource.data.date);
+            && (isOpen(resource.data.date) || fixingScreenForReceipt(resource.data, request.resource.data));
+        }
+
+        // Ruling R6: while a receipt on screen time is open, the player can fix
+        // the number before proving it, even after the day locks. Nothing else
+        // on the day can change then.
+        function fixingScreenForReceipt(before, after) {
+          let asked = get(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/receipts/$(before.player + '_' + before.date + '_screen'));
+          return asked != null
+            && asked.data.proofAt == null
+            && asked.data.backedDownAt == null
+            && request.time < asked.data.deadline
+            && after.diff(before).affectedKeys().hasOnly(['screenMinutes', 'updatedAt']);
+        }
+
+        // ---- Receipts -----------------------------------------------------------
+        // SCOPE.md, "Receipts on demand". Anyone can ask for proof of a square
+        // someone else claimed, until that day locks: 3 requests a week each,
+        // each holding one of their slots. Proof is due by the end of that day,
+        // or of the next day when asked after 6 pm. The player proves it with a
+        // photo, or backs down for free (ruling R4). After the deadline nothing
+        // changes, and the engine voids the square and takes 1 more point.
+        match /receipts/{receiptId} {
+          allow read: if isMember(L);
+          allow create: if validReceipt(receiptId, request.resource.data);
+          allow update: if isPlayer(L, resource.data.target)
+            && resource.data.proofAt == null
+            && resource.data.backedDownAt == null
+            && request.time < resource.data.deadline
+            && ((request.resource.data.diff(resource.data).affectedKeys().hasOnly(['backedDownAt'])
+                  && request.resource.data.backedDownAt == request.time)
+                || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['proofAt'])
+                  && request.resource.data.proofAt == request.time
+                  && existsAfter(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/proofs/$(receiptId))));
+        }
+
+        function validReceipt(id, asked) {
+          let day = cal(asked.date);
+          let log = get(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/days/$(asked.target + '_' + asked.date));
+          return asked.keys().hasOnly(['target', 'date', 'square', 'by', 'slot', 'requestedAt', 'deadline', 'proofAt', 'backedDownAt'])
+            && isPlayer(L, asked.by)
+            && asked.target != asked.by
+            && asked.square in ['screen', 'mind', 'body', 'wildcard']
+            && id == asked.target + '_' + asked.date + '_' + asked.square
+            && asked.requestedAt == request.time
+            && asked.proofAt == null
+            && asked.backedDownAt == null
+            && request.time >= day.start && request.time < day.lock
+            && asked.deadline == (request.time < day.sixPm ? day.end : day.nextEnd)
+            && log != null
+            && (asked.square == 'screen' ? log.data.screenMinutes != null : log.data.goals[asked.square] == true)
+            && (asked.square == 'screen' || !isRestDay(day.period, asked.target, asked.date, day))
+            && asked.slot in [day.period + '_' + asked.by + '_1', day.period + '_' + asked.by + '_2', day.period + '_' + asked.by + '_3']
+            && getAfter(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/receiptSlots/$(asked.slot)).data.receipt == id;
+        }
+
+        // A slot is one of a player's 3 requests for a week. It is taken in the
+        // same save as its receipt, and never given back.
+        match /receiptSlots/{slotId} {
+          allow read: if isMember(L);
+          allow create: if request.resource.data.keys().hasOnly(['receipt'])
+            && !exists(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/receipts/$(request.resource.data.receipt))
+            && getAfter(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/receipts/$(request.resource.data.receipt)).data.slot == slotId;
+        }
+
+        // Proof: a photo of up to 300 KB, saved by the player who owes it,
+        // before the deadline, in the same save that marks the receipt proven.
+        // The jobs delete proof photos after 14 days.
+        match /proofs/{receiptId} {
+          allow read: if isMember(L);
+          allow create: if isPlayer(L, receiptOf(receiptId).target)
+            && request.resource.data.keys().hasOnly(['photo', 'at'])
+            && request.resource.data.at == request.time
+            && request.resource.data.photo is string
+            && request.resource.data.photo.size() <= 420000
+            && request.resource.data.photo.matches('data:image/jpeg;base64,.*')
+            && request.time < receiptOf(receiptId).deadline
+            && receiptOf(receiptId).proofAt == null
+            && getAfter(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/receipts/$(receiptId)).data.proofAt == request.time;
+        }
+
+        function receiptOf(id) {
+          return get(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/receipts/$(id)).data;
         }
 
         function validDay(day) {

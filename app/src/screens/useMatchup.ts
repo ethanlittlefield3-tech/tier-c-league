@@ -3,7 +3,7 @@
  * the week, your opponent, and both players' weeks scored by the engine.
  * Match uses it; Today gathers the same things for itself.
  */
-import { type Lane, type Square } from '@tcl/engine';
+import { receiptFixes, type Lane, type Square, type StoredReceipt } from '@tcl/engine';
 import { useDoc, usePeek, useWhere } from '../data/hooks.ts';
 import type { Me } from '../data/identity.ts';
 import type { CalDay } from '../today/kit.ts';
@@ -17,6 +17,9 @@ interface SeasonDoc {
 }
 
 type Change = { date: string; amount: number; void: Square | null };
+
+/** A calendar day with the times a receipt's deadline is worked out from. */
+export type ReceiptDay = CalDay & { sixPm: number; end: number; nextEnd: number };
 type Logged = DayEntry & { date: string };
 
 export function useMatchup(me: Me, now: number) {
@@ -26,7 +29,8 @@ export function useMatchup(me: Me, now: number) {
   const seasonPath = seasonId ? `${leaguePath}/seasons/${seasonId}` : null;
   const season = useDoc<SeasonDoc>(seasonPath);
   const dates = season.data ? leagueDates(now, season.data.timeZone) : null;
-  const todayCal = useDoc<CalDay>(seasonPath && dates ? `${seasonPath}/calendar/${dates.today}` : null);
+  const todayCal = useDoc<ReceiptDay>(seasonPath && dates ? `${seasonPath}/calendar/${dates.today}` : null);
+  const yesterdayCal = useDoc<ReceiptDay>(seasonPath && dates ? `${seasonPath}/calendar/${dates.yesterday}` : null);
   const period = todayCal.data?.period ?? null;
   const week = useWhere<CalDay>(seasonPath ? `${seasonPath}/calendar` : null, 'period', period);
   const weekDoc = useDoc<{ targets?: Record<string, string[]> }>(seasonPath && period ? `${seasonPath}/weeks/${period}` : null);
@@ -41,6 +45,10 @@ export function useMatchup(me: Me, now: number) {
   const theirDays = useWhere<Logged>(seasonPath ? `${seasonPath}/days` : null, 'player', opponentId);
   const theirKit = useWhere<KitPlay>(seasonPath ? `${seasonPath}/kit` : null, 'player', opponentId);
   const theirChanges = useWhere<Change>(seasonPath ? `${seasonPath}/adjustments` : null, 'player', opponentId);
+  // Receipts count like the commish's fixes once answered by backing down, or failed.
+  const myReceipts = useWhere<StoredReceipt>(seasonPath ? `${seasonPath}/receipts` : null, 'target', me.player);
+  const theirReceipts = useWhere<StoredReceipt>(seasonPath ? `${seasonPath}/receipts` : null, 'target', opponentId);
+  const myRequests = useWhere<StoredReceipt & { slot: string; target: string }>(seasonPath ? `${seasonPath}/receipts` : null, 'by', me.player);
   const mySealed = useWhere<{ period: string; target: string; date: string; lane: Lane }>(seasonPath ? `${seasonPath}/sealed` : null, 'player', me.player);
   const lockedSoFar = week.docs.filter((found) => now >= found.data.lock).length;
   const onMe = usePeek<{ target: string; date: string; lane: Lane }>(
@@ -61,7 +69,7 @@ export function useMatchup(me: Me, now: number) {
           logs: logsOf(myDays.docs),
           kit: myKit.docs.map((found) => found.data),
           demolitionsOn: onMe && onMe.target === me.player ? [{ date: onMe.date, lane: onMe.lane }] : [],
-          adjustments: myChanges.docs.map((found) => found.data),
+          adjustments: [...myChanges.docs.map((found) => found.data), ...receiptFixes(myReceipts.docs.map((found) => found.data), now)],
           now,
           timeZone: season.data.timeZone,
         })
@@ -74,7 +82,7 @@ export function useMatchup(me: Me, now: number) {
           logs: logsOf(theirDays.docs),
           kit: theirKit.docs.map((found) => found.data),
           demolitionsOn: mine ? [{ date: mine.date, lane: mine.lane }] : [],
-          adjustments: theirChanges.docs.map((found) => found.data),
+          adjustments: [...theirChanges.docs.map((found) => found.data), ...receiptFixes(theirReceipts.docs.map((found) => found.data), now)],
           now,
           timeZone: season.data.timeZone,
         })
@@ -100,5 +108,10 @@ export function useMatchup(me: Me, now: number) {
     theirWeek,
     /** Your own sealed Demolition on them this week, which only you can see. */
     myDemolition: mine,
+    /** Days still open to receipts: today, and yesterday until it locks at noon. */
+    receiptDays: [todayCal.data, yesterdayCal.data].filter((day): day is ReceiptDay => day !== null && now >= day.start && now < day.lock),
+    theirLogs: logsOf(theirDays.docs),
+    theirReceipts: theirReceipts.docs,
+    myRequests: myRequests.docs,
   };
 }

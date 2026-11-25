@@ -90,3 +90,24 @@ export function receiptEffect(status: ReceiptStatus): { voided: boolean; adjustm
   if (status === 'backedDown') return { voided: true, adjustment: 0 };
   return { voided: false, adjustment: 0 };
 }
+
+/** A receipt as it is stored: the day and square asked about, and what happened. */
+export interface StoredReceipt {
+  date: DateStr;
+  square: Square;
+  deadline: Instant;
+  proofAt: Instant | null;
+  backedDownAt: Instant | null;
+}
+
+/**
+ * What a player's receipts do to their days as of `now`, in the same shape as
+ * the commish's fixes, so every score adds them the same way: a square backed
+ * down from is voided for free, and a failed one is voided and costs 1 more.
+ */
+export function receiptFixes(receipts: readonly StoredReceipt[], now: Instant): { date: DateStr; amount: number; void: Square | null }[] {
+  return receipts.flatMap((receipt) => {
+    const effect = receiptEffect(receiptStatus({ deadline: receipt.deadline, now, proofAt: receipt.proofAt, backedDownAt: receipt.backedDownAt }));
+    return effect.voided ? [{ date: receipt.date, amount: effect.adjustment, void: receipt.square }] : [];
+  });
+}

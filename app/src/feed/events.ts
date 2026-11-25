@@ -9,7 +9,7 @@ import type { DemolitionOutcome, Lane, Square } from '@tcl/engine';
 export interface FeedEvent {
   id: string;
   at: number;
-  kind: 'checkIn' | 'power' | 'dock' | 'reveal' | 'results';
+  kind: 'checkIn' | 'power' | 'dock' | 'reveal' | 'results' | 'receipt';
   text: string;
   /** A second line: a dock's reason, or a week's scores and awards. */
   detail?: string;
@@ -41,6 +41,13 @@ export interface FeedInput {
       finalAt?: number | null;
     };
   }[];
+  /** Receipts, newest first. */
+  receipts?: {
+    id: string;
+    data: { by: string; target: string; date: string; square: Square; requestedAt?: number | null; deadline: number; proofAt: number | null; backedDownAt: number | null };
+  }[];
+  /** The time now, to tell a receipt left past its deadline. */
+  now?: number;
 }
 
 const DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -54,6 +61,7 @@ const OUTCOME: Record<string, string> = {
   ruleOne: 'Blocked by Rule One',
 };
 const VERB: Record<Result['outcome'], string> = { win: 'beat', draw: 'drew with', loss: 'lost to' };
+const TITLE: Record<Square, string> = { screen: 'Screen time', mind: 'Mind goal', body: 'Body goal', wildcard: 'Wildcard goal' };
 
 /** A date's weekday, short: "Tue". */
 export function weekday(date: string): string {
@@ -135,6 +143,21 @@ export function feedEvents(input: FeedInput): FeedEvent[] {
     }
     if (typeof data.finalAt === 'number') {
       events.push({ id: `final-${id}`, at: data.finalAt, kind: 'results', text: `Week ${data.week} is final` });
+    }
+  }
+
+  for (const { id, data } of input.receipts ?? []) {
+    const who = name(data.target);
+    const what = `${TITLE[data.square]}, ${weekday(data.date)}`;
+    if (typeof data.requestedAt === 'number') {
+      events.push({ id: `receipt-${id}`, at: data.requestedAt, kind: 'receipt', text: `${name(data.by)} asked ${object(who)} for receipts: ${what}` });
+    }
+    if (typeof data.proofAt === 'number') {
+      events.push({ id: `proven-${id}`, at: data.proofAt, kind: 'receipt', text: `${who} proved it: ${what}`, outcome: 'Proven' });
+    } else if (typeof data.backedDownAt === 'number') {
+      events.push({ id: `backed-${id}`, at: data.backedDownAt, kind: 'receipt', text: `${who} backed down: ${what}`, outcome: 'Voided' });
+    } else if (input.now !== undefined && input.now >= data.deadline) {
+      events.push({ id: `failed-${id}`, at: data.deadline, kind: 'receipt', text: `No proof from ${object(who)} in time: ${what}`, outcome: 'Voided, −1' });
     }
   }
 
