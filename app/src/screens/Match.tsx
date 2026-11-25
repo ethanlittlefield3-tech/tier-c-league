@@ -94,7 +94,7 @@ function WeekRow(props: { who: string; team: 'blue' | 'orange'; cells: DayCell[]
 export function Match(props: { me: Me }) {
   const now = useNow();
   const match = useMatchup(props.me, now);
-  const mine = useDoc<{ car?: Partial<CarParts>; rivals?: Record<string, Rival> }>(`leagues/${props.me.league}/players/${props.me.player}`);
+  const mine = useDoc<{ car?: Partial<CarParts>; rivals?: Record<string, Rival>; stickers?: Partial<Record<string, { until?: unknown }>> }>(`leagues/${props.me.league}/players/${props.me.player}`);
 
   if (match.loading) {
     return (
@@ -122,7 +122,7 @@ export function Match(props: { me: Me }) {
     <div class="match">
       <section class="match-board" aria-label="This week's score">
         <div class="match-side" data-team="blue">
-          <CarArt parts={mine.data?.car} team="blue" class="match-car" />
+          <CarArt parts={mine.data?.car} stickers={mine.data?.stickers} team="blue" class="match-car" />
           <span class="match-name">You</span>
           <span class="match-points">{formatPoints(match.myWeek.totals.points)}</span>
         </div>
@@ -130,7 +130,7 @@ export function Match(props: { me: Me }) {
           VS
         </span>
         <div class="match-side" data-team="orange">
-          <CarArt parts={them.car} team="orange" class="match-car match-car-them" />
+          <CarArt parts={them.car} stickers={them.stickers} team="orange" class="match-car match-car-them" />
           <span class="match-name">{them.name}</span>
           {nemesisOf(mine.data?.rivals) === them.id && (
             <span class="match-nemesis">

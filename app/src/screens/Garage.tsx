@@ -59,7 +59,7 @@ function angleOf(element: Element | null): number {
  * unlocks a part; a locked part shows the badge that unlocks it.
  */
 export function Garage(props: { me: Me }) {
-  const profile = useDoc<{ car?: Partial<CarParts>; badges?: Record<string, unknown> }>(`leagues/${props.me.league}/players/${props.me.player}`);
+  const profile = useDoc<{ car?: Partial<CarParts>; badges?: Record<string, unknown>; stickers?: Partial<Record<string, { until?: unknown }>> }>(`leagues/${props.me.league}/players/${props.me.player}`);
   const saved: CarParts = { ...STARTER_CAR, ...(profile.data?.car ?? {}) };
   const [draft, setDraft] = useState<CarParts | null>(null);
   const car = draft ?? saved;
@@ -157,7 +157,7 @@ export function Garage(props: { me: Me }) {
             data-mirrored={angle !== null && face(angle) < 0}
             style={angle === null ? undefined : { transform: `scaleX(${face(angle).toFixed(3)})` }}
           >
-            <CarArt parts={car} class="garage-car" />
+            <CarArt parts={car} stickers={profile.data?.stickers} class="garage-car" />
           </span>
         </button>
         {boom > 0 && <GoalExplosion key={boom} kind={car.explosion} class="garage-boom" />}

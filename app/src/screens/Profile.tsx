@@ -8,7 +8,7 @@ import { loadData } from '../data/load.ts';
 import { whyOf } from '../data/why.ts';
 import { NAME_MAX, nameProblem, tidyName } from '../join/name.ts';
 import { Back, Field, Heading } from '../ui/parts.tsx';
-import type { Rank } from '@tcl/engine';
+import { activeStickers, type Rank, type StickerId } from '@tcl/engine';
 import { Alerts } from './Alerts.tsx';
 import { BadgesPanel } from './Badges.tsx';
 import { RankPanel, type RankEntry } from './Rank.tsx';
@@ -25,10 +25,16 @@ const TROUBLE: Record<Trouble, string> = {
  * rank and badges, alerts, signing this phone out and the league log. Stats
  * and "Suggest an idea" arrive with the features they belong to.
  */
+/** What a sticker on your car says about you. */
+const STICKER_WHY: Record<StickerId, string> = {
+  dodger: 'Your car wears the Dare Dodger sticker for a week: a dare went unproven.',
+  L: 'Your car wears an L for a week: you lost a rematch.',
+};
+
 export function Profile(props: { me: Me; onBack: () => void; onRenamed: (me: Me) => void; onSignedOut: () => void; onCommish: () => void; onLog: () => void }) {
   const league = useDoc<{ commish?: string; coCommish?: string | null }>(`leagues/${props.me.league}`);
   const isCommish = league.data !== null && (league.data.commish === props.me.player || league.data.coCommish === props.me.player);
-  const mine = useDoc<{ rank?: Rank; rankHistory?: RankEntry[]; badges?: Record<string, unknown>; car?: Partial<CarParts> }>(`leagues/${props.me.league}/players/${props.me.player}`);
+  const mine = useDoc<{ rank?: Rank; rankHistory?: RankEntry[]; badges?: Record<string, unknown>; car?: Partial<CarParts>; stickers?: Partial<Record<string, { until?: unknown }>> }>(`leagues/${props.me.league}/players/${props.me.player}`);
   const [name, setName] = useState(props.me.displayName);
   const [nameNote, setNameNote] = useState<{ error: boolean; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
@@ -113,9 +119,14 @@ export function Profile(props: { me: Me; onBack: () => void; onRenamed: (me: Me)
       <div class="screen-body">
         <Back onBack={props.onBack} />
         <div class="profile-who">
-          <CarArt parts={mine.data?.car} class="profile-car" />
+          <CarArt parts={mine.data?.car} stickers={mine.data?.stickers} class="profile-car" />
           <Heading>{props.me.displayName}</Heading>
           <p class="profile-league">{props.me.leagueName}</p>
+          {activeStickers(mine.data?.stickers, Date.now()).map((id) => (
+            <p key={id} class="profile-sticker">
+              {STICKER_WHY[id]}
+            </p>
+          ))}
         </div>
 
         {isCommish && (

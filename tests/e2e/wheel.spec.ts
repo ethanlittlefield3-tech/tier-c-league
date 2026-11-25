@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { expect, test, type Page } from '@playwright/test';
-import { enterAsCommish, joinAs } from './helpers.ts';
+import { enterAsCommish, joinAs, tapToEnter } from './helpers.ts';
 import { createLeague, readDoc, startSeason, writeDoc, type TestLeague, type TestSeason } from './league.ts';
 
 const run = promisify(execFile);
@@ -129,7 +129,7 @@ test.describe('The Wheel of Shame', () => {
     await phone.context().close();
   });
 
-  test('No proof by the deadline is a dodge: 3 Season Points off in the standings, and the feed says so', async ({ page, request, browser }) => {
+  test('No proof by the deadline is a dodge: 3 Season Points off in the standings, the feed says so, and the car wears the Dare Dodger sticker for a week', async ({ page, request, browser }) => {
     const league = await createLeague(request);
     const season = await startSeason(request, league);
     const phone = await (await browser.newContext()).newPage();
@@ -147,10 +147,18 @@ test.describe('The Wheel of Shame', () => {
     const rows = (await readDoc(request, `${season.path}/standings/current`))?.rows as { player: string; seasonPoints: number }[];
     expect(rows.find((row) => row.player === riley)?.seasonPoints).toBe(17);
     expect(rows.find((row) => row.player === league.commish)?.seasonPoints).toBe(35);
+    const until = ((await readDoc(request, `leagues/${league.id}/players/${riley}`))?.stickers as { dodger?: { until: Date } } | undefined)?.dodger?.until;
+    expect(new Date(String(until)).getTime() - (Date.now() - 3_600_000)).toBeGreaterThan(7 * 24 * 3_600_000 - 120_000);
 
     await enterAsCommish(page, league);
     await tab(page, 'Feed').click();
     await expect(page.locator('.feed-event[data-kind="wheel"]')).toContainText(['Riley dodged the dare: −3 Season Points']);
+    // Riley's own phone: the sticker is on the car, and Profile says why.
+    await phone.reload();
+    await tapToEnter(phone);
+    await expect(phone.locator('.frame-me .frame-car')).toHaveAttribute('data-stickers', 'dodger');
+    await button(phone, 'Your profile, Riley').click();
+    await expect(phone.locator('.profile-sticker')).toHaveText('Your car wears the Dare Dodger sticker for a week: a dare went unproven.');
     await phone.context().close();
   });
 });

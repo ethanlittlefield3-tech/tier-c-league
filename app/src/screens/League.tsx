@@ -65,7 +65,7 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
   const season = useDoc<{ timeZone: string; regularWeeks: number }>(seasonPath);
   const standings = useDoc<{ rows?: Row[] }>(seasonPath ? `${seasonPath}/standings/current` : null);
   const weeks = useAll<WeekDoc>(seasonPath ? `${seasonPath}/weeks` : null);
-  const players = useAll<{ displayName?: string; car?: Partial<CarParts>; rivals?: Record<string, Rival> }>(`${leaguePath}/players`);
+  const players = useAll<{ displayName?: string; car?: Partial<CarParts>; rivals?: Record<string, Rival>; stickers?: Partial<Record<string, { until?: unknown }>> }>(`${leaguePath}/players`);
   const dates = season.data ? seasonDates(now, season.data) : null;
   const today = useDoc<{ period: string }>(seasonPath && dates ? `${seasonPath}/calendar/${dates.today}` : null);
 
@@ -93,7 +93,7 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
     return `${tally.win}–${tally.draw}–${tally.loss}`;
   };
   const rows = standings.data?.rows ?? [];
-  const carOf = (player: string) => players.docs.find((found) => found.id === player)?.data.car;
+  const lookOf = (player: string) => players.docs.find((found) => found.id === player)?.data;
   // Your all-time record against each player you have met, most meetings first.
   const myRivals = players.docs.find((found) => found.id === props.me.player)?.data.rivals ?? {};
   const nemesis = nemesisOf(myRivals);
@@ -141,7 +141,7 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
                 <tr data-me={row.player === props.me.player}>
                   <td class="standings-rank">{row.rank}</td>
                   <td class="standings-who">
-                    <CarArt parts={carOf(row.player)} bare class="standings-car" />
+                    <CarArt parts={lookOf(row.player)?.car} stickers={lookOf(row.player)?.stickers} bare class="standings-car" />
                     {row.player === props.me.player ? (
                       name(row.player)
                     ) : (
@@ -242,7 +242,7 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
           <ul class="rivals">
             {rivals.map(([player, rival]) => (
               <li key={player} data-nemesis={player === nemesis}>
-                <CarArt parts={carOf(player)} bare class="standings-car" />
+                <CarArt parts={lookOf(player)?.car} stickers={lookOf(player)?.stickers} bare class="standings-car" />
                 <span class="rivals-name">
                   {name(player)}
                   {player === nemesis && skull}

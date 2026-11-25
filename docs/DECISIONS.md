@@ -197,7 +197,7 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 107. **Dare proof works like receipts:** a photo of up to 300 KB, in the same save that marks the spin proven, before the Sunday deadline. Dare photos are deleted after 14 days too.
 108. **The proof vote uses the draft's majority** (provisional, "Still open" item 1): "Doesn't count" needs more than half of everyone but the spinner. A vote is settled as soon as the outcome can't change, or else when the 24 hours close.
 109. **A new spin after "doesn't count" comes from the hourly weekly job,** within the hour, sealed like the first, with its own deadline: the Sunday after that draw.
-110. **Each dodged dare takes 3 Season Points off in the standings.** It is worked out from the clock, like a receipt, and shows within the hour after the deadline. The "Dare Dodger" sticker comes with the cars in the Garage.
+110. **Each dodged dare takes 3 Season Points off in the standings.** It is worked out from the clock, like a receipt, and shows within the hour after the deadline. The "Dare Dodger" sticker goes on the car with it (call 188).
 111. **Tiebreak coins are sealed from their own player too.** Before this, the sealed-item rule let a player read their own coin's number.
 
 **Commish tools, part 3** (new on 2026-11-25, not yet reviewed by the commish)
@@ -319,6 +319,10 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 185. **A poke goes to this week's opponent, once a day, any time that day,** and never to The House. The league files it under the day and the poker, so a second one that day is refused, and nobody changes or deletes one.
 186. **It arrives as "{name} poked you: You awake?" under Social, within about 10 minutes, and opens Today,** so they can log. It stays between the two of you: it isn't in the feed.
 187. **The Poke button is on Match, under your opponent's day,** where you can see whether they have logged.
+
+**Phase 2: stickers** (new on 2026-11-25, not yet reviewed by the commish)
+
+188. **A sticker goes on high up behind the door, at a slight tilt,** and comes off by itself a week later: the time it comes off is kept with it. A dodge puts the Dare Dodger sticker on (a white feather on yellow) for a week from the dare's deadline (SCOPE.md, "Wheel of Shame"); the rematch's "L" is a white L on red. Profile says why your car wears one.
 
 **Calendar**
 

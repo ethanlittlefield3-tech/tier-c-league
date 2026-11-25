@@ -71,7 +71,7 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
   const online = useOnline();
   // A rank change since this phone last showed one plays its scene as the app
   // opens: decided on the server's answer, not the phone's own older copy.
-  const profile = useDoc<{ rank?: Rank; rankHistory?: RankEntry[]; car?: Partial<CarParts> }>(`leagues/${props.me.league}/players/${props.me.player}`);
+  const profile = useDoc<{ rank?: Rank; rankHistory?: RankEntry[]; car?: Partial<CarParts>; stickers?: Partial<Record<string, { until?: unknown }>> }>(`leagues/${props.me.league}/players/${props.me.player}`);
   const settled = !profile.loading && !profile.fromCache;
   const rankScene = useRankScene(props.me.league, props.me.player, settled ? (profile.data?.rank ?? null) : undefined);
   // A week you won, since this phone last looked, plays your goal explosion first.
@@ -164,7 +164,7 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
         </div>
         <button ref={meButton} class="frame-me" type="button" aria-label={`Your profile, ${props.me.displayName}`} onClick={() => setProfileOpen(true)}>
           {/* Your car is your icon across the app (SCOPE.md, "Garage and achievements"). */}
-          <CarArt parts={profile.data?.car} bare class="frame-car" />
+          <CarArt parts={profile.data?.car} stickers={profile.data?.stickers} bare class="frame-car" />
         </button>
       </header>
       {!online && (

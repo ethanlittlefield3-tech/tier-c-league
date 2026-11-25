@@ -338,6 +338,18 @@ export function bodyBounds(body: string): { width: number } {
   return { width: Math.max(...known.wheels.map(([x, , r]) => x + r), known.light[0] + 10) };
 }
 
+/** A sticker, slapped on high up behind the door at a slight tilt, clear of the rear wheel. */
+function sticker(kind: string, at: number, { x1, x2, y1 }: Body['band']): string {
+  const cx = n(x1 + (x2 - x1) * 0.22 + at * 19);
+  const cy = n(y1 + 3);
+  const tilt = `transform="rotate(-9 ${cx} ${cy})"`;
+  if (kind === 'L') {
+    return `<g ${tilt}><circle cx="${cx}" cy="${cy}" r="9" fill="#e0242f" stroke="${INK}" stroke-width="1.4"/><text x="${cx}" y="${n(cy + 4.6)}" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="900" font-size="13" fill="#ffffff">L</text></g>`;
+  }
+  // Dare Dodger: a white feather on yellow.
+  return `<g ${tilt}><circle cx="${cx}" cy="${cy}" r="9" fill="#ffd21f" stroke="${INK}" stroke-width="1.4"/><path d="M${n(cx - 4)} ${n(cy + 6)}Q${n(cx - 5)} ${n(cy - 3)} ${n(cx + 4)} ${n(cy - 6)}Q${n(cx + 2)} ${n(cy + 1)} ${n(cx - 4)} ${n(cy + 6)}Z" fill="#ffffff" stroke="${INK}" stroke-width="0.9" stroke-linejoin="round"/><path d="M${n(cx - 5)} ${n(cy + 7)}L${n(cx + 2)} ${n(cy - 3)}" stroke="${INK}" stroke-width="0.8"/></g>`;
+}
+
 let counter = 0;
 
 /** Text for an attribute: a player's name can hold any character. */
@@ -348,7 +360,7 @@ const attribute = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&
  * always team blue, your opponent's orange. `bare` leaves out the boost and
  * the shadow, for small icons.
  */
-export function drawCar(parts: Partial<CarParts>, options: { team?: 'blue' | 'orange'; bare?: boolean; title?: string } = {}): string {
+export function drawCar(parts: Partial<CarParts>, options: { team?: 'blue' | 'orange'; bare?: boolean; title?: string; stickers?: readonly string[] } = {}): string {
   counter += 1;
   const id = `car${counter}`;
   const car = { ...STARTER_CAR, ...parts };
@@ -376,6 +388,7 @@ export function drawCar(parts: Partial<CarParts>, options: { team?: 'blue' | 'or
     finishOverlay(paint, body),
     `<rect x="-10" y="${bottom - 22}" width="${width + 20}" height="30" fill="#000000" opacity="0.22"/>`,
     decalArt,
+    ...(options.stickers ?? []).map((kind, at) => sticker(kind, at, body.band)),
     '</g>',
     ...body.glass.map((glass) => `<path d="${glass}" fill="url(#${id}-glass)" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/>`),
     `<path d="${body.shine}" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" opacity="0.75"/>`,

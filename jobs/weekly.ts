@@ -12,7 +12,7 @@
 import { randomInt } from 'node:crypto';
 import { FieldValue, Timestamp, getFirestore, type DocumentData } from 'firebase-admin/firestore';
 import { connect } from './admin.ts';
-import { DODGE_PENALTY, STARTER_DARES, dareStatus, fastDareDue, fastLeagueClock, receiptFixes, rivalRecords, wheelPool, zoneClock, type RivalWeek, type StoredReceipt } from '../engine/src/index.ts';
+import { DODGE_PENALTY, STARTER_DARES, STICKER_DAYS, dareStatus, fastDareDue, fastLeagueClock, receiptFixes, rivalRecords, wheelPool, zoneClock, type RivalWeek, type StoredReceipt } from '../engine/src/index.ts';
 import { fastClockOf } from './lib/fast.ts';
 import { PROOF_DAYS, staleProofs } from './lib/proofs.ts';
 import { revealDemolitions, sameReveals } from './lib/reveals.ts';
@@ -26,6 +26,7 @@ import { weekReads } from './lib/week-reads.ts';
 const { app, emulator } = connect();
 const db = getFirestore(app);
 const ms = (value: unknown) => (value instanceof Timestamp ? value.toMillis() : value);
+const DAY = 86_400_000;
 const plain = (data: DocumentData) => Object.fromEntries(Object.entries(data).map(([key, value]) => [key, ms(value)]));
 
 const only = process.env.LEAGUE_ID?.trim();
@@ -188,6 +189,14 @@ for (const league of leagues) {
       });
       for (const { draw, status } of statuses) {
         if (status === 'dodged') penalties[draw.player] = (penalties[draw.player] ?? 0) + DODGE_PENALTY;
+        // A dodge also puts the Dare Dodger sticker on the car for a week from the deadline, once.
+        if (status === 'dodged' && !(draw as Draw & { dodgedAt?: unknown }).dodgedAt) {
+          const until = Timestamp.fromMillis(Number(ms(draw.dueAt)) + STICKER_DAYS * DAY);
+          await league.ref.collection('players').doc(draw.player).update({ 'stickers.dodger': { until } }).catch((error: { code?: number }) => {
+            if (error.code !== 5) throw error;
+          });
+          await week.ref.update({ [`wheel.${draw.id}.dodgedAt`]: FieldValue.serverTimestamp() });
+        }
         if (status === 'counted') daresDone[draw.player] = (daresDone[draw.player] ?? 0) + 1;
       }
       const redo = statuses.filter(({ status }) => status === 'redo').map(({ draw }) => draw.id);

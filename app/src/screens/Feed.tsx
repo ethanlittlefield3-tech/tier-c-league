@@ -60,7 +60,7 @@ export function Feed(props: { me: Me; onWheel?: () => void }) {
   const leaguePath = `leagues/${props.me.league}`;
   const league = useDoc<{ season?: string | null; commish?: string; coCommish?: string | null; members?: Record<string, boolean> }>(leaguePath);
   const seasonPath = league.data?.season ? `${leaguePath}/seasons/${league.data.season}` : null;
-  const players = useAll<{ displayName?: string; taunts?: string[]; car?: Partial<CarParts> }>(`${leaguePath}/players`);
+  const players = useAll<{ displayName?: string; taunts?: string[]; car?: Partial<CarParts>; stickers?: Partial<Record<string, { until?: unknown }>> }>(`${leaguePath}/players`);
   const posts = useLatest<Post>(`${leaguePath}/wall`, 'at', 50);
   const checkIns = useLatest<FeedInput['checkIns'][number]['data']>(seasonPath ? `${seasonPath}/days` : null, 'firstAt', 20);
   const kit = useLatest<FeedInput['kit'][number]['data']>(seasonPath ? `${seasonPath}/kit` : null, 'at', 20);
@@ -76,7 +76,7 @@ export function Feed(props: { me: Me; onWheel?: () => void }) {
 
   const realName: Names = (player) => (player === 'HOUSE' ? 'The House' : (players.docs.find((found) => found.id === player)?.data.displayName ?? 'a former player'));
   const name: Names = (player) => (player === props.me.player ? 'You' : realName(player));
-  const carOf: Cars = (player) => players.docs.find((found) => found.id === player)?.data.car ?? null;
+  const carOf: Cars = (player) => players.docs.find((found) => found.id === player)?.data ?? null;
   const saved = players.docs.find((found) => found.id === props.me.player)?.data.taunts ?? [];
   const wheel = latestWheel(weeks.docs as { id: string; data: { week: number; wheel?: Record<string, Draw> } }[]);
   const events = feedEvents({
@@ -135,8 +135,8 @@ export function Feed(props: { me: Me; onWheel?: () => void }) {
   );
 }
 
-/** A player's car, for their icon; `null` for someone with none saved yet (the starter car is drawn). */
-type Cars = (player: string) => Partial<CarParts> | null;
+/** A player's car and stickers, for their icon; `null` for someone unknown (the starter car is drawn). */
+type Cars = (player: string) => { car?: Partial<CarParts>; stickers?: Partial<Record<string, { until?: unknown }>> } | null;
 
 /** A game event in the feed: who did what, and when. A week's results put its MVP and Bust in the spotlight. */
 function EventRow(props: { event: FeedEvent; now: number; name: Names; carOf: Cars }) {
@@ -160,7 +160,7 @@ function EventRow(props: { event: FeedEvent; now: number; name: Names; carOf: Ca
         <ul class="feed-spotlight" aria-label="Spotlight">
           {[...event.spotlight.mvp.map((player) => ({ player, award: 'MVP' })), ...event.spotlight.bust.map((player) => ({ player, award: 'Bust' }))].map(({ player, award }) => (
             <li key={`${award}-${player}`} data-award={award}>
-              <CarArt parts={props.carOf(player)} class="feed-spotlight-car" />
+              <CarArt parts={props.carOf(player)?.car} stickers={props.carOf(player)?.stickers} class="feed-spotlight-car" />
               <span class="feed-spotlight-award">{award}</span>
               <span class="feed-spotlight-name">{props.name(player)}</span>
             </li>
@@ -354,7 +354,7 @@ function PostCard(props: { me: Me; id: string; post: Post; now: number; name: Na
     <article class="feed-post" data-kind={post.kind} aria-label={`${KIND[post.kind]} from ${props.name(post.by)}`}>
       <header class="feed-post-head">
         <span class="feed-who">
-          <CarArt parts={props.carOf(post.by)} bare class="feed-car" />
+          <CarArt parts={props.carOf(post.by)?.car} stickers={props.carOf(post.by)?.stickers} bare class="feed-car" />
           {props.name(post.by)}
           {post.to && (
             <>
