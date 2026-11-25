@@ -1,0 +1,18 @@
+/**
+ * Tier C League engine: every game rule, as pure functions.
+ * No Firebase, no device clock, no randomness. The app and the jobs both
+ * import from here, so a phone's live score and the official result always
+ * come from the same code.
+ */
+
+export * from './calendar.ts';
+export * from './scoring.ts';
+export * from './week.ts';
+export * from './schedule.ts';
+export * from './standings.ts';
+export * from './awards.ts';
+export * from './streaks.ts';
+export * from './kit.ts';
+export * from './receipts.ts';
+export * from './ids.ts';
+export * from './season.ts';

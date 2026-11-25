@@ -1,0 +1,11 @@
+{
+  "name": "@tcl/engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Pure scoring, calendar and schedule rules shared by the app and the jobs. No Firebase imports.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "sideEffects": false
+}
