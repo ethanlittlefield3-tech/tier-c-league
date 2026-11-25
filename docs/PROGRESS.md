@@ -1,6 +1,6 @@
 # Tier C League: progress log
 
-Last updated 2026-11-25, after Today's new layout from the commish's mockup.
+Last updated 2026-11-25, after Today's week strip and scoreboard.
 
 ## Plan change (commish ruling, 2026-11-25)
 
@@ -109,6 +109,13 @@ Last updated 2026-11-25, after Today's new layout from the commish's mockup.
   - Tapping screen time opens a big sheet with the time and its points, a blue-to-orange slider, buttons for 1 hour and 15 minutes either way, and the scale at the season's par with your bracket lit. It also has "Save screen time", "Clear it" and "Close". Nothing changes until Save.
   - Below, a scroll away: beers, the day total with its breakdown ("Goals +2 · screen +1 · beers −1"), and the power-ups.
   - New flow tests check that all four squares fit without scrolling on an iPhone 13 and a small iPhone SE, at the Home Screen app's own size. 9 new logic tests and 6 new flow tests, 103 flow tests in all.
+- **Today, part 3: the week strip and the scoreboard** (2026-11-25).
+  - Below the day total: "Week 2", then "You +14 vs Maya +9" with who leads, using the tiebreak on fewer beers. It moves live as either player logs.
+  - Seven day cells, M to S, each with its score (blue up, red down). Days that haven't started are dashed, today is underlined, and rest days are outlined in gold.
+  - The beers card shows beers this week.
+  - Each day is scored by the engine with everything on it: power-ups, commish docks and voids, and Demolitions once their day locks. A Demolition aimed at you is sealed until noon, so the phone looks for it once after each noon: about 7 reads a week.
+  - Against The House, the scoreboard says so; The House's number comes with the weekly settlement job.
+  - 7 logic tests and 4 flow tests.
 - **The shorter intro on reopening is on purpose:** the full intro plays on the first open each day, and a 1-second title after that (SCOPE.md, "Intro animation").
 
 ## Waiting on the commish
@@ -117,7 +124,7 @@ Last updated 2026-11-25, after Today's new layout from the commish's mockup.
 
 ## Next
 
-1. **Step 3, continued.** Next: the rest of Today (the week strip, beers this week, and the scoreboard against your opponent), then Match, Feed, League, the rest of Profile, Wheel, the rest of Commish tools and the mini draft.
+1. **Step 3, continued.** Next: Match (your opponent's live day), then Feed, League, the rest of Profile, Wheel, the rest of Commish tools and the mini draft.
    - **Still to add to joining:** the notifications step (with push alerts), a commish's "approve joins" switch, and a way to make a league. Leagues are made by a setup script, which is built with the jobs in Step 4.
    - **Offline start** comes with the offline step: a service worker that keeps the app's files on the phone, so it opens with no signal. Chrome on Android only offers its one-tap Install button once that exists. Until then Android installs from the browser menu, which the guide explains.
 2. **Before real players join:** limit the app's web key to the app's own address in the Google Cloud console, and look at App Check, which stops other programs from using the database's free daily allowance.

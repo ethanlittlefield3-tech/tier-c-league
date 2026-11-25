@@ -79,6 +79,32 @@ export function useWhere<T>(path: string | null, field: string, value: string | 
   return state;
 }
 
+/**
+ * One look at a document that may still be sealed, taken again whenever
+ * `again` changes. Today passes the number of days locked so far, so it looks
+ * once after each noon, when a Demolition can be revealed.
+ */
+export function usePeek<T>(path: string | null, again: number): T | null {
+  const [data, setData] = useState<T | null>(null);
+  useEffect(() => {
+    if (path === null) {
+      setData(null);
+      return undefined;
+    }
+    let stopped = false;
+    loadData()
+      .then((api) => api.peekDoc(path))
+      .then((found) => {
+        if (!stopped) setData(found as T | null);
+      })
+      .catch(() => undefined);
+    return () => {
+      stopped = true;
+    };
+  }, [path, again]);
+  return data;
+}
+
 /** The time now, updated twice a minute, so a day rolls over and locks on screen. */
 export function useNow(): number {
   const [now, setNow] = useState(() => Date.now());

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'preact/hooks';
-import { LANES, weekPeriod, type Lane } from '@tcl/engine';
-import { useDoc, useNow, useWhere } from '../data/hooks.ts';
+import { LANES, weekPeriod, type Lane, type Square } from '@tcl/engine';
+import { useDoc, useNow, usePeek, useWhere } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
 import { whyOf } from '../data/why.ts';
@@ -18,8 +18,10 @@ import {
   type DayEntry,
 } from '../today/model.ts';
 import type { CalDay } from '../today/kit.ts';
+import { playerWeek, type KitPlay } from '../today/week.ts';
 import { PowerUps, type Play } from './PowerUps.tsx';
 import { ScreenSheet } from './ScreenSheet.tsx';
+import { WeekStrip } from './WeekStrip.tsx';
 import './today.css';
 
 interface LeagueDoc {
@@ -185,6 +187,21 @@ export function Today(props: { me: Me }) {
   const opponentRoster = useDoc<RosterDoc>(seasonPath && opponentId ? `${seasonPath}/roster/${opponentId}` : null);
   const opponentRest = useDoc<{ date: string }>(seasonPath && period && opponentId ? `${seasonPath}/kit/${period}_${opponentId}_rest` : null);
 
+  // Both sides of this week, for the week strip and the scoreboard.
+  type Change = { date: string; amount: number; void: Square | null };
+  const myDays = useWhere<DayEntry & { date: string }>(seasonPath ? `${seasonPath}/days` : null, 'player', me);
+  const myKit = useWhere<KitPlay>(seasonPath ? `${seasonPath}/kit` : null, 'player', me);
+  const myChanges = useWhere<Change>(seasonPath ? `${seasonPath}/adjustments` : null, 'player', me);
+  const theirDays = useWhere<DayEntry & { date: string }>(seasonPath ? `${seasonPath}/days` : null, 'player', opponentId);
+  const theirKit = useWhere<KitPlay>(seasonPath ? `${seasonPath}/kit` : null, 'player', opponentId);
+  const theirChanges = useWhere<Change>(seasonPath ? `${seasonPath}/adjustments` : null, 'player', opponentId);
+  // A Demolition aimed at you is sealed until its day locks at noon, so look once after each noon.
+  const lockedSoFar = week.docs.filter((found) => now >= found.data.lock).length;
+  const demolitionOnMe = usePeek<{ target: string; date: string; lane: Lane }>(
+    seasonPath && period && opponentId ? `${seasonPath}/sealed/${period}_${opponentId}_demolition` : null,
+    lockedSoFar,
+  );
+
   if (league.loading || season.loading || (seasonPath && (todayCal.loading || yesterdayCal.loading))) {
     return (
       <div class="waiting today-waiting" aria-busy="true">
@@ -238,6 +255,31 @@ export function Today(props: { me: Me }) {
   const totalNote =
     dayWindow === 'locked' ? 'Final' : score.kind === 'open' ? 'Nothing logged yet' : restDay ? 'So far, on your rest day' : 'So far';
   const status = error ?? (day.pending ? 'Saving' : day.data ? 'Saved' : '');
+  const logsOf = (docs: { data: DayEntry & { date: string } }[]) => Object.fromEntries(docs.map((found) => [found.data.date, found.data]));
+  const weekDays = week.docs.map((found) => found.data);
+  const myDemolition = sealed.docs.map((found) => found.data).find((play) => play.period === period && play.target === opponentId) ?? null;
+  const myWeek = playerWeek({
+    par: season.data.par,
+    days: weekDays,
+    logs: logsOf(myDays.docs),
+    kit: myKit.docs.map((found) => found.data),
+    demolitionsOn: demolitionOnMe && demolitionOnMe.target === me ? [{ date: demolitionOnMe.date, lane: demolitionOnMe.lane }] : [],
+    adjustments: myChanges.docs.map((found) => found.data),
+    now,
+    timeZone: season.data.timeZone,
+  });
+  const theirWeek = opponentId
+    ? playerWeek({
+        par: season.data.par,
+        days: weekDays,
+        logs: logsOf(theirDays.docs),
+        kit: theirKit.docs.map((found) => found.data),
+        demolitionsOn: myDemolition && myDemolition.lane ? [{ date: myDemolition.date, lane: myDemolition.lane }] : [],
+        adjustments: theirChanges.docs.map((found) => found.data),
+        now,
+        timeZone: season.data.timeZone,
+      })
+    : null;
   const screenPointsShown = entry.screenMinutes === null ? null : score.screen.points;
 
   return (
@@ -306,7 +348,9 @@ export function Today(props: { me: Me }) {
         <BeerMug />
         <div class="beer-words">
           <h3>Beers</h3>
-          <p>{'\u2212'}1 pt each</p>
+          <p>
+            {'\u2212'}1 pt each {'\u00b7'} {myWeek.totals.beers} this week
+          </p>
         </div>
         <div class="beer-controls">
           <button type="button" class="step" aria-label="One beer less" disabled={!editable || entry.beers === 0} onClick={() => setBeers(entry.beers - 1)}>
@@ -338,6 +382,16 @@ export function Today(props: { me: Me }) {
       <p class={error ? 'today-status today-status-error' : 'today-status'} role="status">
         {status}
       </p>
+
+      {weekDays.length > 0 && todayCal.data && (
+        <WeekStrip
+          week={todayCal.data.week}
+          cells={myWeek.cells}
+          me={myWeek.totals}
+          opponent={theirWeek ? { ...theirWeek.totals, name: opponentProfile.data?.displayName ?? 'Your opponent' } : null}
+          vsHouse={targets.includes('HOUSE')}
+        />
+      )}
 
 
       {period && week.docs.length > 0 && (

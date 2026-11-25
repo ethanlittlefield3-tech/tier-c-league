@@ -3,7 +3,7 @@
  * phone or anyone else's. A save made on this phone shows at once, marked as
  * pending until the server accepts it.
  */
-import { Timestamp, collection, doc, onSnapshot, query, where } from 'firebase/firestore';
+import { Timestamp, collection, doc, getDoc, onSnapshot, query, where } from 'firebase/firestore';
 import { connect } from './firebase.ts';
 import { trouble, type Trouble } from './identity.ts';
 
@@ -74,4 +74,19 @@ export function watchWhere(
     stopped = true;
     stop?.();
   };
+}
+
+/**
+ * One look at a document that may not be readable yet, such as a Demolition
+ * still sealed. `null` when there is no such document or it is still sealed:
+ * the rules answer both the same way, on purpose.
+ */
+export async function peekDoc(path: string): Promise<Record<string, unknown> | null> {
+  try {
+    const { db } = await connect();
+    const found = await getDoc(doc(db, path));
+    return found.exists() ? (plain(found.data()) as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
 }
