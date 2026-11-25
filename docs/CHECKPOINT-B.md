@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 243 of 243 passing.
+- **Tests:** 248 of 248 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -298,6 +298,21 @@ Everyone in the league can read them. Only the weekly job writes them.
 - Nobody outside the league can
 - Only the weekly job writes them: no phone can, the commish included
 - A week's results can be read by everyone in the league and written by no phone
+
+## Weeks and dares
+
+The commish can unlock a final week or take a dare off the Wheel, and every such change goes in the audit log.
+
+**Unlocking a final week**
+
+- The commish can unlock a final week, so the weekly job counts it again, and it goes in the audit log
+- Nobody else can, and not without the audit entry
+- Unlocking changes nothing else: no results, and only a final week
+
+**Removing a dare**
+
+- The commish can take a dare off the Wheel, and it goes in the audit log
+- Nobody else can, and not without the audit entry, and nothing else about the dare changes
 
 ## Receipts
 

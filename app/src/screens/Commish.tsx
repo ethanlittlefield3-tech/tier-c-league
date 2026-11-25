@@ -7,6 +7,7 @@ import { loadData } from '../data/load.ts';
 import { whyOf } from '../data/why.ts';
 import { Back, Field, Heading } from '../ui/parts.tsx';
 import { CommishPlayers } from './CommishPlayers.tsx';
+import { CommishModeration } from './CommishModeration.tsx';
 import { CommishScores } from './CommishScores.tsx';
 import { DraftControls } from './DraftControls.tsx';
 import './commish.css';
@@ -334,6 +335,7 @@ export function Commish(props: { me: Me; onBack: () => void }) {
         {league.data && seasonId && season.data && (
           <CommishScores me={props.me} seasonId={seasonId} timeZone={season.data.timeZone} members={Object.keys(league.data.members ?? {})} />
         )}
+        {league.data && seasonId && season.data && <CommishModeration me={props.me} seasonId={seasonId} />}
       </div>
     </main>
   );

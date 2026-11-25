@@ -507,6 +507,11 @@ service cloud.firestore {
             && votesOpen()
             && draft().step in ['dares', 'done']
             && validWords(request.resource.data, resource == null ? null : resource.data, 80);
+          // Moderation: the commish takes a dare off the Wheel, with an audit entry.
+          allow update: if isCommish(L)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['removed', 'audit'])
+            && request.resource.data.removed == true
+            && audited(L, request.resource.data.audit, 'dare.remove', 'dares/' + P);
         }
 
         // ---- Votes ----------------------------------------------------------
@@ -570,6 +575,13 @@ service cloud.firestore {
 
         match /weeks/{week} {
           allow read: if isMember(L);
+          // The commish can unlock a final week, so the weekly job counts it
+          // again with any late fixes; it then goes final again.
+          allow update: if isCommish(L)
+            && resource.data.status == 'final'
+            && request.resource.data.status == 'provisional'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'audit'])
+            && audited(L, request.resource.data.audit, 'week.unlock', 'weeks/' + week);
         }
 
         // ---- Daily logs -----------------------------------------------------

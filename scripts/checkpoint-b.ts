@@ -33,6 +33,7 @@ const AREAS: [file: string, heading: string, blurb: string][] = [
   ['roster', 'Goals', "Everyone in the league can read every player's goals."],
   ['draft', 'The draft', "The commish runs it, and every change goes in the audit log. Players set their own goals and vote on everyone else's until the votes close."],
   ['standings', 'Standings', 'Everyone in the league can read them. Only the weekly job writes them.'],
+  ['weeks', 'Weeks and dares', 'The commish can unlock a final week or take a dare off the Wheel, and every such change goes in the audit log.'],
   ['receipts', 'Receipts', 'You ask in your own name, before the day locks, 3 times a week. Only the player asked can answer, and only before the deadline.'],
   ['wheel', 'The Wheel of Shame', 'The job seals each draw. Nobody reads it until its spinner taps Spin, once.'],
   ['wall', 'The wall', 'Everyone in the league reads it. You post, comment and react in your own name. Nobody edits a post, and only its author or the commish takes it down.'],

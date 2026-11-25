@@ -125,7 +125,7 @@ for (const league of leagues) {
     let pool: string[] | null = null;
     const poolNow = async () => {
       if (pool) return pool;
-      const dares = (await seasonRef.collection('dares').get()).docs.map((dare) => ({ player: dare.id, text: String(dare.get('text')), version: Number(dare.get('version')) }));
+      const dares = (await seasonRef.collection('dares').get()).docs.map((dare) => ({ player: dare.id, text: String(dare.get('text')), version: Number(dare.get('version')), removed: dare.get('removed') === true }));
       const votes = (await seasonRef.collection('votes').where('kind', '==', 'dare').get()).docs.map((vote) => ({ player: String(vote.get('player')), version: Number(vote.get('version')), choice: String(vote.get('choice')) }));
       const order = STARTER_DARES.map((_, index) => ({ index, key: randomInt(1_000_000_000) })).sort((a, b) => a.key - b.key).map((item) => item.index);
       pool = wheelPool(approvedDares(dares, votes, Math.max(0, members.length - 1)), STARTER_DARES, order);

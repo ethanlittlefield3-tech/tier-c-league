@@ -25,6 +25,14 @@ describe("The Wheel's draws", () => {
     expect(approvedDares(dares, votes, 3)).toEqual(['Cape to work', 'Sing in public']);
   });
 
+  it('A dare the commish took off the Wheel stays off it', () => {
+    const dares = [
+      { player: 'maya', text: 'Cape to work', version: 1 },
+      { player: 'sam', text: 'Something unkind', version: 1, removed: true },
+    ];
+    expect(approvedDares(dares, [], 3)).toEqual(['Cape to work']);
+  });
+
   it('Once a week is final, each spinner gets one sealed draw, with proof due that Sunday', () => {
     const due = drawsDue({ period: 'w02', spinners: ['maya', 'sam'], existing: {}, redo: [], pool, now: FINAL, timeZone: NY, roll: rolls(3, 10) });
     expect(due.map(({ draw, slice }) => [draw.id, draw.n, slice])).toEqual([

@@ -93,3 +93,25 @@ export const adjustScore = (me: Me, season: string, input: { player: string; dat
     save.set(doc(league, 'audit', audit), auditEntry(me, 'score.adjust', `adjustments/${adjustment.id}`, input.reason));
     await save.commit();
   });
+
+/** Unlocks a final week, so the weekly job counts it again with any late fixes. It goes final again after. */
+export const unlockWeek = (me: Me, season: string, period: string, reason: string) =>
+  attempt(async (db) => {
+    const league = doc(db, 'leagues', me.league);
+    const audit = doc(collection(league, 'audit')).id;
+    const save = writeBatch(db);
+    save.update(doc(league, 'seasons', season, 'weeks', period), { status: 'provisional', audit });
+    save.set(doc(league, 'audit', audit), auditEntry(me, 'week.unlock', `weeks/${period}`, reason));
+    await save.commit();
+  });
+
+/** Takes a player's dare off the Wheel. Draws already made keep their wheel. */
+export const removeDare = (me: Me, season: string, player: string, reason: string) =>
+  attempt(async (db) => {
+    const league = doc(db, 'leagues', me.league);
+    const audit = doc(collection(league, 'audit')).id;
+    const save = writeBatch(db);
+    save.update(doc(league, 'seasons', season, 'dares', player), { removed: true, audit });
+    save.set(doc(league, 'audit', audit), auditEntry(me, 'dare.remove', `dares/${player}`, reason));
+    await save.commit();
+  });

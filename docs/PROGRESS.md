@@ -1,6 +1,6 @@
 # Tier C League: progress log
 
-Last updated 2026-11-25, after the Wheel of Shame, part 2.
+Last updated 2026-11-25, after Commish tools, part 3.
 
 ## Plan change (commish ruling, 2026-11-25)
 
@@ -203,6 +203,11 @@ Last updated 2026-11-25, after the Wheel of Shame, part 2.
   - Fixed on the way, found by a flow test: the job stored each draw's deadline as a plain number, which the rules could not compare with the clock. It is a timestamp now.
   - New rules: 11 rule tests, 243 in all. Weakening them 16 ways was caught 10 times, after 2 missing tests were added. The other 6 are still refused because the proof and the spin's "proven" mark must arrive in one save, and each rule checks the other.
   - 1 job test, 1 logic test, and 2 flow tests: a vote that sends the spinner back to the wheel, and a dodge that comes off the standings.
+- **Commish tools, part 3: weeks and dares** (2026-11-25).
+  - Unlock a final week, with a reason: the weekly job counts it again with any late fixes, such as a dock after the week ended, then it goes final again.
+  - Take a dare off the Wheel, with a reason: future draws leave it out, and the draft's results say so.
+  - Both go in the league log. New rules: 5 rule tests, 248 in all. Weakening them 8 ways was caught 6 times. The other 2, letting anyone unlock a week or remove a dare, are still refused because the save also needs an audit entry only the commish can write.
+  - 1 job test and 2 flow tests that run the real weekly job.
 - **The shorter intro on reopening is on purpose:** the full intro plays on the first open each day, and a 1-second title after that (SCOPE.md, "Intro animation").
 
 ## Waiting on the commish
@@ -211,7 +216,7 @@ Last updated 2026-11-25, after the Wheel of Shame, part 2.
 
 ## Next
 
-1. **Step 3, continued.** Every Phase 1 screen now exists. Next: the rest of Commish tools (approve joins, settle or unlock a week, and removing a dare), then the commish's phone check of every screen (Checkpoint C).
+1. **Step 3, continued.** Every Phase 1 screen now exists. Still to come in Commish tools: approve joins (a waiting list for new players), mark a player as left (waits on the mid-season question below), settle a week from the app when the job runs late, and taking a starter dare off the Wheel. Then the commish's phone check of every screen (Checkpoint C).
    - **Push alerts** wait on one thing from the commish: a Cloud Messaging web push key, made in the Firebase console. The app will ask for it one step at a time when that feature is next.
    - **Still to add to joining:** the notifications step (with push alerts), a commish's "approve joins" switch, and a way to make a league. Leagues are made by a setup script, which is built with the jobs in Step 4.
    - **Offline start** comes with the offline step: a service worker that keeps the app's files on the phone, so it opens with no signal. Chrome on Android only offers its one-tap Install button once that exists. Until then Android installs from the browser menu, which the guide explains.

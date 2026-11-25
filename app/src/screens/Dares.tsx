@@ -35,7 +35,7 @@ function tally(votes: DareVote[], player: string, version: number | undefined, e
  * nobody votes on their own.
  */
 export function Dares(props: { me: Me; seasonId: string; open: boolean; members: string[]; votes: DareVote[]; eligible: number; name: (player: string) => string }) {
-  const dares = useAll<{ text: string; version?: number }>(`leagues/${props.me.league}/seasons/${props.seasonId}/dares`);
+  const dares = useAll<{ text: string; version?: number; removed?: boolean }>(`leagues/${props.me.league}/seasons/${props.seasonId}/dares`);
   const mine = dares.docs.find((found) => found.id === props.me.player)?.data ?? null;
   const [text, setText] = useState<string | null>(null);
   const shown = text ?? mine?.text ?? '';
@@ -86,8 +86,8 @@ export function Dares(props: { me: Me; seasonId: string; open: boolean; members:
                 <span>{player === props.me.player ? 'Your dare' : props.name(player)}</span>
                 {found.text}
               </p>
-              <p class="draft-tally" data-outcome={count.outcome}>
-                {OUTCOME[count.outcome]}: {count.approvals} approve, {count.vetoes} veto
+              <p class="draft-tally" data-outcome={found.removed ? 'vetoed' : count.outcome}>
+                {found.removed ? 'Taken off the Wheel by the commish' : `${OUTCOME[count.outcome]}: ${count.approvals} approve, ${count.vetoes} veto`}
               </p>
             </div>
           );

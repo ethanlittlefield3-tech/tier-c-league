@@ -16,13 +16,17 @@ export interface Draw {
   dueAt: number;
 }
 
-/** The dares from the draft that stand: the current words of each, unless more than half the league vetoed them. */
+/**
+ * The dares from the draft that stand: the current words of each, unless more
+ * than half the league vetoed them or the commish took them off the Wheel.
+ */
 export function approvedDares(
-  dares: { player: string; text: string; version: number }[],
+  dares: { player: string; text: string; version: number; removed?: boolean }[],
   votes: { player: string; version: number; choice: string }[],
   eligible: number,
 ): string[] {
   return dares
+    .filter((dare) => dare.removed !== true)
     .filter((dare) => {
       const these = votes.filter((vote) => vote.player === dare.player && vote.version === dare.version);
       const outcome = voteOutcome({

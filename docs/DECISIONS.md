@@ -200,6 +200,11 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 110. **Each dodged dare takes 3 Season Points off in the standings.** It is worked out from the clock, like a receipt, and shows within the hour after the deadline. The "Dare Dodger" sticker comes with the cars in the Garage.
 111. **Tiebreak coins are sealed from their own player too.** Before this, the sealed-item rule let a player read their own coin's number.
 
+**Commish tools, part 3** (new on 2026-11-25, not yet reviewed by the commish)
+
+112. **Unlocking a final week hands it back to the weekly job,** which counts it again with any late fixes within the hour and makes it final again. The commish's phone doesn't recount it.
+113. **A dare taken off the Wheel stays out of future draws;** a wheel already drawn keeps its slices. The draft's results say it was taken off.
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.
