@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 123 of 123 passing.
+- **Tests:** 137 of 137 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -29,6 +29,20 @@ A device is in a league only while its claim holds the player's current recovery
 - Joining cannot slip in any other change to the league, like making yourself commish
 - Nobody can mint themselves a key and a claim without joining through the league code
 - Leagues cannot be created or deleted from a phone
+
+**Finding a profile from its recovery key**
+
+- A new phone that knows a recovery key can find which player it belongs to
+- A key nobody holds finds nothing
+- A visitor who is not signed in cannot look a key up
+- Nobody can list the keys on file, not even the commish, so a key cannot be found by browsing
+- Joining has to file the new key, so the player can always recover later
+- An entry holds the player and nothing else
+- A key cannot be filed under a different player
+- Recovery files the new key and takes the old one off file
+- A recovery that leaves the old key on file is refused
+- A recovery that does not file the new key is refused
+- Nobody can take a current key off file, which would stop that player ever recovering
 
 **Recovery keys**
 
@@ -196,6 +210,9 @@ Every commish change has to arrive with an audit entry, or it is refused.
 
 - Reissuing a key lands in the audit log and signs that player out everywhere
 - The commish cannot reissue a key without an audit entry
+- The player can recover on a new phone with the reissued key, and the old key finds nothing
+- A reissue that does not file the new key, or leaves the old one on file, is refused
+- Blanking a key to remove a player takes it off file, so it can never be used to get back in
 - Handing over the commish role lands in the audit log
 - A player cannot make themselves commish
 - The commish can close the league to new players, and remove a player, with an audit entry each time

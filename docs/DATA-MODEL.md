@@ -13,6 +13,7 @@ Where everything lives in Firestore, who can write it and who can read it. It co
 | --- | --- |
 | A device is a player | `claims/{device}` holds a player and a key. It counts only while that key equals `keys/{player}.key`. |
 | Recovery signs out old devices | Recovery rewrites `keys/{player}.key`, so every other claim stops matching. |
+| A new phone can find its profile | `lookup/{key}` says which player a key belongs to. A phone that knows the league code and the key can fetch that one entry. The rules keep it in step with the keys. |
 | The server's clock decides | Rules compare `request.time` with `calendar/{date}`, which only the jobs write. |
 | One Aerial a week | The week has one document, `kit/w02_{player}_aerial`, and a used one can't be moved or deleted. |
 | Demolition is hidden | It lives in `sealed/`, readable only by its author until the day's lock. |
@@ -35,6 +36,7 @@ Where everything lives in Firestore, who can write it and who can read it. It co
 | --- | --- | --- | --- | --- |
 | `players/{player}` | Created on joining. The player edits `displayName` and `car`. Jobs write the rest. | Members | 1, rules today | `displayName`, `joinedAt`, `car` (body, paint, decal, wheels, boost, explosion, topper). Jobs, Phase 2: `badges`, `unlocked` (parts by slot), `rank`, `rankHistory`, `stats`, `streaks`, `stickers` (Dare Dodger, the "L"), `trophies` |
 | `keys/{player}` | Created on joining. Rotated by anyone who proves the old key. Reissued by the commish with an audit entry. | That player, the commish | 1, rules today | `key`, `prev`, `rotatedAt`, `audit` |
+| `lookup/{key}` | Filed in the same save that sets a key, and taken off file in the same save that replaces it | Anyone signed in who already knows the key, one at a time, never listed | 1, rules today | `player` |
 | `claims/{device}` | That device, with the player's key | That device, the commish | 1, rules today | `player`, `key`, `code` (when joining), `at` |
 | `audit/{entry}` | The commish, never edited or deleted | Members | 1, rules today | `by`, `at`, `action`, `target`, `reason` |
 | `feed/{event}` | Jobs | Members | 1 | `at`, `kind`, `players`, `season`, `period`, `data` |

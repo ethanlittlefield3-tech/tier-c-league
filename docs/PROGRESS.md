@@ -48,6 +48,8 @@ Last updated 2026-11-25, after the app went live on GitHub Pages with its instal
   - The fonts now come from the app itself, so the first screen waits on no other website and works offline later.
   - 20 logic tests and 19 flow tests cover it. Breaking the install rules 11 different ways on purpose made a test fail every time.
 
+- **Finding a profile from its recovery key** (2026-11-25). Step 2 left a gap: a new phone had no way to learn which player a recovery key belonged to. Each key is now on file under its own name (`lookup/{key}`), written and replaced in the same save as the key. 14 new rule tests, 137 in all. Weakening the new rules 11 ways was caught 11 times.
+
 ## Waiting on the commish
 
 Neither of these blocks the build.

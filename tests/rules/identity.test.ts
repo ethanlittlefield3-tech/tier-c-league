@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
   CODE,
   KEYS,
@@ -25,20 +25,26 @@ beforeAll(startEmulator);
 afterAll(stopEmulator);
 beforeEach(seedLeague);
 
-/** Everything a new player's phone writes when it joins, as one batch. */
-function join(db: Db, uid: string, player: string, key: string, code = CODE) {
+/** Everything a new player's phone writes when it joins, as one batch. `skip` leaves one piece out. */
+function join(db: Db, uid: string, player: string, key: string, code = CODE, skip: 'nothing' | 'lookup' = 'nothing') {
   const batch = db.batch();
   batch.update(db.doc(league), { [`members.${player}`]: true });
   batch.set(db.doc(`${league}/players/${player}`), { displayName: 'Riley', joinedAt: now() });
   batch.set(db.doc(`${league}/keys/${player}`), { key, rotatedAt: now() });
+  if (skip !== 'lookup') batch.set(db.doc(`${league}/lookup/${key}`), { player });
   batch.set(db.doc(`${league}/claims/${uid}`), { player, key, code, at: now() });
   return batch.commit();
 }
 
-/** A new phone taking over a profile: it proves the old key and sets a new one. */
-function recover(db: Db, uid: string, player: string, oldKey: string, newKey: string) {
+/**
+ * A new phone taking over a profile: it proves the old key, sets a new one, and
+ * files the new key in place of the old. `skip` leaves one piece out.
+ */
+function recover(db: Db, uid: string, player: string, oldKey: string, newKey: string, skip: 'nothing' | 'unfile' | 'file' = 'nothing') {
   const batch = db.batch();
   batch.update(db.doc(`${league}/keys/${player}`), { key: newKey, prev: oldKey, rotatedAt: now() });
+  if (skip !== 'unfile') batch.delete(db.doc(`${league}/lookup/${oldKey}`));
+  if (skip !== 'file') batch.set(db.doc(`${league}/lookup/${newKey}`), { player });
   batch.set(db.doc(`${league}/claims/${uid}`), { player, key: newKey, at: now() });
   return batch.commit();
 }
@@ -117,6 +123,7 @@ describe('Joining', () => {
     batch.update(db.doc(league), { 'members.p9': true, commish: 'p9' });
     batch.set(db.doc(`${league}/players/p9`), { displayName: 'Riley', joinedAt: now() });
     batch.set(db.doc(`${league}/keys/p9`), { key: NEW_KEY, rotatedAt: now() });
+    batch.set(db.doc(`${league}/lookup/${NEW_KEY}`), { player: 'p9' });
     batch.set(db.doc(`${league}/claims/dev9`), { player: 'p9', key: NEW_KEY, code: CODE, at: now() });
     await assertFails(batch.commit());
   });
@@ -125,6 +132,7 @@ describe('Joining', () => {
     const db = stranger();
     const batch = db.batch();
     batch.set(db.doc(`${league}/keys/p9`), { key: NEW_KEY, rotatedAt: now() });
+    batch.set(db.doc(`${league}/lookup/${NEW_KEY}`), { player: 'p9' });
     batch.set(db.doc(`${league}/claims/dev9`), { player: 'p9', key: NEW_KEY, at: now() });
     await assertFails(batch.commit());
     await assertFails(db.doc(league).get());
@@ -133,6 +141,81 @@ describe('Joining', () => {
   it('Leagues cannot be created or deleted from a phone', async () => {
     await assertFails(stranger().doc('leagues/L2').set({ name: 'Mine', commish: 'p9', members: {} }));
     await assertFails(dev1().doc(league).delete());
+  });
+});
+
+describe('Finding a profile from its recovery key', () => {
+  const lookup = (key: string) => `${league}/lookup/${key}`;
+
+  it('A new phone that knows a recovery key can find which player it belongs to', async () => {
+    const found = await assertSucceeds(stranger().doc(lookup(KEYS.p2)).get());
+    expect(found.data()).toEqual({ player: 'p2' });
+  });
+
+  it('A key nobody holds finds nothing', async () => {
+    const found = await assertSucceeds(stranger().doc(lookup(NEW_KEY)).get());
+    expect(found.exists).toBe(false);
+  });
+
+  it('A visitor who is not signed in cannot look a key up', async () => {
+    await assertFails(visitor().doc(lookup(KEYS.p2)).get());
+  });
+
+  it('Nobody can list the keys on file, not even the commish, so a key cannot be found by browsing', async () => {
+    await assertFails(stranger().collection(`${league}/lookup`).get());
+    await assertFails(dev2().collection(`${league}/lookup`).get());
+    await assertFails(dev1().collection(`${league}/lookup`).get());
+  });
+
+  it('Joining has to file the new key, so the player can always recover later', async () => {
+    await assertFails(join(stranger(), 'dev9', 'p9', NEW_KEY, CODE, 'lookup'));
+  });
+
+  it('An entry holds the player and nothing else', async () => {
+    const db = stranger();
+    const batch = db.batch();
+    batch.update(db.doc(league), { 'members.p9': true });
+    batch.set(db.doc(`${league}/players/p9`), { displayName: 'Riley', joinedAt: now() });
+    batch.set(db.doc(`${league}/keys/p9`), { key: NEW_KEY, rotatedAt: now() });
+    batch.set(db.doc(lookup(NEW_KEY)), { player: 'p9', note: 'anything else' });
+    batch.set(db.doc(`${league}/claims/dev9`), { player: 'p9', key: NEW_KEY, code: CODE, at: now() });
+    await assertFails(batch.commit());
+  });
+
+  it('A key cannot be filed under a different player', async () => {
+    // Not while joining...
+    const db = stranger();
+    const batch = db.batch();
+    batch.update(db.doc(league), { 'members.p9': true });
+    batch.set(db.doc(`${league}/players/p9`), { displayName: 'Riley', joinedAt: now() });
+    batch.set(db.doc(`${league}/keys/p9`), { key: NEW_KEY, rotatedAt: now() });
+    batch.set(db.doc(lookup(NEW_KEY)), { player: 'p2' });
+    batch.set(db.doc(`${league}/claims/dev9`), { player: 'p9', key: NEW_KEY, code: CODE, at: now() });
+    await assertFails(batch.commit());
+    // ...and not on its own, for a made-up key or for a real one.
+    await assertFails(stranger().doc(lookup(NEW_KEY)).set({ player: 'p2' }));
+    await assertFails(dev3().doc(lookup(KEYS.p2)).set({ player: 'p3' }));
+    await assertFails(dev3().doc(lookup(KEYS.p2)).update({ player: 'p3' }));
+  });
+
+  it('Recovery files the new key and takes the old one off file', async () => {
+    await recover(device('newPhone'), 'newPhone', 'p2', KEYS.p2, NEW_KEY);
+    expect((await stranger().doc(lookup(NEW_KEY)).get()).data()).toEqual({ player: 'p2' });
+    expect((await stranger().doc(lookup(KEYS.p2)).get()).exists).toBe(false);
+  });
+
+  it('A recovery that leaves the old key on file is refused', async () => {
+    await assertFails(recover(device('newPhone'), 'newPhone', 'p2', KEYS.p2, NEW_KEY, 'unfile'));
+  });
+
+  it('A recovery that does not file the new key is refused', async () => {
+    await assertFails(recover(device('newPhone'), 'newPhone', 'p2', KEYS.p2, NEW_KEY, 'file'));
+  });
+
+  it('Nobody can take a current key off file, which would stop that player ever recovering', async () => {
+    await assertFails(dev3().doc(lookup(KEYS.p2)).delete());
+    await assertFails(stranger().doc(lookup(KEYS.p2)).delete());
+    await assertFails(dev2().doc(lookup(KEYS.p2)).delete());
   });
 });
 
@@ -186,6 +269,7 @@ describe('Recovery keys', () => {
 
   it("One player cannot rotate another player's key", async () => {
     await assertFails(dev3().doc(`${league}/keys/p2`).update({ key: NEW_KEY, prev: KEYS.p3, rotatedAt: now() }));
+    await assertFails(recover(dev3(), 'dev3', 'p2', KEYS.p3, NEW_KEY));
   });
 
   it("A device's claim can be read by that device and by the commish, and by no other player", async () => {

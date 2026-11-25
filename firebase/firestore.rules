@@ -179,9 +179,21 @@ service cloud.firestore {
           && request.resource.data.rotatedAt == request.time
           && !exists(/databases/$(database)/documents/leagues/$(L)/players/$(P))
           && joinsNow(P)
-          && holdsAfter(P, request.resource.data.key);
+          && holdsAfter(P, request.resource.data.key)
+          && filed(P, request.resource.data.key);
 
         allow update: if rotates(P) || reissues(P);
+      }
+
+      // A key is always "on file": lookup/{key} says which player it belongs
+      // to. These two checks keep the file in step with the keys. Every save
+      // that sets a key must file it, and take the key it replaces off file.
+      function filed(P, key) {
+        return getAfter(/databases/$(database)/documents/leagues/$(L)/lookup/$(key)).data.player == P;
+      }
+
+      function offFile(key) {
+        return !existsAfter(/databases/$(database)/documents/leagues/$(L)/lookup/$(key));
       }
 
       // After this save, this device's claim is for player P with this key.
@@ -201,7 +213,9 @@ service cloud.firestore {
           && validKey(after.key)
           && after.key != resource.data.key
           && after.rotatedAt == request.time
-          && holdsAfter(P, after.key);
+          && holdsAfter(P, after.key)
+          && filed(P, after.key)
+          && offFile(resource.data.key);
       }
 
       // The commish can reissue a key, or blank it to remove a player. Logged.
@@ -211,7 +225,29 @@ service cloud.firestore {
           && after.diff(resource.data).affectedKeys().hasOnly(['key', 'prev', 'rotatedAt', 'audit'])
           && (validKey(after.key) || after.key == '')
           && after.rotatedAt == request.time
-          && audited(L, after.audit, 'key.reissue', 'keys/' + P);
+          && audited(L, after.audit, 'key.reissue', 'keys/' + P)
+          && (after.key == '' || filed(P, after.key))
+          && (resource.data.key == '' || resource.data.key == after.key || offFile(resource.data.key));
+      }
+
+      // ---- Which player a key belongs to -------------------------------------
+      // A new phone knows only the league code and a recovery key. This is how
+      // it finds out whose key that is. An entry is named by the key itself, so
+      // it can be fetched by anyone signed in who already knows the key, and it
+      // can never be listed.
+      match /lookup/{K} {
+        allow get: if signedIn();
+
+        // Filed only in a save that makes K this player's key.
+        allow create: if signedIn()
+          && request.resource.data.keys().hasOnly(['player'])
+          && request.resource.data.player is string
+          && getAfter(/databases/$(database)/documents/leagues/$(L)/keys/$(request.resource.data.player)).data.key == K;
+
+        // Taken off file only in a save that replaces the key. Nobody can
+        // remove the entry for a key that is still current.
+        allow delete: if signedIn()
+          && getAfter(/databases/$(database)/documents/leagues/$(L)/keys/$(resource.data.player)).data.key != K;
       }
 
       // ---- Device claims ----------------------------------------------------

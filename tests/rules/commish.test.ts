@@ -9,12 +9,15 @@ import {
   auditEntry,
   dev1,
   dev2,
+  dev3,
+  device,
   league,
   now,
   season,
   seedLeague,
   startEmulator,
   stopEmulator,
+  stranger,
   type Db,
 } from './harness.ts';
 
@@ -51,6 +54,16 @@ function withAudit(db: Db, path: string, write: 'set' | 'update', data: Record<s
   if (write === 'set') batch.set(ref, { ...data, audit: auditId });
   else batch.update(ref, { ...data, audit: auditId });
   batch.set(db.doc(`${league}/audit/${auditId}`), { ...auditEntry(action, target), by });
+  return batch.commit();
+}
+
+/** The commish replacing a player's key: the key, where it is filed, and the audit entry, in one save. */
+function reissue(db: Db, player: string, oldKey: string, newKey: string, skip: 'nothing' | 'unfile' | 'file' = 'nothing') {
+  const batch = db.batch();
+  batch.update(db.doc(`${league}/keys/${player}`), { key: newKey, prev: oldKey, rotatedAt: now(), audit: 'a-key' });
+  if (skip !== 'unfile') batch.delete(db.doc(`${league}/lookup/${oldKey}`));
+  if (newKey !== '' && skip !== 'file') batch.set(db.doc(`${league}/lookup/${newKey}`), { player });
+  batch.set(db.doc(`${league}/audit/a-key`), { ...auditEntry('key.reissue', `keys/${player}`), by: 'p1' });
   return batch.commit();
 }
 
@@ -210,12 +223,44 @@ describe('The audit log', () => {
 describe('Commish powers over players', () => {
   it('Reissuing a key lands in the audit log and signs that player out everywhere', async () => {
     await assertSucceeds(dev2().doc(league).get());
-    await assertSucceeds(withAudit(dev1(), `${league}/keys/p2`, 'update', { key: NEW_KEY, prev: KEYS.p2, rotatedAt: now() }, 'a-key', 'key.reissue', 'keys/p2'));
+    await assertSucceeds(reissue(dev1(), 'p2', KEYS.p2, NEW_KEY));
     await assertFails(dev2().doc(league).get());
+    const entry = await dev1().doc(`${league}/audit/a-key`).get();
+    expect(entry.data()).toMatchObject({ by: 'p1', action: 'key.reissue', target: 'keys/p2' });
   });
 
   it('The commish cannot reissue a key without an audit entry', async () => {
-    await assertFails(dev1().doc(`${league}/keys/p2`).update({ key: NEW_KEY, prev: KEYS.p2, rotatedAt: now() }));
+    const db = dev1();
+    const batch = db.batch();
+    batch.update(db.doc(`${league}/keys/p2`), { key: NEW_KEY, prev: KEYS.p2, rotatedAt: now() });
+    batch.delete(db.doc(`${league}/lookup/${KEYS.p2}`));
+    batch.set(db.doc(`${league}/lookup/${NEW_KEY}`), { player: 'p2' });
+    await assertFails(batch.commit());
+  });
+
+  it('The player can recover on a new phone with the reissued key, and the old key finds nothing', async () => {
+    await reissue(dev1(), 'p2', KEYS.p2, NEW_KEY);
+    const phone = device('newPhone');
+    expect((await phone.doc(`${league}/lookup/${NEW_KEY}`).get()).data()).toEqual({ player: 'p2' });
+    expect((await phone.doc(`${league}/lookup/${KEYS.p2}`).get()).exists).toBe(false);
+    const batch = phone.batch();
+    batch.update(phone.doc(`${league}/keys/p2`), { key: 'TCL-EEEE-EEEE', prev: NEW_KEY, rotatedAt: now() });
+    batch.delete(phone.doc(`${league}/lookup/${NEW_KEY}`));
+    batch.set(phone.doc(`${league}/lookup/TCL-EEEE-EEEE`), { player: 'p2' });
+    batch.set(phone.doc(`${league}/claims/newPhone`), { player: 'p2', key: 'TCL-EEEE-EEEE', at: now() });
+    await assertSucceeds(batch.commit());
+    await assertSucceeds(phone.doc(league).get());
+  });
+
+  it('A reissue that does not file the new key, or leaves the old one on file, is refused', async () => {
+    await assertFails(reissue(dev1(), 'p2', KEYS.p2, NEW_KEY, 'file'));
+    await assertFails(reissue(dev1(), 'p2', KEYS.p2, NEW_KEY, 'unfile'));
+  });
+
+  it('Blanking a key to remove a player takes it off file, so it can never be used to get back in', async () => {
+    await assertSucceeds(reissue(dev1(), 'p3', KEYS.p3, ''));
+    expect((await stranger().doc(`${league}/lookup/${KEYS.p3}`).get()).exists).toBe(false);
+    await assertFails(dev3().doc(league).get());
   });
 
   it('Handing over the commish role lands in the audit log', async () => {

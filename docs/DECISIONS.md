@@ -92,6 +92,7 @@ Nothing is open. The receipts question that was here is now ruling R6.
 - **League codes are 8 characters and recovery keys are TCL-XXXX-XXXX,** both from 32 characters with no 0, O, 1 or I. That is 40 bits each. A code can be looked up only one at a time, never listed.
 - **Joining is one atomic save:** the member list, the profile, the key and the device claim are all written together or not at all. The member list is capped at 12.
 - **Recovery proves the old key and sets a new one in the same save,** so there is never a moment when both the old phone and the new phone are in.
+- **Every key is on file under its own name,** so a new phone that knows only the league code and a recovery key can find which player it is. The entry can be fetched by someone who already knows the key and can never be listed, the same way league codes work. The rules refuse any save that sets a key without filing it, or replaces a key without taking the old one off file.
 - **Kit slots are filed by period, not week number.** Week 2 is `w02`. Playoff rounds will get their own tags, so "a fresh kit each round" needs no data change.
 - **A Demolition unseals by the clock.** Its reveal time is copied from the calendar's lock and checked by the rules. If a job runs late, nothing stays hidden past the lock.
 - **Sealed items sit under the season,** not the league as SCOPE.md's sketch has them. Same protection, shorter names.

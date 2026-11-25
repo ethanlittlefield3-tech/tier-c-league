@@ -158,6 +158,7 @@ export async function seedLeague(): Promise<void> {
     for (const [index, player] of (['p1', 'p2', 'p3'] as const).entries()) {
       batch.set(db.doc(`${league}/players/${player}`), { displayName: names[player], joinedAt: stamp(-1000 * HOUR) });
       batch.set(db.doc(`${league}/keys/${player}`), { key: KEYS[player], rotatedAt: stamp(-1000 * HOUR) });
+      batch.set(db.doc(`${league}/lookup/${KEYS[player]}`), { player });
       batch.set(db.doc(`${league}/claims/dev${index + 1}`), { player, key: KEYS[player], at: stamp(-1000 * HOUR) });
     }
     batch.set(db.doc(season), {
