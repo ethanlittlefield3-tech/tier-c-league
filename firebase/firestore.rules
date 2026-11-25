@@ -367,7 +367,8 @@ service cloud.firestore {
                   && request.resource.data.to != request.resource.data.by
                   && get(/databases/$(database)/documents/leagues/$(L)).data.members[request.resource.data.to] == true);
         allow update: if takenDown(resource.data, request.resource.data, 'wall/' + post)
-          || reacted(resource.data, request.resource.data);
+          || reacted(resource.data, request.resource.data)
+          || stamped(resource.data, request.resource.data);
 
         // Comments, on brags only.
         match /comments/{comment} {
@@ -400,17 +401,30 @@ service cloud.firestore {
               || (isCommish(L) && changed.hasOnly(['deleted', 'text', 'audit']) && audited(L, after.audit, 'wall.delete', target)));
       }
 
-      // One player's own reactions on a post that is still up.
+      // One player's own reactions on a post that is still up, which may stamp
+      // the post with the server time, so the alerts job can tell its author.
       function reacted(before, after) {
         let me = claim(L).player;
         let mine = after.reactions[me];
         return isMember(L)
           && before.deleted == false
-          && after.diff(before).affectedKeys().hasOnly(['reactions'])
+          && after.diff(before).affectedKeys().hasOnly(['reactions', 'activityAt'])
+          && after.diff(before).affectedKeys().hasAny(['reactions'])
+          && (!after.diff(before).affectedKeys().hasAny(['activityAt']) || after.activityAt == request.time)
           && after.reactions.diff(before.get('reactions', {})).affectedKeys().hasOnly([me])
           && mine.keys().hasOnly(['fire', 'skull', 'beer'])
           && mine.keys().hasAll(['fire', 'skull', 'beer'])
           && mine.fire is bool && mine.skull is bool && mine.beer is bool;
+      }
+
+      // A comment stamps its brag the same way, in the same save. A stamp
+      // changes nothing else, and only ever says "now".
+      function stamped(before, after) {
+        return isMember(L)
+          && before.deleted == false
+          && before.kind == 'brag'
+          && after.diff(before).affectedKeys().hasOnly(['activityAt'])
+          && after.activityAt == request.time;
       }
 
       // ---- Seasons ----------------------------------------------------------

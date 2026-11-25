@@ -94,15 +94,22 @@ function restDayOf(input: AlertInput, player: string, day: AlertDay): string {
   return moved?.date ?? addDays(day.date, 6 - day.dayIndex);
 }
 
-/** The timed alerts' moments that came round since the last run: what the job must read for. */
-export function timedChecks(input: { since: number; now: number; clock: LeagueClock; calendar: AlertDay[] }): { kind: 'log' | 'lastCall' | 'rest' | 'aerial'; day: AlertDay }[] {
+export type TimedKind = 'log' | 'lastCall' | 'rest' | 'aerial' | 'close';
+
+/**
+ * The timed alerts' moments that came round since the last run: what the job
+ * must read for. "Close finish" is checked at 6 pm on Saturday and Sunday,
+ * from live scores the job works out itself (`live.ts`).
+ */
+export function timedChecks(input: { since: number; now: number; clock: LeagueClock; calendar: AlertDay[] }): { kind: TimedKind; day: AlertDay }[] {
   const due = (at: number) => input.since < at && at <= input.now;
-  const checks: { kind: 'log' | 'lastCall' | 'rest' | 'aerial'; day: AlertDay }[] = [];
+  const checks: { kind: TimedKind; day: AlertDay }[] = [];
   for (const day of input.calendar) {
     if (due(input.clock.timeOf(day.date, 21))) checks.push({ kind: 'log', day });
     if (due(input.clock.timeOf(addDays(day.date, 1), 11))) checks.push({ kind: 'lastCall', day });
     if (day.dayIndex === 0 && due(input.clock.timeOf(day.date, 9))) checks.push({ kind: 'rest', day });
     if (day.dayIndex === 5 && due(input.clock.timeOf(day.date, 20))) checks.push({ kind: 'aerial', day });
+    if ((day.dayIndex === 5 || day.dayIndex === 6) && due(input.clock.timeOf(day.date, 18))) checks.push({ kind: 'close', day });
   }
   return checks;
 }

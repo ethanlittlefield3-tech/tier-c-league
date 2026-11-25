@@ -254,11 +254,18 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 
 142. **A job works out and sends alerts every 10 minutes,** from what happened or came round since its last run, so alerts arrive within about 10 minutes, as SCOPE.md says. A quiet run reads about a dozen documents.
 143. **The alerts built so far:** log your day (9 pm); last call, Full Boost still unused and Rule One in hand (11 am, about yesterday); this week's rest day (Monday 9 am); last chance for Aerial (Saturday 8 pm); a taunt or quick-chat line aimed at you; receipts asked of you, and again an hour before they're due; docks; Demolitions as their day locks; the week's result; draft day; a Wheel spin to watch, and a dare proof to vote on.
-144. **Still to come: "your opponent passed you", "close finish", and bundled reactions and comments.** The first two need each matchup's live score, and the last needs each post's new activity, which the job can't yet see without many more reads. Badges, rank, Rumble items, group play and the offseason come with Phases 2 and 3.
+144. **Badges, rank, Rumble items, group play and the offseason alerts come with Phases 2 and 3.** "Your opponent passed you", "close finish" and bundled reactions and comments were added right after (calls 149 to 152).
 145. **Quiet hours hold alerts, and they arrive as one push when quiet hours end,** leaving out any that are no use by then, like "log your day" once the day has locked.
 146. **A week's result carries the recap:** "Week 3: you won. 14–9 against Maya. MVP: Maya." One push, not two, under Matchup.
 147. **A phone signed out by a new key gets nothing, and is taken off alerts;** so is a phone whose push token no longer works.
 148. **The job's memory between runs,** when it last ran and the alerts it is holding, is kept where no phone can read it.
+
+**Alerts, part 3: the matchup and the wall** (new on 2026-11-25, not yet reviewed by the commish)
+
+149. **"Your opponent passed you" means an overtake:** you led, and now you trail. Going from level to behind doesn't count, or the first log of every week would set it off. The job works out live scores only for matchups something touched since its last run: a log, a dock or a Demolition.
+150. **"Close finish" is checked at 6 pm on Saturday and again on Sunday,** within 3 points, and goes to both players at most once a week.
+151. **Reactions and comments are bundled once an hour:** each author hears one count of what others added to their posts, like "3 reactions and 1 comment", and a newer count replaces the last one on the phone.
+152. **A reaction or a comment stamps its post with the server time,** so the job finds new activity with one look instead of reading every post. A stamp can't say anything but "now", and a reaction has to change something.
 
 **Calendar**
 

@@ -15,12 +15,16 @@
 import { Timestamp, getFirestore, type DocumentData, type DocumentSnapshot } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
 import { addDays } from '../engine/src/calendar.ts';
+import { receiptFixes, type StoredReceipt } from '../engine/src/receipts.ts';
+import type { PlayerWeekData } from '../engine/src/settlement.ts';
 import { fastLeagueClock, zoneClock } from '../engine/src/clock.ts';
 import { weekPeriod } from '../engine/src/ids.ts';
 import { connect } from './admin.ts';
 import { alertsDue, timedChecks, type Alert, type AlertDay, type AlertInput } from './lib/alerts.ts';
+import { activityAlerts, type ActivePost } from './lib/activity.ts';
 import { deliver, type Device, type Push } from './lib/deliver.ts';
 import { fastClockOf } from './lib/fast.ts';
+import { closeAlerts, leadsOf, liveTotal, passedAlerts, type Lead } from './lib/live.ts';
 
 const MIN = 60_000;
 const HOUR = 60 * MIN;
@@ -68,6 +72,47 @@ async function send(pushes: Push[]): Promise<{ sent: number; gone: string[] }> {
   return { sent, gone };
 }
 
+/**
+ * Each player's points so far this week, as their phones show them, for
+ * "your opponent passed you" and "close finish". Only the players asked for
+ * are read: about 17 documents each.
+ */
+async function liveTotals(input: {
+  seasonRef: FirebaseFirestore.DocumentReference;
+  period: string;
+  days: { date: string; period: string; dayIndex: number; phase: string; start: number; lock: number }[];
+  players: string[];
+  /** Each player's opponent, whose Demolition is the only one that can hit them. */
+  opponentOf: Record<string, string>;
+  par: number;
+  now: number;
+}): Promise<Record<string, number>> {
+  const { seasonRef, period, days, now } = input;
+  const totals: Record<string, number> = {};
+  for (const player of input.players) {
+    const [logs, kit, ruleOnes, fixes, asked, sealed] = await Promise.all([
+      db.getAll(...days.map((day) => seasonRef.collection('days').doc(`${player}_${day.date}`))),
+      seasonRef.collection('kit').where('player', '==', player).where('period', '==', period).get(),
+      seasonRef.collection('kit').where('player', '==', player).where('item', '==', 'ruleOne').get(),
+      seasonRef.collection('adjustments').where('player', '==', player).get(),
+      seasonRef.collection('receipts').where('target', '==', player).get(),
+      input.opponentOf[player] ? seasonRef.collection('sealed').doc(`${period}_${input.opponentOf[player]}_demolition`).get() : null,
+    ]);
+    const data: PlayerWeekData = {
+      logs: Object.fromEntries(logs.filter((log) => log.exists).map((log) => [String(log.get('date')), plain(log.data()!) as unknown as PlayerWeekData['logs'][string]])),
+      kit: [...kit.docs, ...ruleOnes.docs].map((play) => plain(play.data()) as unknown as PlayerWeekData['kit'][number]),
+      adjustments: [
+        ...fixes.docs.map((fix) => plain(fix.data()) as unknown as PlayerWeekData['adjustments'][number]),
+        ...receiptFixes(asked.docs.map((receipt) => plain(receipt.data()) as unknown as StoredReceipt), now),
+      ],
+    };
+    const hit = sealed?.exists && sealed.get('target') === player ? sealed : null;
+    const lock = hit ? days.find((day) => day.date === hit.get('date'))?.lock : undefined;
+    totals[player] = liveTotal({ par: input.par, days, data, demolitionsOn: hit && lock !== undefined ? [{ date: String(hit.get('date')), lane: hit.get('lane'), lock }] : [], now });
+  }
+  return totals;
+}
+
 const only = process.env.LEAGUE_ID?.trim();
 const leagues = only ? [await db.collection('leagues').doc(only).get()] : (await db.collection('leagues').get()).docs;
 let totalSent = 0;
@@ -96,13 +141,18 @@ for (const league of leagues) {
 
   // What happened since the last run.
   const after = stamp(since);
-  const [wall, asked, dueSoon, docks, spun, proven] = await Promise.all([
+  const activitySince = typeof ms(state.activitySince) === 'number' ? Number(ms(state.activitySince)) : now - HOUR;
+  // Reactions and comments are bundled: their posts are looked at once an hour.
+  const activityDue = now - activitySince >= 55 * MIN;
+  const [wall, asked, dueSoon, docks, spun, proven, changed, active] = await Promise.all([
     league.ref.collection('wall').where('at', '>', after).get(),
     seasonRef.collection('receipts').where('requestedAt', '>', after).get(),
     seasonRef.collection('receipts').where('deadline', '>', stamp(since + HOUR)).where('deadline', '<=', stamp(now + HOUR)).get(),
     seasonRef.collection('adjustments').where('at', '>', after).get(),
     seasonRef.collection('spins').where('at', '>', after).get(),
     seasonRef.collection('spins').where('proofAt', '>', after).get(),
+    seasonRef.collection('days').where('updatedAt', '>', after).get(),
+    activityDue ? league.ref.collection('wall').where('activityAt', '>', stamp(activitySince)).get() : null,
   ]);
   const today = calendar.find((day) => day.date === clock.dateOf(now)) ?? calendar.at(-1);
   const weekIds = today ? [today.week, today.week - 1].filter((week) => week >= 1).map(weekPeriod) : [];
@@ -115,7 +165,22 @@ for (const league of leagues) {
   const newReveals = reveals.filter((reveal) => !revealed.includes(`reveal-${reveal.player}-${reveal.date}`));
   const finalNow = weeks.some((week) => typeof week.finalAt === 'number' && since < week.finalAt && week.finalAt <= now);
   const draftNow = draftAt !== null && ((since < draftAt - HOUR && draftAt - HOUR <= now) || (since < draftAt && draftAt <= now));
-  const anything = checks.length > 0 || !wall.empty || !asked.empty || !dueSoon.empty || !docks.empty || !spun.empty || !proven.empty || newReveals.length > 0 || finalNow || draftNow || Object.keys(held).length > 0;
+  // This week's matchups, for "your opponent passed you" and "close finish".
+  const thisWeek = weeks.find((week) => week.id === today?.period) as (AlertInput['weeks'][number] & { pairs?: { a: string; b: string }[] }) | undefined;
+  const pairs = (thisWeek?.pairs ?? []).filter((pair) => pair.a !== 'HOUSE' && pair.b !== 'HOUSE');
+  const leadsBefore = (state.leads as { period?: string; map?: Record<string, Lead> } | undefined)?.period === today?.period ? ((state.leads as { map?: Record<string, Lead> }).map ?? {}) : {};
+  const moved = new Set([
+    ...changed.docs.map((day) => String(day.get('player'))),
+    ...newReveals.map((reveal) => reveal.target),
+    ...docks.docs.map((dock) => String(dock.get('player'))),
+  ]);
+  const passedPairs = pairs.filter((pair) => moved.has(pair.a) || moved.has(pair.b));
+  const closeNow = checks.some((check) => check.kind === 'close' && check.day.period === today?.period);
+  const anything =
+    checks.length > 0 || !wall.empty || !asked.empty || !dueSoon.empty || !docks.empty || !spun.empty || !proven.empty || newReveals.length > 0 || finalNow || draftNow || passedPairs.length > 0 || (active !== null && !active.empty) || Object.keys(held).length > 0;
+  let leadsAfter: Record<string, Lead> = leadsBefore;
+  let closeSent = (state.closeSent as { period?: string; players?: string[] } | undefined)?.period === today?.period ? ((state.closeSent as { players?: string[] }).players ?? []) : [];
+  let seen = (state.seen ?? {}) as Record<string, number>;
 
   let alerts: Alert[] = [];
   let pushes: Push[] = [];
@@ -157,6 +222,34 @@ for (const league of leagues) {
     };
     alerts = alertsDue(input);
 
+    // Live scores: the matchups a change touched, or every one at 6 pm on the weekend.
+    const livePairs = closeNow ? pairs : passedPairs;
+    if (today && livePairs.length > 0) {
+      const periodDays = docs((await seasonRef.collection('calendar').where('period', '==', today.period).get()).docs) as unknown as { date: string; period: string; dayIndex: number; phase: string; start: number; lock: number }[];
+      periodDays.sort((a, b) => a.start - b.start);
+      const opponentOf: Record<string, string> = Object.fromEntries(pairs.flatMap((pair) => [[pair.a, pair.b], [pair.b, pair.a]]));
+      const totals = await liveTotals({ seasonRef, period: today.period, days: periodDays, players: [...new Set(livePairs.flatMap((pair) => [pair.a, pair.b]))], opponentOf, par: Number(season.get('par')), now });
+      const weekEnds = periodDays.at(-1)?.lock ?? now + 24 * HOUR;
+      alerts.push(...passedAlerts({ period: today.period, pairs: livePairs, before: leadsBefore, totals, names: players, now, expires: weekEnds }));
+      leadsAfter = { ...leadsBefore, ...leadsOf(livePairs, totals) };
+      if (closeNow) {
+        const close = closeAlerts({ period: today.period, pairs, totals, names: players, expires: weekEnds }).filter((alert) => !closeSent.includes(alert.player));
+        alerts.push(...close);
+        closeSent = [...closeSent, ...close.map((alert) => alert.player)];
+      }
+    }
+
+    // Reactions and comments on each author's posts, once an hour.
+    if (active && !active.empty) {
+      const posts = active.docs.map((post) => ({ id: post.id, ...plain(post.data()) })) as unknown as ActivePost[];
+      const comments = (
+        await Promise.all(posts.map((post) => league.ref.collection('wall').doc(post.id).collection('comments').where('at', '>', stamp(activitySince)).get()))
+      ).flatMap((snapshot, index) => snapshot.docs.map((comment) => ({ post: posts[index]!.id, by: String(comment.get('by')) })));
+      const out = activityAlerts({ posts, comments, seen, players, now });
+      alerts.push(...out.alerts);
+      seen = out.seen;
+    }
+
     if (alerts.length > 0 || Object.keys(held).length > 0) {
       const found = await db.collection('devices').where('league', '==', league.id).get();
       const devices: Device[] = found.docs
@@ -183,6 +276,11 @@ for (const league of leagues) {
 
   await stateRef.set({
     since: stamp(now),
+    activitySince: stamp(activityDue ? now : activitySince),
+    leads: { period: today?.period ?? null, map: leadsAfter },
+    closeSent: { period: today?.period ?? null, players: closeSent },
+    // Reaction counts for the most recent posts only.
+    seen: Object.fromEntries(Object.entries(seen).slice(-300)),
     held: nextHeld,
     revealed: [...new Set([...revealed, ...reveals.map((reveal) => `reveal-${reveal.player}-${reveal.date}`)])].slice(-500),
     updatedAt: stamp(now),

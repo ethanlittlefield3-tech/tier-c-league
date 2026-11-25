@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 267 of 267 passing.
+- **Tests:** 269 of 269 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -436,6 +436,8 @@ Everyone in the league reads it. You post, comment and react in your own name. N
 - Each player has one set of reactions on a post: fire, skull and beer, each on or off
 - A reaction changes nothing else on the post
 - Everyone in the league can see the comments; nobody outside can
+- A reaction or a comment stamps its post with the server time, so its author can hear about it
+- The stamp is always the server time, changes nothing else, and only on a post that is still up
 
 **Saved custom taunts**
 

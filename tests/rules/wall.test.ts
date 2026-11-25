@@ -143,6 +143,28 @@ describe('Comments and reactions', () => {
     await assertSucceeds(dev3().collection(`${wall('b1')}/comments`).get());
     await assertFails(stranger().collection(`${wall('b1')}/comments`).get());
   });
+
+  it('A reaction or a comment stamps its post with the server time, so its author can hear about it', async () => {
+    await assertSucceeds(dev3().doc(wall('b1')).update({ 'reactions.p3': reaction(true, false, false), activityAt: now() }));
+    const db = dev3();
+    const batch = db.batch();
+    batch.set(db.doc(`${wall('b1')}/comments/c10`), comment('p3'));
+    batch.update(db.doc(wall('b1')), { activityAt: now() });
+    await assertSucceeds(batch.commit());
+  });
+
+  it('The stamp is always the server time, changes nothing else, and only on a post that is still up', async () => {
+    await assertFails(dev3().doc(wall('b1')).update({ 'reactions.p3': reaction(true, false, false), activityAt: new Date(0) }));
+    await assertFails(dev3().doc(wall('b1')).update({ activityAt: new Date(0) }));
+    await assertFails(dev3().doc(wall('b1')).update({ activityAt: now(), text: 'Edited' }));
+    await assertFails(stranger().doc(wall('b1')).update({ activityAt: now() }));
+    // A taunt takes reactions, so a reaction can stamp it; a stamp alone, as a comment would make, needs a brag.
+    await asJob((db) => db.doc(wall('t2')).set({ by: 'p2', kind: 'taunt', text: 'Calculated.', to: 'p3', at: new Date(), deleted: false }));
+    await assertSucceeds(dev3().doc(wall('t2')).update({ 'reactions.p3': reaction(false, true, false), activityAt: now() }));
+    await assertFails(dev3().doc(wall('t2')).update({ activityAt: now() }));
+    await asJob((db) => db.doc(wall('b1')).update({ deleted: true, text: '' }));
+    await assertFails(dev3().doc(wall('b1')).update({ activityAt: now() }));
+  });
 });
 
 describe('Saved custom taunts', () => {

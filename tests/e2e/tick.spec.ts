@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { expect, test, type APIRequestContext } from '@playwright/test';
-import { createLeague, patchDoc, quietPlayer, readDoc, startSeason, writeDoc, type TestLeague } from './league.ts';
+import { createLeague, patchDoc, quietPlayer, readDoc, startSeason, thisWeek, writeDoc, type TestLeague } from './league.ts';
 
 const run = promisify(execFile);
 const tickJob = fileURLToPath(new URL('../../jobs/tick.ts', import.meta.url));
@@ -84,5 +84,41 @@ test.describe('Sending alerts', () => {
     await taunt(request, league, 'Anyone there, {name}?');
     expect(await tick(league)).toEqual([]);
     expect(await readDoc(request, `devices/${device}`)).toBeNull();
+  });
+
+  test('"Your opponent passed you" goes to a player who led and now trails', async ({ request }) => {
+    const league = await createLeague(request);
+    const season = await startSeason(request, league);
+    await quietPlayer(request, league, 'maya', 'Maya');
+    const device = await phoneWithAlerts(request, league);
+    const { period } = thisWeek(season);
+    await writeDoc(request, `${season.path}/weeks/${period}`, { week: 2, period, mode: 'regular', pairs: [{ a: league.commish, b: 'maya' }], targets: { [league.commish]: ['maya'], maya: [league.commish] } });
+    const perfect = { goals: { mind: true, body: true, wildcard: true }, screenMinutes: 0, beers: 0 };
+    const log = (player: string) => writeDoc(request, `${season.path}/days/${player}_${season.today}`, { player, date: season.today, ...perfect, firstAt: new Date(), updatedAt: new Date() });
+
+    // Alex logs a perfect day and leads. A first look at a week only takes note.
+    await log(league.commish);
+    expect(await tick(league)).toEqual([]);
+
+    // Maya draws level, and a dock puts Alex behind: Maya has passed Alex.
+    await log('maya');
+    await writeDoc(request, `${season.path}/adjustments/late1`, { player: league.commish, date: season.today, amount: -1, void: null, reason: 'Late call', by: league.commish, at: new Date(), audit: 'x' });
+    const pushes = await tick(league);
+    expect(pushes.map((push) => push.title)).toContain('Maya passed you');
+    expect(pushes.find((push) => push.title === 'Maya passed you')).toMatchObject({ device, screen: 'match' });
+  });
+
+  test('Reactions and comments on your posts arrive bundled, once an hour', async ({ request }) => {
+    const league = await createLeague(request);
+    await startSeason(request, league);
+    await quietPlayer(request, league, 'maya', 'Maya');
+    const device = await phoneWithAlerts(request, league);
+    const post = `leagues/${league.id}/wall/brag1`;
+    await writeDoc(request, post, { by: league.commish, kind: 'brag', text: 'New PR', to: null, at: new Date(), deleted: false, reactions: { maya: { fire: true, skull: false, beer: true } }, activityAt: new Date() });
+    await writeDoc(request, `${post}/comments/c1`, { by: 'maya', text: 'Huge', at: new Date(), deleted: false });
+    expect(await tick(league)).toEqual([expect.objectContaining({ device, title: 'New on your posts', body: '2 reactions and 1 comment.', screen: 'feed' })]);
+    // Within the hour, more activity waits for the next bundle.
+    await patchDoc(request, post, { activityAt: new Date() });
+    expect(await tick(league)).toEqual([]);
   });
 });
