@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 292 of 292 passing.
+- **Tests:** 296 of 296 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -452,6 +452,17 @@ The jobs' news, like a badge earned or a rank changed. Everyone in the league re
 
 - Everyone in the league reads the jobs' news of badges and rank changes; nobody outside can
 - Only the jobs write it: nobody in the league can add, change or remove news, the commish included
+
+## Predictions
+
+Each player picks a week's winners in their own name, until it starts. Nobody else sees them until then. Only the weekly job scores them.
+
+**Predictions**
+
+- Before a week starts, a player picks its winners in their own name, and can change them until it starts
+- Once the week has started, picks are closed
+- Picks are filed under their week and player, lock when the week starts, and name only players in the league, each once
+- Until the week starts, only the picker sees their picks; after, everyone in the league does
 
 ## The suggestion box
 

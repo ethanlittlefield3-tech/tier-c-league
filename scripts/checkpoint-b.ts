@@ -39,6 +39,7 @@ const AREAS: [file: string, heading: string, blurb: string][] = [
   ['wheel', 'The Wheel of Shame', 'The job seals each draw. Nobody reads it until its spinner taps Spin, once.'],
   ['wall', 'The wall', 'Everyone in the league reads it. You post, comment and react in your own name. Nobody edits a post, and only its author or the commish takes it down.'],
   ['feed', 'The league feed', "The jobs' news, like a badge earned or a rank changed. Everyone in the league reads it; no phone writes it."],
+  ['predictions', 'Predictions', "Each player picks a week's winners in their own name, until it starts. Nobody else sees them until then. Only the weekly job scores them."],
   ['suggestions', 'The suggestion box', 'Anyone posts an idea, everyone else upvotes it with their own vote, and only the commish tags it. Its author takes it down, or the commish does, with an audit entry.'],
   ['pokes', 'Pokes', "One a day, to this week's opponent, dated today and in your own name. Never changed."],
   ['rematches', 'Rematch challenges', 'After a final week, the loser challenges the winner to a side race the next week, by its Wednesday, once. Only the weekly job settles it.'],

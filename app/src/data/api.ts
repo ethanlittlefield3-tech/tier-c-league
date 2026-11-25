@@ -9,6 +9,7 @@ export * from './identity.ts';
 export * from './kit.ts';
 export * from './live.ts';
 export * from './pokes.ts';
+export * from './predictions.ts';
 export * from './rematches.ts';
 export * from './season.ts';
 export * from './suggestions.ts';

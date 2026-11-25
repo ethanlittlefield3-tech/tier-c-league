@@ -401,3 +401,7 @@
   border-radius: 50%;
   background: currentColor;
 }
+
+.feed-event[data-kind='picks'] {
+  border-left-color: #b58cff;
+}

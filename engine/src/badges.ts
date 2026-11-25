@@ -70,6 +70,8 @@ export interface BadgeFacts {
   reachedGrandChamp: boolean;
   /** Rematch challenges won this season. */
   rematchesWon?: number;
+  /** Had the season's best predictions record, once the season is over. */
+  bestPicker?: boolean;
 }
 
 /** The longest run of entries that pass, with `skip` entries neither counting nor breaking it. */
@@ -173,6 +175,7 @@ export function earnedBadges(facts: BadgeFacts): string[] {
   for (const week of wins) winsOver.set(week.opponent!, (winsOver.get(week.opponent!) ?? 0) + 1);
   earn('rivalryKing', [...winsOver.values()].some((count) => count >= 5));
   earn('payback', (facts.rematchesWon ?? 0) >= 1);
+  earn('prophet', facts.bestPicker === true);
 
   // Power-ups
   earn('demolisher', weeks.reduce((sum, week) => sum + week.demolitionsLanded, 0) >= 3);

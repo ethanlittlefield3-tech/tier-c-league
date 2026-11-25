@@ -346,11 +346,19 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 197. **The highlight reel is a picture card drawn on the phone,** 1080 by 1350, the 4:5 shape chats show best: the league and the week, the MVP with their car and points, the week's storylines, and every result, winner first. It uses real names, never "You", since it's for the group chat. Each week's results in the feed have a Highlight reel button.
 198. **Share hands the picture to the phone's share sheet.** A phone that can't share pictures shares the same card as words; one that can't share at all saves the picture.
 
+**Phase 2: predictions** (new on 2026-11-25, not yet reviewed by the commish). Predictions never change a score. The readings below are in "Still open" too.
+
+199. **Picks are for the coming week:** each player picks the winners of next week's 1v1 matchups, in League, until the Sunday before it at 11:59 pm, and can change them until then. Nobody else sees them until the week starts. Matchups with The House aren't picked, and Week 1 has no picks, since the app has no "next week" before the season starts.
+200. **A pick is right when the player picked wins;** a draw makes every pick on it wrong. Leaving a matchup unpicked is allowed.
+201. **The best record is the most right picks; a tie goes to whoever made fewer picks, and players still level share it.** The week's top picker gets a shoutout in the feed when the week goes final, and the season's best record earns Prophet once every regular week is final.
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.
 
 ## Still open
+
+0. **Predictions, built provisionally (calls 199 to 201):** picks are for the coming week, due the Sunday before it; a draw makes every pick on it wrong; and the best record is the most right picks, with fewer picks made breaking a tie. The other readings would be picking the current week, a draw counting as right for nobody or as half, and the best record being the highest share right.
 
 1. **What a "majority" veto means. Built provisionally, waiting on the commish.** The draft counts a goal as vetoed when more than half of the players who can vote veto it (everyone but the goal's owner). The other reading is more than half of the votes cast. Under the built reading, a goal stands when votes close unless a majority vetoed it, so nobody can sink a goal with one veto while the others stay quiet. The same rule will decide dare vetoes and dare proof. Changing it is one line in `engine/src/votes.ts`.
 2. **A goal still vetoed when the votes close.** For now the results list it for the commish to settle, for example by reopening the votes for 12 hours so the player can re-word it. Should something happen on its own instead?

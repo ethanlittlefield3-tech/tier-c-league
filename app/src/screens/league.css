@@ -189,3 +189,23 @@
   font: italic 900 18px/1 var(--display);
   white-space: nowrap;
 }
+
+/* Your picks: one choice a matchup. */
+.picks {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.picks .choice-option {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.picks-record {
+  margin-top: 12px;
+  font-weight: 700;
+  color: var(--gold);
+}

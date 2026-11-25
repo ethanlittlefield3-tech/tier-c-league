@@ -189,6 +189,7 @@ describe('Badges: power-ups, social and career', () => {
     expect(has({ commishSeasons: 1 }, 'commish')).toBe(true);
     expect(has({ rematchesWon: 1 }, 'payback')).toBe(true);
     expect(has({ rematchesWon: 0 }, 'payback')).toBe(false);
+    expect(has({ bestPicker: true }, 'prophet')).toBe(true);
   });
 
   it('Badges from features still to come are never earned yet', () => {

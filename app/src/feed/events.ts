@@ -10,7 +10,7 @@ import { storyText } from './stories.ts';
 export interface FeedEvent {
   id: string;
   at: number;
-  kind: 'checkIn' | 'power' | 'dock' | 'reveal' | 'results' | 'receipt' | 'wheel' | 'badge' | 'rank' | 'rematch';
+  kind: 'checkIn' | 'power' | 'dock' | 'reveal' | 'results' | 'receipt' | 'wheel' | 'badge' | 'rank' | 'rematch' | 'picks';
   text: string;
   /** A second line: a dock's reason, or a week's scores and awards. */
   detail?: string;
@@ -59,7 +59,7 @@ export interface FeedInput {
   /** Rematch challenges, and how their side races ended. */
   rematches?: { id: string; data: { from: string; to: string; period: string; at?: number | null; winner?: string | null; points?: Record<string, number>; settledAt?: number | null } }[];
   /** The jobs' news: badges earned and rank changes. */
-  news?: { id: string; data: { kind: string; player: string; at?: number | null; data?: { badge?: string; rank?: Rank; from?: Rank | null } } }[];
+  news?: { id: string; data: { kind: string; player: string; at?: number | null; data?: { badge?: string; rank?: Rank; from?: Rank | null; top?: string[]; right?: number; made?: number; week?: number } } }[];
   /** The Wheel of Shame's latest draws, their spins and the votes on their proof. */
   wheel?: {
     eligible: number;
@@ -242,6 +242,14 @@ export function feedEvents(input: FeedInput): FeedEvent[] {
       const badge = BADGES.find((found) => found.id === data.data?.badge);
       if (!badge) continue;
       events.push({ id: `news-${id}`, at: data.at, kind: 'badge', text: `${who} earned ${badge.name}${badge.shame ? ' (shame)' : ''}`, detail: `${badge.how}. Unlocks: ${badge.unlocks.map((part) => part.name).join(' and ')}.` });
+    }
+    if (data.kind === 'picks' && data.data?.top?.length) {
+      const top = data.data.top.map(name);
+      const text =
+        top.length === 1
+          ? `Top picker in Week ${data.data.week}: ${top[0]}, ${data.data.right} right of ${data.data.made}`
+          : `Top pickers in Week ${data.data.week}: ${list(data.data.top, name)}, ${data.data.right} right each`;
+      events.push({ id: `news-${id}`, at: data.at, kind: 'picks', text });
     }
     if (data.kind === 'rank' && data.data?.rank) {
       const move = rankMove(data.data.from ?? null, data.data.rank);

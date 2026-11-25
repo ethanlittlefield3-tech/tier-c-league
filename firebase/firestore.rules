@@ -774,6 +774,36 @@ service cloud.firestore {
             && request.resource.data.to in get(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/weeks/$(cal(request.resource.data.date).period)).data.targets[request.resource.data.player];
         }
 
+        // ---- Predictions (SCOPE.md, "Predictions") -----------------------------
+        // Before a week starts, each player picks the winners of its 1v1
+        // matchups, by Sunday 11:59 pm, and can change them until then. Filed
+        // under the week and the player, and hidden from everyone else until
+        // the week starts. The weekly job scores them when the week is final.
+        match /predictions/{pickId} {
+          allow get: if isMember(L)
+            && (resource.data.player == claim(L).player || request.time >= resource.data.lockAt);
+          allow list: if isMember(L) && resource.data.player == claim(L).player;
+          allow create, update: if validPicks(pickId, request.resource.data);
+        }
+
+        function validPicks(id, picks) {
+          let monday = cal(picks.date);
+          return picks.keys().hasOnly(['player', 'period', 'date', 'picks', 'lockAt', 'at'])
+            && validPeriod(picks.period)
+            && picks.player is string
+            && id == picks.period + '_' + picks.player
+            && isPlayer(L, picks.player)
+            && monday.period == picks.period
+            && monday.dayIndex == 0
+            && picks.lockAt == monday.start
+            && request.time < monday.start
+            && picks.at == request.time
+            && picks.picks is list
+            && picks.picks.size() <= 12
+            && picks.picks.toSet().size() == picks.picks.size()
+            && picks.picks.toSet().hasOnly(get(/databases/$(database)/documents/leagues/$(L)).data.members.keys());
+        }
+
         // ---- Rematch challenges (SCOPE.md, "Rematch challenge") --------------
         // After a final week's loss, the loser challenges the winner to a side
         // race the next week, by that week's Wednesday. Once per loss, filed

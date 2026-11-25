@@ -12,7 +12,7 @@
 import { randomInt } from 'node:crypto';
 import { FieldValue, Timestamp, getFirestore, type DocumentData } from 'firebase-admin/firestore';
 import { connect } from './admin.ts';
-import { DODGE_PENALTY, STARTER_DARES, STICKER_DAYS, dareStatus, rematchResult, fastDareDue, fastLeagueClock, receiptFixes, rivalRecords, wheelPool, zoneClock, type RivalWeek, type StoredReceipt } from '../engine/src/index.ts';
+import { DODGE_PENALTY, STARTER_DARES, STICKER_DAYS, addRecords, bestPickers, dareStatus, rematchResult, scorePicks, type PickRecord, fastDareDue, fastLeagueClock, receiptFixes, rivalRecords, wheelPool, zoneClock, type RivalWeek, type StoredReceipt } from '../engine/src/index.ts';
 import { fastClockOf } from './lib/fast.ts';
 import { PROOF_DAYS, staleProofs } from './lib/proofs.ts';
 import { revealDemolitions, sameReveals } from './lib/reveals.ts';
@@ -142,6 +142,21 @@ for (const league of leagues) {
           await league.ref.collection('feed').doc(`rank_${line.player}_${seasonId}_${period}`).set({ at: FieldValue.serverTimestamp(), kind: 'rank', player: line.player, data: { rank: ranked.rank, from: before ?? null } });
         }
       }
+      // Predictions for this week: each player's picks are scored, and the
+      // best record gets a shoutout in the feed.
+      const pickDocs = await seasonRef.collection('predictions').where('period', '==', period).get();
+      const scored: Record<string, PickRecord> = {};
+      for (const doc of pickDocs.docs) {
+        const record = scorePicks((doc.get('picks') ?? []) as string[], (week.get('pairs') ?? []) as { a: string; b: string }[], settled.results);
+        scored[String(doc.get('player'))] = record;
+        await doc.ref.update({ ...record, scoredAt: FieldValue.serverTimestamp() });
+      }
+      const top = bestPickers(scored);
+      if (top.length > 0) {
+        const best = scored[top[0]!]!;
+        await league.ref.collection('feed').doc(`picks_${seasonId}_${period}`).set({ at: FieldValue.serverTimestamp(), kind: 'picks', player: top[0], data: { top, right: best.right, made: best.made, week: Number(week.get('week')) } });
+      }
+
       // Rematches raced this week: most points wins, and the loser's car
       // wears an L for a week. Counted again if the week is unlocked.
       const races = await seasonRef.collection('rematches').where('period', '==', period).get();
@@ -259,7 +274,7 @@ for (const league of leagues) {
   // good and announced in the league feed. One read of the season a week.
   if (wentFinal) {
     const fresh = await (async () => {
-      const [allWeeks, days, kit, fixes, asked, sealed, wall, races] = await Promise.all([
+      const [allWeeks, days, kit, fixes, asked, sealed, wall, races, predictions] = await Promise.all([
         seasonRef.collection('weeks').get(),
         seasonRef.collection('days').get(),
         seasonRef.collection('kit').get(),
@@ -268,6 +283,7 @@ for (const league of leagues) {
         seasonRef.collection('sealed').where('kind', '==', 'demolition').get(),
         league.ref.collection('wall').get(),
         seasonRef.collection('rematches').get(),
+        seasonRef.collection('predictions').get(),
       ]);
       const rematchWins: Record<string, number> = {};
       for (const race of races.docs) {
@@ -301,6 +317,12 @@ for (const league of leagues) {
       // The season is over once every regular week is final: then the most beers is a shame badge.
       const regular = Number(season.get('regularWeeks'));
       const over = finals.length >= regular && regular > 0;
+      // The season's best predictions record wins Prophet, once the season is over.
+      const pickRecords: Record<string, PickRecord[]> = {};
+      for (const doc of predictions.docs) {
+        if (typeof doc.get('made') === 'number') (pickRecords[String(doc.get('player'))] ??= []).push({ made: Number(doc.get('made')), right: Number(doc.get('right') ?? 0) });
+      }
+      const prophets = bestPickers(Object.fromEntries(Object.entries(pickRecords).map(([player, list]) => [player, addRecords(list)])));
       const beers: Record<string, number> = {};
       for (const week of finals) for (const line of (week.get('lines') ?? []) as WeekLineStored[]) beers[line.player] = (beers[line.player] ?? 0) + line.beers;
       const mostBeers = Math.max(0, ...Object.values(beers));
@@ -323,6 +345,7 @@ for (const league of leagues) {
           daresCompleted: daresDone[player] ?? 0,
           reachedGrandChamp: ((found.get('rankHistory') ?? []) as RankEntry[]).some((entry) => entry.rank === 'grandChamp'),
           rematchesWon: rematchWins[player] ?? 0,
+          bestPicker: over && prophets.includes(player),
         });
         if (update.fresh.length === 0) continue;
         await profile.set({ badges: Object.fromEntries(update.fresh.map((badge) => [badge, { at: FieldValue.serverTimestamp(), season: seasonId }])) }, { merge: true });

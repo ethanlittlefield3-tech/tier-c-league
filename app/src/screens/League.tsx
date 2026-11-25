@@ -2,6 +2,7 @@ import { CarArt } from '../art/car/CarArt.tsx';
 import type { CarParts } from '../art/car/draw.ts';
 import { nemesisOf, recordText, type Rival } from '@tcl/engine';
 import { useAll, useDoc, useNow } from '../data/hooks.ts';
+import { Picks } from './Picks.tsx';
 import type { Me } from '../data/identity.ts';
 import { seasonDates } from '../today/model.ts';
 import './feed.css';
@@ -67,7 +68,7 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
   const weeks = useAll<WeekDoc>(seasonPath ? `${seasonPath}/weeks` : null);
   const players = useAll<{ displayName?: string; car?: Partial<CarParts>; rivals?: Record<string, Rival>; stickers?: Partial<Record<string, { until?: unknown }>> }>(`${leaguePath}/players`);
   const dates = season.data ? seasonDates(now, season.data) : null;
-  const today = useDoc<{ period: string }>(seasonPath && dates ? `${seasonPath}/calendar/${dates.today}` : null);
+  const today = useDoc<{ period: string; date: string; week: number; dayIndex: number }>(seasonPath && dates ? `${seasonPath}/calendar/${dates.today}` : null);
 
   if (league.loading || season.loading || weeks.loading) {
     return (
@@ -234,6 +235,17 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
       )}
 
       {!thisWeek?.data.pairs && settled.length === 0 && upcoming.length === 0 && <p class="fine-print">The schedule appears after the draft.</p>}
+      {today.data && (
+        <Picks
+          me={props.me}
+          seasonId={seasonId}
+          today={today.data}
+          weeks={weeks.docs as { id: string; data: { week: number; pairs?: { a: string; b: string }[] } }[]}
+          name={(player) => (player === props.me.player ? 'You' : name(player))}
+          now={now}
+        />
+      )}
+
       <section class="panel league-panel" aria-labelledby="rivals-title">
         <h2 id="rivals-title">Your rivalries</h2>
         {rivals.length === 0 ? (

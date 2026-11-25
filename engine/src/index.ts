@@ -33,3 +33,4 @@ export * from './meter.ts';
 export * from './stickers.ts';
 export * from './rematch.ts';
 export * from './storylines.ts';
+export * from './predictions.ts';

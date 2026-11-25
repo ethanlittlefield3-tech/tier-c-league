@@ -110,6 +110,14 @@ describe('The live feed', () => {
     expect(events[0]?.headlines).toEqual(['Maya crushed Jordan by 22']);
   });
 
+  it("The week's top picker gets a shoutout; a tie shares it", () => {
+    const news = [
+      { id: 'picks_s1_w02', data: { kind: 'picks', player: 'maya', at: 9, data: { top: ['maya'], right: 4, made: 5, week: 2 } } },
+      { id: 'picks_s1_w03', data: { kind: 'picks', player: 'maya', at: 10, data: { top: ['maya', 'sam'], right: 3, made: 4, week: 3 } } },
+    ];
+    expect(feedEvents({ ...none, name, news }).map((event) => event.text)).toEqual(['Top pickers in Week 3: Maya and Sam, 3 right each', 'Top picker in Week 2: Maya, 4 right of 5']);
+  });
+
   it('A rematch shows when it is made, and again with the winner and the score once its week is settled', () => {
     const events = feedEvents({
       ...none,

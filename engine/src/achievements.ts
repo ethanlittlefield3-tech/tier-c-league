@@ -78,7 +78,7 @@ export const BADGES: readonly Badge[] = [
   { id: 'trashTalker', name: 'Trash Talker', group: 'social', how: '50 taunts sent', unlocks: [part('topper', 'megaphone', 'Megaphone topper')] },
   { id: 'showOff', name: 'Show-Off', group: 'social', how: '10 brags with 3 or more reactions each', unlocks: [part('boost', 'spotlight', 'Spotlight boost trail')] },
   { id: 'fanFavorite', name: 'Fan Favorite', group: 'social', how: '100 reactions received', unlocks: [part('explosion', 'confetti', 'Confetti goal explosion')] },
-  { id: 'prophet', name: 'Prophet', group: 'social', how: 'Best predictions record in a season', unlocks: [part('topper', 'crystalBall', 'Crystal-ball topper')], later: 'predictions' },
+  { id: 'prophet', name: 'Prophet', group: 'social', how: 'Best predictions record in a season', unlocks: [part('topper', 'crystalBall', 'Crystal-ball topper')] },
   { id: 'payback', name: 'Payback', group: 'social', how: 'Won a rematch challenge', unlocks: [part('decal', 'payback', 'Payback decal')] },
   // Season and career
   { id: 'foundingMember', name: 'Founding Member', group: 'career', how: 'Played Season 1', unlocks: [part('decal', 'og', 'OG decal')] },
