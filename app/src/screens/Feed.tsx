@@ -7,6 +7,8 @@ import { loadData } from '../data/load.ts';
 import type { PostKind, Reaction } from '../data/wall.ts';
 import { whyOf } from '../data/why.ts';
 import { feedEvents, type FeedEvent, type FeedInput } from '../feed/events.ts';
+import { reelCard } from '../reel/card.ts';
+import { Reel } from './Reel.tsx';
 import { POST_MAX, QUICK_CHAT, SAVED_TAUNTS_MAX, TAUNT_MAX, fillName } from '../feed/words.ts';
 import { Field } from '../ui/parts.tsx';
 import { ago } from '../ui/when.ts';
@@ -106,6 +108,19 @@ export function Feed(props: { me: Me; onWheel?: () => void }) {
     .sort((a, b) => b.at - a.at)
     .slice(0, 80);
 
+  // A week's highlight reel, when one is open.
+  const [reelWeek, setReelWeek] = useState<number | null>(null);
+  const reel =
+    reelWeek === null
+      ? null
+      : reelCard({
+          league: props.me.leagueName,
+          weeks: weeks.docs.map((found) => ({ week: found.data.week, results: found.data.results, awards: found.data.awards })),
+          week: reelWeek,
+          name: realName,
+          carOf: (player) => carOf(player)?.car ?? null,
+        });
+
   // The Wheel of Shame, while its dares are still due.
   const wheelLive = wheel !== null && wheel.draws.some((draw) => now < draw.dueAt);
   const waiting = wheel ? wheel.draws.filter((draw) => !spins.docs.some((spin) => spin.id === draw.id)).map((draw) => name(draw.player)) : [];
@@ -129,10 +144,11 @@ export function Feed(props: { me: Me; onWheel?: () => void }) {
           'post' in item ? (
             <PostCard key={item.post.id} me={props.me} id={item.post.id} post={item.post.data} now={now} name={name} realName={realName} carOf={carOf} isCommish={isCommish} />
           ) : (
-            <EventRow key={item.event.id} event={item.event} now={now} name={name} carOf={carOf} />
+            <EventRow key={item.event.id} event={item.event} now={now} name={name} carOf={carOf} onReel={setReelWeek} />
           ),
         )}
       </section>
+      {reel && <Reel card={reel} onClose={() => setReelWeek(null)} />}
     </div>
   );
 }
@@ -141,7 +157,7 @@ export function Feed(props: { me: Me; onWheel?: () => void }) {
 type Cars = (player: string) => { car?: Partial<CarParts>; stickers?: Partial<Record<string, { until?: unknown }>> } | null;
 
 /** A game event in the feed: who did what, and when. A week's results put its MVP and Bust in the spotlight. */
-function EventRow(props: { event: FeedEvent; now: number; name: Names; carOf: Cars }) {
+function EventRow(props: { event: FeedEvent; now: number; name: Names; carOf: Cars; onReel?: (week: number) => void }) {
   const { event } = props;
   return (
     <div class="feed-event" data-kind={event.kind}>
@@ -175,6 +191,11 @@ function EventRow(props: { event: FeedEvent; now: number; name: Names; carOf: Ca
             </li>
           ))}
         </ul>
+      )}
+      {event.kind === 'results' && event.week !== undefined && (
+        <button type="button" class="btn btn-second feed-reel" onClick={() => props.onReel?.(event.week!)}>
+          Highlight reel
+        </button>
       )}
     </div>
   );

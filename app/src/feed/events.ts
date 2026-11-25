@@ -16,6 +16,8 @@ export interface FeedEvent {
   detail?: string;
   /** How a revealed Demolition went. */
   outcome?: string;
+  /** The week a results post is about, for its highlight reel. */
+  week?: number;
   /** A week's storylines, the biggest news first (SCOPE.md, "Season storylines"). */
   headlines?: string[];
   /** The week's MVP and Bust, shown with their cars (SCOPE.md, "MVP and Bust"). */
@@ -160,7 +162,7 @@ export function feedEvents(input: FeedInput): FeedEvent[] {
       // Storylines from the season so far, up to this week.
       const settledWeeks = input.weeks.filter((each) => each.data.results).map((each) => ({ week: each.data.week, results: each.data.results! }));
       const headlines = storylines(settledWeeks, data.week).map((story) => storyText(story, name));
-      events.push({ id: `results-${id}`, at: data.settledAt, kind: 'results', text: `Week ${data.week} results are in`, detail: lines.join('\n'), ...(headlines.length ? { headlines } : {}), ...spotlight });
+      events.push({ id: `results-${id}`, at: data.settledAt, kind: 'results', text: `Week ${data.week} results are in`, detail: lines.join('\n'), week: data.week, ...(headlines.length ? { headlines } : {}), ...spotlight });
     }
     if (typeof data.finalAt === 'number') {
       events.push({ id: `final-${id}`, at: data.finalAt, kind: 'results', text: `Week ${data.week} is final` });

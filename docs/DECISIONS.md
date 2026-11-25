@@ -341,6 +341,11 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 
 196. **A week's recap in the feed carries up to 3 storylines, the biggest news first:** a win streak of 3 or more snapped, the leader beaten (whoever had the most Season Points going in, alone at the top), a win streak reaching 3 or more, a first win after 2 or more losses, a blowout of 20 or more, and a win by a single point. They are worked out on each phone from the season's results, so they need no job. Weeks against The House make no stories, and don't count in streaks.
 
+**Phase 2: the highlight reel** (new on 2026-11-25, not yet reviewed by the commish)
+
+197. **The highlight reel is a picture card drawn on the phone,** 1080 by 1350, the 4:5 shape chats show best: the league and the week, the MVP with their car and points, the week's storylines, and every result, winner first. It uses real names, never "You", since it's for the group chat. Each week's results in the feed have a Highlight reel button.
+198. **Share hands the picture to the phone's share sheet.** A phone that can't share pictures shares the same card as words; one that can't share at all saves the picture.
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.

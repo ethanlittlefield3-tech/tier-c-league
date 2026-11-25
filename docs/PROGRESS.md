@@ -230,6 +230,8 @@ Last updated 2026-11-25, after taking starter dares off the Wheel.
 - **Alerts, part 1: on the phone** (2026-11-25). Profile has an Alerts panel: turn them on with a tap, switch each of the 7 kinds on or off, and set quiet hours. A new player is offered alerts right under their recovery key. A service worker shows the alerts, opens the app at the right screen when one is tapped, and keeps the app's files on the phone so it opens with no signal. The push token is fetched again on every open.
   - New rules for devices: a phone signs up only as the player its claim holds. 4 new rule tests and 1 rewritten. Weakening the rule 14 ways was caught 13 times; the other is still refused by the checks on each field. 3 engine tests and 5 flow tests.
   - Sending them is next: the tick job, every 10 minutes. Alerts also wait on the Cloud Messaging web push key from the commish.
+- **The highlight reel** (2026-11-25, Phase 2). Each week's results in the feed have a Highlight reel button: a picture card of the week's best moments, with the MVP's car, the storylines and every result, and Share, which hands it to the phone's share sheet for the group chat (DECISIONS.md, calls 197 and 198).
+  - 2 app tests and 1 flow test, which checks the picture and what the share sheet is handed.
 - **Season storylines** (2026-11-25, Phase 2). Each week's results in the feed carry up to 3 headlines, like "Alex's 4-game win streak snapped by Maya", "You took down the leader, Jordan" or "Maya crushed Sam by 22" (DECISIONS.md, call 196).
   - 6 engine tests, 2 app tests, and the feed flow test checks a week with none.
 - **The suggestion box** (2026-11-25, Phase 2). A small "Suggest an idea" link on Profile opens it: anyone posts an idea, the others upvote it, most upvoted first, and the commish tags each one Planned, Maybe or No. Its author can take it down, and so can the commish, which goes in the league log (DECISIONS.md, calls 193 to 195).
@@ -283,7 +285,7 @@ Last updated 2026-11-25, after taking starter dares off the Wheel.
 2. **Before real players join:** limit the app's web key to the app's own address in the Google Cloud console, and look at App Check, which stops other programs from using the database's free daily allowance.
    - **Step 5 items still to come, each with the feature that needs it:** the Cloud Messaging web push key (notifications), and the private backups repo with its token (the backup job is built and waits on them).
 3. **Rules still to write, each with its screen and its tests:** marking a player as left, once the mid-season question is answered. Phase 2 and 3 collections are in DATA-MODEL.md and refused until then.
-4. **Phase 2, continued:** the highlight reel with sharing, and predictions; and the trophy case. Phase 3 after that.
+4. **Phase 2, continued:** predictions, and the trophy case. Phase 3 after that.
 
 ## Questions for the commish, asked when each feature is built
 

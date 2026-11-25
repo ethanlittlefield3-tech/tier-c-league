@@ -93,6 +93,7 @@ describe('The live feed', () => {
         kind: 'results',
         text: 'Week 2 results are in',
         detail: 'Maya beat Jordan 39–33\nYou drew with Sam 20–20\nMVP: Maya · Bust: Jordan · Spins the Wheel: Jordan',
+        week: 2,
         spotlight: { mvp: ['maya'], bust: ['jordan'] },
       },
     ]);

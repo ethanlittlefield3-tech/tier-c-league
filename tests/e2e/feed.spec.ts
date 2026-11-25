@@ -148,6 +148,45 @@ test.describe('Feed and the wall', () => {
     await riley.phone.context().close();
   });
 
+  test("A week's highlight reel is a picture of its best moments, shared to the group chat with one tap", async ({ page, request, browser }) => {
+    const { league, season, riley } = await rivals(page, request, browser);
+    await writeDoc(request, `${season.path}/weeks/w01`, {
+      week: 1,
+      mode: 'regular',
+      status: 'final',
+      settledAt: new Date(),
+      results: {
+        [league.commish]: { player: league.commish, opponent: riley.player, points: 30, opponentPoints: 24, outcome: 'win', seasonPoints: 35 },
+        [riley.player]: { player: riley.player, opponent: league.commish, points: 24, opponentPoints: 30, outcome: 'loss', seasonPoints: 24 },
+      },
+      awards: { mvp: [league.commish], bust: [riley.player], wheel: [riley.player] },
+    });
+    // A phone that can share pictures: the share sheet is stood in for, to see what it is handed.
+    await page.evaluate(() => {
+      const holder = window as unknown as { shared: unknown };
+      holder.shared = null;
+      Object.defineProperty(navigator, 'canShare', { value: () => true, configurable: true });
+      Object.defineProperty(navigator, 'share', {
+        value: async (data: ShareData) => {
+          holder.shared = { title: data.title, files: (data.files ?? []).map((file) => ({ name: file.name, type: file.type, size: file.size })) };
+        },
+        configurable: true,
+      });
+    });
+
+    await page.locator('.feed-event[data-kind="results"]').getByRole('button', { name: 'Highlight reel' }).click();
+    const reel = page.getByRole('dialog', { name: 'Week 1 highlights' });
+    const picture = reel.getByRole('img');
+    await expect(picture).toHaveAttribute('alt', /MVP: Alex, 30 points/);
+    await expect(picture).toHaveAttribute('alt', /Alex 30–24 Riley/);
+    await expect.poll(() => picture.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(1080);
+    await reel.getByRole('button', { name: 'Share' }).click();
+    await expect.poll(() => page.evaluate(() => (window as unknown as { shared: unknown }).shared)).toMatchObject({ title: 'Week 1 highlights', files: [{ name: 'tier-c-week-1.png', type: 'image/png' }] });
+    await reel.getByRole('button', { name: 'Close' }).click();
+    await expect(reel).toHaveCount(0);
+    await riley.phone.context().close();
+  });
+
   test('Before there is an opponent, the Feed says taunts open after the draft', async ({ page, request }) => {
     const league = await createLeague(request);
     await enterAsCommish(page, league);
