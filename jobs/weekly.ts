@@ -127,7 +127,12 @@ for (const league of leagues) {
       if (pool) return pool;
       const dares = (await seasonRef.collection('dares').get()).docs.map((dare) => ({ player: dare.id, text: String(dare.get('text')), version: Number(dare.get('version')), removed: dare.get('removed') === true }));
       const votes = (await seasonRef.collection('votes').where('kind', '==', 'dare').get()).docs.map((vote) => ({ player: String(vote.get('player')), version: Number(vote.get('version')), choice: String(vote.get('choice')) }));
-      const order = STARTER_DARES.map((_, index) => ({ index, key: randomInt(1_000_000_000) })).sort((a, b) => a.key - b.key).map((item) => item.index);
+      // Starter dares the commish took off the Wheel stay off it.
+      const removed = ((await seasonRef.collection('config').doc('wheel').get()).get('removedStarters') ?? []) as number[];
+      const order = STARTER_DARES.map((_, index) => ({ index, key: randomInt(1_000_000_000) }))
+        .filter((item) => !removed.includes(item.index))
+        .sort((a, b) => a.key - b.key)
+        .map((item) => item.index);
       pool = wheelPool(approvedDares(dares, votes, Math.max(0, members.length - 1)), STARTER_DARES, order);
       return pool;
     };

@@ -1,6 +1,6 @@
 # Tier C League: progress log
 
-Last updated 2026-11-25, after the demo league.
+Last updated 2026-11-25, after taking starter dares off the Wheel.
 
 ## Plan change (commish ruling, 2026-11-25)
 
@@ -217,6 +217,7 @@ Last updated 2026-11-25, after the demo league.
 - **Anyone's day, and a keepalive** (2026-11-25).
   - In League, each name in the standings opens that player's day: what they claimed today, and yesterday until noon, with "Receipts?" on each square. Before the standings start, everyone is listed instead. 1 flow test.
   - A monthly job, "Keep the schedules running", records the date and pushes it, because GitHub pauses scheduled jobs in a public repo after 60 days with no activity, which a quiet season could reach.
+- **Starter dares off the Wheel** (2026-11-25). Commish tools lists the 8 starter dares, each with Remove or Put back and a reason for the league log. The next draw leaves removed ones out. New rule: 2 rule tests, 250 in all. Weakening it 4 ways was caught 2 times; the other 2 are still refused, by the audit entry only the commish can write and by the check on each place in the list. 1 engine test and 1 flow test.
 - **The shorter intro on reopening is on purpose:** the full intro plays on the first open each day, and a 1-second title after that (SCOPE.md, "Intro animation").
 
 ## Waiting on the commish
@@ -226,7 +227,7 @@ Last updated 2026-11-25, after the demo league.
 
 ## Next
 
-1. **Step 3, continued.** Every Phase 1 screen now exists, and the demo league lets the commish try them all. Still to come in Commish tools: approve joins (a waiting list for new players), mark a player as left (waits on the mid-season question below), settle a week from the app when the job runs late, and taking a starter dare off the Wheel. Then the commish's phone check of every screen (Checkpoint C).
+1. **Step 3, continued.** Every Phase 1 screen now exists, and the demo league lets the commish try them all. Still to come in Commish tools: approve joins (a waiting list for new players), mark a player as left (waits on the mid-season question below), and settle a week from the app when the job runs late. Then the commish's phone check of every screen (Checkpoint C).
    - **Push alerts** wait on one thing from the commish: a Cloud Messaging web push key, made in the Firebase console. The app will ask for it one step at a time when that feature is next.
    - **Still to add to joining:** the notifications step (with push alerts), a commish's "approve joins" switch, and a way to make a league. Leagues are made by a setup script, which is built with the jobs in Step 4.
    - **Offline start** comes with the offline step: a service worker that keeps the app's files on the phone, so it opens with no signal. Chrome on Android only offers its one-tap Install button once that exists. Until then Android installs from the browser menu, which the guide explains.

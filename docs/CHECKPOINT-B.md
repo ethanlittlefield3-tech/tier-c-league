@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 248 of 248 passing.
+- **Tests:** 250 of 250 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -313,6 +313,11 @@ The commish can unlock a final week or take a dare off the Wheel, and every such
 
 - The commish can take a dare off the Wheel, and it goes in the audit log
 - Nobody else can, and not without the audit entry, and nothing else about the dare changes
+
+**Taking starter dares off the Wheel**
+
+- The commish can take starter dares off the Wheel or put them back, and it goes in the audit log
+- Only the 8 starters, by their place in the list, and only by the commish with the audit entry
 
 ## Receipts
 

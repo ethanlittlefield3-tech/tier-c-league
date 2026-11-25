@@ -54,3 +54,27 @@ describe('Removing a dare', () => {
     await assertFails(audited(dev1(), dare('p2'), { removed: true, text: 'Kinder words' }, 'dare.remove', 'dares/p2'));
   });
 });
+
+describe('Taking starter dares off the Wheel', () => {
+  const config = `${season}/config/wheel`;
+  const setStarters = (db: Db, removedStarters: unknown, by = 'p1') => {
+    const batch = db.batch();
+    batch.set(db.doc(config), { removedStarters, audit: `a-starters-${by}` });
+    batch.set(db.doc(`${league}/audit/a-starters-${by}`), { ...auditEntry('wheel.starters', 'config/wheel'), by });
+    return batch.commit();
+  };
+
+  beforeEach(seedLeague);
+
+  it('The commish can take starter dares off the Wheel or put them back, and it goes in the audit log', async () => {
+    await assertSucceeds(setStarters(dev1(), [2, 5]));
+    await assertSucceeds(dev2().doc(config).get());
+  });
+
+  it('Only the 8 starters, by their place in the list, and only by the commish with the audit entry', async () => {
+    await assertFails(setStarters(dev1(), [8]));
+    await assertFails(setStarters(dev1(), ['Cold shower']));
+    await assertFails(setStarters(dev2(), [1], 'p2'));
+    await assertFails(dev1().doc(config).set({ removedStarters: [1] }));
+  });
+});

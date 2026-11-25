@@ -115,3 +115,14 @@ export const removeDare = (me: Me, season: string, player: string, reason: strin
     save.set(doc(league, 'audit', audit), auditEntry(me, 'dare.remove', `dares/${player}`, reason));
     await save.commit();
   });
+
+/** Which of the 8 starter dares are off the Wheel, by their place in the list. */
+export const setRemovedStarters = (me: Me, season: string, removedStarters: number[], reason: string) =>
+  attempt(async (db) => {
+    const league = doc(db, 'leagues', me.league);
+    const audit = doc(collection(league, 'audit')).id;
+    const save = writeBatch(db);
+    save.set(doc(league, 'seasons', season, 'config', 'wheel'), { removedStarters: [...new Set(removedStarters)].sort(), audit });
+    save.set(doc(league, 'audit', audit), auditEntry(me, 'wheel.starters', 'config/wheel', reason));
+    await save.commit();
+  });

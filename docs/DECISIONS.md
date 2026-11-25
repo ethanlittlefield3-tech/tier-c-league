@@ -212,6 +212,7 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 116. **The made-up players don't play on.** After it's made, the hourly jobs keep its calendar, results and Wheel going, but nobody logs for them.
 
 117. **A monthly keepalive keeps the schedules running.** GitHub pauses scheduled jobs in a public repo after 60 days with no activity, which a quiet season could reach. Once a month a job records the date in `.github/keepalive` and pushes it with its own token, which starts no other workflow.
+118. **Starter dares come off the Wheel by their place in the list,** and can be put back. The next draw leaves them out; a wheel already drawn keeps its slices.
 
 **Calendar**
 

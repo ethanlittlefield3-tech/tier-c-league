@@ -14,6 +14,11 @@ describe('The Wheel of Shame', () => {
     expect(wheelPool(twelve, starters, [7, 2, 5, 0, 1, 3, 4, 6])).toEqual([...twelve, 's8', 's3', 's6', 's1']);
   });
 
+  it("Starters the commish took off are left out of the order, so they never reach the wheel", () => {
+    // The job leaves them out of the order it passes in.
+    expect(wheelPool(['p1'], starters, [0, 2, 3])).toEqual(['p1', 's1', 's3', 's4']);
+  });
+
   it('With no dares from the draft, the wheel is the 8 starters', () => {
     expect(wheelPool([], starters, [0, 1, 2, 3, 4, 5, 6, 7])).toHaveLength(8);
   });

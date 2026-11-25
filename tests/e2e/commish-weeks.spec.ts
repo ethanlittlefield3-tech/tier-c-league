@@ -107,4 +107,38 @@ test.describe('Commish tools: weeks and dares', () => {
     expect(wheel[`w01_${riley}_1`]?.pool).not.toContain('Something unkind');
     await phone.context().close();
   });
+
+  test('A starter dare taken off the Wheel stays out of the next draw', async ({ page, request, browser }) => {
+    const league = await createLeague(request);
+    const season = await startSeason(request, league);
+    const phone = await (await browser.newContext()).newPage();
+    const key = await joinAs(phone, league, 'Riley');
+    const riley = String((await readDoc(request, `leagues/${league.id}/lookup/${key}`))?.player);
+
+    await enterAsCommish(page, league);
+    const panel = await openModeration(page);
+    await panel.getByRole('button', { name: 'Remove: Cold shower, on video.' }).click();
+    await panel.getByLabel('Reason').fill('Not in winter');
+    await panel.getByRole('button', { name: 'Take it off' }).click();
+    await expect(panel.getByRole('status')).toHaveText('"Cold shower, on video." is off the Wheel.');
+    await expect(panel.getByRole('button', { name: 'Put back: Cold shower, on video.' })).toBeVisible();
+    await expect.poll(async () => (await readDoc(request, `${season.path}/config/wheel`))?.removedStarters).toEqual([5]);
+
+    await writeDoc(request, `${season.path}/weeks/w01`, {
+      week: 1,
+      mode: 'regular',
+      pairs: [{ a: league.commish, b: riley }],
+      status: 'final',
+      settledAt: new Date(),
+      finalAt: new Date(),
+      results: {},
+      lines: [],
+      awards: { mvp: [], bust: [], wheel: [riley] },
+    });
+    expect(await runWeekly(league)).toContain('1 Wheel draw sealed');
+    const wheel = (await readDoc(request, `${season.path}/weeks/w01`))?.wheel as Record<string, { pool: string[] }>;
+    expect(wheel[`w01_${riley}_1`]?.pool).toHaveLength(7);
+    expect(wheel[`w01_${riley}_1`]?.pool).not.toContain('Cold shower, on video.');
+    await phone.context().close();
+  });
 });

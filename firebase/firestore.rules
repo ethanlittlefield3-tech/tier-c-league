@@ -615,6 +615,18 @@ service cloud.firestore {
             && after.diff(before).affectedKeys().hasOnly(['screenMinutes', 'updatedAt']);
         }
 
+        // The Wheel's settings: which of the 8 starter dares the commish took
+        // off it, by their place in the list. Every change is in the audit log.
+        match /config/{doc} {
+          allow read: if isMember(L);
+          allow create, update: if isCommish(L)
+            && doc == 'wheel'
+            && request.resource.data.keys().hasOnly(['removedStarters', 'audit'])
+            && request.resource.data.removedStarters is list
+            && request.resource.data.removedStarters.hasOnly([0, 1, 2, 3, 4, 5, 6, 7])
+            && audited(L, request.resource.data.audit, 'wheel.starters', 'config/wheel');
+        }
+
         // ---- The Wheel of Shame --------------------------------------------------
         // The weekly job seals each draw when the week goes final. The spinner
         // taps Spin, once, which reveals the result to everyone at once.

@@ -1,5 +1,6 @@
 import { useState } from 'preact/hooks';
-import { useAll } from '../data/hooks.ts';
+import { STARTER_DARES } from '@tcl/engine';
+import { useAll, useDoc } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
 import { whyOf } from '../data/why.ts';
@@ -11,7 +12,10 @@ const TROUBLE: Record<Trouble, string> = {
   refused: 'The league did not accept that.',
 };
 
-type Pending = { kind: 'week'; id: string; label: string } | { kind: 'dare'; id: string; label: string };
+type Pending =
+  | { kind: 'week'; id: string; label: string }
+  | { kind: 'dare'; id: string; label: string }
+  | { kind: 'starter'; index: number; off: boolean; label: string };
 
 /**
  * Commish tools, weeks and moderation (SCOPE.md, "Commish tools"): unlock a
@@ -23,6 +27,8 @@ export function CommishModeration(props: { me: Me; seasonId: string }) {
   const weeks = useAll<{ week: number; status?: string }>(`${seasonPath}/weeks`);
   const dares = useAll<{ text: string; removed?: boolean }>(`${seasonPath}/dares`);
   const players = useAll<{ displayName?: string }>(`leagues/${props.me.league}/players`);
+  const wheel = useDoc<{ removedStarters?: number[] }>(`${seasonPath}/config/wheel`);
+  const removedStarters = wheel.data?.removedStarters ?? [];
   const name = (player: string) => players.docs.find((found) => found.id === player)?.data.displayName ?? 'A former player';
   const [pending, setPending] = useState<Pending | null>(null);
   const [reason, setReason] = useState('');
@@ -38,9 +44,20 @@ export function CommishModeration(props: { me: Me; seasonId: string }) {
     if (reason.trim().length === 0) return setNote({ error: true, text: 'Give a reason. It goes in the league log.' });
     setBusy(true);
     setNote(null);
-    const done = pending.kind === 'week' ? `${pending.label} is unlocked. The weekly job counts it again within the hour.` : `${pending.label} is off the Wheel.`;
+    const done =
+      pending.kind === 'week'
+        ? `${pending.label} is unlocked. The weekly job counts it again within the hour.`
+        : pending.kind === 'starter'
+          ? `"${pending.label}" is ${pending.off ? 'back on' : 'off'} the Wheel.`
+          : `${pending.label} is off the Wheel.`;
     void loadData()
-      .then((api) => (pending.kind === 'week' ? api.unlockWeek(props.me, props.seasonId, pending.id, reason) : api.removeDare(props.me, props.seasonId, pending.id, reason)))
+      .then((api) =>
+        pending.kind === 'week'
+          ? api.unlockWeek(props.me, props.seasonId, pending.id, reason)
+          : pending.kind === 'starter'
+            ? api.setRemovedStarters(props.me, props.seasonId, pending.off ? removedStarters.filter((index) => index !== pending.index) : [...removedStarters, pending.index], reason)
+            : api.removeDare(props.me, props.seasonId, pending.id, reason),
+      )
       .then(() => {
         setNote({ error: false, text: done });
         setPending(null);
@@ -91,14 +108,36 @@ export function CommishModeration(props: { me: Me; seasonId: string }) {
         ))
       )}
 
+      <h3 class="draft-subhead">Starter dares</h3>
+      {STARTER_DARES.map((dare, index) => {
+        const off = removedStarters.includes(index);
+        return (
+          <div class="receipt-row" key={dare} data-off={off}>
+            <span class="receipt-what">
+              {dare}
+              {off ? <span class="receipt-state"> (off the Wheel)</span> : null}
+            </span>
+            <button type="button" class="receipt-ask" disabled={busy} aria-label={`${off ? 'Put back' : 'Remove'}: ${dare}`} onClick={() => ask({ kind: 'starter', index, off, label: dare })}>
+              {off ? 'Put back' : 'Remove'}
+            </button>
+          </div>
+        );
+      })}
+
       {pending && (
         <form class="moderation-confirm" onSubmit={confirm} noValidate>
           <p class="panel-text">
-            <strong>{pending.kind === 'week' ? `Unlock ${pending.label}?` : `Take ${pending.label} off the Wheel?`}</strong>
+            <strong>
+              {pending.kind === 'week'
+                ? `Unlock ${pending.label}?`
+                : pending.kind === 'starter'
+                  ? `${pending.off ? 'Put back' : 'Take off'} "${pending.label}"?`
+                  : `Take ${pending.label} off the Wheel?`}
+            </strong>
           </p>
           <Field id="moderation-reason" label="Reason" value={reason} onInput={setReason} maxLength={500} help="Everyone sees it in the league log." />
-          <button class="btn btn-danger" type="submit" disabled={busy}>
-            {pending.kind === 'week' ? `Unlock ${pending.label}` : 'Remove the dare'}
+          <button class={pending.kind === 'starter' && pending.off ? 'btn' : 'btn btn-danger'} type="submit" disabled={busy}>
+            {pending.kind === 'week' ? `Unlock ${pending.label}` : pending.kind === 'starter' ? (pending.off ? 'Put it back' : 'Take it off') : 'Remove the dare'}
           </button>
           <button type="button" class="btn-quiet" onClick={() => setPending(null)}>
             Cancel
