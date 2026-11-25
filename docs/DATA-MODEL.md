@@ -45,7 +45,7 @@ Where everything lives in Firestore, who can write it and who can read it. It co
 | `wall/{post}` | The author. Taken down by the author, or by the commish with an audit entry, which blanks its words. Each player writes only their own reactions. | Members | 1, rules today | `by`, `kind` (quick, taunt, brag), `text` (1 to 280 characters; a taunt keeps `{name}` as written), `to` (the player aimed at, or null for a brag), `at`, `deleted`, `audit`, `reactions` (each player's `fire`, `skull` and `beer`, each on or off), `activityAt` (stamped by a reaction or a comment, for the alerts job) |
 | `wall/{post}/comments/{id}` | The writer, on brags only. Taken down like a post. | Members | 1, rules today | `by`, `text` (1 to 280 characters), `at`, `deleted`, `audit` |
 | `taunts/{player}` | That player | That player | 1 | `saved` (custom taunts, with `{name}`) |
-| `suggestions/{idea}` | Any member. The commish tags it. | Members | 2 | `by`, `text`, `at`, `tag` (planned, maybe, no), `votes` |
+| `suggestions/{idea}` | Any member, in their own name. Everyone else sets only their own vote; the commish sets only the tag. Taken down by its author, or by the commish with an audit entry, which blanks its words. | Members | 2, rules today | `by`, `text` (1 to 280 characters), `at`, `tag` (planned, maybe, no, or null), `votes` (each voter's `true`), `deleted`, `audit` |
 | `trophies/{season}` | Jobs | Members | 2 | One entry per trophy in SCOPE.md's trophy case |
 
 ## In a season: `leagues/{league}/seasons/{season}/...`

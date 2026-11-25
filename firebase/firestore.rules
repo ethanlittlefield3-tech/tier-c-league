@@ -387,7 +387,7 @@ service cloud.firestore {
                 : request.resource.data.to is string
                   && request.resource.data.to != request.resource.data.by
                   && get(/databases/$(database)/documents/leagues/$(L)).data.members[request.resource.data.to] == true);
-        allow update: if takenDown(resource.data, request.resource.data, 'wall/' + post)
+        allow update: if takenDown(resource.data, request.resource.data, 'wall/' + post, 'wall.delete')
           || reacted(resource.data, request.resource.data)
           || stamped(resource.data, request.resource.data);
 
@@ -401,7 +401,7 @@ service cloud.firestore {
             && request.resource.data.deleted == false
             && wallPost(post).kind == 'brag'
             && wallPost(post).deleted == false;
-          allow update: if takenDown(resource.data, request.resource.data, 'wall/' + post + '/comments/' + comment);
+          allow update: if takenDown(resource.data, request.resource.data, 'wall/' + post + '/comments/' + comment, 'wall.delete');
         }
       }
 
@@ -410,6 +410,43 @@ service cloud.firestore {
       // Everyone in the league reads it; no phone writes it.
       match /feed/{event} {
         allow read: if isMember(L);
+      }
+
+      // ---- The suggestion box (SCOPE.md, "Suggestion box") ----------------
+      // Anyone in the league posts an idea; everyone else upvotes it, each
+      // with their own vote; the commish tags it Planned, Maybe or No. Its
+      // author takes it down, or the commish does, which goes in the log.
+      match /suggestions/{idea} {
+        allow read: if isMember(L);
+        allow create: if isPlayer(L, request.resource.data.by)
+          && request.resource.data.keys().hasOnly(['by', 'text', 'at', 'tag', 'votes', 'deleted'])
+          && validText(request.resource.data.text, 280)
+          && request.resource.data.at == request.time
+          && request.resource.data.tag == null
+          && request.resource.data.votes == {}
+          && request.resource.data.deleted == false;
+        allow update: if upvoted(resource.data, request.resource.data)
+          || tagged(resource.data, request.resource.data)
+          || takenDown(resource.data, request.resource.data, 'suggestions/' + idea, 'idea.delete');
+      }
+
+      // One player's own upvote on someone else's idea that is still up: on, or taken back.
+      function upvoted(before, after) {
+        let me = claim(L).player;
+        return isMember(L)
+          && before.deleted == false
+          && before.by != me
+          && after.diff(before).affectedKeys().hasOnly(['votes'])
+          && after.votes.diff(before.votes).affectedKeys().hasOnly([me])
+          && (!(me in after.votes) || after.votes[me] == true);
+      }
+
+      // The commish tags an idea that is still up: Planned, Maybe or No, or no tag.
+      function tagged(before, after) {
+        return isCommish(L)
+          && before.deleted == false
+          && after.diff(before).affectedKeys().hasOnly(['tag'])
+          && (after.tag == null || after.tag in ['planned', 'maybe', 'no']);
       }
 
       function wallPost(post) {
@@ -422,11 +459,11 @@ service cloud.firestore {
 
       // Taking a post or a comment down: its author, or the commish with an
       // audit entry. Its words are blanked.
-      function takenDown(before, after, target) {
+      function takenDown(before, after, target, action) {
         let changed = after.diff(before).affectedKeys();
         return before.deleted == false && after.deleted == true && after.text == ''
           && ((isPlayer(L, before.by) && changed.hasOnly(['deleted', 'text']))
-              || (isCommish(L) && changed.hasOnly(['deleted', 'text', 'audit']) && audited(L, after.audit, 'wall.delete', target)));
+              || (isCommish(L) && changed.hasOnly(['deleted', 'text', 'audit']) && audited(L, after.audit, action, target)));
       }
 
       // One player's own reactions on a post that is still up, which may stamp

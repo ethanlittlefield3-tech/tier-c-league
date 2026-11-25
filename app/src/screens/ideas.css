@@ -1,0 +1,117 @@
+/* The suggestion box: ideas for the league, most upvoted first. */
+
+.ideas-list {
+  width: 100%;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  text-align: left;
+}
+
+.idea {
+  padding: 14px 16px;
+  border: 1px solid rgba(196, 216, 255, 0.14);
+  border-radius: 18px;
+  background: rgba(17, 30, 73, 0.7);
+}
+
+.idea-text {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.4;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.idea-meta {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.idea-tag {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font: italic 800 12px/1.4 var(--display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: rgba(196, 216, 255, 0.14);
+  color: var(--ink);
+}
+
+.idea-tag[data-tag='planned'] {
+  background: rgba(47, 208, 106, 0.2);
+  color: #7ff0a8;
+}
+
+.idea-tag[data-tag='maybe'] {
+  background: rgba(255, 207, 63, 0.18);
+  color: var(--gold);
+}
+
+.idea-tag[data-tag='no'] {
+  background: rgba(255, 90, 102, 0.18);
+  color: #ff9aa2;
+}
+
+.idea-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.idea-vote {
+  min-width: 64px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid rgba(159, 208, 255, 0.35);
+  border-radius: 999px;
+  background: rgba(10, 19, 48, 0.85);
+  font: italic 800 15px/1 var(--display);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.idea-vote[aria-pressed='true'] {
+  border-color: transparent;
+  background: linear-gradient(180deg, #3fa0ff, var(--blue-deep));
+}
+
+.idea-vote:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.idea-vote:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.idea-tags {
+  margin-top: 10px;
+}
+
+/* A small link on Profile, as SCOPE.md has it. */
+.profile-ideas {
+  margin-top: 18px;
+  padding: 6px 10px;
+  border: 0;
+  background: none;
+  font: 600 15px/1.3 var(--body);
+  color: #9fd0ff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.profile-ideas:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 8px;
+}

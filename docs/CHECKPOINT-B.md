@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 287 of 287 passing.
+- **Tests:** 292 of 292 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -452,6 +452,18 @@ The jobs' news, like a badge earned or a rank changed. Everyone in the league re
 
 - Everyone in the league reads the jobs' news of badges and rank changes; nobody outside can
 - Only the jobs write it: nobody in the league can add, change or remove news, the commish included
+
+## The suggestion box
+
+Anyone posts an idea, everyone else upvotes it with their own vote, and only the commish tags it. Its author takes it down, or the commish does, with an audit entry.
+
+**The suggestion box**
+
+- Anyone in the league posts an idea in their own name, up to 280 characters, with no tag or votes yet
+- Everyone else upvotes an idea with their own vote, and can take it back; nobody votes for their own idea, or for anyone else
+- Only the commish tags an idea, Planned, Maybe or No, and can clear the tag
+- Its author takes an idea down, which blanks its words; the commish can too, with an entry in the league log; nobody edits an idea's words
+- Everyone in the league reads the ideas; nobody outside it does
 
 ## Pokes
 

@@ -17,6 +17,7 @@ const ACTIONS: Record<string, string> = {
   'league.settings': 'changed the league settings',
   'key.reissue': 'reissued a recovery key',
   'score.adjust': 'changed a score',
+  'idea.delete': 'took down an idea from the suggestion box',
 };
 
 function when(at: number): string {

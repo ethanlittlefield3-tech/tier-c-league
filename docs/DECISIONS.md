@@ -331,6 +331,12 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 191. **Most points in the race week wins;** level points means nobody wins. The winner, whichever side, earns the Payback badge (and its decal), and the loser's car wears an L for a week from when the week goes final. A week unlocked and counted again settles its rematches again.
 192. **Rematches show in the feed:** the challenge, and the result once the race week is final. Match shows the challenge offer, and the race while it is on.
 
+**Phase 2: the suggestion box** (new on 2026-11-25, not yet reviewed by the commish)
+
+193. **"Suggest an idea" is a small link at the bottom of Profile,** as SCOPE.md has it, and opens the suggestion box: anyone posts an idea of up to 280 characters, the most upvoted come first, then the newest.
+194. **Everyone but its author upvotes an idea, once each, and can take the vote back.** The commish tags each idea Planned, Maybe or No, or clears the tag; a tag isn't a change to the game, so it needs no reason in the league log.
+195. **An idea's author can take it down, and so can the commish, as on the wall:** that goes in the league log. Nobody edits an idea.
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.

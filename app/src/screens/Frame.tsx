@@ -7,6 +7,7 @@ import type { Me } from '../data/identity.ts';
 import { useDoc } from '../data/hooks.ts';
 import { loadData } from '../data/load.ts';
 import { AuditLog } from './AuditLog.tsx';
+import { Ideas } from './Ideas.tsx';
 import { Commish } from './Commish.tsx';
 import { Draft } from './Draft.tsx';
 import { Feed } from './Feed.tsx';
@@ -63,6 +64,7 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
   const [profileOpen, setProfileOpen] = useState(false);
   const [commishOpen, setCommishOpen] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
+  const [ideasOpen, setIdeasOpen] = useState(false);
   const [draftOpen, setDraftOpen] = useState(false);
   const [wheelOpen, setWheelOpen] = useState(false);
   const [dayOf, setDayOf] = useState<string | null>(null);
@@ -134,6 +136,10 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
     return <AuditLog me={props.me} onBack={() => setLogOpen(false)} />;
   }
 
+  if (ideasOpen) {
+    return <Ideas me={props.me} onBack={() => setIdeasOpen(false)} />;
+  }
+
   if (commishOpen) {
     return <Commish me={props.me} onBack={() => setCommishOpen(false)} />;
   }
@@ -143,6 +149,7 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
       <Profile
         onCommish={() => setCommishOpen(true)}
         onLog={() => setLogOpen(true)}
+        onIdeas={() => setIdeasOpen(true)}
         me={props.me}
         onBack={() => {
           setBackFromProfile(true);

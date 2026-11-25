@@ -13,6 +13,7 @@ import { Alerts } from './Alerts.tsx';
 import { BadgesPanel } from './Badges.tsx';
 import { RankPanel, type RankEntry } from './Rank.tsx';
 import './profile.css';
+import './ideas.css';
 
 const TROUBLE: Record<Trouble, string> = {
   'not-open': 'The league is not open yet.',
@@ -31,7 +32,7 @@ const STICKER_WHY: Record<StickerId, string> = {
   L: 'Your car wears an L for a week: you lost a rematch.',
 };
 
-export function Profile(props: { me: Me; onBack: () => void; onRenamed: (me: Me) => void; onSignedOut: () => void; onCommish: () => void; onLog: () => void }) {
+export function Profile(props: { me: Me; onBack: () => void; onRenamed: (me: Me) => void; onSignedOut: () => void; onCommish: () => void; onLog: () => void; onIdeas?: () => void }) {
   const league = useDoc<{ commish?: string; coCommish?: string | null }>(`leagues/${props.me.league}`);
   const isCommish = league.data !== null && (league.data.commish === props.me.player || league.data.coCommish === props.me.player);
   const mine = useDoc<{ rank?: Rank; rankHistory?: RankEntry[]; badges?: Record<string, unknown>; car?: Partial<CarParts>; stickers?: Partial<Record<string, { until?: unknown }>> }>(`leagues/${props.me.league}/players/${props.me.player}`);
@@ -230,6 +231,10 @@ export function Profile(props: { me: Me; onBack: () => void; onRenamed: (me: Me)
             Open the league log
           </button>
         </section>
+
+        <button type="button" class="profile-ideas" onClick={props.onIdeas}>
+          Suggest an idea
+        </button>
 
         <p class="profile-credit">
           <SmallNunchucks />A Nunchucks Production
