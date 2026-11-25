@@ -8,6 +8,7 @@ import { whyOf } from '../data/why.ts';
 import { Back, Field, Heading } from '../ui/parts.tsx';
 import { CommishPlayers } from './CommishPlayers.tsx';
 import { CommishScores } from './CommishScores.tsx';
+import { DraftControls } from './DraftControls.tsx';
 import './commish.css';
 
 interface LeagueDoc {
@@ -326,6 +327,8 @@ export function Commish(props: { me: Me; onBack: () => void }) {
             {note.text}
           </p>
         )}
+
+        {league.data && seasonId && season.data && <DraftControls me={props.me} seasonId={seasonId} status={season.data.status} members={Object.keys(league.data.members ?? {})} joiningOpen={league.data.joining !== 'closed'} />}
 
         {league.data && <CommishPlayers me={props.me} league={league.data} />}
         {league.data && seasonId && season.data && (

@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 148 of 148 passing.
+- **Tests:** 165 of 165 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -220,3 +220,51 @@ Every commish change has to arrive with an audit entry, or it is refused.
 - Handing over the commish role lands in the audit log
 - A player cannot make themselves commish
 - The commish can close the league to new players, and remove a player, with an audit entry each time
+
+## Goals
+
+Everyone in the league can read every player's goals.
+
+**Goals for the season**
+
+- Everyone in the league can see every player's goals
+- Someone outside the league cannot see anyone's goals
+- Before the draft opens, nobody can set or change goals from a phone, the commish included
+
+## The draft
+
+The commish runs it, and every change goes in the audit log. Players set their own goals and vote on everyone else's until the votes close.
+
+**Starting the draft**
+
+- The commish starts the draft: the order is set, the season moves to draft, and both are in the audit log
+- Nobody else can start it
+- Once the draft has started, the season settings are fixed
+
+**Goals at the draft**
+
+- While the draft's votes are open, a player sets their three goals
+- A goal is 1 to 60 characters
+- Changing a goal's words gives it a new version, so votes on the old words stop counting
+- Nobody can set someone else's goals, the commish included
+- Goals are fixed once the draft's votes close
+- Goals can still be set and voted on after the live draft moves on, until the votes close, for anyone who missed it
+- Players vote approve or veto on each other's goals, and can change their vote
+- Nobody votes on their own goal, or in someone else's name
+- A vote is for the goal's current words: a vote on an old version is refused
+- A vote has to be approve or veto
+- Votes on goals close when the draft's votes close
+- The commish can close the votes sooner or give more time, and it goes in the audit log
+- The draft always says when its votes close
+- Everyone in the league can see the draft and the votes; nobody outside can
+
+## Standings
+
+Everyone in the league can read them. Only the weekly job writes them.
+
+**The standings**
+
+- Everyone in the league can read the standings
+- Nobody outside the league can
+- Only the weekly job writes them: no phone can, the commish included
+- A week's results can be read by everyone in the league and written by no phone

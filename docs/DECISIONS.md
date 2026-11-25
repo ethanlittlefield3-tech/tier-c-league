@@ -112,7 +112,7 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 55. **The tray plays into the week of today's date.** Yesterday's Full Boost, Aerial and rest day come from yesterday's own week, so Sunday's Full Boost still works on Monday morning (call 7).
 56. **A bye week against The House has no Demolition.** The tile says "Bye week". Before the schedule exists, it says "No opponent yet".
 
-**Commish tools** (new on 2026-11-26, not yet reviewed by the commish)
+**Commish tools** (new on 2026-11-25, not yet reviewed by the commish)
 
 65. **"Sign out a lost device" is the same button as "Reissue key".** This was one of the open questions; this is the proposal from PROGRESS.md, built. A new key signs out every phone that player is on, and they get back in with the new key. Signing out one phone at a time would need the commish to tell the phones apart.
 66. **Handing over the commish role makes the old commish the co-commish,** so nobody is locked out by a slip. The new commish can remove the co-commish afterwards.
@@ -133,13 +133,25 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 59. **The season calendar is written by a job that runs every hour,** so a change in season setup is in place within the hour. Until kickoff, Today shows "Kickoff is coming" with the date, which needs no calendar.
 60. **Seasons are numbered s1, s2 and so on.** The name the commish types is only for show.
 
+**The draft, part 1: goals and votes** (new on 2026-11-25, not yet reviewed by the commish)
+
+69. **The draft order is drawn on the commish's phone** when "Start the draft" is tapped, with the phone's secure random numbers, and logged. The on-screen draw for the live show comes with the draft's reveal.
+70. **Goals and votes stay open 24 hours from the start of the draft** (SCOPE.md: "Votes stay open 24 hours for anyone who missed the live draft"). Meanwhile the live draft moves on to rival picks and dares. The commish can close them sooner, give 12 more hours, or reopen them for 12 hours, and each change is logged. The 12 hours cover SCOPE.md's "re-voted within 12 hours" when a late veto leaves too little time.
+71. **All the goals are on one screen,** not one at a time as SCOPE.md describes the live draft. With votes open for a day, one screen lets everyone vote at their own pace. A one-at-a-time view for the live show can come with the reveal.
+72. **New words make a new version of a goal,** and only votes on the current words count. A player can re-word any goal until the votes close.
+73. **A vote can be changed until the votes close.** Nobody votes on their own goal, the commish included.
+74. **A player who joins after the draft starts is not in the draft order.** Commish tools says so before the draft starts, while joining is open.
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.
 
 ## Still open
 
-Nothing is open. The receipts question that was here is now ruling R6.
+1. **What a "majority" veto means. Built provisionally, waiting on the commish.** The draft counts a goal as vetoed when more than half of the players who can vote veto it (everyone but the goal's owner). The other reading is more than half of the votes cast. Under the built reading, a goal stands when votes close unless a majority vetoed it, so nobody can sink a goal with one veto while the others stay quiet. The same rule will decide dare vetoes and dare proof. Changing it is one line in `engine/src/votes.ts`.
+2. **A goal still vetoed when the votes close.** For now the results list it for the commish to settle, for example by reopening the votes for 12 hours so the player can re-word it. Should something happen on its own instead?
+
+The receipts question that was here is now ruling R6.
 
 ## Things the commish should know (rules as written, working as written)
 

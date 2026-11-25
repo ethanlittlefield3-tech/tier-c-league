@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { assertFails, assertSucceeds, dev1, dev2, dev3, season, seedLeague, startEmulator, stopEmulator, stranger, visitor } from './harness.ts';
+import { asJob, assertFails, assertSucceeds, dev1, dev2, dev3, season, seedLeague, startEmulator, stopEmulator, stranger, visitor } from './harness.ts';
 
 beforeAll(startEmulator);
 afterAll(stopEmulator);
@@ -21,11 +21,13 @@ describe('Goals for the season', () => {
     await assertFails(visitor().doc(roster('p2')).get());
   });
 
-  it('Nobody can change goals from a phone yet, the commish included: they are settled at the draft', async () => {
-    const goals = { mind: { text: 'Nap', status: 'approved' }, body: { text: 'Nap', status: 'approved' }, wildcard: { text: 'Nap', status: 'approved' } };
-    await assertFails(dev2().doc(roster('p2')).update({ goals }));
+  it('Before the draft opens, nobody can set or change goals from a phone, the commish included', async () => {
+    // Goals a player could set during the draft, so the only thing missing is the draft.
+    await asJob((db) => db.doc(roster('p3')).delete());
+    const goals = { mind: { text: 'Nap', version: 1 }, body: { text: 'Nap', version: 1 }, wildcard: { text: 'Nap', version: 1 } };
+    await assertFails(dev3().doc(roster('p3')).set({ goals }));
+    await assertFails(dev1().doc(roster('p3')).set({ goals }));
     await assertFails(dev2().doc(roster('p9')).set({ goals }));
-    await assertFails(dev1().doc(roster('p2')).update({ goals }));
     await assertFails(dev2().doc(roster('p2')).delete());
   });
 });

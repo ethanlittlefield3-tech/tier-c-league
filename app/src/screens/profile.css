@@ -97,14 +97,6 @@
   -webkit-user-select: all;
 }
 
-/* Lost points are red: so is the one button that takes you out. */
-.btn-danger {
-  background: linear-gradient(180deg, #ff7781, #c42f3c);
-  box-shadow:
-    0 0 22px rgba(255, 90, 102, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35);
-}
-
 .profile-credit {
   margin: 28px 0 0;
   display: flex;

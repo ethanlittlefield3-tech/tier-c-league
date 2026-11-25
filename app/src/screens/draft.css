@@ -1,0 +1,110 @@
+/* The draft: your goals to set, and everyone else's to vote on. */
+
+.draft-clock {
+  margin: 0 0 14px;
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+.draft-clock strong {
+  color: var(--ink);
+}
+
+.draft-goal + .draft-goal {
+  margin-top: 6px;
+}
+
+.draft-tally {
+  margin: 6px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.draft-tally[data-outcome='approved'] {
+  color: #8fe3a8;
+}
+
+.draft-tally[data-outcome='vetoed'] {
+  color: #ff9aa2;
+}
+
+.draft-player {
+  margin-top: 16px;
+}
+
+.draft-player h3 {
+  margin: 0 0 6px;
+  font: italic 900 18px/1.2 var(--display);
+}
+
+.draft-vote {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(196, 216, 255, 0.14);
+  background: rgba(10, 19, 48, 0.6);
+}
+
+.draft-vote-goal {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.draft-vote-goal span {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.draft-vote-buttons {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+}
+
+.draft-vote-buttons .choice-option[aria-pressed='true'].draft-veto {
+  background: linear-gradient(180deg, #e2525e, #b02a37);
+  box-shadow: 0 0 14px rgba(255, 90, 102, 0.4);
+}
+
+/* Commish tools: the vote clock and its buttons. */
+.draft-votes-line {
+  margin-top: 18px;
+}
+
+.draft-votes-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* On Today, during the draft. */
+.draft-card {
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 207, 63, 0.45);
+  background: linear-gradient(180deg, rgba(255, 207, 63, 0.14), rgba(255, 207, 63, 0.04));
+}
+
+.draft-card h2 {
+  margin: 0;
+  font: italic 900 22px/1.1 var(--display);
+}
+
+.draft-card p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+.draft-card .btn {
+  width: 100%;
+  min-width: 0;
+  margin-top: 12px;
+}

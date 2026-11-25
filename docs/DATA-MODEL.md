@@ -55,7 +55,7 @@ Where everything lives in Firestore, who can write it and who can read it. It co
 | --- | --- | --- | --- | --- |
 | The season document | The commish while it is in setup, with an audit entry. Jobs after that. | Members | 1, rules today | Settings: `name`, `status`, `regularWeeks` (3 to 12), `playoffs`, `playoffSize`, `par` (1 to 6), `groupWeeks`, `timeZone`, `kickoff`, `draftAt`, `joinMidSeason`, `holidayEvents`, `updatedAt`, `audit`. Jobs: `ruleOneIssue` (when each Rule One arrives), `schedule`. Phase 3: `modes` (the draft's vote), `teams`, `captains`, `bounty`, `events`, `seasonDare`, `bracket` |
 | `calendar/{date}` | Jobs | Members | 1, rules today | `date`, `period`, `week`, `dayIndex`, `phase` (regular, playoff), `kind` (play, reset), `mode`, `kit`, `start`, `sixPm`, `end`, `lock`, `nextEnd`, `periodStart`, `sundayStart`, `restOpens` |
-| `roster/{player}` | The player proposes goals. Votes and the commish settle them. | Members | 1 | `goals` (mind, body, wildcard: text and status), `joinedPeriod`, `seed`. Phase 3: `team` |
+| `roster/{player}` | That player, while the draft's votes are open | Members | 1, rules today | `goals` (mind, body, wildcard: each `text`, 1 to 60 characters, and `version`, which goes up by 1 when the words change). Whether a goal stands is worked out from `votes/`. Still to come: `joinedPeriod`, `seed`. Phase 3: `team` |
 | `days/{player}_{date}` | That player, while the day is open. Never deleted. | Members | 1, rules today | `player`, `date`, `goals` (mind, body, wildcard), `screenMinutes` (0 to 1,440 in 15s, or null), `beers` (0 to 30), `firstAt`, `updatedAt` |
 | `kit/{period}_{player}_aerial` | That player, before the day starts | Members | 1, rules today | `player`, `item`, `period`, `date`, `at` |
 | `kit/{period}_{player}_fullBoost` | That player, while the day is open | Members | 1, rules today | The same, plus `lane` |
@@ -70,8 +70,8 @@ Where everything lives in Firestore, who can write it and who can read it. It co
 | `receiptSlots/{period}_{player}_{n}` | The requester, with the receipt | Members | 1 | `receipt`. Three slots a week is the limit of 3 requests. |
 | `proofs/{id}` | The player who owes the proof, before the deadline | Members | 1 | `photo` (300 KB or less), `at`. Jobs delete it after 14 days. |
 | `spins/{id}` | The spinner, by tapping Spin | Members | 1 | `player`, `period`, `at`. Its existence is what unseals the Wheel draw. |
-| `votes/{id}` | Each voter, once | Members | 1 | `voter`, `about`, `choice`, `at`. Used for goal vetoes, dare vetoes and dare proof. Phase 3: the group-play ranking. |
-| `draft/{doc}` | The commish runs it; players make their own picks | Members | 1 and 3 | Order, the step under way, the clock, rival picks. Phase 3: captains' picks. |
+| `votes/{voter}_goal_{player}_{lane}_{version}` | That voter, while the draft's votes are open. One vote each, which can be changed. | Members | 1, rules today | `voter`, `kind` (goal), `player`, `lane`, `version`, `choice` (approve or veto), `at`. Nobody votes on their own goal, and a vote is for the goal's current version. Still to come: dare vetoes and dare proof. Phase 3: the group-play ranking. |
+| `draft/state` | The commish, with an audit entry. Players make their own rival picks (still to come). | Members | 1 and 3, rules today | `step` (goals, rivals, dares, done), `order` (drawn at random when the draft starts), `turn`, `picks`, `turnEndsAt` (the 2-minute clock), `startedAt`, `votesCloseAt`, `audit`. Phase 3: captains' picks. |
 | `predictions/{period}_{player}` | That player, before Sunday 11:59 pm | That player; everyone after the deadline | 2 | `picks`, `at` |
 | `pokes/{date}_{player}` | That player, once a day | Members | 2 | `to`, `at` |
 | `rematches/{id}` | The challenger | Members | 2 | `from`, `to`, `period`, `status`, `winner` |
@@ -84,3 +84,5 @@ Where everything lives in Firestore, who can write it and who can read it. It co
 4. **A Demolition unseals by time.** Its `revealAt` is copied from the calendar's lock when it is set, and the rules check that the copy is honest. The jobs still post the "Landed, Missed or Blocked" feed event, but if a job runs late nothing stays hidden past the lock, and the commish can settle the week from the app.
 5. **Removing a player blanks their key** and takes them off the member list. No claim can match a blank key, so they are out at once.
 6. **Proof photos are in their own collection,** so listing receipts never downloads photos.
+7. **Goal votes are filed under the version of the goal they are about.** New words make a new version, so old votes stop counting without anything being deleted, and the rules can check that a vote is for the current words.
+8. **The draft's votes close by the clock** (`votesCloseAt`), not by its step, because SCOPE.md keeps them open for 24 hours while the live draft moves on.

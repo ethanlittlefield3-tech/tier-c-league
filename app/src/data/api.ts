@@ -2,6 +2,7 @@
 // background, as one piece, by `load.ts`.
 export * from './commish.ts';
 export * from './days.ts';
+export * from './draft.ts';
 export * from './identity.ts';
 export * from './kit.ts';
 export * from './live.ts';

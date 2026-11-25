@@ -157,6 +157,51 @@ export async function startSeason(request: APIRequestContext, league: TestLeague
   return { path, timeZone, par, kickoff, today, yesterday: addDays(today, -1) };
 }
 
+/**
+ * A season in setup, before its draft: kickoff is two Mondays away, so the
+ * season has not started and it has no calendar yet.
+ */
+export async function seasonInSetup(request: APIRequestContext, league: TestLeague): Promise<{ path: string; kickoff: string }> {
+  const timeZone = 'America/New_York';
+  const kickoff = addDays(mondayOf(localDate(Date.now(), timeZone)), 14);
+  const path = `leagues/${league.id}/seasons/s1`;
+  await writeDoc(request, path, {
+    name: 'Season 1',
+    status: 'setup',
+    regularWeeks: 6,
+    playoffs: 'oneWeek',
+    playoffSize: 4,
+    par: 3,
+    groupWeeks: [3, 5],
+    timeZone,
+    kickoff,
+    draftAt: null,
+    joinMidSeason: false,
+    holidayEvents: true,
+  });
+  await patchDoc(request, `leagues/${league.id}`, { season: 's1' });
+  return { path, kickoff };
+}
+
+/** The draft as the commish starts it: at the goals step, with goals and votes open for 24 hours. */
+export async function draftUnderway(request: APIRequestContext, season: { path: string }, order: string[]): Promise<void> {
+  await patchDoc(request, season.path, { status: 'draft' });
+  await writeDoc(request, `${season.path}/draft/state`, {
+    step: 'goals',
+    order,
+    turn: 0,
+    picks: {},
+    turnEndsAt: null,
+    startedAt: new Date(),
+    votesCloseAt: new Date(Date.now() + 24 * 3_600_000),
+  });
+}
+
+/** The players in a league, by id. */
+export async function membersOf(request: APIRequestContext, league: TestLeague): Promise<string[]> {
+  return Object.keys(((await readDoc(request, `leagues/${league.id}`))?.members ?? {}) as Record<string, unknown>);
+}
+
 /** A player's three approved goals for the season. */
 export async function setGoals(request: APIRequestContext, season: TestSeason, player: string, goals: { mind: string; body: string; wildcard: string }): Promise<void> {
   const lane = (text: string) => ({ text, status: 'approved' });

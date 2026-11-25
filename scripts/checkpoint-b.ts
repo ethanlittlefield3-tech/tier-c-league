@@ -30,6 +30,9 @@ const AREAS: [file: string, heading: string, blurb: string][] = [
   ['kit', 'Aerial, Full Boost, rest days and Rule One', 'Each has one fixed slot, and each slot has its own deadline.'],
   ['sealed', 'Demolition', 'Hidden from everyone but the player who set it until the day locks. There is no exception for the commish.'],
   ['commish', 'Commish powers and the audit log', 'Every commish change has to arrive with an audit entry, or it is refused.'],
+  ['roster', 'Goals', "Everyone in the league can read every player's goals."],
+  ['draft', 'The draft', "The commish runs it, and every change goes in the audit log. Players set their own goals and vote on everyone else's until the votes close."],
+  ['standings', 'Standings', 'Everyone in the league can read them. Only the weekly job writes them.'],
 ];
 
 const lines: string[] = [];

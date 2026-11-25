@@ -24,6 +24,8 @@ import { GoalMark } from './GoalMark.tsx';
 import { ScreenSheet } from './ScreenSheet.tsx';
 import { WeekStrip } from './WeekStrip.tsx';
 import { lateSyncRisk, useOnline } from '../ui/online.ts';
+import { timeLeft } from '../ui/when.ts';
+import './draft.css';
 import './today.css';
 
 interface LeagueDoc {
@@ -109,7 +111,7 @@ function Notice(props: { title: string; children: string }) {
  * against your opponent, the power-up tray, the rest-day picker and the week
  * bars come next.
  */
-export function Today(props: { me: Me }) {
+export function Today(props: { me: Me; onDraft?: () => void }) {
   const now = useNow();
   const [picked, setPicked] = useState<'today' | 'yesterday'>('today');
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -167,6 +169,7 @@ export function Today(props: { me: Me }) {
   const opponentProfile = useDoc<{ displayName?: string }>(opponentId ? `${leaguePath}/players/${opponentId}` : null);
   const opponentRoster = useDoc<RosterDoc>(seasonPath && opponentId ? `${seasonPath}/roster/${opponentId}` : null);
   const opponentRest = useDoc<{ date: string }>(seasonPath && period && opponentId ? `${seasonPath}/kit/${period}_${opponentId}_rest` : null);
+  const draftState = useDoc<{ step: string; votesCloseAt?: number }>(seasonPath ? `${seasonPath}/draft/state` : null);
 
   // Both sides of this week, for the week strip and the scoreboard.
   type Change = { date: string; amount: number; void: Square | null };
@@ -197,6 +200,25 @@ export function Today(props: { me: Me }) {
     );
   }
 
+  // The draft card stays up while the draft is live, and while its votes are open.
+  const draftVotesOpen = now < (draftState.data?.votesCloseAt ?? 0);
+  const draftOn = draftState.data !== null && (draftState.data.step !== 'done' || draftVotesOpen);
+  const draftCard = draftOn && (
+    <section class="draft-card" aria-labelledby="draft-card-title">
+      <h2 id="draft-card-title">The draft is on</h2>
+      <p>
+        {draftState.data?.step === 'goals'
+          ? "Set your three goals for the season, and vote on everyone else's."
+          : draftVotesOpen
+            ? `Goals and votes are open for ${timeLeft((draftState.data?.votesCloseAt ?? now) - now)} more.`
+            : 'Follow the draft as it happens.'}
+      </p>
+      <button type="button" class="btn" onClick={props.onDraft}>
+        Open the draft
+      </button>
+    </section>
+  );
+
   if (!seasonId || !season.data || !dates) {
     return <Notice title="No season yet">Your commish sets up the season. Logging opens on kickoff day.</Notice>;
   }
@@ -204,9 +226,19 @@ export function Today(props: { me: Me }) {
   if (!todayCal.data && !yesterdayOpen) {
     const kickoff = season.data.kickoff;
     if (kickoff && dates.today < kickoff) {
-      return <Notice title="Kickoff is coming">{`The season starts ${longDate(kickoff)}. Logging opens then.`}</Notice>;
+      return (
+        <div class="today">
+          {draftCard}
+          <Notice title="Kickoff is coming">{`The season starts ${longDate(kickoff)}. Logging opens then.`}</Notice>
+        </div>
+      );
     }
-    return <Notice title="No logging today">There is nothing to log today. Check the League tab for what is next.</Notice>;
+    return (
+      <div class="today">
+        {draftCard}
+        <Notice title="No logging today">There is nothing to log today. Check the League tab for what is next.</Notice>
+      </div>
+    );
   }
 
   const dayWindow = windowOf(cal, now);
@@ -295,6 +327,7 @@ export function Today(props: { me: Me }) {
 
   return (
     <div class="today" data-window={dayWindow}>
+      {draftCard}
       <div class="today-days" role="group" aria-label="Which day">
         <button type="button" class="today-day" aria-pressed={showing === 'today'} onClick={() => setPicked('today')}>
           Today {'\u00b7'} {shortDate(dates.today)}

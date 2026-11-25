@@ -1,6 +1,6 @@
 # Tier C League: progress log
 
-Last updated 2026-11-26, after weekly settlement and the League tab.
+Last updated 2026-11-25, after the draft's goals and votes.
 
 ## Plan change (commish ruling, 2026-11-25)
 
@@ -123,7 +123,7 @@ Last updated 2026-11-26, after weekly settlement and the League tab.
   - Your own sealed Demolition on them shows here, to you alone.
   - In a bye week, Match says you face The House. Before the schedule exists, it says the opponent comes after the draft.
   - 6 flow tests.
-- **Commish tools, part 2** (2026-11-26). No new rules were needed: all of these were written and tested in Step 2.
+- **Commish tools, part 2** (2026-11-25). No new rules were needed: all of these were written and tested in Step 2.
   - Joining: open or closed.
   - Players and keys: see any player's recovery key, reissue it, name or remove a co-commish, hand over the role, and remove a player. Each one that matters asks first. Reissuing a key signs out every phone that player is on, which is how a lost phone is signed out. Removing a player signs them out at once, and their old key no longer works.
   - Fix a score: dock 1 point, void a square (it counts as missed, and 1 more point comes off), or enter a correction from −20 to +20. A reason is required, and a fix can't be changed afterwards.
@@ -131,13 +131,13 @@ Last updated 2026-11-26, after weekly settlement and the League tab.
   - Today's day total now includes the commish's fixes, and shows them ("Commish: −1").
   - 5 flow tests with two phones: what the commish does is checked on the other player's phone.
   - Still to come with their features: approving joins, the draft controls, settling a week from the app, and moderation.
-- **Offline mode** (2026-11-26, from PHASE1.md's Step 3).
+- **Offline mode** (2026-11-25, from PHASE1.md's Step 3).
   - The phone keeps its own copy of the league's data and of saves it hasn't sent, so the app opens and logging works with no signal. Everything goes through when the signal is back.
   - With no signal, a strip under the header says so. Today's save line says the log is kept on this phone.
   - If an unsent save could miss the noon lock (offline, something waiting, the lock within 3 hours), Today warns: "This day locks at 12:00 pm. Get a signal before then…"
   - Fixed on the way, a real bug: two quick taps could lose one, and a quick second tap on a brand-new day could be refused. Each tap now builds on the phone's last save, not on what the screen last showed. A test reproduces it, and fails with the old behavior.
   - 3 logic tests and 3 flow tests that cut the browser's connection.
-- **Weekly settlement and the League tab** (2026-11-26).
+- **Weekly settlement and the League tab** (2026-11-25).
   - "Settle the weeks" runs on GitHub every hour (`jobs/weekly.ts`). Once a week's Sunday locks (noon on Monday) its results post as provisional, and at midnight on Tuesday they are final. It decides each 1v1, The House for a bye, the bonuses, MVP, Bust and who spins the Wheel. Then it rebuilds the standings. It works everything out again from the logs each time, so it is safe to run any number of times.
   - Each player gets a coin for the last tiebreak. It is drawn once, on the server, with real randomness, and kept sealed.
   - A player's week is now scored by the engine (`engine/src/days.ts`), shared by the phone and the job, so the live score and the official one can't disagree. 6 engine tests.
@@ -145,6 +145,13 @@ Last updated 2026-11-26, after weekly settlement and the League tab.
   - New rule: everyone in the league can read the standings, and no phone can write them (4 rule tests, 148 in all).
   - 9 job tests and 2 flow tests. One runs the real job against a finished week, and checks League and a second run.
   - Not yet: the weeks' pairings come from the schedule, which the draft builds. Until the draft exists, nothing has a pairing to settle.
+- **The draft, part 1: goals and votes** (2026-11-25).
+  - Commish tools: "Start the draft" draws the order at random from everyone in the league, opens goals and votes for 24 hours, and fixes the season's settings. Then: move the live draft on (rival picks, dares, done), give 12 more hours, or close the votes (it asks first). Every change is logged.
+  - Today shows "The draft is on" while it runs, with a button to the Draft screen.
+  - The Draft screen: set your Mind, Body and Wildcard goals, and approve or veto everyone else's. Each goal shows its tally live ("Vetoed: 0 approve, 1 veto"). A vetoed goal gets new words, which start a fresh vote. When the votes close, everyone sees the season's goals and how each vote ended.
+  - New rules: the draft, goals and votes (17 rule tests, 165 in all). Weakening them 13 ways was caught 12 times. The 13th, letting anyone write the draft, is still refused because the save also needs an audit entry only the commish can write.
+  - The vote count is in the engine (`engine/src/votes.ts`, 5 tests). The "majority" in a majority veto is built provisionally: see DECISIONS.md, "Still open".
+  - 4 logic tests and 3 flow tests with two phones. They caught one real problem: tapping "Close" while "more time" was still saving undid the close. Both buttons now wait for each other.
 - **The shorter intro on reopening is on purpose:** the full intro plays on the first open each day, and a 1-second title after that (SCOPE.md, "Intro animation").
 
 ## Waiting on the commish
@@ -153,20 +160,20 @@ Last updated 2026-11-26, after weekly settlement and the League tab.
 
 ## Next
 
-1. **Step 3, continued.** Next: the mini draft (goals, rival picks and dares, which make the schedule), Feed and the wall, receipts, and the Wheel.
+1. **Step 3, continued.** Next: the rest of the mini draft (rival picks on a 2-minute clock, which make the schedule, then dares for the Wheel), Feed and the wall, receipts, and the Wheel.
    - **Still to add to joining:** the notifications step (with push alerts), a commish's "approve joins" switch, and a way to make a league. Leagues are made by a setup script, which is built with the jobs in Step 4.
    - **Offline start** comes with the offline step: a service worker that keeps the app's files on the phone, so it opens with no signal. Chrome on Android only offers its one-tap Install button once that exists. Until then Android installs from the browser menu, which the guide explains.
 2. **Before real players join:** limit the app's web key to the app's own address in the Google Cloud console, and look at App Check, which stops other programs from using the database's free daily allowance.
    - **Step 5 items still to come, each with the feature that needs it:** the Cloud Messaging web push key (notifications), and the private backups repo with its token (the backup job).
-3. **Rules still to write, each with its screen and its tests:** receipts and proofs, roster and goal votes, the wall, dares, the Wheel, the draft, and the remaining commish tools (approve joins, settle or unlock a week, moderation). They are in DATA-MODEL.md and refused until then.
+3. **Rules still to write, each with its screen and its tests:** receipts and proofs, the wall, dares, the Wheel, rival picks, and the remaining commish tools (approve joins, settle or unlock a week, moderation). They are in DATA-MODEL.md and refused until then.
 
 ## Questions for the commish, asked when each feature is built
 
-- **Votes:** is a "majority" more than half of everyone eligible, or more than half of the votes cast? This decides goal vetoes, dare vetoes and dare-proof votes.
+- **Votes:** is a "majority" more than half of everyone eligible, or more than half of the votes cast? This decides goal vetoes, dare vetoes and dare-proof votes. **Built provisionally as more than half of everyone eligible** (DECISIONS.md, "Still open").
+- **A goal still vetoed when the votes close:** the commish settles it for now. Should something happen on its own?
 - **Wheel:** what happens if the spinner never taps Spin? Proposal: the proof deadline runs from when the week goes final, not from the tap.
 - **Dare pool:** 8 starter dares plus one per player is up to 20, but the wheel holds 8 to 16 slices.
 - **Joining or leaving mid-season:** how the schedule and the missed days are handled.
-- **"Sign out a lost device":** proposal: this is the same button as "reissue key", which signs out every device that player has. Signing out one device at a time would need the commish to know which device is which.
 
 ## What was verified on 2026-11-24
 
