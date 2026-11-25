@@ -7,7 +7,9 @@ import { whyOf } from '../data/why.ts';
 import { Back, Field, Heading } from '../ui/parts.tsx';
 import { timeLeft } from '../ui/when.ts';
 import { Dares, type DareVote } from './Dares.tsx';
+import { drawHype, hypeCard } from '../reel/hype.ts';
 import { Captains } from './Captains.tsx';
+import { Reel } from './Reel.tsx';
 import { GroupWeeks, ModeVote } from './ModeVote.tsx';
 import { RivalPicks } from './RivalPicks.tsx';
 import './draft.css';
@@ -50,6 +52,14 @@ const TROUBLE: Record<Trouble, string> = {
   offline: 'No answer from the league. Check your signal and try again.',
   refused: 'The league did not accept that. The votes may have closed.',
 };
+
+/** "Mon Jan 4", from "2027-01-04". */
+function kickoffLabel(date: string): string {
+  const [year, month, day] = date.split('-').map(Number) as [number, number, number];
+  const at = new Date(Date.UTC(year, month - 1, day));
+  const part = (options: Intl.DateTimeFormatOptions) => at.toLocaleDateString('en-US', { ...options, timeZone: 'UTC' });
+  return `${part({ weekday: 'short' })} ${part({ month: 'short', day: 'numeric' })}`;
+}
 
 /** The tally for one version of one player's goal. */
 function tally(votes: Vote[], player: string, lane: Lane, version: number | undefined, eligible: number, closed: boolean) {
@@ -116,13 +126,15 @@ const STEP: Record<DraftState['step'], string> = { goals: 'goals', modes: 'the g
 export function Draft(props: { me: Me; onBack: () => void }) {
   const leaguePath = `leagues/${props.me.league}`;
   const league = useDoc<{ season?: string | null; members?: Record<string, boolean>; commish?: string; coCommish?: string | null }>(leaguePath);
-  const seasonDoc = useDoc<{ groupWeeks?: number[] }>(league.data?.season ? `${leaguePath}/seasons/${league.data.season}` : null);
+  const seasonDoc = useDoc<{ groupWeeks?: number[]; name?: string; kickoff?: string; regularWeeks?: number }>(league.data?.season ? `${leaguePath}/seasons/${league.data.season}` : null);
+  const scheduled = useAll<{ week: number; mode?: string; pairs?: { a: string; b: string }[] }>(league.data?.season ? `${leaguePath}/seasons/${league.data.season}/weeks` : null);
+  const [hypeOpen, setHypeOpen] = useState(false);
   const seasonId = league.data?.season ?? null;
   const seasonPath = seasonId ? `${leaguePath}/seasons/${seasonId}` : null;
   const draft = useDoc<DraftState>(seasonPath ? `${seasonPath}/draft/state` : null);
   const rosters = useAll<{ goals?: Goals }>(seasonPath ? `${seasonPath}/roster` : null);
   const votes = useAll<Vote>(seasonPath ? `${seasonPath}/votes` : null);
-  const players = useAll<{ displayName?: string }>(`${leaguePath}/players`);
+  const players = useAll<{ displayName?: string; car?: Record<string, string> }>(`${leaguePath}/players`);
   const now = useNow();
 
   const mine = rosters.docs.find((found) => found.id === props.me.player)?.data.goals ?? {};
@@ -194,6 +206,28 @@ export function Draft(props: { me: Me; onBack: () => void }) {
                 <GroupWeeks groupWeeks={groupWeeks} rankings={rankings} commish={league.data?.commish ?? null} label="Group-play weeks" />
               </section>
             )}
+            {step === 'done' && scheduled.docs.length > 0 && (
+              <section class="panel" aria-labelledby="reveal-title">
+                <h2 id="reveal-title">The season is set</h2>
+                <p class="panel-text">The full schedule is in League. Share the season with the group chat.</p>
+                <button type="button" class="btn" onClick={() => setHypeOpen(true)}>
+                  Season hype card
+                </button>
+              </section>
+            )}
+            {hypeOpen &&
+              (() => {
+                const card = hypeCard({
+                  league: props.me.leagueName,
+                  season: seasonDoc.data?.name ?? 'The season',
+                  kickoff: seasonDoc.data?.kickoff ? kickoffLabel(seasonDoc.data.kickoff) : 'soon',
+                  regularWeeks: seasonDoc.data?.regularWeeks ?? scheduled.docs.length,
+                  players: members.map((player) => ({ id: player, name: name(player), car: players.docs.find((found) => found.id === player)?.data.car ?? null })),
+                  weeks: scheduled.docs.map((found) => found.data),
+                  name: (player) => (player === 'HOUSE' ? 'The House' : name(player)),
+                });
+                return <Reel title={`${card.season} hype card`} text={card.text} file="tier-c-season.png" draw={() => drawHype(card)} onClose={() => setHypeOpen(false)} />;
+              })()}
             {draft.data.captains && draft.data.squads && seasonId && (
               <Captains
                 me={props.me}

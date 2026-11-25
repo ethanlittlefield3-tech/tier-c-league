@@ -369,6 +369,10 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 208. **The picks snake: blue, orange, orange, blue, blue, …,** each on the same 2-minute clock as rival picks, and the commish's phone makes a missed pick at random, logged. With an odd number left to pick, one squad gets the extra player, as SCOPE.md allows.
 209. **The squads hold for the season:** every Team Week plays the same blue and orange. If Team Week has a slot but the captains' draft never ran, the squads alternate down the draft order.
 
+**Phase 3: the reveal**
+
+210. **The draft's reveal is the Draft screen once the schedule is built:** the full schedule is in League, and a Season hype card button draws a picture of the season to share, like the highlight reel: the kickoff, the season's length, everyone's car, the group-play weeks and Week 1's matchups, by real names.
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.

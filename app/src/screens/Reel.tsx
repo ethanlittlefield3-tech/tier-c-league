@@ -1,23 +1,22 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { drawReel, type ReelCard } from '../reel/card.ts';
 import './reel.css';
 
 /**
- * A week's highlight reel (SCOPE.md, "Highlight reel"): the card as a
- * picture, and Share, which hands it to the phone's share sheet for the
- * group chat. Where a picture can't be shared, the same card goes as words,
- * or the picture is saved.
+ * A card to share (SCOPE.md: the highlight reel, and the season hype card):
+ * the card as a picture, and Share, which hands it to the phone's share
+ * sheet for the group chat. Where a picture can't be shared, the same card
+ * goes as words, or the picture is saved.
  */
-export function Reel(props: { card: ReelCard; onClose: () => void }) {
+export function Reel(props: { title: string; text: string; file: string; draw: () => Promise<Blob>; onClose: () => void }) {
   const [picture, setPicture] = useState<{ blob: Blob; url: string } | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const close = useRef<HTMLButtonElement>(null);
-  const title = `Week ${props.card.week} highlights`;
+  const title = props.title;
 
   useEffect(() => {
     let live = true;
     let url: string | null = null;
-    drawReel(props.card).then(
+    props.draw().then(
       (blob) => {
         if (!live) return;
         url = URL.createObjectURL(blob);
@@ -39,12 +38,12 @@ export function Reel(props: { card: ReelCard; onClose: () => void }) {
 
   const share = async () => {
     if (!picture) return;
-    const file = new File([picture.blob], `tier-c-week-${props.card.week}.png`, { type: 'image/png' });
+    const file = new File([picture.blob], props.file, { type: 'image/png' });
     try {
       if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file], title });
       } else if (navigator.share) {
-        await navigator.share({ title, text: props.card.text });
+        await navigator.share({ title, text: props.text });
       } else {
         const link = document.createElement('a');
         link.href = picture.url;
@@ -63,7 +62,7 @@ export function Reel(props: { card: ReelCard; onClose: () => void }) {
       <div class="reel-sheet">
         <h2 id="reel-title">{title}</h2>
         <div class="reel-card">
-          {picture ? <img src={picture.url} alt={props.card.text} width={1080} height={1350} /> : <div class="waiting-ring" aria-label="Drawing the card" />}
+          {picture ? <img src={picture.url} alt={props.text} width={1080} height={1350} /> : <div class="waiting-ring" aria-label="Drawing the card" />}
         </div>
         {note && (
           <p class="fine-print" role="status">

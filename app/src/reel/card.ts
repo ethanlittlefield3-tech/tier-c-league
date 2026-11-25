@@ -64,11 +64,11 @@ export function reelCard(input: { league: string; weeks: readonly ReelWeek[]; we
 export const REEL_WIDTH = 1080;
 export const REEL_HEIGHT = 1350;
 
-const DISPLAY = "'Exo 2', 'Avenir Next Condensed', 'Arial Narrow', system-ui, sans-serif";
-const BODY = "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif";
+export const DISPLAY = "'Exo 2', 'Avenir Next Condensed', 'Arial Narrow', system-ui, sans-serif";
+export const BODY = "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif";
 
 /** A car as a picture the canvas can draw. */
-function carImage(parts: Partial<CarParts> | null): Promise<HTMLImageElement> {
+export function carImage(parts: Partial<CarParts> | null): Promise<HTMLImageElement> {
   const markup = drawCar(parts ?? {}, {}).replace('<svg ', '<svg width="760" height="400" ');
   const url = URL.createObjectURL(new Blob([markup], { type: 'image/svg+xml' }));
   const image = new Image();
@@ -86,7 +86,7 @@ function carImage(parts: Partial<CarParts> | null): Promise<HTMLImageElement> {
 }
 
 /** Text cut to fit a width, with an ellipsis. */
-function fit(context: CanvasRenderingContext2D, text: string, width: number): string {
+export function fit(context: CanvasRenderingContext2D, text: string, width: number): string {
   if (context.measureText(text).width <= width) return text;
   let cut = text;
   while (cut.length > 1 && context.measureText(`${cut}…`).width > width) cut = cut.slice(0, -1);

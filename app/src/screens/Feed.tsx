@@ -7,7 +7,7 @@ import { loadData } from '../data/load.ts';
 import type { PostKind, Reaction } from '../data/wall.ts';
 import { whyOf } from '../data/why.ts';
 import { feedEvents, type FeedEvent, type FeedInput } from '../feed/events.ts';
-import { reelCard } from '../reel/card.ts';
+import { drawReel, reelCard } from '../reel/card.ts';
 import { Reel } from './Reel.tsx';
 import { POST_MAX, QUICK_CHAT, SAVED_TAUNTS_MAX, TAUNT_MAX, fillName } from '../feed/words.ts';
 import { Field } from '../ui/parts.tsx';
@@ -148,7 +148,7 @@ export function Feed(props: { me: Me; onWheel?: () => void }) {
           ),
         )}
       </section>
-      {reel && <Reel card={reel} onClose={() => setReelWeek(null)} />}
+      {reel && <Reel title={`Week ${reel.week} highlights`} text={reel.text} file={`tier-c-week-${reel.week}.png`} draw={() => drawReel(reel)} onClose={() => setReelWeek(null)} />}
     </div>
   );
 }

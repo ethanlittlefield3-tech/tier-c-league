@@ -283,6 +283,15 @@ test.describe('The draft', () => {
     ]);
     expect(await runSchedule(league)).toContain('left alone (not-in-draft)');
 
+    // The reveal: a season hype card to share.
+    await riley.phone.clock.fastForward(31_000);
+    await button(riley.phone, 'Season hype card').click();
+    const hype = riley.phone.getByRole('dialog', { name: 'Season 1 hype card' });
+    await expect(hype.getByRole('img')).toHaveAttribute('alt', /Season 1 kicks off/);
+    await expect(hype.getByRole('img')).toHaveAttribute('alt', /Week 1: Riley vs Sam · Alex vs The House/);
+    await expect.poll(() => hype.getByRole('img').evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(1080);
+    await hype.getByRole('button', { name: 'Close' }).click();
+
     // Everyone sees the schedule in League.
     await button(riley.phone, 'Back').click();
     await tab(riley.phone, 'League').click();
