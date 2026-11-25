@@ -63,6 +63,12 @@ export async function writeDocs(request: APIRequestContext, docs: { path: string
   if (!response.ok()) throw new Error(`Could not write ${docs.length} documents: ${response.status()} ${await response.text()}`);
 }
 
+/** Deletes one document, the way a job would. */
+export async function deleteDoc(request: APIRequestContext, path: string): Promise<void> {
+  const response = await request.delete(`${ROOT}/${path}`, { headers: OWNER });
+  if (!response.ok()) throw new Error(`Could not delete ${path}: ${response.status()} ${await response.text()}`);
+}
+
 /** A document's fields, or `null` if there is no such document. */
 export async function readDoc(request: APIRequestContext, path: string): Promise<Record<string, unknown> | null> {
   const response = await request.get(`${ROOT}/${path}`, { headers: OWNER });

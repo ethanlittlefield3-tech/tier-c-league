@@ -282,6 +282,7 @@ The receipts question that was here is now ruling R6.
 - **The commish never edits a player's day.** A dock, void or correction is its own document with a reason, and it cannot be edited or deleted. Undoing one means entering the opposite correction.
 - **A day records when it was first logged,** so the Early Bird badge in Phase 2 needs no new data.
 
+- **The hourly jobs read only what can have changed** (2026-11-25), to stay well inside the free 50,000 reads a day. The weekly job reads nothing for a week that hasn't started; mid-week, only the players whose Demolition day has locked; and everyone once Sunday locks. Before this it read every player's days for every unfinished week, every hour: about 30,000 reads a day in a 12-week season. The calendar job keeps a note of the settings it last wrote from, so an unchanged season costs one read an hour instead of one for each of its days.
 - **The database library loads in the background while the intro plays.** It is the biggest piece of the app (about 165 kB zipped), so the first screen never waits on it.
 - **The app waits 15 seconds for the database, then says there is no answer.** Without that, a save made with no signal would wait forever without a word.
 - **The security rules publish themselves.** After every test has passed on main, a job publishes `firebase/firestore.rules` to the league's database. Nobody pastes rules into a console by hand, so the rules that are live are always the rules that were tested.

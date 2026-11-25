@@ -230,6 +230,7 @@ Last updated 2026-11-25, after taking starter dares off the Wheel.
 - **Alerts, part 1: on the phone** (2026-11-25). Profile has an Alerts panel: turn them on with a tap, switch each of the 7 kinds on or off, and set quiet hours. A new player is offered alerts right under their recovery key. A service worker shows the alerts, opens the app at the right screen when one is tapped, and keeps the app's files on the phone so it opens with no signal. The push token is fetched again on every open.
   - New rules for devices: a phone signs up only as the player its claim holds. 4 new rule tests and 1 rewritten. Weakening the rule 14 ways was caught 13 times; the other is still refused by the checks on each field. 3 engine tests and 5 flow tests.
   - Sending them is next: the tick job, every 10 minutes. Alerts also wait on the Cloud Messaging web push key from the commish.
+- **The hourly jobs read far less** (2026-11-25). The weekly job read every player's days for every unfinished week every hour, about 30,000 reads a day by the end of a 12-week season, against the free 50,000. Now it reads only what can have changed, and the calendar job leaves an unchanged season alone with one read. 5 job tests.
 - **The README is current** (2026-11-25): what each folder holds, the demo league and the fast test week step by step, and what runs on its own.
 - **The shorter intro on reopening is on purpose:** the full intro plays on the first open each day, and a 1-second title after that (SCOPE.md, "Intro animation").
 

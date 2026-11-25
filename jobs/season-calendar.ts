@@ -12,6 +12,7 @@ import { Timestamp, getFirestore, type DocumentData } from 'firebase-admin/fires
 import { connect } from './admin.ts';
 import { fastClockOf } from './lib/fast.ts';
 import { seasonSync } from './lib/season-sync.ts';
+import { calendarStamp } from './lib/week-reads.ts';
 
 const { app, emulator } = connect();
 const db = getFirestore(app);
@@ -32,23 +33,35 @@ for (const league of leagues) {
   if (!season.exists) continue;
   checked += 1;
 
+  const settings = {
+    status: season.get('status'),
+    kickoff: season.get('kickoff'),
+    regularWeeks: season.get('regularWeeks'),
+    timeZone: season.get('timeZone'),
+    fast: fastClockOf({ demo: league.get('demo') }, { fast: plain(season.get('fast') ?? {}) }) !== null,
+  };
+  // A finished, fast or unworkable season is left alone without reading its calendar.
+  const early = seasonSync({ settings, existing: [], ruleOneIssue: null });
+  if (early.skip) {
+    console.log(`League ${league.id}, season ${seasonId}: left alone (${early.skip}).`);
+    continue;
+  }
+  // So is one whose settings haven't changed since its calendar was written:
+  // one read, not one for every day.
+  const stampRef = seasonRef.collection('config').doc('calendar');
+  const stamp = calendarStamp(settings);
+  if ((await stampRef.get()).get('for') === stamp) {
+    console.log(`League ${league.id}, season ${seasonId}: unchanged.`);
+    continue;
+  }
+
   const calendar = await seasonRef.collection('calendar').get();
   const issue = season.get('ruleOneIssue');
   const sync = seasonSync({
-    settings: {
-      status: season.get('status'),
-      kickoff: season.get('kickoff'),
-      regularWeeks: season.get('regularWeeks'),
-      timeZone: season.get('timeZone'),
-      fast: fastClockOf({ demo: league.get('demo') }, { fast: plain(season.get('fast') ?? {}) }) !== null,
-    },
+    settings,
     existing: calendar.docs.map((day) => ({ id: day.id, data: plain(day.data()) })),
     ruleOneIssue: Array.isArray(issue) ? issue.map((at) => Number(ms(at))) : null,
   });
-  if (sync.skip) {
-    console.log(`League ${league.id}, season ${seasonId}: left alone (${sync.skip}).`);
-    continue;
-  }
 
   // At most 500 changes go in one save.
   const changes = [
@@ -61,6 +74,8 @@ for (const league of leagues) {
     for (const change of changes.slice(start, start + 400)) change(batch);
     await batch.commit();
   }
+  // Settings can still change in setup, so the stamp says which ones this calendar is for.
+  await stampRef.set({ for: stamp, at: new Date() });
   console.log(`League ${league.id}, season ${seasonId}: ${sync.write.length} days written, ${sync.remove.length} removed${sync.ruleOneIssue ? ', Rule One times set' : ''}.`);
 }
 

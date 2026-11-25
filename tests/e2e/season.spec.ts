@@ -4,7 +4,7 @@ import { promisify } from 'node:util';
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { addDays, weekdayIndex } from '../../engine/src/calendar.ts';
 import { enter, expectInApp, joinAs } from './helpers.ts';
-import { createLeague, listIds, readDoc, type TestLeague } from './league.ts';
+import { createLeague, deleteDoc, listIds, readDoc, type TestLeague } from './league.ts';
 
 const run = promisify(execFile);
 const job = fileURLToPath(new URL('../../jobs/season-calendar.ts', import.meta.url));
@@ -106,6 +106,10 @@ test.describe('Season setup', () => {
     expect(days.sort()[0]).toBe(kickoff);
     expect(((await season(request, league))?.ruleOneIssue as unknown[]).length).toBe(2);
 
+    // Nothing changed, so it reads one document, not every day.
+    expect(await runCalendarJob(league)).toContain('unchanged.');
+    // Without its note of what it last wrote, it compares every day, and still changes nothing.
+    await deleteDoc(request, `leagues/${league.id}/seasons/s1/config/calendar`);
     expect(await runCalendarJob(league)).toContain('0 days written, 0 removed.');
   });
 

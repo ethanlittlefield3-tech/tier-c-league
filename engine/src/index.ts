@@ -24,3 +24,4 @@ export * from './wheel.ts';
 export * from './settlement.ts';
 export * from './fast.ts';
 export * from './alerts.ts';
+export * from './clock.ts';

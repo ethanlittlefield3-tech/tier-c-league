@@ -18,6 +18,7 @@ import { PROOF_DAYS, staleProofs } from './lib/proofs.ts';
 import { revealDemolitions, sameReveals } from './lib/reveals.ts';
 import { approvedDares, drawsDue, type Draw } from './lib/wheel.ts';
 import { settleDue, standingsFrom, type PlayerWeekData, type WeekLineStored } from './lib/settle.ts';
+import { weekReads } from './lib/week-reads.ts';
 
 const { app, emulator } = connect();
 const db = getFirestore(app);
@@ -57,8 +58,14 @@ for (const league of leagues) {
     const days = calendar.filter((day) => day.period === period) as unknown as Parameters<typeof settleDue>[0]['days'];
     if (days.length === 0) continue;
 
+    // This period's Demolitions: one query, and nothing more while none can be revealed or settled.
+    const sealed = await seasonRef.collection('sealed').where('period', '==', period).get();
+    const demolitions = sealed.docs.filter((item) => item.get('kind') === 'demolition').map((item) => plain(item.data()) as unknown as Parameters<typeof settleDue>[0]['demolitions'][number]);
+    const reads = weekReads({ days, pairs, demolitions, now });
+    if (!reads) continue;
+
     const players: Record<string, PlayerWeekData> = {};
-    for (const player of new Set(pairs.flatMap((pair) => [pair.a, pair.b]).filter((id) => id !== 'HOUSE'))) {
+    for (const player of reads.players) {
       const logs = await db.getAll(...days.map((day) => seasonRef.collection('days').doc(`${player}_${day.date}`)));
       const kit = await seasonRef.collection('kit').where('player', '==', player).get();
       const fixes = await seasonRef.collection('adjustments').where('player', '==', player).get();
@@ -73,8 +80,6 @@ for (const league of leagues) {
         ],
       };
     }
-    const sealed = await seasonRef.collection('sealed').where('period', '==', period).get();
-    const demolitions = sealed.docs.filter((item) => item.get('kind') === 'demolition').map((item) => plain(item.data()) as unknown as Parameters<typeof settleDue>[0]['demolitions'][number]);
 
     // Demolitions whose day has locked, with how they went, for the feed.
     const reveals = revealDemolitions({ par: season.get('par'), timeZone: season.get('timeZone'), days, players, demolitions, now });
