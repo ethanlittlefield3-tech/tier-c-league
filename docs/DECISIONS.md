@@ -111,6 +111,13 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 55. **The tray plays into the week of today's date.** Yesterday's Full Boost, Aerial and rest day come from yesterday's own week, so Sunday's Full Boost still works on Monday morning (call 7).
 56. **A bye week against The House has no Demolition.** The tile says "Bye week". Before the schedule exists, it says "No opponent yet".
 
+**Season setup** (new on 2026-11-25, not yet reviewed by the commish)
+
+57. **Kickoff defaults to the first Monday at least a week away.** SCOPE.md's default, "the Monday after the draft", depends on the draft date, which depends on kickoff, so one of them had to come first.
+58. **Commish tools are reached from Profile,** with a gold button only the commish and co-commish see. All five bottom tabs stay the same for everyone.
+59. **The season calendar is written by a job that runs every hour,** so a change in season setup is in place within the hour. Until kickoff, Today shows "Kickoff is coming" with the date, which needs no calendar.
+60. **Seasons are numbered s1, s2 and so on.** The name the commish types is only for show.
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.

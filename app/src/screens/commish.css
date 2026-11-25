@@ -1,0 +1,135 @@
+/* Commish tools: the league code to share, and season setup. The cards are
+   the same as Profile's (.panel, in profile.css). */
+
+.commish-code {
+  margin: 12px 0 0;
+  padding: 14px 10px;
+  border: 2px solid var(--gold);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 207, 63, 0.14), rgba(255, 207, 63, 0.05));
+  font: italic 900 30px/1 var(--display);
+  letter-spacing: 0.12em;
+  text-align: center;
+  color: var(--gold);
+  user-select: all;
+  -webkit-user-select: all;
+}
+
+.commish-waiting {
+  min-height: 200px;
+}
+
+.setup {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.setup-label {
+  margin: 16px 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stepper-value {
+  flex: 1;
+  margin: 0;
+  text-align: center;
+  font: italic 900 30px/1 var(--display);
+}
+
+.stepper-value span {
+  font: 600 15px/1 var(--body);
+  color: var(--ink-soft);
+}
+
+.choice {
+  display: flex;
+  gap: 8px;
+}
+
+.choice-wrap {
+  flex-wrap: wrap;
+}
+
+.choice + .choice {
+  margin-top: 8px;
+}
+
+.choice-option {
+  flex: 1;
+  min-width: 48px;
+  min-height: 46px;
+  padding: 0 12px;
+  border: 1px solid rgba(196, 216, 255, 0.24);
+  border-radius: 12px;
+  background: rgba(17, 30, 73, 0.9);
+  font: italic 800 15px/1 var(--display);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.choice-wrap .choice-option {
+  flex: 0 0 auto;
+}
+
+.choice-option[aria-pressed='true'] {
+  border-color: transparent;
+  background: linear-gradient(180deg, #3fa0ff, var(--blue-deep));
+  box-shadow: 0 0 14px rgba(31, 139, 255, 0.45);
+}
+
+.choice-option:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* 16px or more, or an iPhone zooms the page in when the field is tapped. */
+.setup-select,
+.setup-input {
+  width: 100%;
+  height: 52px;
+  box-sizing: border-box;
+  padding: 0 14px;
+  border: 2px solid rgba(196, 216, 255, 0.22);
+  border-radius: 14px;
+  background: var(--navy-800);
+  font: 600 17px/1 var(--body);
+  color: var(--ink);
+  color-scheme: dark;
+}
+
+.setup-select:focus,
+.setup-input:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 4px rgba(31, 139, 255, 0.22);
+}
+
+.setup-problems ul {
+  margin: 6px 0 0;
+  padding-left: 20px;
+}
+
+.setup-note {
+  margin: 16px 0 0;
+  text-align: center;
+}
+
+.setup .btn.setup-save {
+  width: 100%;
+  min-width: 0;
+}
+
+.setup-fine {
+  text-align: center;
+}

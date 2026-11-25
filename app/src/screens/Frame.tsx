@@ -3,6 +3,7 @@ import { PlayerBadge } from '../art/PlayerBadge.tsx';
 import { TAB_ICONS, type Tab } from '../art/tabIcons.tsx';
 import type { Me } from '../data/identity.ts';
 import { initialOf } from '../join/name.ts';
+import { Commish } from './Commish.tsx';
 import { Profile } from './Profile.tsx';
 import { Today } from './Today.tsx';
 import './frame.css';
@@ -46,6 +47,7 @@ function Soon(props: { tab: TabInfo }) {
 export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut: () => void }) {
   const [tab, setTab] = useState<Tab>('today');
   const [profileOpen, setProfileOpen] = useState(false);
+  const [commishOpen, setCommishOpen] = useState(false);
   const [backFromProfile, setBackFromProfile] = useState(false);
   const meButton = useRef<HTMLButtonElement>(null);
 
@@ -54,9 +56,14 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
     if (!profileOpen && backFromProfile) meButton.current?.focus({ preventScroll: true });
   }, [profileOpen, backFromProfile]);
 
+  if (commishOpen) {
+    return <Commish me={props.me} onBack={() => setCommishOpen(false)} />;
+  }
+
   if (profileOpen) {
     return (
       <Profile
+        onCommish={() => setCommishOpen(true)}
         me={props.me}
         onBack={() => {
           setBackFromProfile(true);

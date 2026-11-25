@@ -1,6 +1,6 @@
 # Tier C League: progress log
 
-Last updated 2026-11-25, after Today's power-up tray and the iPhone layout fix.
+Last updated 2026-11-25, after season setup and the calendar job.
 
 ## Plan change (commish ruling, 2026-11-25)
 
@@ -98,6 +98,12 @@ Last updated 2026-11-25, after Today's power-up tray and the iPhone layout fix.
   - Every choice comes from the same calendar times the security rules use, so what the phone offers is what the server accepts. No new rules were needed.
   - Fixed on the way: on a Monday morning, yesterday belongs to last week, and so do its power-ups (call 7). A test now reproduces Monday morning on any day.
   - 13 logic tests and 15 flow tests. 93 flow tests in all.
+- **Season setup and the season calendar** (2026-11-25).
+  - Commish tools, opened from Profile and shown only to the commish and co-commish. They show the league code to share, and season setup with every setting from SCOPE.md and its defaults. Kickoff must be a future Monday, and the draft must come before kickoff. The draft defaults to 7 pm league time on the Sunday before.
+  - Starting a season is one save: the season, and the league pointing at it, each with an audit entry. The settings can change until the draft starts, and every change is logged.
+  - "Keep the season calendar" runs on GitHub every hour (`jobs/season-calendar.ts`). It writes each day of the current season from its settings, and when each Rule One arrives. It writes only what changed, and removes days a moved kickoff left behind.
+  - 5 logic tests for the calendar sync, 14 for season setup, 3 new rule tests (144 in all), and 6 flow tests. The flow tests run the real job against the local database.
+  - On the way, a test caught that the "season is set up" message vanished as the form reloaded. Fixed.
 - **The shorter intro on reopening is on purpose:** the full intro plays on the first open each day, and a 1-second title after that (SCOPE.md, "Intro animation").
 
 ## Waiting on the commish
@@ -106,7 +112,7 @@ Last updated 2026-11-25, after Today's power-up tray and the iPhone layout fix.
 
 ## Next
 
-1. **Step 3, continued.** The screens: the rest of Today (the scoreboard against your opponent and the week bars), Match, Feed, League, the rest of Profile, Wheel, Commish and the mini draft. Next: the commish's season setup and the job that writes the calendar, so a real season can start, then the scoreboard.
+1. **Step 3, continued.** Next: Today's new layout, from the commish's mockup (all four squares on one screen, and a big screen-time sheet). Then the rest of Today (the scoreboard against your opponent and the week bars), Match, Feed, League, the rest of Profile, Wheel, the rest of Commish tools and the mini draft.
    - **Still to add to joining:** the notifications step (with push alerts), a commish's "approve joins" switch, and a way to make a league. Leagues are made by a setup script, which is built with the jobs in Step 4.
    - **Offline start** comes with the offline step: a service worker that keeps the app's files on the phone, so it opens with no signal. Chrome on Android only offers its one-tap Install button once that exists. Until then Android installs from the browser menu, which the guide explains.
 2. **Before real players join:** limit the app's web key to the app's own address in the Google Cloud console, and look at App Check, which stops other programs from using the database's free daily allowance.

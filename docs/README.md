@@ -109,6 +109,12 @@ Leagues are made from GitHub, not from the app.
 3. The league code and the commish's recovery key are not shown on GitHub. Read them in the Firebase console, under **Firestore Database**: the code is the name of the document in `codes`, and the key is in `leagues`, your league, `keys`.
 4. In the app, tap **I'm already in a league** and enter both.
 
+## Starting a season
+
+1. In the app, tap your badge, then **Commish tools**.
+2. Check the settings, then tap **Start the season**. The settings can change until the draft starts.
+3. Within the hour, the **Keep the season calendar** job writes the season's days. To run it now, open **Actions**, choose **Keep the season calendar**, then **Run workflow**.
+
 ## Where the live rules come from
 
 After every test has passed on `main`, a job publishes `firebase/firestore.rules` to the league's database. There is nothing to do by hand. To publish again, open **Actions**, choose **Publish the security rules**, then **Run workflow**.

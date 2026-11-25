@@ -70,11 +70,42 @@ function reissue(db: Db, player: string, oldKey: string, newKey: string, skip: '
 const createSeason = (db: Db, overrides: Record<string, unknown> = {}, auditId = 'a1') =>
   withAudit(db, NEXT, 'set', settings(overrides), auditId, 'season.settings', 'seasons/s2');
 
+/** Everything the app writes when the commish starts a new season: the season, and the league pointing at it, each with its own audit entry. */
+function startSeason(db: Db, overrides: Record<string, unknown> = {}) {
+  const batch = db.batch();
+  batch.set(db.doc(NEXT), { ...settings(overrides), audit: 'a-season' });
+  batch.set(db.doc(`${league}/audit/a-season`), { ...auditEntry('season.settings', 'seasons/s2'), by: 'p1' });
+  batch.update(db.doc(league), { season: 's2', audit: 'a-league' });
+  batch.set(db.doc(`${league}/audit/a-league`), { ...auditEntry('league.settings', 'league'), by: 'p1' });
+  return batch.commit();
+}
+
 describe('Season settings', () => {
   it('The commish can set up a season, and it lands in the audit log', async () => {
     await assertSucceeds(createSeason(dev1()));
     const entry = await dev2().doc(`${league}/audit/a1`).get();
     expect(entry.data()).toMatchObject({ by: 'p1', action: 'season.settings', target: 'seasons/s2' });
+  });
+
+  it("The commish can start a new season and make it the league's current one in one save, with an audit entry for each", async () => {
+    await assertSucceeds(startSeason(dev1()));
+    const after = await dev2().doc(league).get();
+    expect(after.data()?.season).toBe('s2');
+    expect((await dev2().doc(`${league}/audit/a-season`).get()).data()).toMatchObject({ action: 'season.settings', target: 'seasons/s2' });
+    expect((await dev2().doc(`${league}/audit/a-league`).get()).data()).toMatchObject({ action: 'league.settings', target: 'league' });
+  });
+
+  it('Starting a season needs both audit entries: the league cannot be pointed at it quietly', async () => {
+    const db = dev1();
+    const batch = db.batch();
+    batch.set(db.doc(NEXT), { ...settings(), audit: 'a-season' });
+    batch.set(db.doc(`${league}/audit/a-season`), { ...auditEntry('season.settings', 'seasons/s2'), by: 'p1' });
+    batch.update(db.doc(league), { season: 's2' });
+    await assertFails(batch.commit());
+  });
+
+  it('Nobody else can start a season', async () => {
+    await assertFails(startSeason(dev2()));
   });
 
   it('A player who is not the commish cannot change settings', async () => {

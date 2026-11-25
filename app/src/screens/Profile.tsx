@@ -2,6 +2,7 @@ import { useState } from 'preact/hooks';
 import { PlayerBadge } from '../art/PlayerBadge.tsx';
 import { SmallNunchucks } from '../art/SmallNunchucks.tsx';
 import type { Me, Trouble } from '../data/identity.ts';
+import { useDoc } from '../data/hooks.ts';
 import { loadData } from '../data/load.ts';
 import { whyOf } from '../data/why.ts';
 import { NAME_MAX, initialOf, nameProblem, tidyName } from '../join/name.ts';
@@ -19,7 +20,9 @@ const TROUBLE: Record<Trouble, string> = {
  * and signing this phone out. Badges, rank history, stats, notification
  * settings and "Suggest an idea" arrive with the features they belong to.
  */
-export function Profile(props: { me: Me; onBack: () => void; onRenamed: (me: Me) => void; onSignedOut: () => void }) {
+export function Profile(props: { me: Me; onBack: () => void; onRenamed: (me: Me) => void; onSignedOut: () => void; onCommish: () => void }) {
+  const league = useDoc<{ commish?: string; coCommish?: string | null }>(`leagues/${props.me.league}`);
+  const isCommish = league.data !== null && (league.data.commish === props.me.player || league.data.coCommish === props.me.player);
   const [name, setName] = useState(props.me.displayName);
   const [nameNote, setNameNote] = useState<{ error: boolean; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
@@ -108,6 +111,12 @@ export function Profile(props: { me: Me; onBack: () => void; onRenamed: (me: Me)
           <Heading>{props.me.displayName}</Heading>
           <p class="profile-league">{props.me.leagueName}</p>
         </div>
+
+        {isCommish && (
+          <button type="button" class="btn profile-commish" onClick={props.onCommish}>
+            Commish tools
+          </button>
+        )}
 
         <form class="panel" onSubmit={saveName} noValidate>
           <h2>Display name</h2>
