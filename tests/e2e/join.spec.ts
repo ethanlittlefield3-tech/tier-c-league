@@ -7,6 +7,18 @@ const KEY_SHAPE = /^TCL-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/;
 const heading = (page: Page, name: string) => page.getByRole('heading', { name });
 const button = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
 
+/**
+ * Tap past the title. The title ignores taps for its first third of a second,
+ * so this waits until the title is ready (it takes the focus then) and jumps
+ * the clock past that moment instead of waiting it out.
+ */
+async function tapToEnter(page: Page) {
+  const enterButton = button(page, 'Tap to enter');
+  await expect(enterButton).toBeFocused();
+  await page.clock.fastForward(1000);
+  await enterButton.click();
+}
+
 /** Open the app from the Home Screen and tap past the title, to whatever comes after it. */
 async function enter(page: Page) {
   await fromHomeScreen(page);
@@ -14,9 +26,7 @@ async function enter(page: Page) {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.clock.install();
   await page.goto('/');
-  // Jump past the moment the title ignores taps, instead of waiting for it.
-  await page.clock.fastForward(1000);
-  await button(page, 'Tap to enter').click();
+  await tapToEnter(page);
 }
 
 /** Go through the join steps as a new player. Returns the recovery key the app shows. */
@@ -159,8 +169,7 @@ test.describe('Joining a league', () => {
     await expect(heading(page, "You're in, Riley.")).toBeVisible();
 
     await page.reload();
-    await page.clock.fastForward(1000);
-    await button(page, 'Tap to enter').click();
+    await tapToEnter(page);
     await expect(heading(page, "You're in, Riley.")).toBeVisible();
     await expect(page.getByText('Sunday Squad')).toBeVisible();
   });
@@ -226,8 +235,7 @@ test.describe('Getting back in with a recovery key', () => {
 
     // Back on the first phone: it is out, with the reason and the league code already filled in.
     await page.reload();
-    await page.clock.fastForward(1000);
-    await button(page, 'Tap to enter').click();
+    await tapToEnter(page);
     await expect(heading(page, 'Get back into your league')).toBeVisible();
     await expect(page.getByText('This phone was signed out.')).toBeVisible();
     await expect(page.getByLabel('League code')).toHaveValue(formatLeagueCode(league.code));
