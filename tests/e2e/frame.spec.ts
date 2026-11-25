@@ -37,11 +37,12 @@ test.describe('The app frame', () => {
     await expect(page.getByRole('heading', { name: 'Talk trash' })).toBeVisible();
   });
 
-  test('A tab that is not built yet says what it will hold', async ({ page, request }) => {
+  test('Every tab is built: none says it is coming soon', async ({ page, request }) => {
     await inTheApp(page, request);
-    await tab(page, 'Garage').click();
-    await expect(page.getByText('Coming soon')).toBeVisible();
-    await expect(page.getByText('Build your car on a turntable. Every badge you earn unlocks a part.')).toBeVisible();
+    for (const name of ['Today', 'Match', 'Feed', 'League', 'Garage']) {
+      await tab(page, name).click();
+      await expect(page.getByText('Coming soon')).toHaveCount(0);
+    }
   });
 
   test('The tabs sit along the bottom of the screen, inside its width', async ({ page, request }) => {
@@ -60,10 +61,10 @@ test.describe('The app frame', () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(screen.width);
   });
 
-  test('Your badge, top right, shows your initial and opens your Profile', async ({ page, request }) => {
+  test('Your car, top right, is your icon, and opens your Profile', async ({ page, request }) => {
     await inTheApp(page, request);
     const badge = profileButton(page, 'Riley');
-    await expect(badge.locator('text')).toHaveText('R');
+    await expect(badge.locator('.frame-car svg')).toBeVisible();
     const box = await badge.boundingBox();
     expect(box!.x + box!.width).toBeGreaterThan(page.viewportSize()!.width - 80);
     expect(box!.y).toBeLessThan(120);

@@ -289,7 +289,15 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 167. **Commish: whoever is the commish (not the co-commish) when a week of a season goes final.** Brewmaster and Sweep are decided once every regular week of the season is final.
 168. **Badges from features still to come** (group play, predictions, rematches and the playoffs) are listed in Profile with "Comes with…", and earned once those features ship.
 169. **Each new badge, and each rank change, is news in the league feed,** made by the weekly job. The alerts job sends it to its player under Progress.
-170. **The parts each badge unlocks are listed now. The Garage, where they go on your car, comes next.**
+170. **Profile lists the part each badge unlocks, and the Garage puts it on your car** (calls 171 to 175).
+
+**Phase 2: the Garage** (new on 2026-11-25, not yet reviewed by the commish)
+
+171. **The cars are side views that turn like a card,** drawn for this app in the title screen's style. The turntable shows one side, turns the car edge-on and shows the other, so the 2.5D look needs no 3D drawing. You drag across the stage to spin it (SCOPE.md, "2.5D art"); when you let go it rests on the nearer side, and a tap, or Enter, turns it round. A decal's letters read the right way round from either side. Motion-sensor tilt is left out: SCOPE.md makes it optional, and iPhone asks permission for it.
+172. **Everyone starts in a cobalt Dart** with the rest of the starter kit: no decal, stock wheels, a boost trail in their team color, the stock burst and no topper. Picking a starter car while joining comes next.
+173. **The league checks every car, not just the app:** each slot holds a part from the catalog, a starter part for anyone, and a badge's part only once that badge is earned. A rule test tries every part in the engine's catalog, so the rules and the catalog can't drift apart.
+174. **Your car in the header is drawn without its boost trail,** so it reads at icon size. Each part's tile in the Garage shows that part on your own car.
+175. **The goal-explosion slot's button says "Explosion",** so the seven slots fit four to a row on an iPhone. An explosion plays when you pick it, or with Watch it. Playing it when you win a week comes with your car in more places.
 
 **Calendar**
 

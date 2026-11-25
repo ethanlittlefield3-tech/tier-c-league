@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { Rank } from '@tcl/engine';
-import { PlayerBadge } from '../art/PlayerBadge.tsx';
+import { CarArt } from '../art/car/CarArt.tsx';
+import type { CarParts } from '../art/car/draw.ts';
 import { TAB_ICONS, type Tab } from '../art/tabIcons.tsx';
 import type { Me } from '../data/identity.ts';
 import { useDoc } from '../data/hooks.ts';
 import { loadData } from '../data/load.ts';
-import { initialOf } from '../join/name.ts';
 import { AuditLog } from './AuditLog.tsx';
 import { Commish } from './Commish.tsx';
 import { Draft } from './Draft.tsx';
 import { Feed } from './Feed.tsx';
+import { Garage } from './Garage.tsx';
 import { League } from './League.tsx';
 import { Match } from './Match.tsx';
 import { PlayerDay } from './PlayerDay.tsx';
@@ -69,7 +70,7 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
   const online = useOnline();
   // A rank change since this phone last showed one plays its scene as the app
   // opens: decided on the server's answer, not the phone's own older copy.
-  const profile = useDoc<{ rank?: Rank }>(`leagues/${props.me.league}/players/${props.me.player}`);
+  const profile = useDoc<{ rank?: Rank; car?: Partial<CarParts> }>(`leagues/${props.me.league}/players/${props.me.player}`);
   const rankScene = useRankScene(props.me.league, props.me.player, profile.loading || profile.fromCache ? undefined : (profile.data?.rank ?? null));
 
   // An alert opens the app at its screen: by a link when the app wasn't open,
@@ -154,7 +155,8 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
           <h1 class="frame-title">{current.label}</h1>
         </div>
         <button ref={meButton} class="frame-me" type="button" aria-label={`Your profile, ${props.me.displayName}`} onClick={() => setProfileOpen(true)}>
-          <PlayerBadge initial={initialOf(props.me.displayName)} />
+          {/* Your car is your icon across the app (SCOPE.md, "Garage and achievements"). */}
+          <CarArt parts={profile.data?.car} bare class="frame-car" />
         </button>
       </header>
       {!online && (
@@ -163,7 +165,7 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
         </p>
       )}
       <main class="frame-body" key={tab}>
-        {tab === 'today' ? <Today me={props.me} onDraft={() => setDraftOpen(true)} onWheel={() => setWheelOpen(true)} /> : tab === 'match' ? <Match me={props.me} /> : tab === 'feed' ? <Feed me={props.me} onWheel={() => setWheelOpen(true)} /> : tab === 'league' ? <League me={props.me} onPlayer={setDayOf} /> : <Soon tab={current} />}
+        {tab === 'today' ? <Today me={props.me} onDraft={() => setDraftOpen(true)} onWheel={() => setWheelOpen(true)} /> : tab === 'match' ? <Match me={props.me} /> : tab === 'feed' ? <Feed me={props.me} onWheel={() => setWheelOpen(true)} /> : tab === 'league' ? <League me={props.me} onPlayer={setDayOf} /> : tab === 'garage' ? <Garage me={props.me} /> : <Soon tab={current} />}
       </main>
       <nav class="frame-tabs" aria-label="Main">
         {TABS.map((info) => {

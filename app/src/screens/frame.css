@@ -49,7 +49,7 @@
 /* Your badge, top right: the way into your Profile. */
 .frame-me {
   flex: none;
-  width: 50px;
+  width: 76px;
   height: 50px;
   padding: 0;
   border: 0;
@@ -60,7 +60,15 @@
 
 .frame-me svg {
   display: block;
-  width: 50px;
+  width: 76px;
+  height: 50px;
+}
+
+/* Your car, as your icon: a side view, so wider than it is tall. */
+.frame-car,
+.frame-car svg {
+  display: block;
+  width: 76px;
   height: 50px;
 }
 

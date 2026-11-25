@@ -1,0 +1,317 @@
+/* ---- The Garage -------------------------------------------------------------
+   The resting state of every rule is the finished screen: the car still on
+   its platform, and no explosion left. The turntable and the bursts move
+   whole layers with transform and opacity only. */
+
+.garage {
+  padding: 4px 0 24px;
+}
+
+.garage-stage {
+  position: relative;
+  height: 190px;
+  margin: 0 -16px;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 85%, rgba(31, 139, 255, 0.28) 0%, rgba(10, 19, 48, 0) 60%);
+}
+
+/* The whole stage is the turntable: drag across it, or tap it. Up and down
+   still scroll the page. */
+.garage-turntable {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: grab;
+  touch-action: pan-y;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.garage-turntable:active {
+  cursor: grabbing;
+}
+
+.garage-turntable:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: -3px;
+  border-radius: 12px;
+}
+
+.garage-platform {
+  display: block;
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  width: 300px;
+  height: 300px;
+  margin-left: -150px;
+  transform: scaleY(0.16);
+  transform-origin: 50% 100%;
+}
+
+.garage-dial {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.garage-ring {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, rgba(159, 208, 255, 0.35) 0deg 6deg, rgba(10, 19, 48, 0.2) 6deg 18deg);
+  box-shadow: 0 0 0 6px rgba(31, 139, 255, 0.35);
+}
+
+.garage-turn {
+  display: block;
+  position: absolute;
+  left: 50%;
+  bottom: 30px;
+  width: 300px;
+  margin-left: -150px;
+}
+
+.garage-car,
+.garage-car svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.garage-boom {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 220px;
+  height: 220px;
+  margin: -110px 0 0 -110px;
+  pointer-events: none;
+}
+
+.boom-bit {
+  transform: translate(var(--x), var(--y)) rotate(var(--r)) scale(var(--s, 1));
+  opacity: 0;
+}
+
+.garage-count {
+  margin: 4px 0 12px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.garage-slots {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.garage-slots .choice-option {
+  min-width: 0;
+  padding: 0 4px;
+  font-size: 14px;
+}
+
+.garage-watch {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.garage-note {
+  margin: 10px 0 0;
+}
+
+.garage-parts {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.garage-part {
+  width: 100%;
+  min-height: 104px;
+  padding: 8px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  border: 2px solid rgba(196, 216, 255, 0.16);
+  border-radius: 12px;
+  background: rgba(17, 30, 73, 0.7);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.garage-part[aria-pressed='true'] {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(31, 139, 255, 0.25);
+}
+
+.garage-part[data-locked='true'] .garage-part-art {
+  opacity: 0.35;
+}
+
+.garage-part:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.garage-part-art {
+  width: 100%;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.garage-part-art span,
+.garage-part-art svg {
+  display: block;
+  width: 100%;
+  max-height: 46px;
+}
+
+.garage-part-name {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.garage-lock {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(255, 207, 63, 0.15);
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--gold);
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .garage-ring {
+    animation: garage-spin 12s linear infinite;
+  }
+
+  .garage-turn {
+    animation: garage-turn 9s ease-in-out infinite;
+  }
+
+  .garage-turntable[data-turn='auto'] .garage-turn text {
+    animation: garage-letters 9s ease-in-out infinite;
+  }
+
+  .garage-turntable[data-turn='rest'] .garage-turn,
+  .garage-turntable[data-turn='rest'] .garage-dial {
+    transition: transform 350ms cubic-bezier(0.2, 0.8, 0.3, 1);
+  }
+
+  .boom-bit {
+    animation: boom-out 1300ms cubic-bezier(0.15, 0.7, 0.3, 1) both;
+  }
+}
+
+/* Once you take hold of the car, it stays where you leave it. */
+.garage-turntable:not([data-turn='auto']) .garage-turn {
+  animation: none;
+}
+
+/* A decal's letters read the right way round from either side of the car. */
+.garage-turn text {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.garage-turntable:not([data-turn='auto']) .garage-turn[data-mirrored='true'] text {
+  transform: scaleX(-1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boom-bit {
+    animation: boom-fade 900ms ease-out both;
+  }
+}
+
+@keyframes garage-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* The car shows one side, squashes to its nose, and shows the other. It
+   passes edge-on at 48.5% and 95.5%, where garage-letters turns the letters. */
+@keyframes garage-turn {
+  0%,
+  40% {
+    transform: none;
+  }
+  47% {
+    transform: scaleX(0.08) translateY(-2px);
+  }
+  50% {
+    transform: scaleX(-0.08) translateY(-2px);
+  }
+  56%,
+  89% {
+    transform: scaleX(-1);
+  }
+  94% {
+    transform: scaleX(-0.08) translateY(-2px);
+  }
+  97% {
+    transform: scaleX(0.08) translateY(-2px);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* The letters turn back as the car passes edge-on, in step with garage-turn. */
+@keyframes garage-letters {
+  0%,
+  48.5% {
+    transform: none;
+  }
+  48.6%,
+  95.5% {
+    transform: scaleX(-1);
+  }
+  95.6%,
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes boom-out {
+  0% {
+    transform: none;
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--x), var(--y)) rotate(var(--r)) scale(var(--s, 1));
+    opacity: 0;
+  }
+}
+
+@keyframes boom-fade {
+  0% {
+    transform: translate(var(--x), var(--y)) rotate(var(--r)) scale(var(--s, 1));
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--x), var(--y)) rotate(var(--r)) scale(var(--s, 1));
+    opacity: 0;
+  }
+}

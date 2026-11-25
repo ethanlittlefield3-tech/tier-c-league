@@ -209,11 +209,32 @@ service cloud.firestore {
           && validProfile(request.resource.data);
       }
 
+      // A car's parts (SCOPE.md, "Garage and achievements"): each slot holds a
+      // part from the catalog, either from the starter kit ('') or unlocked by
+      // the badge named here, which the player must have. Generated from the
+      // engine's catalog (engine/src/achievements.ts); the rule tests check it.
+      function validCar(car, badges) {
+        return car is map
+          && car.keys().hasOnly(['body', 'paint', 'decal', 'wheels', 'boost', 'explosion', 'topper'])
+          && car.keys().hasAll(['body', 'paint', 'decal', 'wheels', 'boost', 'explosion', 'topper'])
+          && owns(car.body, {'brick': '', 'dart': '', 'bruiser': '', 'spiked': 'demolisher', 'noodle': 'alleyCat', 'retro': 'veteran'}, badges)
+          && owns(car.paint, {'midnightBlack': '', 'arcticWhite': '', 'gunmetal': '', 'racingRed': '', 'blazeOrange': '', 'sunburstYellow': '', 'lime': '', 'forestGreen': '', 'teal': '', 'skyBlue': '', 'cobalt': '', 'royalPurple': '', 'hotPink': '', 'burgundy': '', 'sand': '', 'chrome': 'perfectWeek', 'sunrise': 'earlyBird', 'tricolor': 'tripleThreat', 'ice': 'dryWeek', 'silver': 'finalist', 'clown': 'wheelSurvivor', 'galaxy': 'grandChamp'}, badges)
+          && owns(car.decal, {'none': '', 'flame': 'hatTrick', 'pinstripe': 'cleanSheet', 'bookworm': 'scholar', 'joker': 'wildOne', 'checkered': 'designatedDriver', 'redStripe': 'firstBlood', 'cameraFlash': 'photoFinish', 'slingshot': 'giantKiller', 'crown': 'rivalryKing', 'fourLeaf': 'clutch', 'squad': 'teamPlayer', 'wantedPoster': 'bountyHunter', 'payback': 'payback', 'og': 'foundingMember', 'mvp': 'mvpMagnet', 'dumpsterFire': 'bustCollector'}, badges)
+          && owns(car.wheels, {'stock': '', 'muscle': 'gymRat', 'turf': 'touchGrass', 'frost': 'dryMonth', 'lightning': 'comeback', 'forceField': 'untouchable'}, badges)
+          && owns(car.boost, {'team': '', 'gold': 'ironStreak', 'ghost': 'ghost', 'phoenix': 'recoveringAddict', 'hotStreak': 'winStreak', 'jet': 'airMail', 'twinTurbo': 'dynamicDuo', 'spotlight': 'showOff'}, badges)
+          && owns(car.explosion, {'stock': '', 'inferno': 'century', 'zen': 'monkMode', 'foam': 'brewmaster', 'shockwave': 'blowout', 'thunder': 'rumbleRoyale', 'shatter': 'floorBreaker', 'confetti': 'fanFavorite', 'golden': 'champion'}, badges)
+          && owns(car.topper, {'none': '', 'partyHat': 'happyHour', 'broom': 'sweep', 'megaphone': 'trashTalker', 'crystalBall': 'prophet', 'trophy': 'champion', 'whistle': 'commish'}, badges);
+      }
+
+      function owns(part, catalog, badges) {
+        return part is string && part in catalog && (catalog[part] == '' || catalog[part] in badges);
+      }
+
       function validProfile(profile) {
         return profile.displayName is string
           && profile.displayName.size() >= 1
           && profile.displayName.size() <= 24
-          && (!('car' in profile) || profile.car is map)
+          && (!('car' in profile) || validCar(profile.car, profile.get('badges', {})))
           && (!('taunts' in profile) || validTaunts(profile.taunts));
       }
 
