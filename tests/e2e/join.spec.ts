@@ -1,7 +1,7 @@
 import { expect, test, type APIRequestContext, type Browser, type Page } from '@playwright/test';
 import { formatLeagueCode, makeLeagueCode } from '../../engine/src/ids.ts';
-import { enter, expectInApp, joinAs, tapToEnter } from './helpers.ts';
-import { createLeague, readDoc, type TestLeague } from './league.ts';
+import { enter, enterAsCommish, expectInApp, joinAs, tapToEnter } from './helpers.ts';
+import { createLeague, listIds, readDoc, type TestLeague } from './league.ts';
 
 const KEY_SHAPE = /^TCL-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/;
 const heading = (page: Page, name: string) => page.getByRole('heading', { name });
@@ -238,5 +238,98 @@ test.describe('Getting back in with a recovery key', () => {
     await button(page, 'Find my profile').click();
     await expect(heading(page, 'Welcome back, Alex')).toBeVisible();
     expect(await playerOf(request, league, league.commishKey)).toBeUndefined();
+  });
+});
+
+test.describe("Joining with the commish's approval", () => {
+  /** A new player types the code and a name, which asks the commish to let them in. */
+  async function askToJoin(page: Page, league: TestLeague, name: string) {
+    await enter(page);
+    await button(page, 'Join a league').click();
+    await page.getByLabel('League code').fill(league.code);
+    await button(page, 'Next').click();
+    await page.getByLabel('Display name').fill(name);
+    await button(page, 'Join the league').click();
+    await expect(heading(page, 'Asked to join')).toBeVisible();
+  }
+
+  /** The commish's phone, on Commish tools. */
+  async function commishTools(browser: Browser, league: TestLeague) {
+    const phone = await anotherPhone(browser);
+    await enterAsCommish(phone, league);
+    await button(phone, 'Your profile, Alex').click();
+    await button(phone, 'Commish tools').click();
+    return phone;
+  }
+
+  test('A new player asks to join, waits, and gets in with a recovery key once the commish lets them in', async ({ page, request, browser }) => {
+    const league = await createLeague(request, { name: 'Sunday Squad', joining: 'approval' });
+    await askToJoin(page, league, 'Riley');
+    await expect(page.getByRole('status')).toContainText('Your commish lets new players in to Sunday Squad.');
+    // Not in the league yet.
+    expect(Object.keys((await readDoc(request, `leagues/${league.id}`))?.members as object)).toEqual([league.commish]);
+
+    const commish = await commishTools(browser, league);
+    await expect(commish.getByRole('heading', { name: 'Waiting to join' })).toBeVisible();
+    await button(commish, 'Let Riley in').click();
+    await expect(commish.getByRole('status')).toHaveText('Riley can join now. Their phone finishes it.');
+
+    // Riley's phone notices on its own, joins, and shows the key.
+    await expect(heading(page, 'Save your recovery key')).toBeVisible();
+    const key = (await page.locator('.join-key').textContent()) ?? '';
+    expect(key).toMatch(KEY_SHAPE);
+    const player = await playerOf(request, league, key);
+    expect((await readDoc(request, `leagues/${league.id}/players/${player}`))?.displayName).toBe('Riley');
+    await button(page, "I've saved it").click();
+    await expectInApp(page, 'Riley', 'Sunday Squad');
+
+    // The request is tidied away, and the commish's answer is in the league log.
+    await expect.poll(() => listIds(request, `leagues/${league.id}/joinRequests`)).toEqual([]);
+    await expect(commish.getByRole('heading', { name: 'Waiting to join' })).toHaveCount(0);
+    const log = await Promise.all((await listIds(request, `leagues/${league.id}/audit`)).map((id) => readDoc(request, `leagues/${league.id}/audit/${id}`)));
+    expect(log.map((entry) => entry?.action)).toContain('join.approve');
+    await commish.context().close();
+  });
+
+  test('The commish can turn a request away, and the phone says so', async ({ page, request, browser }) => {
+    const league = await createLeague(request, { joining: 'approval' });
+    await askToJoin(page, league, 'Jordan');
+    const commish = await commishTools(browser, league);
+    await button(commish, 'Turn Jordan away').click();
+    await expect(commish.getByRole('status')).toHaveText('Turned Jordan away.');
+
+    await expect(heading(page, 'Not this time')).toBeVisible();
+    await expect(page.getByRole('status')).toContainText('Your commish turned this request down.');
+    expect(Object.keys((await readDoc(request, `leagues/${league.id}`))?.members as object)).toEqual([league.commish]);
+
+    await button(page, 'Start over').click();
+    await expect(button(page, 'Join a league')).toBeVisible();
+    await expect.poll(() => listIds(request, `leagues/${league.id}/joinRequests`)).toEqual([]);
+    await commish.context().close();
+  });
+
+  test('A phone that asked remembers it when the app is opened again, and can take the request back', async ({ page, request }) => {
+    const league = await createLeague(request, { joining: 'approval' });
+    await askToJoin(page, league, 'Casey');
+    await page.reload();
+    await tapToEnter(page);
+    await expect(heading(page, 'Asked to join')).toBeVisible();
+
+    await button(page, 'Take my request back').click();
+    await expect(button(page, 'Join a league')).toBeVisible();
+    await expect.poll(() => listIds(request, `leagues/${league.id}/joinRequests`)).toEqual([]);
+    await page.reload();
+    await tapToEnter(page);
+    await expect(button(page, 'Join a league')).toBeVisible();
+  });
+
+  test('While the league is closed, the commish cannot let anyone in', async ({ page, request, browser }) => {
+    const league = await createLeague(request, { joining: 'approval' });
+    await askToJoin(page, league, 'Morgan');
+    const commish = await commishTools(browser, league);
+    await commish.getByRole('group', { name: 'Joining' }).getByRole('button', { name: 'Closed' }).click();
+    await expect(commish.getByText('The league is closed, so nobody gets in.')).toBeVisible();
+    await expect(button(commish, 'Let Morgan in')).toBeDisabled();
+    await commish.context().close();
   });
 });

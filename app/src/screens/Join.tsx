@@ -1,12 +1,13 @@
-import { useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { formatLeagueCode } from '@tcl/engine';
 import { Lockup } from '../art/Lockup.tsx';
 import { PlayerBadge } from '../art/PlayerBadge.tsx';
 import scene from '../art/title-scene.svg';
-import type { Me, Trouble } from '../data/identity.ts';
+import type { JoinAnswer, Me, Trouble } from '../data/identity.ts';
 import { whyOf } from '../data/why.ts';
 import { readCode, readKey, type EntryProblem } from '../join/entry.ts';
 import { NAME_MAX, initialOf, nameProblem, tidyName } from '../join/name.ts';
+import type { Waiting } from '../join/waiting.ts';
 import { Back, Field, Heading } from '../ui/parts.tsx';
 import './join.css';
 
@@ -15,6 +16,9 @@ export interface JoinApi {
   findLeague(code: string): Promise<{ league: string; name: string } | null>;
   join(input: { league: string; leagueName: string; code: string; displayName: string }): Promise<{ me: Me; key: string }>;
   recover(input: { league: string; leagueName: string; code: string; key: string }): Promise<{ me: Me; key: string } | null>;
+  askToJoin(input: Waiting): Promise<void>;
+  watchJoinRequest(league: string, onChange: (answer: JoinAnswer) => void): () => void;
+  withdrawJoin(league: string): Promise<void>;
 }
 
 type Step =
@@ -22,7 +26,8 @@ type Step =
   | { at: 'code' }
   | { at: 'name'; league: string; leagueName: string; code: string }
   | { at: 'recover' }
-  | { at: 'key'; me: Me; key: string; returning: boolean };
+  | { at: 'key'; me: Me; key: string; returning: boolean }
+  | { at: 'waiting'; waiting: Waiting };
 
 const TROUBLE: Record<Trouble, string> = {
   'not-open': 'The league is not open yet. Check back soon.',
@@ -53,9 +58,11 @@ export function Join(props: {
   notice?: { title: string; body: string } | null;
   /** True while the league's database is not set up yet. The first step says so. */
   closed?: boolean;
+  /** A request to join this phone is waiting on, from before it was closed. */
+  waiting?: Waiting | null;
   onDone: (me: Me) => void;
 }) {
-  const [step, setStep] = useState<Step>(props.start === 'recover' ? { at: 'recover' } : { at: 'welcome' });
+  const [step, setStep] = useState<Step>(props.waiting ? { at: 'waiting', waiting: props.waiting } : props.start === 'recover' ? { at: 'recover' } : { at: 'welcome' });
   const [code, setCode] = useState(props.code ? formatLeagueCode(props.code) : '');
   const [name, setName] = useState('');
   const [key, setKey] = useState('');
@@ -100,8 +107,20 @@ export function Join(props: {
     if (problem === 'empty') return setError({ on: 'name', text: 'Type a name first.' });
     if (problem === 'too-long') return setError({ on: 'name', text: `That is too long. A name can be up to ${NAME_MAX} characters.` });
     void attempt('name', async () => {
-      const joined = await props.api.join({ league: step.league, leagueName: step.leagueName, code: step.code, displayName: tidyName(name) });
-      go({ at: 'key', me: joined.me, key: joined.key, returning: false });
+      const input = { league: step.league, leagueName: step.leagueName, code: step.code, displayName: tidyName(name) };
+      try {
+        const joined = await props.api.join(input);
+        go({ at: 'key', me: joined.me, key: joined.key, returning: false });
+      } catch (failure) {
+        if (whyOf(failure) !== 'refused') throw failure;
+        // A league that lets players in with the commish's approval takes a request instead.
+        try {
+          await props.api.askToJoin(input);
+        } catch {
+          throw failure;
+        }
+        go({ at: 'waiting', waiting: input });
+      }
     });
   };
 
@@ -196,6 +215,17 @@ export function Join(props: {
     );
   }
 
+  if (step.at === 'waiting') {
+    return (
+      <WaitingToJoin
+        api={props.api}
+        waiting={step.waiting}
+        onJoined={(me, key) => go({ at: 'key', me, key, returning: false })}
+        onStartOver={() => go({ at: 'welcome' })}
+      />
+    );
+  }
+
   if (step.at === 'recover') {
     return (
       <main class="screen join" data-step="recover">
@@ -243,6 +273,69 @@ export function Join(props: {
         <button class="btn" type="button" onClick={() => props.onDone(step.me)}>
           I've saved it
         </button>
+      </div>
+    </main>
+  );
+}
+
+/**
+ * Waiting for the commish to let you in (joining "with my approval"). When
+ * they do, the phone joins as usual and shows the recovery key.
+ */
+function WaitingToJoin(props: { api: JoinApi; waiting: Waiting; onJoined: (me: Me, key: string) => void; onStartOver: () => void }) {
+  const [answer, setAnswer] = useState<JoinAnswer>('waiting');
+  const [error, setError] = useState<string | null>(null);
+  const joining = useRef(false);
+  const { api, waiting, onJoined } = props;
+
+  useEffect(
+    () =>
+      api.watchJoinRequest(waiting.league, (next) => {
+        setAnswer(next);
+        if (next !== 'approved' || joining.current) return;
+        joining.current = true;
+        void api
+          .join(waiting)
+          .then(async (joined) => {
+            await api.withdrawJoin(waiting.league);
+            onJoined(joined.me, joined.key);
+          })
+          .catch((failure: unknown) => {
+            joining.current = false;
+            setError(TROUBLE[whyOf(failure)]);
+          });
+      }),
+    [waiting.league],
+  );
+
+  const startOver = () => {
+    void api.withdrawJoin(waiting.league).then(props.onStartOver);
+  };
+
+  return (
+    <main class="screen join" data-step="waiting">
+      <div class="screen-body">
+        <PlayerBadge class="join-badge" initial={initialOf(waiting.displayName)} />
+        <Heading>{answer === 'declined' ? 'Not this time' : answer === 'approved' ? "You're in" : 'Asked to join'}</Heading>
+        <p class="lead" role="status">
+          {answer === 'declined'
+            ? `Your commish turned this request down. Ask them about ${waiting.leagueName}.`
+            : answer === 'approved'
+              ? 'Setting up your profile…'
+              : answer === 'gone'
+                ? 'This request is gone. Start over to ask again.'
+                : `Your commish lets new players in to ${waiting.leagueName}. You can close the app: it remembers you asked.`}
+        </p>
+        {error && (
+          <p class="field-error" role="alert">
+            {error}
+          </p>
+        )}
+        {answer !== 'approved' && (
+          <button class="btn btn-second" type="button" onClick={startOver}>
+            {answer === 'waiting' ? 'Take my request back' : 'Start over'}
+          </button>
+        )}
       </div>
     </main>
   );

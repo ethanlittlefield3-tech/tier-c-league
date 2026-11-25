@@ -126,3 +126,14 @@ export const setRemovedStarters = (me: Me, season: string, removedStarters: numb
     save.set(doc(league, 'audit', audit), auditEntry(me, 'wheel.starters', 'config/wheel', reason));
     await save.commit();
   });
+
+/** Lets someone in who asked to join, or turns them away. Either way it goes in the league log. */
+export const answerJoin = (me: Me, uid: string, name: string, letIn: boolean) =>
+  attempt(async (db) => {
+    const league = doc(db, 'leagues', me.league);
+    const audit = doc(collection(league, 'audit')).id;
+    const save = writeBatch(db);
+    save.update(doc(league, 'joinRequests', uid), letIn ? { approved: true, audit } : { declined: true, audit });
+    save.set(doc(league, 'audit', audit), auditEntry(me, letIn ? 'join.approve' : 'join.decline', `joinRequests/${uid}`, letIn ? `Let ${name} in` : `Turned ${name} away`));
+    await save.commit();
+  });

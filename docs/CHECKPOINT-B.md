@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 250 of 250 passing.
+- **Tests:** 258 of 258 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -67,6 +67,24 @@ A device is in a league only while its claim holds the player's current recovery
 - A display name must be 1 to 24 characters
 - An accented letter counts as one character and an emoji as two
 - A device's push settings can be read and written by that device only
+
+## Joining with the commish's approval
+
+With joining set to "with my approval", a new player asks first, and only the commish lets them in, with an audit entry.
+
+**Joining with the commish's approval**
+
+- A new player can't just join: they ask first, with the league code, under their own sign-in
+- A request starts unanswered, and carries the server time and a name of 1 to 24 characters, and nothing else
+- Only the commish lets someone in, with an audit entry; then their phone joins as usual
+- The commish can turn someone away, with an audit entry, and then they cannot join
+- The player and the commish can see the request; nobody else can
+- The player can take their request back; nobody else can
+
+**Asking to join in other leagues**
+
+- An open league takes no requests: you just join
+- A closed league takes no requests either
 
 ## Daily logs
 

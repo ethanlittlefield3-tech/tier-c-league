@@ -6,7 +6,8 @@
  * whole, so a player can never be left half joined.
  */
 import { makeRecoveryKey } from '@tcl/engine';
-import { collection, deleteDoc, doc, getDoc, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, onSnapshot, serverTimestamp, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { clearWaiting, saveWaiting, type Waiting } from '../join/waiting.ts';
 import { forget, recall, remember } from '../storage.ts';
 import { NoBackend, connect } from './firebase.ts';
 
@@ -124,6 +125,57 @@ export async function join(input: { league: string; leagueName: string; code: st
       return { me, key };
     })(),
   );
+}
+
+/**
+ * Asks the commish to let you in, when the league's joining needs their
+ * approval. The phone remembers it is waiting.
+ */
+export async function askToJoin(input: Waiting): Promise<void> {
+  return patiently(
+    (async () => {
+      const { db, device } = await connect();
+      await setDoc(doc(db, 'leagues', input.league, 'joinRequests', device), { displayName: input.displayName, code: input.code, at: serverTimestamp(), approved: false });
+      saveWaiting(input);
+    })(),
+  );
+}
+
+export type JoinAnswer = 'waiting' | 'approved' | 'declined' | 'gone';
+
+/** Watches your request to join: still waiting, let in, turned away, or gone. */
+export function watchJoinRequest(league: string, onChange: (answer: JoinAnswer) => void): () => void {
+  let stop: (() => void) | null = null;
+  let stopped = false;
+  connect().then(
+    ({ db, device }) => {
+      if (stopped) return;
+      stop = onSnapshot(
+        doc(db, 'leagues', league, 'joinRequests', device),
+        (snapshot) => {
+          const data = snapshot.data();
+          onChange(!data ? 'gone' : data.approved === true ? 'approved' : data.declined === true ? 'declined' : 'waiting');
+        },
+        () => onChange('gone'),
+      );
+    },
+    () => onChange('gone'),
+  );
+  return () => {
+    stopped = true;
+    stop?.();
+  };
+}
+
+/** Takes your request back, or tidies it away once you are in. The phone stops waiting. */
+export async function withdrawJoin(league: string): Promise<void> {
+  clearWaiting();
+  try {
+    const { db, device } = await connect();
+    await deleteDoc(doc(db, 'leagues', league, 'joinRequests', device));
+  } catch {
+    // Nothing to tidy away.
+  }
 }
 
 /**

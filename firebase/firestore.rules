@@ -103,7 +103,9 @@ service cloud.firestore {
           && change.changedKeys().size() == 0
           && after.members[mine.player] == true
           && after.members.size() <= 12
-          && before.joining == 'open'
+          && (before.joining == 'open'
+              || (before.joining == 'approval'
+                  && get(/databases/$(database)/documents/leagues/$(L)/joinRequests/$(request.auth.uid)).data.approved == true))
           && mine.code == before.code
           && mine.key == getAfter(/databases/$(database)/documents/leagues/$(L)/keys/$(mine.player)).data.key;
       }
@@ -133,6 +135,34 @@ service cloud.firestore {
           && after.members is map && after.members.size() >= 1 && after.members.size() <= 12
           && after.commish is string && after.commish in after.members
           && (after.coCommish == null || (after.coCommish is string && after.coCommish in after.members));
+      }
+
+      // ---- Join requests ----------------------------------------------------
+      // With joining set to "with my approval", a new player asks first: their
+      // name, filed under their own sign-in, with the league code. The commish
+      // lets them in or turns them away, with an audit entry. Once let in, the
+      // player's own phone joins as usual.
+      match /joinRequests/{uid} {
+        allow get: if (signedIn() && request.auth.uid == uid) || isCommish(L);
+        allow list: if isCommish(L);
+        allow create: if signedIn()
+          && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['displayName', 'code', 'at', 'approved'])
+          && request.resource.data.displayName is string
+          && request.resource.data.displayName.size() >= 1
+          && request.resource.data.displayName.size() <= 24
+          && request.resource.data.code == get(/databases/$(database)/documents/leagues/$(L)).data.code
+          && get(/databases/$(database)/documents/leagues/$(L)).data.joining == 'approval'
+          && request.resource.data.at == request.time
+          && request.resource.data.approved == false;
+        allow update: if isCommish(L)
+          && ((request.resource.data.diff(resource.data).affectedKeys().hasOnly(['approved', 'audit'])
+                && request.resource.data.approved == true
+                && audited(L, request.resource.data.audit, 'join.approve', 'joinRequests/' + uid))
+              || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['declined', 'audit'])
+                && request.resource.data.declined == true
+                && audited(L, request.resource.data.audit, 'join.decline', 'joinRequests/' + uid)));
+        allow delete: if signedIn() && request.auth.uid == uid;
       }
 
       // ---- Players ----------------------------------------------------------

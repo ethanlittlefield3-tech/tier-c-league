@@ -3,6 +3,7 @@ import { backend } from '../data/backend.ts';
 import { loadData } from '../data/load.ts';
 import type { Me } from '../data/identity.ts';
 import { Frame } from './Frame.tsx';
+import { savedWaiting } from '../join/waiting.ts';
 import { Join, type JoinApi } from './Join.tsx';
 
 type State =
@@ -70,6 +71,7 @@ export function Session() {
         start={state.signedOutCode ? 'recover' : 'welcome'}
         code={state.signedOutCode ?? undefined}
         notice={state.signedOutCode ? SIGNED_OUT : null}
+        waiting={savedWaiting()}
         onDone={(me) => setState({ at: 'home', me })}
       />
     );

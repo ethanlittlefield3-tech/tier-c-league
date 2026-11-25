@@ -98,7 +98,7 @@ const random = (bytes: number) => crypto.getRandomValues(new Uint8Array(bytes));
  */
 export async function createLeague(
   request: APIRequestContext,
-  options: { name?: string; joining?: 'open' | 'closed'; players?: number } = {},
+  options: { name?: string; joining?: 'open' | 'approval' | 'closed'; players?: number } = {},
 ): Promise<TestLeague> {
   const league = newLeague({ name: options.name ?? 'Sunday Squad', commishName: 'Alex', random });
   for (const doc of leagueSeed(league, new Date())) {

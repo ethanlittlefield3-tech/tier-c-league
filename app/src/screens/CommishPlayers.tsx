@@ -12,6 +12,21 @@ const TROUBLE: Record<Trouble, string> = {
 
 type Confirm = { kind: 'reissue' | 'handOver' | 'remove'; player: string } | null;
 
+type Joining = 'open' | 'approval' | 'closed';
+
+const JOINING: Record<Joining, { label: string; reason: string; done: string }> = {
+  open: { label: 'Open', reason: 'Opened the league to new players', done: 'The league is open.' },
+  approval: { label: 'With my approval', reason: 'Made new players ask to join', done: 'New players ask you first. Let them in below.' },
+  closed: { label: 'Closed', reason: 'Closed the league to new players', done: 'The league is closed to new players.' },
+};
+
+interface JoinRequest {
+  displayName?: string;
+  at?: number;
+  approved?: boolean;
+  declined?: boolean;
+}
+
 /**
  * Players and recovery keys (SCOPE.md, "Commish tools"): see a key, reissue
  * one (which also signs out a lost phone), name a co-commish, hand over the
@@ -19,6 +34,7 @@ type Confirm = { kind: 'reissue' | 'handOver' | 'remove'; player: string } | nul
  */
 export function CommishPlayers(props: { me: Me; league: { commish?: string; coCommish?: string | null; members?: Record<string, boolean>; joining?: string } }) {
   const players = useAll<{ displayName?: string }>(`leagues/${props.me.league}/players`);
+  const requests = useAll<JoinRequest>(`leagues/${props.me.league}/joinRequests`);
   const [open, setOpen] = useState<string | null>(null);
   const [keys, setKeys] = useState<Record<string, string>>({});
   const [confirm, setConfirm] = useState<Confirm>(null);
@@ -28,6 +44,8 @@ export function CommishPlayers(props: { me: Me; league: { commish?: string; coCo
   const members = Object.keys(props.league.members ?? {});
   const roster = players.docs.filter((found) => members.includes(found.id)).sort((a, b) => (a.data.displayName ?? '').localeCompare(b.data.displayName ?? ''));
   const nameOf = (player: string) => players.docs.find((found) => found.id === player)?.data.displayName ?? 'Player';
+  const waiting = requests.docs.filter((found) => found.data.approved !== true && found.data.declined !== true).sort((a, b) => (a.data.at ?? 0) - (b.data.at ?? 0));
+  const full = members.length >= 12;
 
   const run = (work: (api: Awaited<ReturnType<typeof loadData>>) => Promise<unknown>, done: string) => {
     if (busy) return;
@@ -53,21 +71,61 @@ export function CommishPlayers(props: { me: Me; league: { commish?: string; coCo
     <>
       <section class="panel" aria-labelledby="joining-title">
         <h2 id="joining-title">Joining</h2>
-        <p class="panel-text">Whether new players can join with the league code.</p>
+        <p class="panel-text">Who can join with the league code. With your approval, each new player asks first and you let them in.</p>
         <div class="choice" role="group" aria-label="Joining">
-          {(['open', 'closed'] as const).map((value) => (
+          {(['open', 'approval', 'closed'] as const).map((value) => (
             <button
               type="button"
               class="choice-option"
               aria-pressed={props.league.joining === value}
               disabled={busy}
-              onClick={() => run((api) => api.editLeague(props.me, { joining: value }, value === 'open' ? 'Opened the league to new players' : 'Closed the league to new players'), value === 'open' ? 'The league is open.' : 'The league is closed to new players.')}
+              onClick={() => run((api) => api.editLeague(props.me, { joining: value }, JOINING[value].reason), JOINING[value].done)}
             >
-              {value === 'open' ? 'Open' : 'Closed'}
+              {JOINING[value].label}
             </button>
           ))}
         </div>
       </section>
+
+      {waiting.length > 0 && (
+        <section class="panel" aria-labelledby="waiting-title">
+          <h2 id="waiting-title">Waiting to join</h2>
+          <p class="panel-text">
+            {props.league.joining === 'closed'
+              ? 'The league is closed, so nobody gets in. Open it, or switch to With my approval, to let them in.'
+              : full
+                ? 'The league is full (12 players), so nobody else can join.'
+                : 'They typed the league code and a name. Let in only people you know.'}
+          </p>
+          <ul class="people">
+            {waiting.map(({ id, data }) => (
+              <li key={id} class="join-request">
+                <p class="join-request-name">{data.displayName ?? 'Someone'}</p>
+                <div class="person-actions">
+                  <button
+                    type="button"
+                    class="btn"
+                    disabled={busy || props.league.joining === 'closed' || full}
+                    aria-label={`Let ${data.displayName ?? 'them'} in`}
+                    onClick={() => run((api) => api.answerJoin(props.me, id, data.displayName ?? 'Someone', true), `${data.displayName ?? 'They'} can join now. Their phone finishes it.`)}
+                  >
+                    Let in
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-quiet person-remove"
+                    disabled={busy}
+                    aria-label={`Turn ${data.displayName ?? 'them'} away`}
+                    onClick={() => run((api) => api.answerJoin(props.me, id, data.displayName ?? 'Someone', false), `Turned ${data.displayName ?? 'them'} away.`)}
+                  >
+                    Turn away
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section class="panel" aria-labelledby="players-title">
         <h2 id="players-title">Players and keys</h2>

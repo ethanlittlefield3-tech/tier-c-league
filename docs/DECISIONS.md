@@ -211,8 +211,16 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 115. **Open the demo on a computer,** so the phone stays in the real league. A phone holds one league at a time.
 116. **The made-up players don't play on.** After it's made, the hourly jobs keep its calendar, results and Wheel going, but nobody logs for them.
 
+**Keeping the schedules running** (new on 2026-11-25, not yet reviewed by the commish)
+
 117. **A monthly keepalive keeps the schedules running.** GitHub pauses scheduled jobs in a public repo after 60 days with no activity, which a quiet season could reach. Once a month a job records the date in `.github/keepalive` and pushes it with its own token, which starts no other workflow.
+**Commish tools, part 4** (new on 2026-11-25, not yet reviewed by the commish)
+
 118. **Starter dares come off the Wheel by their place in the list,** and can be put back. The next draw leaves them out; a wheel already drawn keeps its slices.
+119. **"With my approval" is a third joining setting,** beside Open and Closed. A new player types the code and a name as usual. Instead of joining, the phone asks the commish and waits.
+120. **The waiting phone remembers it asked,** so the app can be closed. Once the commish lets them in, the phone joins on its own and shows the recovery key, as a normal join does. A player turned away is told so and can start over.
+121. **Only the commish and the asking phone can see a request,** and each answer goes in the league log. The request is deleted once the player is in, or when they take it back.
+122. **Letting someone in still needs room:** a full league (12 players) or a closed one lets nobody in, and Let in stays off while the league is closed.
 
 **Calendar**
 

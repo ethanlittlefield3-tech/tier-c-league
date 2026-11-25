@@ -26,6 +26,7 @@ const results = JSON.parse(readFileSync(resolve(root, '.vitest/rules.json'), 'ut
 // The order the areas are presented in, by test file.
 const AREAS: [file: string, heading: string, blurb: string][] = [
   ['identity', 'Who is in the league', 'A device is in a league only while its claim holds the player\'s current recovery key.'],
+  ['joins', "Joining with the commish's approval", 'With joining set to "with my approval", a new player asks first, and only the commish lets them in, with an audit entry.'],
   ['days', 'Daily logs', 'You write your own day, and only between its start and its lock, by the server\'s clock.'],
   ['kit', 'Aerial, Full Boost, rest days and Rule One', 'Each has one fixed slot, and each slot has its own deadline.'],
   ['sealed', 'Demolition', 'Hidden from everyone but the player who set it until the day locks. There is no exception for the commish.'],
