@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatPoints, formatScreen, isRestDay, leagueDates, liveDayScore, stepScreen, windowOf } from '../src/today/model.ts';
+import { breakdown, formatPoints, formatScreen, formatScreenShort, isRestDay, leagueDates, liveDayScore, pointsChip, scaleRowOf, screenScale, stepScreen, windowOf } from '../src/today/model.ts';
 
 const NY = 'America/New_York';
 const at = (iso: string) => new Date(iso).getTime();
@@ -99,5 +99,71 @@ describe('Screen time and points, as the app writes them', () => {
     expect(formatPoints(3)).toBe('+3');
     expect(formatPoints(0)).toBe('0');
     expect(formatPoints(-2)).toBe('−2');
+  });
+});
+
+describe('The screen-time sheet', () => {
+  it('Screen time on the card reads short: "2 h 15m"', () => {
+    expect(formatScreenShort(null)).toBe('Not logged');
+    expect(formatScreenShort(0)).toBe('0m');
+    expect(formatScreenShort(45)).toBe('45m');
+    expect(formatScreenShort(120)).toBe('2 h');
+    expect(formatScreenShort(135)).toBe('2 h 15m');
+  });
+
+  it('The scale shows each hour at the season\'s par: at par 3, under 1 hour is +3 and 6 to 7 hours is -3', () => {
+    const scale = screenScale(3);
+    expect(scale.map((row) => [row.label, row.points])).toEqual([
+      ['Under 1 h', '+3'],
+      ['1–2 h', '+2'],
+      ['2–3 h', '+1'],
+      ['3–4 h', '0'],
+      ['4–5 h', '−1'],
+      ['5–6 h', '−2'],
+      ['6–7 h', '−3'],
+      ['Each hour more', '−1'],
+    ]);
+  });
+
+  it('At another par the scale moves with it', () => {
+    expect(screenScale(5)[0]).toMatchObject({ label: 'Under 1 h', points: '+5' });
+    expect(screenScale(1)[2]).toMatchObject({ label: '2–3 h', points: '−1' });
+  });
+
+  it('The row for the time logged is the one lit up', () => {
+    expect(scaleRowOf(null)).toBeNull();
+    expect(scaleRowOf(0)).toBe(0);
+    expect(scaleRowOf(59)).toBe(0);
+    expect(scaleRowOf(135)).toBe(2);
+    expect(scaleRowOf(419)).toBe(6);
+    expect(scaleRowOf(420)).toBe(7);
+    expect(scaleRowOf(900)).toBe(7);
+  });
+
+  it('Points chips say pt or pts', () => {
+    expect(pointsChip(1)).toBe('+1 pt');
+    expect(pointsChip(2)).toBe('+2 pts');
+    expect(pointsChip(0)).toBe('0 pts');
+    expect(pointsChip(-1)).toBe('−1 pt');
+  });
+});
+
+describe('The day total', () => {
+  it('Breaks the total down by part', () => {
+    const entry = { goals: { mind: true, body: true, wildcard: false }, screenMinutes: 135, beers: 1 };
+    expect(breakdown(liveDayScore({ par: 3, entry, restDay: false, locked: false }))).toBe('Goals +2 · screen +1 · beers −1');
+  });
+
+  it('Says when a power-up changed it', () => {
+    const entry = { goals: { mind: true, body: false, wildcard: false }, screenMinutes: 30, beers: 0 };
+    expect(breakdown(liveDayScore({ par: 3, entry, restDay: false, locked: false, aerial: true }))).toBe('Goals +1 · screen +3 · beers 0 · Aerial ×2');
+    expect(breakdown(liveDayScore({ par: 3, entry, restDay: false, locked: false, ruleOne: true }))).toBe('Rule One: the day scores 0');
+  });
+
+  it('Leaves out screen time while it is not logged, and says nothing when nothing is logged', () => {
+    const entry = { goals: { mind: true, body: false, wildcard: false }, screenMinutes: null, beers: 0 };
+    expect(breakdown(liveDayScore({ par: 3, entry, restDay: false, locked: false }))).toBe('Goals +1 · beers 0');
+    expect(breakdown(liveDayScore({ par: 3, entry: null, restDay: false, locked: false }))).toBe('');
+    expect(breakdown(liveDayScore({ par: 3, entry: null, restDay: false, locked: true }))).toBe('Nothing logged: −5');
   });
 });

@@ -113,7 +113,7 @@ test.describe('A power-up belongs to the week of its day', () => {
     // This week's is untouched.
     expect((await kit(`${period}_${me}_fullBoost`))?.lane).toBe('wildcard');
 
-    await button(page, 'Yesterday Fix until 12:00 pm').click();
+    await page.getByRole('button', { name: /^Yesterday/ }).click();
     await expect(goal(page, 'body')).toHaveAttribute('data-state', 'boosted');
   });
 });

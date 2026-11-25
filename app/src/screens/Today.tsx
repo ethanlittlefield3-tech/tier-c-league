@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks';
+import { useRef, useState } from 'preact/hooks';
 import { LANES, weekPeriod, type Lane } from '@tcl/engine';
 import { useDoc, useNow, useWhere } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
@@ -6,18 +6,20 @@ import { loadData } from '../data/load.ts';
 import { whyOf } from '../data/why.ts';
 import {
   BEERS_MAX,
-  SCREEN_STEP,
+  breakdown,
   formatPoints,
   formatScreen,
+  formatScreenShort,
   isRestDay,
   leagueDates,
   liveDayScore,
-  stepScreen,
+  pointsChip,
   windowOf,
   type DayEntry,
 } from '../today/model.ts';
 import type { CalDay } from '../today/kit.ts';
 import { PowerUps, type Play } from './PowerUps.tsx';
+import { ScreenSheet } from './ScreenSheet.tsx';
 import './today.css';
 
 interface LeagueDoc {
@@ -44,8 +46,6 @@ interface RosterDoc {
 
 const LANE_NAMES: Record<Lane, string> = { mind: 'Mind', body: 'Body', wildcard: 'Wildcard' };
 const EMPTY: DayEntry = { goals: { mind: false, body: false, wildcard: false }, screenMinutes: null, beers: 0 };
-/** The slider covers the first 8 hours, where nearly every day falls. The + button goes on to 24. */
-const SLIDER_MAX = 480;
 
 const TROUBLE: Record<Trouble, string> = {
   'not-open': 'The league is not open yet.',
@@ -61,6 +61,57 @@ function longDate(date: string): string {
   const [year, month, day] = date.split('-').map(Number) as [number, number, number];
   const weekday = (new Date(Date.UTC(year, month - 1, day)).getUTCDay() + 6) % 7;
   return `${DAY_NAMES[weekday]}, ${MONTHS[month - 1]} ${day}`;
+}
+
+/** "Nov 25" from a date like 2026-11-25. */
+function shortDate(date: string): string {
+  const [, month, day] = date.split('-').map(Number) as [number, number, number];
+  return `${(MONTHS[month - 1] ?? '').slice(0, 3)} ${day}`;
+}
+
+/** "Wed Nov 25" from a date like 2026-11-25. */
+function sheetDate(date: string): string {
+  const [year, month, day] = date.split('-').map(Number) as [number, number, number];
+  const weekday = (new Date(Date.UTC(year, month - 1, day)).getUTCDay() + 6) % 7;
+  return `${(DAY_NAMES[weekday] ?? '').slice(0, 3)} ${shortDate(date)}`;
+}
+
+/** The ring, check, bolt or "Rest" in the corner of a goal card. */
+function GoalMark(props: { state: string }) {
+  if (props.state === 'rest') return <span class="goal-mark goal-mark-rest">Rest</span>;
+  if (props.state === 'boosted') {
+    return (
+      <span class="goal-mark goal-mark-boost">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M13 3 6 13h5l-1 8 7-10h-5Z" fill="currentColor" />
+        </svg>
+        Boost
+      </span>
+    );
+  }
+  if (props.state === 'hit') {
+    return (
+      <span class="goal-mark goal-mark-hit">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m6 12.5 4 4 8-9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </span>
+    );
+  }
+  return <span class="goal-mark" />;
+}
+
+/** A mug of beer, drawn for this app. */
+function BeerMug() {
+  return (
+    <svg class="beer-mug" viewBox="0 0 40 40" aria-hidden="true">
+      <path d="M9 13h19v20a3 3 0 0 1-3 3H12a3 3 0 0 1-3-3Z" fill="#ffb53a" stroke="#050914" stroke-width="2" />
+      <path d="M28 17h3a4 4 0 0 1 4 4v4a4 4 0 0 1-4 4h-3" fill="none" stroke="#050914" stroke-width="5" />
+      <path d="M28 17h3a4 4 0 0 1 4 4v4a4 4 0 0 1-4 4h-3" fill="none" stroke="#ffb53a" stroke-width="2.5" />
+      <path d="M13 18v13M18.5 18v13M24 18v13" stroke="#ffd98a" stroke-width="2" stroke-linecap="round" />
+      <path d="M8 13a4 4 0 0 1 4-5 5 5 0 0 1 8-2 4.5 4.5 0 0 1 7 3 3.5 3.5 0 0 1 1 4Z" fill="#ffffff" stroke="#050914" stroke-width="2" stroke-linejoin="round" />
+    </svg>
+  );
 }
 
 /** A card in place of the day, when there is no day to log. */
@@ -82,8 +133,9 @@ function Notice(props: { title: string; children: string }) {
 export function Today(props: { me: Me }) {
   const now = useNow();
   const [picked, setPicked] = useState<'today' | 'yesterday'>('today');
-  const [draftMinutes, setDraftMinutes] = useState<number | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const screenCard = useRef<HTMLButtonElement>(null);
 
   const leaguePath = `leagues/${props.me.league}`;
   const league = useDoc<LeagueDoc>(leaguePath);
@@ -167,7 +219,6 @@ export function Today(props: { me: Me }) {
   const aerialHere = shownAerial !== null && shownAerial.date === date;
   const ruleOneHere = ruleOnes.some((play) => play.date === date);
   const score = liveDayScore({ par: season.data.par, entry, restDay, locked: dayWindow === 'locked', aerial: aerialHere, fullBoost: boostLane, ruleOne: ruleOneHere });
-  const shownMinutes = draftMinutes ?? entry.screenMinutes;
 
   const save = (next: DayEntry) => {
     if (!editable || !date || !seasonId) return;
@@ -178,89 +229,56 @@ export function Today(props: { me: Me }) {
   };
 
   const toggleGoal = (lane: Lane) => save({ ...entry, goals: { ...entry.goals, [lane]: !entry.goals[lane] } });
-  const setScreen = (minutes: number | null) => {
-    setDraftMinutes(null);
-    save({ ...entry, screenMinutes: minutes });
-  };
   const setBeers = (beers: number) => save({ ...entry, beers: Math.min(BEERS_MAX, Math.max(0, beers)) });
+  const closeSheet = () => {
+    setSheetOpen(false);
+    screenCard.current?.focus({ preventScroll: true });
+  };
 
   const totalNote =
     dayWindow === 'locked' ? 'Final' : score.kind === 'open' ? 'Nothing logged yet' : restDay ? 'So far, on your rest day' : 'So far';
   const status = error ?? (day.pending ? 'Saving' : day.data ? 'Saved' : '');
+  const screenPointsShown = entry.screenMinutes === null ? null : score.screen.points;
 
   return (
     <div class="today" data-window={dayWindow}>
-      {yesterdayOpen && (
-        <div class="today-days" role="group" aria-label="Which day">
-          <button type="button" class="today-day" aria-pressed={showing === 'today'} onClick={() => setPicked('today')}>
-            Today
+      <div class="today-days" role="group" aria-label="Which day">
+        <button type="button" class="today-day" aria-pressed={showing === 'today'} onClick={() => setPicked('today')}>
+          Today {'\u00b7'} {shortDate(dates.today)}
+        </button>
+        {yesterdayOpen && (
+          <button
+            type="button"
+            class="today-day"
+            aria-pressed={showing === 'yesterday'}
+            aria-label={`Yesterday \u00b7 ${shortDate(dates.yesterday)}, fix until 12:00 pm`}
+            onClick={() => setPicked('yesterday')}
+          >
+            Yesterday {'\u00b7'} {shortDate(dates.yesterday)}
           </button>
-          <button type="button" class="today-day" aria-pressed={showing === 'yesterday'} onClick={() => setPicked('yesterday')}>
-            Yesterday
-            <span>Fix until 12:00 pm</span>
-          </button>
-        </div>
-      )}
+        )}
+      </div>
 
-      <section class="today-total" aria-label="Day total">
-        <p class="today-date">
-          {cal ? longDate(cal.date) : ''}
-          {cal ? ` · Week ${cal.week}` : ''}
-          {restDay && <span class="today-rest">Rest day</span>}
-        </p>
-        <p class="today-points" data-sign={score.total > 0 ? 'up' : score.total < 0 ? 'down' : 'zero'}>
-          <span class="sr-only">Day total: </span>
-          {formatPoints(score.total)}
-        </p>
-        <p class="today-note">{totalNote}</p>
-        {ruleOneHere ? (
-          <p class="today-kit">Rule One: this day scores 0</p>
-        ) : aerialHere ? (
-          <p class="today-kit">Aerial: this day counts double</p>
-        ) : null}
-      </section>
-
+      {restDay && <p class="today-rest">Rest day</p>}
       {dayWindow === 'locked' && <p class="today-locked">This day is locked. Its score is final once the week settles.</p>}
       {dayWindow === 'before' && <p class="today-locked">This day has not started yet.</p>}
+      {showing === 'yesterday' && editable && <p class="today-locked">Yesterday can be fixed until 12:00 pm today.</p>}
 
       <section class="squares" aria-label="Your squares">
-        <div class="square square-screen" data-logged={shownMinutes !== null}>
-          <div class="square-head">
-            <h3>Screen time</h3>
-            <span class="square-points">{entry.screenMinutes === null ? '—' : formatPoints(score.screen.points)}</span>
-          </div>
-          <p class="square-value" aria-live="polite">
-            {formatScreen(shownMinutes)}
-          </p>
-          <div class="screen-controls">
-            <button type="button" class="step" aria-label="15 minutes less" disabled={!editable || (shownMinutes ?? 0) === 0} onClick={() => setScreen(stepScreen(entry.screenMinutes, -SCREEN_STEP))}>
-              {'−'}
-            </button>
-            <input
-              type="range"
-              min={0}
-              max={SLIDER_MAX}
-              step={SCREEN_STEP}
-              value={Math.min(SLIDER_MAX, shownMinutes ?? 0)}
-              aria-label="Screen time"
-              aria-valuetext={formatScreen(shownMinutes)}
-              disabled={!editable}
-              onInput={(event) => setDraftMinutes(Number(event.currentTarget.value))}
-              onChange={(event) => setScreen(Number(event.currentTarget.value))}
-            />
-            <button type="button" class="step" aria-label="15 minutes more" disabled={!editable} onClick={() => setScreen(stepScreen(entry.screenMinutes, SCREEN_STEP))}>
-              +
-            </button>
-          </div>
-          <p class="square-help">
-            Social, entertainment and games, from your phone's Screen Time. Par is {season.data.par} hours.
-            {entry.screenMinutes !== null && editable && (
-              <button type="button" class="square-clear" onClick={() => setScreen(null)}>
-                Clear
-              </button>
-            )}
-          </p>
-        </div>
+        <button
+          ref={screenCard}
+          type="button"
+          class="square square-screen"
+          data-logged={entry.screenMinutes !== null}
+          aria-label={`Screen time: ${formatScreen(entry.screenMinutes)}${screenPointsShown === null ? '' : `, ${pointsChip(screenPointsShown)}`}. Open screen time`}
+          onClick={() => setSheetOpen(true)}
+        >
+          <span class="square-label">Screen time {'\u00b7'} everyone</span>
+          <span class="square-value">{formatScreenShort(entry.screenMinutes)}</span>
+          <span class="square-chip" data-sign={screenPointsShown === null ? 'none' : screenPointsShown > 0 ? 'up' : screenPointsShown < 0 ? 'down' : 'zero'}>
+            {screenPointsShown === null ? (editable ? 'Tap to log' : 'Not logged') : pointsChip(screenPointsShown)}
+          </span>
+        </button>
 
         {LANES.map((lane) => {
           const goal = roster.data?.goals?.[lane]?.text ?? '';
@@ -277,40 +295,50 @@ export function Today(props: { me: Me }) {
               disabled={!editable || restDay || !goal}
               onClick={() => toggleGoal(lane)}
             >
-              <span class="square-lane">{LANE_NAMES[lane]}</span>
               <span class="square-goal-text">{goal || 'Set at the draft'}</span>
-              <span class="square-check" aria-hidden="true">
-                {restDay ? 'Rest' : state === 'boosted' ? 'Boost' : hit ? '✓' : ''}
-              </span>
-              <span class="square-points">{state === 'hit' || state === 'boosted' ? '+1' : '0'}</span>
+              <GoalMark state={state} />
             </button>
           );
         })}
+      </section>
 
-        <div class="square square-beers">
-          <div class="square-head">
-            <h3>Beers</h3>
-            <span class="square-points">{formatPoints(score.beerPoints)}</span>
-          </div>
-          <div class="beer-controls">
-            <button type="button" class="step" aria-label="One beer less" disabled={!editable || entry.beers === 0} onClick={() => setBeers(entry.beers - 1)}>
-              {'−'}
-            </button>
-            <p class="beer-count" aria-live="polite">
-              <span class="sr-only">Beers: </span>
-              {entry.beers}
-            </p>
-            <button type="button" class="step" aria-label="One beer more" disabled={!editable || entry.beers >= BEERS_MAX} onClick={() => setBeers(entry.beers + 1)}>
-              +
-            </button>
-          </div>
-          <p class="square-help">Any alcoholic drink. Each one is {'−'}1.</p>
+      <section class="square square-beers" aria-label="Beers">
+        <BeerMug />
+        <div class="beer-words">
+          <h3>Beers</h3>
+          <p>{'\u2212'}1 pt each</p>
         </div>
+        <div class="beer-controls">
+          <button type="button" class="step" aria-label="One beer less" disabled={!editable || entry.beers === 0} onClick={() => setBeers(entry.beers - 1)}>
+            {'\u2212'}
+          </button>
+          <p class="beer-count" aria-live="polite">
+            <span class="sr-only">Beers: </span>
+            {entry.beers}
+          </p>
+          <button type="button" class="step" aria-label="One beer more" disabled={!editable || entry.beers >= BEERS_MAX} onClick={() => setBeers(entry.beers + 1)}>
+            +
+          </button>
+        </div>
+      </section>
+
+      <section class="today-total" aria-label="Day total">
+        <p class="today-total-line">
+          <span class="today-points" data-sign={score.total > 0 ? 'up' : score.total < 0 ? 'down' : 'zero'}>
+            <span class="sr-only">Day total: </span>
+            {formatPoints(score.total)}
+          </span>
+          <span class="today-when">{showing === 'today' ? 'today' : 'yesterday'}</span>
+          <span class="today-note">{totalNote}</span>
+        </p>
+        {breakdown(score) && <p class="today-breakdown">{breakdown(score)}</p>}
+        {ruleOneHere ? <p class="today-kit">Rule One: this day scores 0</p> : aerialHere ? <p class="today-kit">Aerial: this day counts double</p> : null}
       </section>
 
       <p class={error ? 'today-status today-status-error' : 'today-status'} role="status">
         {status}
       </p>
+
 
       {period && week.docs.length > 0 && (
         <PowerUps
@@ -340,6 +368,20 @@ export function Today(props: { me: Me }) {
           }
           vsHouse={targets.includes('HOUSE')}
           hitByDay={dates ? { [dates.today]: dayToday.data?.goals ?? {}, [dates.yesterday]: dayYesterday.data?.goals ?? {} } : {}}
+        />
+      )}
+
+      {sheetOpen && date && (
+        <ScreenSheet
+          dateLabel={sheetDate(date)}
+          minutes={entry.screenMinutes}
+          par={season.data.par}
+          editable={editable}
+          onSave={(minutes) => {
+            save({ ...entry, screenMinutes: minutes });
+            closeSheet();
+          }}
+          onClose={closeSheet}
         />
       )}
     </div>

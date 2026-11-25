@@ -97,3 +97,45 @@ export function formatPoints(points: number): string {
   if (points < 0) return `−${-points}`;
   return '0';
 }
+
+/** Screen time as the card shows it: "2 h 15m". */
+export function formatScreenShort(minutes: number | null): string {
+  if (minutes === null) return 'Not logged';
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (hours === 0) return `${rest}m`;
+  return rest === 0 ? `${hours} h` : `${hours} h ${rest}m`;
+}
+
+/** "+1 pt", "+2 pts", "0 pts", "−1 pt". */
+export function pointsChip(points: number): string {
+  return `${formatPoints(points)} ${Math.abs(points) === 1 ? 'pt' : 'pts'}`;
+}
+
+/** The screen-time scale at a par: one row an hour up to 7 hours, then "each hour more". */
+export function screenScale(par: number): { label: string; points: string }[] {
+  const rows = [{ label: 'Under 1 h', points: formatPoints(par) }];
+  for (let hour = 1; hour < 7; hour += 1) rows.push({ label: `${hour}–${hour + 1} h`, points: formatPoints(par - hour) });
+  rows.push({ label: 'Each hour more', points: formatPoints(-1) });
+  return rows;
+}
+
+/** Which row of the scale a screen time falls in: 0 for under an hour, 7 for 7 hours or more. */
+export function scaleRowOf(minutes: number | null): number | null {
+  if (minutes === null) return null;
+  return Math.min(7, Math.floor(minutes / 60));
+}
+
+/** The day total, part by part: "Goals +2 · screen +1 · beers −1". */
+export function breakdown(score: DayScore): string {
+  if (score.kind === 'ruleOne') return 'Rule One: the day scores 0';
+  if (score.kind === 'noShow') return `Nothing logged: ${formatPoints(score.total)}`;
+  if (score.kind === 'restNoLog') return `Nothing logged on a rest day: ${formatPoints(score.total)}`;
+  if (score.kind === 'open') return '';
+  const parts = [`Goals ${formatPoints(score.goalPoints)}`];
+  if (score.screen.state === 'logged') parts.push(`screen ${formatPoints(score.screen.points)}`);
+  if (score.screen.state === 'notLogged' || score.screen.state === 'voided') parts.push(`screen not logged ${formatPoints(score.screen.points)}`);
+  parts.push(`beers ${formatPoints(score.beerPoints)}`);
+  if (score.aerial === 'doubled') parts.push('Aerial ×2');
+  return parts.join(' · ');
+}
