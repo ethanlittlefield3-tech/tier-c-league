@@ -612,6 +612,27 @@ service cloud.firestore {
             && request.resource.data.status == 'provisional'
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'audit'])
             && audited(L, request.resource.data.audit, 'week.unlock', 'weeks/' + week);
+          // If the weekly job runs late, the commish's phone can post a
+          // finished week's results, counted with the same engine. They stay
+          // provisional: the job counts the week again when it runs, and only
+          // the job makes a week final.
+          allow update: if isCommish(L)
+            && resource.data.get('status', null) != 'final'
+            && request.resource.data.status == 'provisional'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'results', 'house', 'awards', 'lines', 'settledAt', 'sunday', 'audit'])
+            && request.resource.data.results is map
+            && request.resource.data.lines is list
+            && request.resource.data.awards is map
+            && (request.resource.data.house == null || request.resource.data.house is map)
+            && request.resource.data.settledAt == resource.data.get('settledAt', request.time)
+            && weekOver(week, request.resource.data.sunday)
+            && audited(L, request.resource.data.audit, 'week.settle', 'weeks/' + week);
+        }
+
+        // A week is over once its Sunday locks, by the calendar.
+        function weekOver(period, sunday) {
+          let day = cal(sunday);
+          return day.period == period && day.dayIndex == 6 && request.time >= day.lock;
         }
 
         // ---- Daily logs -----------------------------------------------------

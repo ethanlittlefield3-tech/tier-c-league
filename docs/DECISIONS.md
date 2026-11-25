@@ -221,6 +221,9 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 120. **The waiting phone remembers it asked,** so the app can be closed. Once the commish lets them in, the phone joins on its own and shows the recovery key, as a normal join does. A player turned away is told so and can start over.
 121. **Only the commish and the asking phone can see a request,** and each answer goes in the league log. The request is deleted once the player is in, or when they take it back.
 122. **Letting someone in still needs room:** a full league (12 players) or a closed one lets nobody in, and Let in stays off while the league is closed.
+123. **Settling a week from the app posts provisional results.** The commish's phone reads what the weekly job reads and counts the week with the same engine code. Only the job makes a week final: when it runs, it counts the week again, and its numbers replace the phone's.
+124. **The standings and the Wheel still wait for the job.** The standings' last tiebreaker is a sealed coin nobody can read, and a Wheel draw needs the job's own randomness, so both follow when the job next runs.
+125. **A week shows as "Waiting on the weekly job" once its Sunday locks with no results,** by the calendar the security rules read. The job runs every hour, so this is for when GitHub is late or down.
 
 **Calendar**
 

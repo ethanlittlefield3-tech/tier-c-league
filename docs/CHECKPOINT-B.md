@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 258 of 258 passing.
+- **Tests:** 263 of 263 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -319,13 +319,21 @@ Everyone in the league can read them. Only the weekly job writes them.
 
 ## Weeks and dares
 
-The commish can unlock a final week or take a dare off the Wheel, and every such change goes in the audit log.
+If the weekly job runs late, the commish can post a finished week's results as provisional. The commish can also unlock a final week or take a dare off the Wheel. Every such change goes in the audit log.
 
 **Unlocking a final week**
 
 - The commish can unlock a final week, so the weekly job counts it again, and it goes in the audit log
 - Nobody else can, and not without the audit entry
 - Unlocking changes nothing else: no results, and only a final week
+
+**Settling a week from the app**
+
+- If the weekly job runs late, the commish can post a finished week's results from the app, with an audit entry
+- Not before the week's Sunday locks, and the Sunday named has to be that week's
+- The results stay provisional: only the weekly job makes a week final, and the commish never posts over a final week
+- Only the commish, only with the audit entry, and nothing but the results change
+- Results the job already posted can be posted again; they keep the time they were first posted
 
 **Removing a dare**
 

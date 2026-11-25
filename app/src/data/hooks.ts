@@ -48,7 +48,7 @@ export function useDoc<T>(path: string | null): LiveDoc<T> {
 }
 
 /** Every document in a collection whose `field` equals `value`, live. Nothing while `path` is `null`. */
-export function useWhere<T>(path: string | null, field: string, value: string | null): { loading: boolean; docs: { id: string; data: T }[]; error: Trouble | null } {
+export function useWhere<T>(path: string | null, field: string, value: string | number | null): { loading: boolean; docs: { id: string; data: T }[]; error: Trouble | null } {
   const [state, setState] = useState<{ loading: boolean; docs: { id: string; data: T }[]; error: Trouble | null }>({ loading: path !== null, docs: [], error: null });
   useEffect(() => {
     if (path === null || value === null) {

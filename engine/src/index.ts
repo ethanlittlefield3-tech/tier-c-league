@@ -21,3 +21,4 @@ export * from './votes.ts';
 export * from './draft.ts';
 export * from './dares.ts';
 export * from './wheel.ts';
+export * from './settlement.ts';

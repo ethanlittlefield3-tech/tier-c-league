@@ -4,7 +4,7 @@ import { promisify } from 'node:util';
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { addDays } from '../../engine/src/calendar.ts';
 import { enterAsCommish, joinAs } from './helpers.ts';
-import { createLeague, patchDoc, readDoc, startSeason, thisWeek, writeDoc, type TestLeague, type TestSeason } from './league.ts';
+import { createLeague, patchDoc, quietPlayer, readDoc, startSeason, thisWeek, writeDoc, type TestLeague, type TestSeason } from './league.ts';
 
 const run = promisify(execFile);
 const weeklyJob = fileURLToPath(new URL('../../jobs/weekly.ts', import.meta.url));
@@ -37,6 +37,41 @@ async function openModeration(page: Page) {
 }
 
 test.describe('Commish tools: weeks and dares', () => {
+  test('When the weekly job runs late, the commish can settle a finished week from the app; the job checks it and makes it final', async ({ page, request }) => {
+    const league = await createLeague(request);
+    const season = await startSeason(request, league);
+    await quietPlayer(request, league, 'riley', 'Riley');
+    const dates = await finishWeekOne(request, season);
+    await writeDoc(request, `${season.path}/weeks/w01`, { week: 1, mode: 'regular', pairs: [{ a: league.commish, b: 'riley' }] });
+    // Alex hit every goal on Monday and Tuesday. Riley logged nothing.
+    for (const date of dates.slice(0, 2)) {
+      await writeDoc(request, `${season.path}/days/${league.commish}_${date}`, { player: league.commish, date, goals: { mind: true, body: true, wildcard: true }, screenMinutes: 30, beers: 0, firstAt: new Date(), updatedAt: new Date() });
+    }
+
+    await enterAsCommish(page, league);
+    const panel = await openModeration(page);
+    await expect(panel.getByRole('heading', { name: 'Waiting on the weekly job' })).toBeVisible();
+    await panel.getByRole('button', { name: 'Settle Week 1 now', exact: true }).click();
+    await panel.getByLabel('Reason').fill('The job is down');
+    await panel.getByRole('button', { name: 'Settle Week 1', exact: true }).click();
+    await expect(panel.getByRole('status')).toHaveText("Week 1's results are up. The weekly job checks them when it runs and makes them final.");
+
+    // Provisional results, counted on the phone, with the Sunday that ended the week and an audit entry.
+    const week = async () => (await readDoc(request, `${season.path}/weeks/w01`)) ?? {};
+    await expect.poll(async () => (await week()).status).toBe('provisional');
+    const posted = (await week()).results as Record<string, { outcome: string }>;
+    expect(posted[league.commish]?.outcome).toBe('win');
+    expect(posted.riley?.outcome).toBe('loss');
+    expect((await week()).sunday).toBe(dates[6]);
+    expect(await readDoc(request, `leagues/${league.id}/audit/${String((await week()).audit)}`)).toMatchObject({ action: 'week.settle', target: 'weeks/w01', reason: 'The job is down' });
+    await expect(panel.getByRole('heading', { name: 'Waiting on the weekly job' })).toHaveCount(0);
+
+    // The job runs: the same numbers, now final.
+    await runWeekly(league);
+    expect((await week()).status).toBe('final');
+    expect((await week()).results).toEqual(posted);
+  });
+
   test('Unlocking a final week lets a late fix count: the weekly job counts it again, then it is final again', async ({ page, request, browser }) => {
     const league = await createLeague(request);
     const season = await startSeason(request, league);

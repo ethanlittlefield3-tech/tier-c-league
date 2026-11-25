@@ -3,10 +3,11 @@
  * whole league can read, and the security rules refuse any that doesn't
  * (firebase/firestore.rules, "audited").
  */
-import { makeRecoveryKey, type Square } from '@tcl/engine';
-import { collection, deleteField, doc, getDoc, serverTimestamp, writeBatch, type Firestore } from 'firebase/firestore';
+import { HOUSE, makeRecoveryKey, receiptFixes, settleDue, type PlayerWeekData, type Square, type StoredReceipt, type WeekLineStored } from '@tcl/engine';
+import { collection, deleteField, doc, getDoc, getDocs, query, serverTimestamp, where, writeBatch, type Firestore } from 'firebase/firestore';
 import { connect } from './firebase.ts';
 import { trouble, type Me } from './identity.ts';
+import { plain } from './live.ts';
 
 const freshKey = () => makeRecoveryKey(crypto.getRandomValues(new Uint8Array(8)));
 
@@ -103,6 +104,87 @@ export const unlockWeek = (me: Me, season: string, period: string, reason: strin
     save.update(doc(league, 'seasons', season, 'weeks', period), { status: 'provisional', audit });
     save.set(doc(league, 'audit', audit), auditEntry(me, 'week.unlock', `weeks/${period}`, reason));
     await save.commit();
+  });
+
+type SettleDays = Parameters<typeof settleDue>[0]['days'];
+type Demolition = Parameters<typeof settleDue>[0]['demolitions'][number];
+
+/**
+ * Settles a finished week on this phone, for when the weekly job runs late
+ * (SCOPE.md, "Commish tools"). It reads what the job reads and counts it with
+ * the same engine code. The results post as provisional: the job counts the
+ * week again when it runs, and only the job makes a week final. Resolves to
+ * false if the week's Sunday hasn't locked yet.
+ */
+export const settleWeekNow = (me: Me, season: string, period: string, reason: string) =>
+  attempt(async (db) => {
+    const league = doc(db, 'leagues', me.league);
+    const seasonRef = doc(league, 'seasons', season);
+    const [settings, weekDoc, calendar, weeks] = await Promise.all([
+      getDoc(seasonRef),
+      getDoc(doc(seasonRef, 'weeks', period)),
+      getDocs(query(collection(seasonRef, 'calendar'), where('period', '==', period))),
+      getDocs(collection(seasonRef, 'weeks')),
+    ]);
+    const week = weekDoc.data() ?? {};
+    const pairs = (week.pairs ?? []) as { a: string; b: string }[];
+    const days = calendar.docs.map((day) => plain(day.data())) as SettleDays;
+    const sunday = days.find((day) => day.dayIndex === 6);
+    if (pairs.length === 0 || !sunday) return false;
+
+    const now = Date.now();
+    const playing = [...new Set(pairs.flatMap((pair) => [pair.a, pair.b]))].filter((player) => player !== HOUSE);
+    const players: Record<string, PlayerWeekData> = {};
+    const demolitions: Demolition[] = [];
+    await Promise.all(
+      playing.map(async (player) => {
+        const [logs, kit, fixes, asked, demolition] = await Promise.all([
+          Promise.all(days.map((day) => getDoc(doc(seasonRef, 'days', `${player}_${day.date}`)))),
+          getDocs(query(collection(seasonRef, 'kit'), where('player', '==', player))),
+          getDocs(query(collection(seasonRef, 'adjustments'), where('player', '==', player))),
+          getDocs(query(collection(seasonRef, 'receipts'), where('target', '==', player))),
+          // One Demolition a week at most, readable by everyone once its day locks.
+          // The rules refuse a missing one the same way, so a refusal means none.
+          getDoc(doc(seasonRef, 'sealed', `${period}_${player}_demolition`)).catch(() => null),
+        ]);
+        players[player] = {
+          logs: Object.fromEntries(logs.filter((log) => log.exists()).map((log) => [String(log.get('date')), plain(log.data()) as PlayerWeekData['logs'][string]])),
+          kit: kit.docs.map((play) => plain(play.data()) as PlayerWeekData['kit'][number]),
+          adjustments: [
+            ...fixes.docs.map((fix) => plain(fix.data()) as PlayerWeekData['adjustments'][number]),
+            // Receipts count like the commish's fixes: backed down, or failed once the deadline passes.
+            ...receiptFixes(asked.docs.map((receipt) => plain(receipt.data()) as StoredReceipt), now),
+          ],
+        };
+        if (demolition?.exists()) demolitions.push(plain(demolition.data()) as Demolition);
+      }),
+    );
+
+    // Each player's points in the earlier final weeks, oldest first, for the Bust.
+    const earlier: Record<string, number[]> = {};
+    for (const found of weeks.docs.map((each) => each.data()).filter((each) => each.status === 'final' && Number(each.week) < Number(week.week)).sort((a, b) => Number(a.week) - Number(b.week))) {
+      for (const line of (found.lines ?? []) as WeekLineStored[]) (earlier[line.player] ??= []).push(line.points);
+    }
+
+    const data = settings.data() ?? {};
+    const settled = settleDue({ week: Number(week.week), period, par: Number(data.par), timeZone: String(data.timeZone), days, pairs, players, demolitions, earlier, now });
+    if (!settled) return false;
+
+    const audit = doc(collection(league, 'audit')).id;
+    const save = writeBatch(db);
+    save.update(doc(seasonRef, 'weeks', period), {
+      status: 'provisional',
+      results: settled.results,
+      house: settled.house,
+      awards: settled.awards,
+      lines: settled.lines,
+      sunday: sunday.date,
+      ...(week.settledAt ? {} : { settledAt: serverTimestamp() }),
+      audit,
+    });
+    save.set(doc(league, 'audit', audit), auditEntry(me, 'week.settle', `weeks/${period}`, reason));
+    await save.commit();
+    return true;
   });
 
 /** Takes a player's dare off the Wheel. Draws already made keep their wheel. */

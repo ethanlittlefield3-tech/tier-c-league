@@ -15,7 +15,7 @@ export interface Live {
 }
 
 /** Timestamps become plain milliseconds, so screens never need the database library. */
-function plain(value: unknown): unknown {
+export function plain(value: unknown): unknown {
   if (value instanceof Timestamp) return value.toMillis();
   if (Array.isArray(value)) return value.map(plain);
   if (value !== null && typeof value === 'object') {
@@ -53,7 +53,7 @@ export function watchDoc(path: string, onChange: (live: Live) => void, onError: 
 export function watchWhere(
   path: string,
   field: string,
-  value: string,
+  value: string | number,
   onChange: (docs: { id: string; data: Record<string, unknown> }[]) => void,
   onError: (why: Trouble) => void,
 ): () => void {

@@ -51,6 +51,9 @@ const dateOf = (week: number, dayIndex: number) => addDays(KICKOFF, (week - 1) *
 /** 'w02' for Week 2: the tag kit documents are filed under. */
 const periodOf = (week: number) => weekPeriod(week);
 
+/** Week 1's last two days. Week 1 is over: its Sunday locked the day before the tests' Wednesday of Week 2 started. */
+export const SAT1 = dateOf(1, 5);
+export const SUN1 = dateOf(1, 6);
 export const MON2 = dateOf(2, 0);
 export const TUE2 = dateOf(2, 1);
 export const WED2 = dateOf(2, 2);
