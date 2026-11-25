@@ -9,7 +9,7 @@
  * - Drop Shot: a 1v1 scored by floor tiles broken, day by day.
  * - Rumble is a 1v1 whose items change the days themselves (`rumble.ts`).
  */
-import type { DateStr } from './calendar.ts';
+import { WEEKDAYS, weekdayIndex, type DateStr } from './calendar.ts';
 import type { DayCell } from './days.ts';
 import { LANES, RULES, type Lane } from './scoring.ts';
 import { GROUP, HOUSE, type WeekMode } from './schedule.ts';
@@ -203,6 +203,24 @@ export type BountyTarget =
   | { kind: 'hits'; lane: Lane | 'any'; count: number }
   | { kind: 'dry'; date: DateStr }
   | { kind: 'screen'; date: DateStr; minutes: number };
+
+const LANE_WORDS: Record<Lane, string> = { mind: 'Mind', body: 'Body', wildcard: 'Wildcard' };
+
+/** A screen-time limit in words: "2 hours", "1 hour 30 minutes", "45 minutes". */
+function duration(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  const parts = [hours > 0 ? `${hours} hour${hours === 1 ? '' : 's'}` : '', rest > 0 ? `${rest} minutes` : ''].filter(Boolean);
+  return parts.join(' ');
+}
+
+/** A target in plain words, for the Bounty bar, the commish and the feed. */
+export function bountyText(target: BountyTarget): string {
+  if (target.kind === 'hits') return `${target.count} ${target.lane === 'any' ? 'goals hit' : `${LANE_WORDS[target.lane]} hits`} across the league`;
+  const day = WEEKDAYS[weekdayIndex(target.date)];
+  if (target.kind === 'dry') return `No beers league-wide on ${day}`;
+  return `Everyone under ${duration(target.minutes)} of screen time on ${day}`;
+}
 
 /** Targets assume one rest day per player: the most a hits target can reach is 6 days each. */
 export function bountyMax(lane: Lane | 'any', players: number): number {

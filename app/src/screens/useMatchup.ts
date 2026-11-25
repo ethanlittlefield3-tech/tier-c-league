@@ -4,7 +4,8 @@
  * Match uses it; Today gathers the same things for itself.
  */
 import type { CarParts } from '../art/car/draw.ts';
-import { receiptFixes, type Lane, type Square, type StoredReceipt } from '@tcl/engine';
+import { isPairedMode, receiptFixes, type Lane, type Square, type StoredReceipt } from '@tcl/engine';
+import type { BoardWeekDoc } from './useWeekBoard.ts';
 import { useDoc, usePeek, useWhere } from '../data/hooks.ts';
 import type { Me } from '../data/identity.ts';
 import type { CalDay } from '../today/kit.ts';
@@ -34,9 +35,11 @@ export function useMatchup(me: Me, now: number) {
   const yesterdayCal = useDoc<ReceiptDay>(seasonPath && dates ? `${seasonPath}/calendar/${dates.yesterday}` : null);
   const period = todayCal.data?.period ?? null;
   const week = useWhere<CalDay>(seasonPath ? `${seasonPath}/calendar` : null, 'period', period);
-  const weekDoc = useDoc<{ targets?: Record<string, string[]> }>(seasonPath && period ? `${seasonPath}/weeks/${period}` : null);
+  const weekDoc = useDoc<BoardWeekDoc & { targets?: Record<string, string[]> }>(seasonPath && period ? `${seasonPath}/weeks/${period}` : null);
+  const mode = weekDoc.data?.mode ?? 'regular';
   const targets = weekDoc.data?.targets?.[me.player] ?? [];
-  const opponentId = targets.find((target) => target !== 'HOUSE') ?? null;
+  // Only a 1v1 week (regular, Rumble or Drop Shot) has one opponent; Team Week and 2v2 aim at a side.
+  const opponentId = isPairedMode(mode) ? (targets.find((target) => target !== 'HOUSE') ?? null) : null;
   const profile = useDoc<{ displayName?: string; car?: Partial<CarParts>; stickers?: Partial<Record<string, { until?: unknown }>> }>(opponentId ? `${leaguePath}/players/${opponentId}` : null);
   const roster = useDoc<{ goals?: Partial<Record<Lane, { text?: string }>> }>(seasonPath && opponentId ? `${seasonPath}/roster/${opponentId}` : null);
 
@@ -94,9 +97,15 @@ export function useMatchup(me: Me, now: number) {
   return {
     loading,
     seasonId,
+    seasonPath,
     season: season.data,
     dates,
     today: todayCal.data,
+    /** This week's mode, and its week document. */
+    mode,
+    weekDoc: weekDoc.data,
+    /** This week's calendar days. */
+    days,
     opponent: opponentId
       ? {
           id: opponentId,

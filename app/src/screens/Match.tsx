@@ -1,4 +1,4 @@
-import { LANES, REMATCH_LAST_DAY, nemesisOf, recordText, rematchFor, weekPeriod, type Lane, type Rival } from '@tcl/engine';
+import { LANES, REMATCH_LAST_DAY, isPairedMode, nemesisOf, recordText, rematchFor, weekPeriod, type Lane, type Rival } from '@tcl/engine';
 import { CarArt } from '../art/car/CarArt.tsx';
 import type { CarParts } from '../art/car/draw.ts';
 import { useState } from 'preact/hooks';
@@ -10,6 +10,8 @@ import { formatPoints, formatScreenShort, pointsChip } from '../today/model.ts';
 import type { DayCell } from '../today/week.ts';
 import { GoalMark } from './GoalMark.tsx';
 import { useMatchup } from './useMatchup.ts';
+import { DropShotFloors, GroupBoard } from './GroupBoard.tsx';
+import { useWeekBoard } from './useWeekBoard.ts';
 import { ReceiptAsk } from './ReceiptAsk.tsx';
 import { leadText } from './WeekStrip.tsx';
 import './match.css';
@@ -157,10 +159,40 @@ function WeekRow(props: { who: string; team: 'blue' | 'orange'; cells: DayCell[]
   );
 }
 
+/** A group-play week with no single opponent: everyone's week, live, on the mode's board. */
+function GroupMatch(props: { me: Me; now: number; match: ReturnType<typeof useMatchup> }) {
+  const { match } = props;
+  const board = useWeekBoard({
+    seasonPath: match.seasonPath,
+    leaguePath: `leagues/${props.me.league}`,
+    week: match.weekDoc,
+    days: match.days,
+    par: match.season?.par ?? 3,
+    now: props.now,
+    timeZone: match.season?.timeZone ?? 'America/New_York',
+    today: match.dates?.today,
+  });
+  if (!match.weekDoc) return null;
+  if (board.loading) {
+    return (
+      <div class="waiting today-waiting" aria-busy="true">
+        <div class="waiting-ring" />
+        <p role="status">Getting everyone's week</p>
+      </div>
+    );
+  }
+  return (
+    <div class="match">
+      <GroupBoard me={props.me} week={match.weekDoc} ids={board.ids} weeks={board.weeks} totals={board.totals} players={board.players} />
+    </div>
+  );
+}
+
 /**
- * Match (SCOPE.md, "Screens"): this week's matchup. Your opponent's live day
- * in team orange, and both weeks side by side. Until group play is built,
- * every week is a 1v1.
+ * Match (SCOPE.md, "Screens"): this week's matchup or mode. In a 1v1 week
+ * (a regular week, Rumble or Drop Shot), your opponent's live day in team
+ * orange, and both weeks side by side; in Team Week, 2v2, Bounty Week and
+ * the Alley, the mode's live board.
  */
 export function Match(props: { me: Me }) {
   const now = useNow();
@@ -179,6 +211,7 @@ export function Match(props: { me: Me }) {
   const rematch =
     match.today && match.dates ? <Rematch me={props.me} seasonId={match.seasonId} week={match.today.week} period={match.today.period} dayIndex={match.today.dayIndex} date={match.dates.today} /> : null;
   if (!match.today || !match.myWeek) return <Notice title="No matchup today">There is no week in play today. Check the League tab for what is next.</Notice>;
+  if (!isPairedMode(match.mode)) return <GroupMatch me={props.me} now={now} match={match} />;
   if (match.vsHouse) {
     return (
       <div class="match">
@@ -227,6 +260,8 @@ export function Match(props: { me: Me }) {
       </section>
 
       {rematch}
+
+      {match.mode === 'dropShot' && <DropShotFloors mine={match.myWeek.cells} theirs={match.theirWeek.cells} name={them.name} />}
 
       <section class="match-day" aria-labelledby="match-day-title">
         <div class="match-day-head">

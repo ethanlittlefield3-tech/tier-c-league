@@ -81,6 +81,39 @@ export function useWhere<T>(path: string | null, field: string, value: string | 
   return state;
 }
 
+/** Live documents whose `field` is between `from` and `to`, both included: a week's days, by date. */
+export function useBetween<T>(path: string | null, field: string, from: string | null, to: string | null): { loading: boolean; docs: { id: string; data: T }[]; error: Trouble | null } {
+  const [state, setState] = useState<{ loading: boolean; docs: { id: string; data: T }[]; error: Trouble | null }>({ loading: path !== null, docs: [], error: null });
+  useEffect(() => {
+    if (path === null || from === null || to === null) {
+      setState({ loading: false, docs: [], error: null });
+      return undefined;
+    }
+    setState({ loading: true, docs: [], error: null });
+    let stop: (() => void) | null = null;
+    let stopped = false;
+    loadData().then(
+      (api) => {
+        if (stopped) return;
+        stop = api.watchBetween(
+          path,
+          field,
+          from,
+          to,
+          (docs) => setState({ loading: false, docs: docs as { id: string; data: T }[], error: null }),
+          (why) => setState((before) => ({ ...before, loading: false, error: why })),
+        );
+      },
+      () => setState((before) => ({ ...before, loading: false, error: 'offline' })),
+    );
+    return () => {
+      stopped = true;
+      stop?.();
+    };
+  }, [path, field, from, to]);
+  return state;
+}
+
 /**
  * One look at a document that may still be sealed, taken again whenever
  * `again` changes. Today passes the number of days locked so far, so it looks

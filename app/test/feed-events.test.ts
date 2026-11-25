@@ -144,6 +144,26 @@ describe('The live feed', () => {
     expect(events[0]?.detail).toBe('Sam lost to The House 25–30\nSpins the Wheel: Sam');
   });
 
+  it("A group-play week's results post the mode's own lines: the squads' averages, the Bounty, the Alley or the floors", () => {
+    const events = feedEvents({
+      ...none,
+      name,
+      weeks: [
+        {
+          id: 'w04',
+          data: {
+            week: 4,
+            settledAt: 5,
+            results: { maya: { opponent: 'GROUP', points: 30, opponentPoints: 24, outcome: 'win' }, sam: { opponent: 'GROUP', points: 20, opponentPoints: 27, outcome: 'loss' } },
+            awards: { mvp: ['maya'], bust: [], wheel: ['sam'] },
+            group: { mode: 'teamWeek', matches: [{ a: { name: 'blue', players: ['maya'], points: 27 }, b: { name: 'orange', players: ['sam'], points: 24 }, winner: 'a' }] },
+          },
+        },
+      ],
+    });
+    expect(events.find((event) => event.id === 'results-w04')?.detail).toBe('Blue beat Orange 27–24 on average\nMVP: Maya · Spins the Wheel: Sam');
+  });
+
   it('Receipts show when asked, and again when proven, backed down from, or left past the deadline', () => {
     const base = { by: 'maya', date: '2027-01-12', square: 'body' as const, requestedAt: 1, deadline: 100, proofAt: null, backedDownAt: null };
     const events = feedEvents({

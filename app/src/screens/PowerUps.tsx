@@ -89,7 +89,8 @@ export function PowerUps(props: {
   ruleOnes: Play[];
   ruleOneIssue: number[];
   demolition: (Play & { target: string }) | null;
-  opponent: Opponent | null;
+  /** Who you may demolish: your opponent, or in Team Week and 2v2 anyone on the other side. */
+  opponents: Opponent[];
   /** True when this week's opponent is The House. */
   vsHouse: boolean;
   /** The goals you have already marked hit, by day, so Full Boost offers only the ones you missed. */
@@ -98,6 +99,7 @@ export function PowerUps(props: {
   const [open, setOpen] = useState<Item | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [demoWho, setDemoWho] = useState<string | null>(null);
   const [demoDay, setDemoDay] = useState<string | null>(null);
   const [demoLane, setDemoLane] = useState<Lane | null>(null);
   const [confirmDemo, setConfirmDemo] = useState(false);
@@ -133,18 +135,22 @@ export function PowerUps(props: {
         ? 'Ready'
         : 'No days left';
 
-  const demoChoices = props.opponent ? demolitionDays(week, now, props.opponent.rest) : [];
+  // With one opponent it is them; with a side to aim at, whoever is picked.
+  const target = props.opponents.length === 1 ? props.opponents[0]! : (props.opponents.find((opponent) => opponent.id === demoWho) ?? null);
+  const demoChoices = target ? demolitionDays(week, now, target.rest) : [];
+  const anyDays = props.opponents.some((opponent) => demolitionDays(week, now, opponent.rest).length > 0);
   const demoStatus = !kit.includes('demolition')
     ? 'Not this week'
     : props.demolition
       ? `Set: ${shortDay(props.demolition.date)}`
       : props.vsHouse
         ? 'Bye week'
-        : !props.opponent
+        : props.opponents.length === 0
           ? 'No opponent yet'
-          : demoChoices.length > 0
+          : anyDays
             ? 'Ready'
             : 'No days left';
+  const demolished = props.demolition ? (props.opponents.find((opponent) => opponent.id === props.demolition!.target)?.name ?? null) : null;
 
   // Each open day uses its own week's Full Boost and rest day.
   const boostChoices = props.openDays
@@ -243,17 +249,42 @@ export function PowerUps(props: {
         <div class="power-panel" id="power-demolition">
           {props.demolition ? (
             <p class="power-done">
-              Set on {longDay(props.demolition.date)}, against their {LANE_NAMES[props.demolition.lane ?? 'mind']} goal. Only you can see it until noon the next day.
+              Set on {longDay(props.demolition.date)}, against {demolished && props.opponents.length > 1 ? `${demolished}'s` : 'their'} {LANE_NAMES[props.demolition.lane ?? 'mind']} goal. Only you can see it until noon the next day.
             </p>
           ) : props.vsHouse ? (
             <p>You face The House this week, so there is nobody to demolish.</p>
-          ) : !props.opponent ? (
+          ) : props.opponents.length === 0 ? (
             <p>Your opponent for this week isn't set yet.</p>
+          ) : !target ? (
+            <>
+              <p>Pick who to demolish: anyone on the other side. Then one of their goals on a day. If they miss it, they lose 2.</p>
+              <div class="power-lanes" role="group" aria-label="Who to demolish">
+                {props.opponents.map((opponent) => (
+                  <button type="button" class="power-choice power-lane" disabled={busy} onClick={() => setDemoWho(opponent.id)}>
+                    <span>{opponent.name}</span>
+                  </button>
+                ))}
+              </div>
+            </>
           ) : (
             <>
               <p>
-                Pick one of {props.opponent.name}'s goals on a day. If they miss it, they lose 2. Hidden from everyone, the commish too, until noon the next day. It can't be changed once set.
+                Pick one of {target.name}'s goals on a day. If they miss it, they lose 2. Hidden from everyone, the commish too, until noon the next day. It can't be changed once set.
               </p>
+              {props.opponents.length > 1 && (
+                <button
+                  type="button"
+                  class="btn-quiet"
+                  onClick={() => {
+                    setDemoWho(null);
+                    setDemoDay(null);
+                    setDemoLane(null);
+                    setConfirmDemo(false);
+                  }}
+                >
+                  Someone else
+                </button>
+              )}
               {demoChoices.length > 0 ? (
                 <>
                   {dayButtons(demoChoices, demoDay, (date) => setDemoDay(date), (date) => `Demolition on ${longDay(date)}`)}
@@ -261,14 +292,14 @@ export function PowerUps(props: {
                     {LANES.map((lane) => (
                       <button type="button" class="power-choice power-lane" aria-pressed={demoLane === lane} disabled={busy} onClick={() => setDemoLane(lane)}>
                         <span>{LANE_NAMES[lane]}</span>
-                        <small>{props.opponent!.goals[lane] ?? 'Not set yet'}</small>
+                        <small>{target.goals[lane] ?? 'Not set yet'}</small>
                       </button>
                     ))}
                   </div>
                   {confirmDemo ? (
                     <>
                       <p class="power-warn">
-                        <strong>This is final.</strong> {props.opponent.name}'s {LANE_NAMES[demoLane!]} goal on {longDay(demoDay!)}.
+                        <strong>This is final.</strong> {target.name}'s {LANE_NAMES[demoLane!]} goal on {longDay(demoDay!)}.
                       </p>
                       <button
                         type="button"
@@ -277,7 +308,7 @@ export function PowerUps(props: {
                         onClick={() => {
                           const day = dayOf(demoDay!);
                           if (!day || !demoLane) return;
-                          act((api) => api.setDemolition(props.where, { period, target: props.opponent!.id, date: day.date, lane: demoLane, lock: day.lock }));
+                          act((api) => api.setDemolition(props.where, { period, target: target.id, date: day.date, lane: demoLane, lock: day.lock }));
                         }}
                       >
                         Demolish

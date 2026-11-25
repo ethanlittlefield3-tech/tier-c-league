@@ -25,6 +25,24 @@ describe('The highlight reel', () => {
     expect(card?.text).toBe('Sunday Squad: Week 1 highlights\nMVP: Maya, 32 points\nMaya crushed Jordan by 22\nMaya 32–10 Jordan\nAlex 15–15 Sam\nBust: Jordan');
   });
 
+  it("A group-play week's card lists the mode's results: the sides, the Bounty, the race or the floors", () => {
+    const card = reelCard({
+      league: 'Sunday Squad',
+      week: 3,
+      name,
+      carOf,
+      weeks: [
+        {
+          week: 3,
+          results: { maya: { opponent: 'GROUP', points: 30, opponentPoints: 0, outcome: 'none' }, sam: { opponent: 'GROUP', points: 20, opponentPoints: 0, outcome: 'none' } },
+          awards: { mvp: ['maya'], bust: [], wheel: ['sam'] },
+          group: { mode: 'alley', race: [{ player: 'maya', race: 30, walls: 0, place: 1 }, { player: 'sam', race: 16, walls: 2, place: 2 }] },
+        },
+      ],
+    });
+    expect(card?.results).toEqual(['1st in the Alley: Maya, 30 race points, +5', '2nd in the Alley: Sam, 16 race points, +3']);
+  });
+
   it('A week with no results yet has no card', () => {
     expect(reelCard({ league: 'Sunday Squad', week: 2, name, carOf, weeks: [{ week: 2 }] })).toBeNull();
   });

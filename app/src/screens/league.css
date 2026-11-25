@@ -111,6 +111,14 @@
   color: var(--ink-soft);
 }
 
+/* An upcoming group-play week's mode, in a line. */
+.result-mode {
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
 .result-awards {
   margin: 8px 0 0;
   font-size: 14px;

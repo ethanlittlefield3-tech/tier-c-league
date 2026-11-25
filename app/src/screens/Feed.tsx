@@ -115,7 +115,7 @@ export function Feed(props: { me: Me; onWheel?: () => void }) {
       ? null
       : reelCard({
           league: props.me.leagueName,
-          weeks: weeks.docs.map((found) => ({ week: found.data.week, results: found.data.results, awards: found.data.awards })),
+          weeks: weeks.docs.map((found) => ({ week: found.data.week, results: found.data.results, awards: found.data.awards, group: found.data.group ?? null })),
           week: reelWeek,
           name: realName,
           carOf: (player) => carOf(player)?.car ?? null,

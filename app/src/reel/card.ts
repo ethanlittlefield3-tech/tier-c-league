@@ -7,11 +7,14 @@
 import { storylines, type StoryResult } from '@tcl/engine';
 import { drawCar, type CarParts } from '../art/car/draw.ts';
 import { storyText } from '../feed/stories.ts';
+import { groupLines, type GroupDoc } from '../group/words.ts';
 
 export interface ReelWeek {
   week: number;
   results?: Record<string, StoryResult>;
   awards?: { mvp: string[]; bust: string[]; wheel: string[] };
+  /** A group-play week's summary: its results are the mode's own lines. */
+  group?: GroupDoc | null;
 }
 
 export interface ReelCard {
@@ -36,10 +39,10 @@ const points = (value: number) => String(value).replace('-', '−');
 export function reelCard(input: { league: string; weeks: readonly ReelWeek[]; week: number; name: (player: string) => string; carOf: (player: string) => Partial<CarParts> | null }): ReelCard | null {
   const now = input.weeks.find((each) => each.week === input.week);
   if (!now?.results) return null;
-  const results: string[] = [];
+  const results: string[] = groupLines(now.group, input.name)?.map((line) => line.text) ?? [];
   const told = new Set<string>();
-  for (const [player, result] of Object.entries(now.results)) {
-    if (told.has(player)) continue;
+  for (const [player, result] of now.group ? [] : Object.entries(now.results)) {
+    if (told.has(player) || result.outcome === 'none') continue;
     told.add(player);
     told.add(result.opponent);
     const [first, second] = result.outcome === 'loss' ? [[result.opponent, result.opponentPoints], [player, result.points]] : [[player, result.points], [result.opponent, result.opponentPoints]];

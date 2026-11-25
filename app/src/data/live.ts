@@ -78,6 +78,34 @@ export function watchWhere(
   };
 }
 
+/** Every document in a collection whose `field` is between `from` and `to`, both included, now and after every change. */
+export function watchBetween(
+  path: string,
+  field: string,
+  from: string,
+  to: string,
+  onChange: (docs: { id: string; data: Record<string, unknown> }[]) => void,
+  onError: (why: Trouble) => void,
+): () => void {
+  let stop: (() => void) | null = null;
+  let stopped = false;
+  connect().then(
+    ({ db }) => {
+      if (stopped) return;
+      stop = onSnapshot(
+        query(collection(db, path), where(field, '>=', from), where(field, '<=', to)),
+        (snapshot) => onChange(snapshot.docs.map((found) => ({ id: found.id, data: plain(found.data({ serverTimestamps: 'estimate' })) as Record<string, unknown> }))),
+        (error) => onError(trouble(error).why),
+      );
+    },
+    (error: unknown) => onError(trouble(error).why),
+  );
+  return () => {
+    stopped = true;
+    stop?.();
+  };
+}
+
 /**
  * One look at a document that may not be readable yet, such as a Demolition
  * still sealed. `null` when there is no such document or it is still sealed:

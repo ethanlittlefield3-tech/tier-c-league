@@ -5,6 +5,7 @@ import {
   alleyRace,
   bountyMax,
   bountyProgress,
+  bountyText,
   decideDropShot,
   decideSides,
   defaultBounty,
@@ -208,6 +209,15 @@ describe('Group play: Bounty Week', () => {
     const due = settleDue({ ...base, mode: 'bounty', roster: ['a', 'b'], players: { a: ALL, b: TWO } })!;
     // 24 needed; a 18 and b 12 is 30.
     expect(due.group).toMatchObject({ target: { kind: 'hits', lane: 'any', count: 24 }, hit: true });
+  });
+
+  it('A target reads as plain words: what, how many, and which day', () => {
+    expect(bountyText({ kind: 'hits', lane: 'body', count: 60 })).toBe('60 Body hits across the league');
+    expect(bountyText({ kind: 'hits', lane: 'any', count: 48 })).toBe('48 goals hit across the league');
+    expect(bountyText({ kind: 'dry', date: date(4) })).toBe('No beers league-wide on Friday');
+    expect(bountyText({ kind: 'screen', date: date(5), minutes: 120 })).toBe('Everyone under 2 hours of screen time on Saturday');
+    expect(bountyText({ kind: 'screen', date: date(5), minutes: 90 })).toBe('Everyone under 1 hour 30 minutes of screen time on Saturday');
+    expect(bountyText({ kind: 'screen', date: date(5), minutes: 45 })).toBe('Everyone under 45 minutes of screen time on Saturday');
   });
 
   it('A target names a lane and a count, or a day of the week and, for screen time, a limit', () => {

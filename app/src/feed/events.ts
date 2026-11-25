@@ -5,6 +5,7 @@
  * Badges earned and rank changes come from the jobs' news in `feed/`.
  */
 import { BADGES, DODGE_PENALTY, PROOF_VOTE_HOURS, RANK_NAMES, dareStatus, rankMove, storylines, type DemolitionOutcome, type Lane, type Rank, type Square } from '@tcl/engine';
+import { groupLines, type GroupDoc } from '../group/words.ts';
 import { storyText } from './stories.ts';
 
 export interface FeedEvent {
@@ -28,7 +29,8 @@ interface Result {
   opponent: string;
   points: number;
   opponentPoints: number;
-  outcome: 'win' | 'draw' | 'loss';
+  /** `none` in a Bounty or Alley week. */
+  outcome: 'win' | 'draw' | 'loss' | 'none';
   seasonPoints?: number;
 }
 
@@ -45,6 +47,8 @@ export interface FeedInput {
       reveals?: { player: string; target: string; date: string; lane: Lane; outcome: DemolitionOutcome | string; at: number }[];
       results?: Record<string, Result>;
       awards?: { mvp: string[]; bust: string[]; wheel: string[] };
+      /** A group-play week's summary, once settled. */
+      group?: GroupDoc | null;
       settledAt?: number | null;
       finalAt?: number | null;
     };
@@ -79,7 +83,7 @@ const OUTCOME: Record<string, string> = {
   fizzled: 'Blocked: it was a rest day',
   ruleOne: 'Blocked by Rule One',
 };
-const VERB: Record<Result['outcome'], string> = { win: 'beat', draw: 'drew with', loss: 'lost to' };
+const VERB: Record<Exclude<Result['outcome'], 'none'>, string> = { win: 'beat', draw: 'drew with', loss: 'lost to' };
 const TITLE: Record<Square, string> = { screen: 'Screen time', mind: 'Mind goal', body: 'Body goal', wildcard: 'Wildcard goal' };
 
 /** A date's weekday, short: "Tue". */
@@ -143,10 +147,11 @@ export function feedEvents(input: FeedInput): FeedEvent[] {
       });
     }
     if (data.results && typeof data.settledAt === 'number') {
-      const lines: string[] = [];
+      // A group-play week has its mode's own lines; a 1v1 week, each matchup once.
+      const lines: string[] = groupLines(data.group, name)?.map((line) => line.text) ?? [];
       const told = new Set<string>();
-      for (const [player, result] of Object.entries(data.results)) {
-        if (told.has(player)) continue;
+      for (const [player, result] of data.group ? [] : Object.entries(data.results)) {
+        if (told.has(player) || result.outcome === 'none') continue;
         told.add(player);
         told.add(result.opponent);
         lines.push(`${name(player)} ${VERB[result.outcome]} ${name(result.opponent)} ${points(result.points)}–${points(result.opponentPoints)}`);

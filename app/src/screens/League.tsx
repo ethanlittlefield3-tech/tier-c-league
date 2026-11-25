@@ -1,6 +1,7 @@
 import { CarArt } from '../art/car/CarArt.tsx';
 import type { CarParts } from '../art/car/draw.ts';
-import { nemesisOf, recordText, type Rival } from '@tcl/engine';
+import { MODE_BLURBS, MODE_NAMES, nemesisOf, recordText, type GroupMode, type Rival } from '@tcl/engine';
+import { groupLines, type GroupDoc } from '../group/words.ts';
 import { useAll, useDoc, useNow } from '../data/hooks.ts';
 import { Picks } from './Picks.tsx';
 import { TrophyCase } from './Trophies.tsx';
@@ -23,16 +24,22 @@ interface Result {
   opponent: string;
   points: number;
   opponentPoints: number;
-  outcome: 'win' | 'draw' | 'loss';
+  /** `none` in a Bounty or Alley week, which counts toward nobody's record. */
+  outcome: 'win' | 'draw' | 'loss' | 'none';
   seasonPoints: number;
 }
 
 interface WeekDoc {
   week: number;
+  /** The group-play mode, or `regular`. */
+  mode?: string;
   pairs?: { a: string; b: string }[];
+  teams?: { blue: string[]; orange: string[] };
   status?: 'provisional' | 'final';
   results?: Record<string, Result>;
   awards?: { mvp: string[]; bust: string[]; wheel: string[] };
+  /** A group-play week's summary, once settled. */
+  group?: GroupDoc | null;
 }
 
 const TIEBREAK: Record<string, string> = {
@@ -43,6 +50,10 @@ const TIEBREAK: Record<string, string> = {
 };
 
 const points = (value: number) => (Number.isInteger(value) ? String(value) : value.toFixed(1));
+
+/** A group-play week's mode name, or nothing for a regular 1v1 week. */
+const modeName = (mode: string | undefined) => (mode && mode in MODE_NAMES ? MODE_NAMES[mode as GroupMode] : null);
+const modeBlurb = (mode: string | undefined) => (mode && mode in MODE_BLURBS ? MODE_BLURBS[mode as GroupMode] : null);
 
 function Notice(props: { title: string; children: string }) {
   return (
@@ -90,7 +101,7 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
     const tally = { win: 0, draw: 0, loss: 0 };
     for (const week of sorted) {
       const result = week.data.results?.[player];
-      if (result) tally[result.outcome] += 1;
+      if (result && result.outcome !== 'none') tally[result.outcome] += 1;
     }
     return `${tally.win}–${tally.draw}–${tally.loss}`;
   };
@@ -162,12 +173,16 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
             </tbody>
           </table>
         )}
-        <p class="panel-text">Season Points are every point you score, plus 5 for a win and 2 for a draw.</p>
+        <p class="panel-text">Season Points are every point you score, plus 5 for a 1v1 win and 2 for a draw, and group play's bonuses.</p>
       </section>
 
       {thisWeek?.data.pairs && (
         <section class="panel league-panel" aria-labelledby="this-week-title">
-          <h2 id="this-week-title">Week {thisWeek.data.week}</h2>
+          <h2 id="this-week-title">
+            Week {thisWeek.data.week}
+            {modeName(thisWeek.data.mode) && <> · {modeName(thisWeek.data.mode)}</>}
+          </h2>
+          {modeBlurb(thisWeek.data.mode) && <p class="panel-text">{modeBlurb(thisWeek.data.mode)} Match shows how it stands.</p>}
           <ul class="pairs">
             {thisWeek.data.pairs.map((pair) => (
               <li data-me={pair.a === props.me.player || pair.b === props.me.player}>
@@ -187,10 +202,13 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
             return (
               <div class="result-week">
                 <p class="result-head">
-                  Week {week.data.week} <span>{week.data.status === 'final' ? 'Final' : 'Provisional'}</span>
+                  Week {week.data.week}
+                  {modeName(week.data.mode) && <> · {modeName(week.data.mode)}</>} <span>{week.data.status === 'final' ? 'Final' : 'Provisional'}</span>
                 </p>
                 <ul class="pairs">
-                  {Object.values(results)
+                  {groupLines(week.data.group, name)?.map((line) => <li data-me={line.players.includes(props.me.player)}>{line.text}</li>)}
+                  {Object.values(week.data.group ? {} : results)
+                    .filter((result) => result.outcome !== 'none')
                     .filter((result) => {
                       if (seen.has(result.player)) return false;
                       seen.add(result.player);
@@ -222,13 +240,24 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
           <h2 id="schedule-title">Schedule</h2>
           {upcoming.map((week) => (
             <div class="result-week">
-              <p class="result-head">Week {week.data.week}</p>
+              <p class="result-head">
+                Week {week.data.week}
+                {modeName(week.data.mode) && <> · {modeName(week.data.mode)}</>}
+              </p>
+              {modeBlurb(week.data.mode) && <p class="result-mode">{modeBlurb(week.data.mode)}</p>}
               <ul class="pairs">
                 {(week.data.pairs ?? []).map((pair) => (
                   <li data-me={pair.a === props.me.player || pair.b === props.me.player}>
                     {name(pair.a)} <span>vs</span> {name(pair.b)}
                   </li>
                 ))}
+                {week.data.mode === 'teamWeek' &&
+                  week.data.teams &&
+                  (['blue', 'orange'] as const).map((team) => (
+                    <li data-me={week.data.teams![team].includes(props.me.player)} data-team={team}>
+                      {team === 'blue' ? 'Blue' : 'Orange'}: {week.data.teams![team].map(name).join(', ')}
+                    </li>
+                  ))}
               </ul>
             </div>
           ))}

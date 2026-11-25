@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { LANES, daysLeft, paceSoFar, receiptFixes, receiptStatus, recentDailyAverage, weekPeriod, winMeter, type Lane, type Square, type StoredReceipt } from '@tcl/engine';
-import { useDoc, useNow, usePeek, useWhere } from '../data/hooks.ts';
+import { LANES, daysLeft, isPairedMode, paceSoFar, receiptFixes, receiptStatus, recentDailyAverage, weekPeriod, winMeter, type BountyTarget, type Lane, type Square, type StoredReceipt, type WeekMode } from '@tcl/engine';
+import { useAll, useDoc, useNow, usePeek, useWhere } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
 import { whyOf } from '../data/why.ts';
@@ -27,6 +27,7 @@ import './wheel.css';
 import { GoalMark } from './GoalMark.tsx';
 import { ScreenSheet } from './ScreenSheet.tsx';
 import { WeekStrip } from './WeekStrip.tsx';
+import { ModeBanner } from './ModeBanner.tsx';
 import { lateSyncRisk, useOnline } from '../ui/online.ts';
 import { timeLeft } from '../ui/when.ts';
 import './draft.css';
@@ -46,7 +47,15 @@ interface SeasonDoc {
 }
 
 interface WeekDoc {
+  week?: number;
+  mode?: string;
   targets?: Record<string, string[]>;
+  teams?: { blue: string[]; orange: string[] };
+  duos?: { a: string[]; b: string[] }[];
+  bounty?: BountyTarget | null;
+  roster?: string[];
+  /** Demolitions whose day has locked, revealed by the weekly job. */
+  reveals?: { player: string; target: string; date: string; lane: Lane }[];
 }
 
 type CalendarDoc = CalDay;
@@ -176,8 +185,15 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
   const ruleOne3 = useDoc<Play>(seasonPath ? `${seasonPath}/kit/ruleOne_${me}_3` : null);
   const sealed = useWhere<Play & { period: string; target: string }>(seasonPath ? `${seasonPath}/sealed` : null, 'player', me);
   const weekDoc = useDoc<WeekDoc>(seasonPath && period ? `${seasonPath}/weeks/${period}` : null);
+  const mode = weekDoc.data?.mode ?? 'regular';
+  const paired = isPairedMode(mode as WeekMode);
   const targets = weekDoc.data?.targets?.[me] ?? [];
-  const opponentId = targets.find((target) => target !== 'HOUSE') ?? null;
+  // Only a 1v1 week has one opponent; in Team Week and 2v2 you may demolish anyone on the other side.
+  const opponentId = paired ? (targets.find((target) => target !== 'HOUSE') ?? null) : null;
+  const sideTargets = paired ? [] : targets.filter((target) => target !== 'HOUSE');
+  const everyone = useAll<{ displayName?: string }>(mode !== 'regular' ? `${leaguePath}/players` : null);
+  const rosters = useAll<RosterDoc>(seasonPath && sideTargets.length > 0 ? `${seasonPath}/roster` : null);
+  const weekKit = useWhere<KitPlay & { player: string }>(seasonPath && sideTargets.length > 0 ? `${seasonPath}/kit` : null, 'period', period);
   const opponentProfile = useDoc<{ displayName?: string; rankHistory?: { points: number }[] }>(opponentId ? `${leaguePath}/players/${opponentId}` : null);
   // Your recent weeks, for the win meter.
   const myProfile = useDoc<{ rankHistory?: { points: number }[] }>(`${leaguePath}/players/${me}`);
@@ -332,7 +348,12 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
     days: weekDays,
     logs: logsOf(myDays.docs),
     kit: myKit.docs.map((found) => found.data),
-    demolitionsOn: demolitionOnMe && demolitionOnMe.target === me ? [{ date: demolitionOnMe.date, lane: demolitionOnMe.lane }] : [],
+    // A 1v1 opponent's Demolition shows from the noon it unseals; in group play, once the weekly job reveals it.
+    demolitionsOn: paired
+      ? demolitionOnMe && demolitionOnMe.target === me
+        ? [{ date: demolitionOnMe.date, lane: demolitionOnMe.lane }]
+        : []
+      : (weekDoc.data?.reveals ?? []).filter((hit) => hit.target === me).map((hit) => ({ date: hit.date, lane: hit.lane })),
     adjustments: myFixes,
     now,
     timeZone: season.data.timeZone,
@@ -489,6 +510,14 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
         {status}
       </p>
 
+      {mode !== 'regular' && weekDoc.data && (
+        <ModeBanner
+          me={me}
+          week={weekDoc.data}
+          name={(player) => (player === me ? 'You' : player === 'HOUSE' ? 'The House' : (everyone.docs.find((found) => found.id === player)?.data.displayName ?? 'Player'))}
+        />
+      )}
+
       {weekDays.length > 0 && todayCal.data && (
         <WeekStrip
           week={todayCal.data.week}
@@ -525,15 +554,22 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
           ruleOnes={ruleOnes}
           ruleOneIssue={season.data.ruleOneIssue ?? []}
           demolition={sealed.docs.map((found) => found.data).find((play) => play.period === period) ?? null}
-          opponent={
+          opponents={
             opponentId
-              ? {
-                  id: opponentId,
-                  name: opponentProfile.data?.displayName ?? 'Your opponent',
-                  goals: Object.fromEntries(LANES.map((lane) => [lane, opponentRoster.data?.goals?.[lane]?.text ?? ''])) as Partial<Record<Lane, string>>,
-                  rest: opponentRest.data?.date ?? null,
-                }
-              : null
+              ? [
+                  {
+                    id: opponentId,
+                    name: opponentProfile.data?.displayName ?? 'Your opponent',
+                    goals: Object.fromEntries(LANES.map((lane) => [lane, opponentRoster.data?.goals?.[lane]?.text ?? ''])) as Partial<Record<Lane, string>>,
+                    rest: opponentRest.data?.date ?? null,
+                  },
+                ]
+              : sideTargets.map((id) => ({
+                  id,
+                  name: everyone.docs.find((found) => found.id === id)?.data.displayName ?? 'Player',
+                  goals: Object.fromEntries(LANES.map((lane) => [lane, rosters.docs.find((found) => found.id === id)?.data.goals?.[lane]?.text ?? ''])) as Partial<Record<Lane, string>>,
+                  rest: weekKit.docs.find((found) => found.data.player === id && found.data.item === 'rest')?.data.date ?? null,
+                }))
           }
           vsHouse={targets.includes('HOUSE')}
           hitByDay={dates ? { [dates.today]: dayToday.data?.goals ?? {}, [dates.yesterday]: dayYesterday.data?.goals ?? {} } : {}}
