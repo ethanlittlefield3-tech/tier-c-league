@@ -54,6 +54,18 @@ describe('Building the schedule after the draft', () => {
     expect(weeks[4]?.data.pairs).toEqual([]);
   });
 
+  it("A Team Week plays the captains' squads, the same every Team Week; without them, the squads alternate down the draft order", () => {
+    const rankings = { a: ['teamWeek', 'rumble', 'twoVTwo', 'bounty', 'dropShot', 'alley'] };
+    const squads = { blue: ['a', 'd'], orange: ['b', 'c'] };
+    // Seven group-play weeks: the order repeats, so Weeks 2 and 8 are both Team Week.
+    const weeks = weeksOf(scheduleDocs({ status: 'draft', regularWeeks: 8, groupWeeks: [2, 3, 4, 5, 6, 7, 8], rankings, commish: 'a', draft: { ...done(['a', 'b', 'c', 'd'], { a: 'b', c: 'd' }), squads } }));
+    expect(weeks[1]?.data).toMatchObject({ mode: 'teamWeek', teams: squads });
+    expect(weeks[7]?.data).toMatchObject({ mode: 'teamWeek', teams: squads });
+    expect(weeks[2]?.data.teams).toBeUndefined();
+    const plain = weeksOf(scheduleDocs({ status: 'draft', regularWeeks: 3, groupWeeks: [3], rankings, commish: 'a', draft: done(['a', 'b', 'c', 'd'], { a: 'b', c: 'd' }) }));
+    expect(plain[2]?.data.teams).toEqual({ blue: ['a', 'c'], orange: ['b', 'd'] });
+  });
+
   it('Without group-play weeks, every week is a normal 1v1 week', () => {
     const weeks = weeksOf(scheduleDocs({ status: 'draft', regularWeeks: 6, groupWeeks: [], draft: done(['a', 'b', 'c', 'd'], { a: 'b', c: 'd' }) }));
     expect(weeks).toHaveLength(6);

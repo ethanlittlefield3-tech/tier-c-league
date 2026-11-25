@@ -363,6 +363,12 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 205. **The vote is counted like a points race:** a ranking gives its first choice 6 points, down to 1 for its last. The top modes fill the group-play weeks in order, the top one first. "The commish breaks ties" is read as the commish's own ranking deciding any tie, then SCOPE.md's order. With more group-play weeks than modes, the order repeats; with no rankings at all, SCOPE.md's order fills them.
 206. **The schedule job counts the vote** when it builds the season, so no phone can change the result. The draft shows the leading modes live while the vote is open, and the result after.
 
+**Phase 3: the captains' draft** (new on 2026-11-25, not yet reviewed by the commish)
+
+207. **The captains' draft is a live step after dares, only when Team Week won a slot.** The captains are last season's top two in the final standings who are still here, the leader blue; in Season 1, or when one of them has left, two are drawn at random from the draft order, the first drawn blue.
+208. **The picks snake: blue, orange, orange, blue, blue, …,** each on the same 2-minute clock as rival picks, and the commish's phone makes a missed pick at random, logged. With an odd number left to pick, one squad gets the extra player, as SCOPE.md allows.
+209. **The squads hold for the season:** every Team Week plays the same blue and orange. If Team Week has a slot but the captains' draft never ran, the squads alternate down the draft order.
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.

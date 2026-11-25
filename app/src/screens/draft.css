@@ -293,3 +293,57 @@
 .draft-modes strong {
   color: var(--ink);
 }
+
+/* Team Week squads: blue and orange, side by side. */
+.squads {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.squad {
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(196, 216, 255, 0.16);
+}
+
+.squad[data-squad='blue'] {
+  background: rgba(31, 139, 255, 0.16);
+}
+
+.squad[data-squad='orange'] {
+  background: rgba(255, 138, 30, 0.16);
+}
+
+.squad h3 {
+  margin: 0 0 6px;
+  font: italic 900 16px/1.2 var(--display);
+}
+
+.squad[data-squad='blue'] h3 {
+  color: #7cc4ff;
+}
+
+.squad[data-squad='orange'] h3 {
+  color: #ffc47c;
+}
+
+.squad ol {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.squad li {
+  padding: 2px 0;
+  overflow-wrap: anywhere;
+}
+
+.squad-captain {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.draft-captains .choice {
+  margin-top: 10px;
+}

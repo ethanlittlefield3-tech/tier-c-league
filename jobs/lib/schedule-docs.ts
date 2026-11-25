@@ -11,6 +11,8 @@ export interface DraftState {
   order: string[];
   picks: Record<string, string>;
   left: string[];
+  /** The captains' draft's squads, when Team Week won a slot. */
+  squads?: { blue: string[]; orange: string[] };
 }
 
 export interface WeekDoc {
@@ -20,6 +22,8 @@ export interface WeekDoc {
   pairs: { a: string; b: string }[];
   /** Who each player faces, which is who they may demolish. `HOUSE` for a bye. */
   targets: Record<string, string[]>;
+  /** Team Week's squads, which hold for the season. */
+  teams?: { blue: string[]; orange: string[] };
 }
 
 export type ScheduleResult = { skip: string } | { weeks: { id: string; data: WeekDoc }[] };
@@ -52,7 +56,8 @@ export function scheduleDocs(input: {
         if (b !== HOUSE) targets[b] = [a];
       }
       const period = weekPeriod(plan.week);
-      return { id: period, data: { week: plan.week, period, mode: plan.mode, pairs: plan.pairs.map(([a, b]) => ({ a, b })), targets } };
+      const teams = plan.mode === 'teamWeek' ? (draft.squads ?? splitSquads(draft.order)) : null;
+      return { id: period, data: { week: plan.week, period, mode: plan.mode, pairs: plan.pairs.map(([a, b]) => ({ a, b })), targets, ...(teams ? { teams } : {}) } };
     }),
   };
 }
@@ -61,4 +66,9 @@ export function scheduleDocs(input: {
 function groupWeeksOf(value: unknown, regularWeeks: number): number[] {
   if (!Array.isArray(value)) return [];
   return value.filter((week): week is number => Number.isInteger(week) && week >= 2 && week <= regularWeeks);
+}
+
+/** Without a captains' draft, the squads alternate down the draft order. */
+function splitSquads(order: readonly string[]): { blue: string[]; orange: string[] } {
+  return { blue: order.filter((_, at) => at % 2 === 0), orange: order.filter((_, at) => at % 2 === 1) };
 }

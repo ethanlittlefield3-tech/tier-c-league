@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks';
-import { REVOTE_HOURS, pickDeadline, picker, picksDone } from '@tcl/engine';
-import { useAll, useDoc, useNow } from '../data/hooks.ts';
+import { REVOTE_HOURS, captainOnTurn, groupWeekModes, modeStandings, pickDeadline, picker, picksDone, type CaptainsDraft } from '@tcl/engine';
+import { useAll, useDoc, useNow, useWhere } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
 import { whyOf } from '../data/why.ts';
@@ -14,14 +14,18 @@ const TROUBLE: Record<Trouble, string> = {
   refused: 'The league did not accept that.',
 };
 
-const NEXT: Record<string, { step: 'modes' | 'rivals' | 'dares' | 'done'; label: string; reason: string } | undefined> = {
+const NEXT: Record<string, { step: 'modes' | 'rivals' | 'dares' | 'captains' | 'done'; label: string; reason: string } | undefined> = {
   goals: { step: 'rivals', label: 'Move on to rival picks', reason: 'Moved the live draft on to rival picks' },
   modes: { step: 'rivals', label: 'Close the vote and move on to rival picks', reason: 'Closed the group-play vote and moved on to rival picks' },
   rivals: { step: 'dares', label: 'Move on to dares', reason: 'Moved the live draft on to dares' },
   dares: { step: 'done', label: 'Finish the draft', reason: 'Finished the live draft' },
+  captains: { step: 'done', label: 'Finish the draft', reason: 'Finished the live draft' },
 };
 
-const STEP_NAME: Record<string, string> = { goals: 'goals and votes', modes: 'the group-play vote', rivals: 'rival picks', dares: 'dares', done: 'done' };
+/** When Team Week won a slot, the captains' draft comes after dares. */
+const CAPTAINS_NEXT = { step: 'captains' as const, label: 'Move on to team captains', reason: 'Moved the live draft on to team captains' };
+
+const STEP_NAME: Record<string, string> = { goals: 'goals and votes', modes: 'the group-play vote', rivals: 'rival picks', dares: 'dares', captains: 'team captains', done: 'done' };
 
 /** With group-play weeks, the group-play vote comes between goals and rival picks. */
 const VOTE_NEXT = { step: 'modes' as const, label: 'Move on to the group-play vote', reason: 'Moved the live draft on to the group-play vote' };
@@ -33,7 +37,13 @@ type Api = Awaited<ReturnType<typeof loadData>>;
  * step, and close the goal votes sooner or give them more time.
  */
 export function DraftControls(props: { me: Me; seasonId: string; status: string; members: string[]; joiningOpen: boolean; groupWeeks?: number[] }) {
-  const draft = useDoc<PickView & { step: string; votesCloseAt?: number }>(`leagues/${props.me.league}/seasons/${props.seasonId}/draft/state`);
+  const draft = useDoc<PickView & Partial<CaptainsDraft> & { step: string; votesCloseAt?: number }>(`leagues/${props.me.league}/seasons/${props.seasonId}/draft/state`);
+  const league = useDoc<{ commish?: string }>(`leagues/${props.me.league}`);
+  const modeVotes = useWhere<{ voter: string; ranking?: string[] }>(`leagues/${props.me.league}/seasons/${props.seasonId}/votes`, 'kind', 'modes');
+  // Team Week won a slot in the group-play vote.
+  const teamWeek = Object.values(
+    groupWeekModes(props.groupWeeks ?? [], modeStandings(Object.fromEntries(modeVotes.docs.map((found) => [found.data.voter, found.data.ranking])), league.data?.commish ?? null)),
+  ).includes('teamWeek');
   const players = useAll<{ displayName?: string }>(`leagues/${props.me.league}/players`);
   const now = useNow(draft.data?.step === 'rivals' ? 1000 : 30_000);
   // The commish's phone makes a missed pick at random, here as well as on the Draft screen.
@@ -57,14 +67,15 @@ export function DraftControls(props: { me: Me; seasonId: string; status: string;
   };
 
   const state = draft.data;
-  const next = state ? (state.step === 'goals' && (props.groupWeeks ?? []).length > 0 ? VOTE_NEXT : NEXT[state.step]) : undefined;
+  const next = state ? (state.step === 'goals' && (props.groupWeeks ?? []).length > 0 ? VOTE_NEXT : state.step === 'dares' && teamWeek ? CAPTAINS_NEXT : NEXT[state.step]) : undefined;
   const closeAt = state?.votesCloseAt ?? null;
   const votesOpen = closeAt !== null && now < closeAt;
   const moreTime = () => Math.max(closeAt ?? now, now) + REVOTE_HOURS * 3_600_000;
   const name = (player: string) => players.docs.find((found) => found.id === player)?.data.displayName ?? 'Player';
-  const picking = state?.step === 'rivals' ? picker(state.left ?? []) : null;
+  const captainsPicking = state?.step === 'captains' && state.squads && state.captains && (state.pool ?? []).length > 0 ? state.captains[captainOnTurn(state as CaptainsDraft)] : null;
+  const picking = state?.step === 'rivals' ? picker(state.left ?? []) : captainsPicking;
   const pickTimeUp = picking !== null && state?.turnStartedAt != null && now >= pickDeadline(state.turnStartedAt);
-  const waitingOnPicks = state?.step === 'rivals' && !picksDone(state.left ?? []);
+  const waitingOnPicks = (state?.step === 'rivals' && !picksDone(state.left ?? [])) || captainsPicking !== null;
 
   return (
     <section class="panel" aria-labelledby="draft-controls-title">
@@ -112,7 +123,12 @@ export function DraftControls(props: { me: Me; seasonId: string; status: string;
               disabled={busy || waitingOnPicks}
               onClick={() =>
                 run(
-                  (api) => (next.step === 'rivals' ? api.startRivalPicks(props.me, props.seasonId, props.members) : api.advanceDraft(props.me, props.seasonId, next.step, next.reason)),
+                  (api) =>
+                    next.step === 'rivals'
+                      ? api.startRivalPicks(props.me, props.seasonId, props.members)
+                      : next.step === 'captains'
+                        ? api.startTeamCaptains(props.me, props.seasonId, props.members)
+                        : api.advanceDraft(props.me, props.seasonId, next.step, next.reason),
                   'Done.',
                 )
               }
@@ -120,7 +136,7 @@ export function DraftControls(props: { me: Me; seasonId: string; status: string;
               {next.label}
             </button>
           )}
-          {waitingOnPicks && <p class="panel-text">Dares come once every rival pick is in.</p>}
+          {waitingOnPicks && <p class="panel-text">{state?.step === 'captains' ? 'The draft finishes once every player is on a squad.' : 'Dares come once every rival pick is in.'}</p>}
 
           <p class="panel-text draft-votes-line">
             {votesOpen ? (

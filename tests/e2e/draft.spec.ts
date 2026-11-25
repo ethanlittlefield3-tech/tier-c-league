@@ -35,6 +35,52 @@ async function joins(browser: Browser, request: Parameters<typeof readDoc>[0], l
 }
 
 test.describe('The draft', () => {
+  test("If Team Week won a slot, its two captains snake-draft the blue and orange squads, which hold for the season's Team Weeks", async ({ page, request, browser }) => {
+    const league = await createLeague(request);
+    const season = await seasonInSetup(request, league);
+    const riley = await joins(browser, request, league, 'Riley');
+    await quietPlayer(request, league, 'sam', 'Sam');
+    await quietPlayer(request, league, 'jordan', 'Jordan');
+    // Team Week topped the group-play vote, and the draft is at dares, with every rival pick in.
+    await draftUnderway(request, season, [riley.player, league.commish, 'sam', 'jordan']);
+    await writeDoc(request, `${season.path}/votes/${riley.player}_modes`, { voter: riley.player, kind: 'modes', ranking: ['teamWeek', 'rumble', 'twoVTwo', 'bounty', 'dropShot', 'alley'], at: new Date() });
+    await patchDoc(request, `${season.path}/draft/state`, { step: 'dares', left: [], picks: { [riley.player]: league.commish, sam: 'jordan' } });
+
+    // The commish moves on to team captains: two of the four, each alone on a squad.
+    await enterAsCommish(page, league);
+    await openTools(page);
+    await page.getByRole('region', { name: 'The draft' }).getByRole('button', { name: 'Move on to team captains' }).click();
+    await expect.poll(async () => (await readDoc(request, `${season.path}/draft/state`))?.step).toBe('captains');
+    const drawn = await readDoc(request, `${season.path}/draft/state`);
+    const captains = drawn?.captains as { blue: string; orange: string };
+    expect([captains.blue, captains.orange].every((player) => [riley.player, league.commish, 'sam', 'jordan'].includes(player))).toBe(true);
+    expect((drawn?.pool as string[]).length).toBe(2);
+
+    // For a known draft: Riley captains blue, Alex orange. Blue picks first.
+    await patchDoc(request, `${season.path}/draft/state`, { captains: { blue: riley.player, orange: league.commish }, squads: { blue: [riley.player], orange: [league.commish] }, pool: ['sam', 'jordan'], turnStartedAt: new Date() });
+    await button(riley.phone, 'Open the draft').click();
+    await expect(riley.phone.locator('.draft-captains .draft-clock')).toContainText('Your pick.');
+    await riley.phone.getByRole('group', { name: 'Pick for Blue' }).getByRole('button', { name: 'Jordan' }).click();
+    await expect(riley.phone.getByRole('list', { name: 'Blue squad' }).getByRole('listitem')).toHaveText(['You (captain)', 'Jordan']);
+    await expect(riley.phone.locator('.draft-captains .draft-clock')).toContainText('Alex is picking for Orange.');
+
+    await button(page, 'Back').click();
+    await button(page, 'Back').click();
+    await button(page, 'Open the draft').click();
+    await page.getByRole('group', { name: 'Pick for Orange' }).getByRole('button', { name: 'Sam' }).click();
+    await expect(page.getByRole('list', { name: 'Orange squad' }).getByRole('listitem')).toHaveText(['You (captain)', 'Sam']);
+    await expect(riley.phone.getByText('The squads are set. They hold for every Team Week this season.')).toBeVisible();
+
+    // The commish finishes the draft, and the schedule's Team Week plays the squads.
+    await button(page, 'Back').click();
+    await openTools(page);
+    await page.getByRole('region', { name: 'The draft' }).getByRole('button', { name: 'Finish the draft' }).click();
+    await expect.poll(async () => (await readDoc(request, `${season.path}/draft/state`))?.step).toBe('done');
+    expect(await runSchedule(league)).toContain('6 weeks scheduled, season active');
+    expect((await readDoc(request, `${season.path}/weeks/w03`))?.teams).toEqual({ blue: [riley.player, 'jordan'], orange: [league.commish, 'sam'] });
+    await riley.phone.context().close();
+  });
+
   test("At the group-play vote, everyone ranks the six modes; the top-ranked fill the group-play weeks, the commish's ranking breaking a tie, and the schedule follows", async ({ page, request, browser }) => {
     const league = await createLeague(request);
     const season = await seasonInSetup(request, league);
@@ -196,6 +242,8 @@ test.describe('The draft', () => {
   test('In draft order, each player picks a Week 1 rival on a 2-minute clock; the odd one out faces The House, and the schedule follows', async ({ page, request, browser }) => {
     const league = await createLeague(request);
     const season = await seasonInSetup(request, league);
+    // A season without group play: no group-play vote and no team captains.
+    await patchDoc(request, season.path, { groupWeeks: [] });
     const riley = await joins(browser, request, league, 'Riley');
     await quietPlayer(request, league, 'sam', 'Sam');
     await rivalPicksUnderway(request, season, [riley.player, league.commish, 'sam']);

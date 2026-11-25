@@ -576,8 +576,8 @@ service cloud.firestore {
           allow read: if isMember(L);
           allow create, update: if isCommish(L)
             && doc == 'state'
-            && request.resource.data.keys().hasOnly(['step', 'order', 'left', 'picks', 'turnStartedAt', 'startedAt', 'votesCloseAt', 'audit'])
-            && request.resource.data.step in ['goals', 'modes', 'rivals', 'dares', 'done']
+            && request.resource.data.keys().hasOnly(['step', 'order', 'left', 'picks', 'turnStartedAt', 'startedAt', 'votesCloseAt', 'audit', 'captains', 'squads', 'pool'])
+            && request.resource.data.step in ['goals', 'modes', 'rivals', 'dares', 'captains', 'done']
             && request.resource.data.order is list
             && request.resource.data.picks is map
             && request.resource.data.votesCloseAt is timestamp
@@ -593,6 +593,33 @@ service cloud.firestore {
             && resource.data.left.size() >= 2
             && isPlayer(L, resource.data.left[0])
             && validPick(resource.data, request.resource.data);
+          allow update: if doc == 'state'
+            && resource.data.step == 'captains'
+            && resource.data.pool.size() >= 1
+            && validCaptainPick(resource.data, request.resource.data);
+        }
+
+        // ---- The captains' draft (SCOPE.md, draft step 6) ---------------------
+        // Only if Team Week won a slot: the captain on turn in the snake
+        // draft, blue, orange, orange, blue, …, takes one player from the
+        // pool for their squad, and the next pick's 2-minute clock starts.
+        function captainOnTurn(state) {
+          let made = state.squads.blue.size() + state.squads.orange.size() - 2;
+          return made % 4 == 0 || made % 4 == 3 ? 'blue' : 'orange';
+        }
+
+        function validCaptainPick(before, after) {
+          let turn = captainOnTurn(before);
+          let other = turn == 'blue' ? 'orange' : 'blue';
+          let pick = after.squads[turn][before.squads[turn].size()];
+          return isPlayer(L, before.captains[turn])
+            && after.diff(before).affectedKeys().hasOnly(['pool', 'squads', 'turnStartedAt'])
+            && after.squads.keys().hasOnly(['blue', 'orange'])
+            && after.squads[other] == before.squads[other]
+            && after.squads[turn] == before.squads[turn].concat([pick])
+            && pick in before.pool
+            && after.pool == before.pool.removeAll([pick])
+            && after.turnStartedAt == request.time;
         }
 
         function validPick(before, after) {

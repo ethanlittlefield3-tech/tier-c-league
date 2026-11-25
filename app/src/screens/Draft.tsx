@@ -7,12 +7,16 @@ import { whyOf } from '../data/why.ts';
 import { Back, Field, Heading } from '../ui/parts.tsx';
 import { timeLeft } from '../ui/when.ts';
 import { Dares, type DareVote } from './Dares.tsx';
+import { Captains } from './Captains.tsx';
 import { GroupWeeks, ModeVote } from './ModeVote.tsx';
 import { RivalPicks } from './RivalPicks.tsx';
 import './draft.css';
 
 interface DraftState {
-  step: 'goals' | 'modes' | 'rivals' | 'dares' | 'done';
+  step: 'goals' | 'modes' | 'rivals' | 'dares' | 'captains' | 'done';
+  captains?: Record<'blue' | 'orange', string>;
+  squads?: Record<'blue' | 'orange', string[]>;
+  pool?: string[];
   order?: string[];
   left?: string[];
   picks?: Record<string, string>;
@@ -101,7 +105,7 @@ function Results(props: {
   );
 }
 
-const STEP: Record<DraftState['step'], string> = { goals: 'goals', modes: 'the group-play vote', rivals: 'rival picks', dares: 'dares', done: 'done' };
+const STEP: Record<DraftState['step'], string> = { goals: 'goals', modes: 'the group-play vote', rivals: 'rival picks', dares: 'dares', captains: 'team captains', done: 'done' };
 
 /**
  * The draft (SCOPE.md, "Draft day agenda"). The live draft has three steps:
@@ -189,6 +193,16 @@ export function Draft(props: { me: Me; onBack: () => void }) {
                 <h2 id="group-weeks-title">Group play</h2>
                 <GroupWeeks groupWeeks={groupWeeks} rankings={rankings} commish={league.data?.commish ?? null} label="Group-play weeks" />
               </section>
+            )}
+            {draft.data.captains && draft.data.squads && seasonId && (
+              <Captains
+                me={props.me}
+                seasonId={seasonId}
+                draft={{ captains: draft.data.captains, squads: draft.data.squads, pool: draft.data.pool ?? [], turnStartedAt: draft.data.turnStartedAt ?? null }}
+                name={(player) => (player === props.me.player ? 'You' : name(player))}
+                now={now}
+                live={step === 'captains'}
+              />
             )}
             {draft.data.left && seasonId && <RivalPicks me={props.me} seasonId={seasonId} state={draft.data} name={name} isCommish={isCommish} />}
             {(step === 'dares' || step === 'done') && seasonId && (

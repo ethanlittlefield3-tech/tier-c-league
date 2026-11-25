@@ -4,7 +4,7 @@
  * goes in the league log.
  */
 import { Timestamp, collection, doc, getDoc, runTransaction, serverTimestamp, setDoc, writeBatch, type Firestore } from 'firebase/firestore';
-import { DRAFT_VOTE_HOURS, applyPick, missedPick, pickDeadline, picker, type Lane } from '@tcl/engine';
+import { DRAFT_VOTE_HOURS, applyPick, captainOnTurn, captainPick, chooseCaptains, missedCaptainPick, missedPick, pickDeadline, picker, startCaptains, type CaptainsDraft, type Lane } from '@tcl/engine';
 import { connect } from './firebase.ts';
 import { trouble, type Me } from './identity.ts';
 
@@ -51,7 +51,7 @@ export const startDraft = (me: Me, season: string, members: string[]) =>
   });
 
 /** Moves the draft on a step. */
-export const advanceDraft = (me: Me, season: string, step: 'goals' | 'modes' | 'rivals' | 'dares' | 'done', reason: string) =>
+export const advanceDraft = (me: Me, season: string, step: 'goals' | 'modes' | 'rivals' | 'dares' | 'captains' | 'done', reason: string) =>
   attempt(async (db) => {
     const league = doc(db, 'leagues', me.league);
     const state = doc(league, 'seasons', season, 'draft', 'state');
@@ -119,12 +119,20 @@ export const pickForMissed = (me: Me, season: string) =>
     const audit = doc(collection(league, 'audit')).id;
     return runTransaction(db, async (tx) => {
       const snapshot = await tx.get(ref);
-      const state = snapshot.data() as PickState | undefined;
+      const state = snapshot.data() as (PickState & Partial<CaptainsDraft>) | undefined;
       const left = state?.left ?? [];
-      const who = state?.step === 'rivals' ? picker(left) : null;
       const started = snapshot.get('turnStartedAt') as Timestamp | null | undefined;
-      if (who === null || !started || Date.now() < pickDeadline(started.toMillis())) return false;
       const [roll] = crypto.getRandomValues(new Uint32Array(1));
+      // A captain's missed pick, in the captains' draft.
+      if (state?.step === 'captains' && state.captains && state.squads && (state.pool ?? []).length > 0) {
+        if (!started || Date.now() < pickDeadline(started.toMillis())) return false;
+        const next = captainPick(state as CaptainsDraft, missedCaptainPick(state.pool ?? [], roll ?? 0));
+        tx.update(ref, { squads: next.squads, pool: next.pool, turnStartedAt: serverTimestamp(), audit });
+        tx.set(doc(league, 'audit', audit), entry(me, 'draft.update', 'draft', "A captain's missed pick, made at random"));
+        return true;
+      }
+      const who = state?.step === 'rivals' ? picker(left) : null;
+      if (who === null || !started || Date.now() < pickDeadline(started.toMillis())) return false;
       const rival = missedPick(left, roll ?? 0);
       const next = applyPick({ left, picks: state?.picks ?? {} }, rival);
       tx.update(ref, { left: next.left, [`picks.${who}`]: rival, turnStartedAt: serverTimestamp(), audit });
@@ -183,3 +191,46 @@ export const voteOnDare = (me: Me, season: string, input: { player: string; vers
 /** Your ranking of the six group-play modes, while the live draft is at the group-play vote. */
 export const voteModes = (me: Me, season: string, ranking: string[]) =>
   attempt((db) => setDoc(doc(db, 'leagues', me.league, 'seasons', season, 'votes', `${me.player}_modes`), { voter: me.player, kind: 'modes', ranking, at: serverTimestamp() }));
+
+/**
+ * Moves the live draft on to team captains (SCOPE.md, draft step 6): last
+ * season's top two still here, or two drawn at random in Season 1, each
+ * alone on their squad, and the first pick's clock starts.
+ */
+export const startTeamCaptains = (me: Me, season: string, members: string[]) =>
+  attempt(async (db) => {
+    const league = doc(db, 'leagues', me.league);
+    const ref = doc(league, 'seasons', season, 'draft', 'state');
+    const number = Number(season.replace(/\D/g, ''));
+    const last = number > 1 ? ((await getDoc(doc(league, 'seasons', `s${number - 1}`, 'standings', 'current'))).data()?.rows as { player: string; rank: number }[] | undefined) : undefined;
+    const top = [...(last ?? [])].sort((a, b) => a.rank - b.rank).map((row) => row.player);
+    const audit = doc(collection(league, 'audit')).id;
+    await runTransaction(db, async (tx) => {
+      const state = (await tx.get(ref)).data() as { step?: string; order?: string[] } | undefined;
+      if (state?.step !== 'dares') throw refused('The draft is not at its dares step.');
+      const order = (state.order ?? []).filter((player) => members.includes(player));
+      const rolls = crypto.getRandomValues(new Uint32Array(2));
+      const draft = startCaptains(order, chooseCaptains(top, order, [rolls[0] ?? 0, rolls[1] ?? 0]));
+      tx.update(ref, { step: 'captains', captains: draft.captains, squads: draft.squads, pool: draft.pool, turnStartedAt: serverTimestamp(), audit });
+      tx.set(doc(league, 'audit', audit), entry(me, 'draft.update', 'draft', 'Moved the live draft on to team captains'));
+    });
+  });
+
+/** Your pick for your squad, when it is your turn as captain. */
+export const pickForSquad = (me: Me, season: string, player: string) =>
+  attempt(async (db) => {
+    const ref = doc(db, 'leagues', me.league, 'seasons', season, 'draft', 'state');
+    await runTransaction(db, async (tx) => {
+      const state = (await tx.get(ref)).data() as (Partial<CaptainsDraft> & { step?: string }) | undefined;
+      if (state?.step !== 'captains' || !state.captains || !state.squads || !state.pool) throw refused('The captains are not picking.');
+      const draft = state as CaptainsDraft;
+      if (draft.captains[captainOnTurn(draft)] !== me.player) throw refused('It is not your pick.');
+      let next: CaptainsDraft;
+      try {
+        next = captainPick(draft, player);
+      } catch {
+        throw refused('That player has been picked.');
+      }
+      tx.update(ref, { squads: next.squads, pool: next.pool, turnStartedAt: serverTimestamp() });
+    });
+  });

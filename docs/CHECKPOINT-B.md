@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 302 of 302 passing.
+- **Tests:** 306 of 306 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -309,6 +309,17 @@ The commish runs it, and every change goes in the audit log. Players set their o
 - Votes on dares close when the votes close
 - A dare vote has no lane, and is filed under its own name
 - Everyone in the league can see the dares; nobody outside can
+
+## The captains' draft
+
+Only the captain on turn picks, one player from the pool, in snake order.
+
+**The captains' draft**
+
+- The captain on turn takes one player from the pool for their squad; the picks snake, blue, orange, orange
+- Nobody picks out of turn, and only a captain picks
+- A pick takes exactly one player who is still in the pool, and leaves the other squad alone
+- The commish moves the draft on to team captains, with an entry in the league log
 
 ## The group-play vote
 
