@@ -1,0 +1,80 @@
+name: Back up the league
+
+# Every night: every document in the database as JSON, committed to the
+# private backups repo, so its history holds every morning's copy. Proof
+# photos are left out. Needs two more secrets besides the league's key:
+# BACKUP_REPO (the private repo, like owner/tier-c-backups) and BACKUP_TOKEN
+# (a token that can write to it). Until both are set, it skips.
+on:
+  schedule:
+    # 07:37 UTC: early morning in the league's time zone, after midnight.
+    - cron: '37 7 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: Back up the league
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check that the keys are in GitHub Secrets
+        id: key
+        env:
+          KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          TOKEN: ${{ secrets.BACKUP_TOKEN }}
+          REPO: ${{ secrets.BACKUP_REPO }}
+        run: |
+          if [ -n "$KEY" ] && [ -n "$TOKEN" ] && [ -n "$REPO" ]; then
+            echo "present=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "The backups repo is not set up yet (FIREBASE_SERVICE_ACCOUNT, BACKUP_REPO and BACKUP_TOKEN). Skipping."
+          fi
+
+      - uses: actions/checkout@v6
+        if: steps.key.outputs.present == 'yes'
+
+      - uses: actions/setup-node@v6
+        if: steps.key.outputs.present == 'yes'
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+        if: steps.key.outputs.present == 'yes'
+
+      # The token is handed to this step only. It stays with that checkout, so the push below can use it.
+      - name: Open the backups repo
+        if: steps.key.outputs.present == 'yes'
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ secrets.BACKUP_REPO }}
+          token: ${{ secrets.BACKUP_TOKEN }}
+          path: backups
+
+      # The league's key is handed to this step only.
+      - name: Read every document into the backup
+        if: steps.key.outputs.present == 'yes'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          BACKUP_DIR: backups/snapshot
+        run: node jobs/backup.ts
+
+      - name: Commit it, if anything changed
+        if: steps.key.outputs.present == 'yes'
+        working-directory: backups
+        run: |
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing changed since the last backup."
+          else
+            git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "Backup $(date -u +%F)"
+            git push -q
+            echo "Backup $(date -u +%F) saved."
+          fi

@@ -234,6 +234,14 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 130. **During a fast test week, the weekly job runs every 2 minutes for that league,** and the made-up players take a turn every 30 seconds. A whole run reads about 15,000 documents, well inside the free 50,000 a day.
 131. **Watch it on a computer, like the demo.** Today says it is a fast test league. Proof votes still stay open 24 real hours, but the made-up players vote at once, so a vote is settled in minutes.
 
+**Backups** (new on 2026-11-25, not yet reviewed by the commish)
+
+132. **Backups run every night from the public repo,** and commit to the private backups repo with a token kept in GitHub Secrets, so they use no private-repo minutes. The private repo's name is a secret too, because it names the account.
+133. **Each collection is one file, one document per line,** so a night's commit holds only what changed, and the repo's history is the list of dates to restore from. A night with no changes makes no commit.
+134. **Proof photos are left out of backups.** They are deleted after 14 days anyway, and would make every backup large.
+135. **A restore puts the database back as that morning's backup found it:** everything in the backup is written back, and anything it doesn't have is deleted, except proof photos. It can be limited to one league, and it needs the word "restore" typed in.
+136. **Timestamps keep every nanosecond,** so a restored day still compares equal with itself in the security rules (for example `firstAt`, which a day keeps for good).
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.

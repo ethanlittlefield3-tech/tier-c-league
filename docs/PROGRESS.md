@@ -225,12 +225,15 @@ Last updated 2026-11-25, after taking starter dares off the Wheel.
 - **The fast test league** (2026-11-25, PHASE1.md Step 4, for Checkpoint D). A button on GitHub, "Fast test week", makes a demo league whose days last 8 minutes, with the commish and three made-up players, then runs it for about 100 minutes. The made-up players log at their own times, set a Demolition on the commish, use Aerial and Full Boost, taunt, ask the commish for receipts, and spin, prove and vote on the Wheel. The weekly job settles the league every 2 minutes as it goes.
   - The engine has a fast clock: the same calendar with each day squeezed into a few minutes. The app follows it on every screen, and Today says the league is fast. The calendar and weekly jobs honor it only in a demo league.
   - 7 engine tests, 16 job tests, 1 app test and 1 flow test, which runs the real job against the local database and opens the league in the app.
+- **Backups and restores** (2026-11-25, PHASE1.md Step 4). Early every morning, "Back up the league" writes every document as JSON, one file per collection, and commits it to the private backups repo, so its history holds every morning's copy. Proof photos are left out. "Restore from a backup" takes a date and puts the database back as that backup found it, for one league or all of it, once "restore" is typed in. Both skip until the backups repo and its token are in GitHub Secrets.
+  - 6 job tests, and 2 flow tests: a demo league is backed up, deleted and restored, and a second backup matches the first file for file.
 - **The README is current** (2026-11-25): what each folder holds, the demo league and the fast test week step by step, and what runs on its own.
 - **The shorter intro on reopening is on purpose:** the full intro plays on the first open each day, and a 1-second title after that (SCOPE.md, "Intro animation").
 
 ## Waiting on the commish
 
 0. **Optional: try every screen in the demo league,** on a computer. The steps come one at a time in the chat.
+   - **Optional: set up backups:** a private repo and a token, then two secrets. The steps come one at a time in the chat when you're ready.
    - **Checkpoint D can be run any time:** the "Fast test week" button, then watch on a computer. The README has the steps.
 1. **Phone check of the layout fix.** Open Tier C. If the area behind the clock is not solid navy, remove Tier C from the Home Screen and add it again from Safari. Have the recovery key ready first (Profile, Show my key), because a re-added app starts signed out. Then check that the title and the main page sit right, and that a touch doesn't move the whole screen.
 
@@ -241,7 +244,7 @@ Last updated 2026-11-25, after taking starter dares off the Wheel.
    - **Still to add to joining:** the notifications step (with push alerts). Leagues are made with the Create a league button on GitHub, not from the app (DECISIONS.md, "Build choices").
    - **Offline start** comes with the offline step: a service worker that keeps the app's files on the phone, so it opens with no signal. Chrome on Android only offers its one-tap Install button once that exists. Until then Android installs from the browser menu, which the guide explains.
 2. **Before real players join:** limit the app's web key to the app's own address in the Google Cloud console, and look at App Check, which stops other programs from using the database's free daily allowance.
-   - **Step 5 items still to come, each with the feature that needs it:** the Cloud Messaging web push key (notifications), and the private backups repo with its token (the backup job).
+   - **Step 5 items still to come, each with the feature that needs it:** the Cloud Messaging web push key (notifications), and the private backups repo with its token (the backup job is built and waits on them).
 3. **Rules still to write, each with its screen and its tests:** marking a player as left, once the mid-season question is answered. Phase 2 and 3 collections are in DATA-MODEL.md and refused until then.
 
 ## Questions for the commish, asked when each feature is built
@@ -270,7 +273,7 @@ Last updated 2026-11-25, after taking starter dares off the Wheel.
 
 ## Design notes from the check
 
-1. **Run every scheduled job from the public repo, the backup included.** The backup job pushes to the private repo with a deploy key or token kept in GitHub Secrets. Private-repo compute used is then zero. Record this in DECISIONS.md when the job is built, because SCOPE.md describes the backup as using private-repo minutes.
+1. **Run every scheduled job from the public repo, the backup included.** The backup job pushes to the private repo with a deploy key or token kept in GitHub Secrets. Private-repo compute used is then zero. Recorded in DECISIONS.md, call 132, now that the job is built.
 2. **Treat job logs as public.** The app repo is public, so jobs log counts and IDs only: never names, recovery keys, photos or other league data.
 3. **Use the schedule time zone** for the daily and weekly jobs so they follow league time across daylight saving. Check the exact syntax in GitHub's docs when writing the workflows.
 4. **Choose Firestore Standard edition in Native mode** at Step 5. The Enterprise edition's free tier is counted in different units.

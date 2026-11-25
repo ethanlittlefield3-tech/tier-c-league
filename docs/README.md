@@ -14,11 +14,11 @@ This file will grow into the plain-steps guide for running, deploying, backing u
 | `firebase/` | The security rules, which decide what each phone may read and write |
 | `tests/rules/` | Tests that try to break those rules against a local copy of the database |
 | `tests/e2e/` | Tests that tap through the app in a browser at iPhone size |
-| `jobs/` | Work that runs on GitHub with the league's key: making a league, keeping the season calendar, settling the weeks and drawing the Wheel, the demo and fast test leagues, and publishing the security rules |
+| `jobs/` | Work that runs on GitHub with the league's key: making a league, keeping the season calendar, settling the weeks and drawing the Wheel, the demo and fast test leagues, backups and restores, and publishing the security rules |
 | `scripts/` | Small tools: the ones that build the checkpoint reports, and the ones that draw the art and the icons |
 | `.github/workflows/` | What GitHub does: on every push, run all the tests, then publish the app and the rules; every hour, the timed jobs; and the buttons in the Actions tab |
 
-Still to come: push notifications, backups, and Phases 2 and 3.
+Still to come: push notifications, and Phases 2 and 3.
 
 ## Run the tests
 
@@ -140,9 +140,29 @@ A week in about an hour and a half: a demo league whose days last 8 minutes, wit
 | --- | --- | --- |
 | Keep the season calendar | Every hour | Writes the season's days and, once the draft is done, its schedule |
 | Settle the weeks | Every hour | Posts each week's results once its Sunday locks at noon on Monday, final at midnight on Tuesday; reveals Demolitions; draws the Wheel; keeps the standings; deletes proof photos after 14 days |
+| Back up the league | Every night | Copies every document to the private backups repo (see below) |
 | Keep the schedules running | Once a month | Records the date, because GitHub pauses scheduled jobs in a public repo after 60 days with no activity |
 
 GitHub can run a scheduled job late. If a week's results are late, Commish tools can settle it from your phone.
+
+## Backups
+
+Early every morning, **Back up the league** copies every document into a private repo, so that repo's history holds a copy from every morning. Proof photos are left out: they are deleted after 14 days anyway.
+
+It needs a private repo and a token, set up once. The steps come one at a time in the chat when you're ready:
+
+1. A private repo named `tier-c-backups`, made with a README so it isn't empty.
+2. A fine-grained token that can only write to that repo.
+3. Two secrets in this repo's **Settings**, **Secrets and variables**, **Actions**: `BACKUP_REPO` (the private repo's name, like `owner/tier-c-backups`) and `BACKUP_TOKEN` (the token).
+
+Until both secrets are set, the job skips. A backup holds every recovery key and league code, so keep that repo private.
+
+## Restoring
+
+1. Open **Actions**, choose **Restore from a backup**, then **Run workflow**.
+2. Type the date to go back to, like `2027-01-31`. It uses that morning's backup, or the newest one before it.
+3. To restore only one league, type its id. Leave it empty to restore everything.
+4. Type `restore` to confirm, and run it. The database goes back to how that backup found it: everything in the backup is written back, and anything it doesn't have is deleted. Proof photos aren't touched.
 
 ## Where the live rules come from
 
