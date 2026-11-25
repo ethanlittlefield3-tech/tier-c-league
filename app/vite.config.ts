@@ -36,9 +36,17 @@ function headTags(): Plugin {
 
 // `base: './'` keeps every path relative, so the same build works on GitHub
 // Pages (served from /tier-c-league/) and from the local dev server.
-export default defineConfig({
+//
+// `--mode emulator` builds an app that talks to the local Firebase emulators
+// instead of the real database. The flow tests and `npm run dev` use it. It is
+// set here, not in a .env file, because this repo ignores every .env file as a
+// guard against secrets.
+export default defineConfig(({ mode }) => ({
   base: './',
   plugins: [preact(), headTags()],
+  define: {
+    'import.meta.env.VITE_BACKEND': JSON.stringify(mode === 'emulator' ? 'emulator' : 'live'),
+  },
   build: {
     // The database library is one big piece (about 165 kB zipped). It is not
     // part of the first screen: the app fetches it in the background while the
@@ -46,4 +54,4 @@ export default defineConfig({
     chunkSizeWarningLimit: 700,
   },
   server: { port: 5173 },
-});
+}));
