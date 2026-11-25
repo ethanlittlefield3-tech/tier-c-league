@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice">
+<defs>
+
+</defs>
+<g transform="translate(0 -46)"><path d="M252 404L212 446" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" opacity="0.55"/><path d="M246 386L196 422" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" opacity="0.55"/><path d="M264 420L238 450" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" opacity="0.55"/><path d="M240 366L204 388" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" opacity="0.35"/><path d="M330 428L312 462" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" opacity="0.35"/><path d="M352 412L340 440" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" opacity="0.35"/>
+<g transform="translate(300 372)">
+<ellipse cx="-12" cy="30" rx="86" ry="30" transform="rotate(-38)" fill="none" stroke="#ffffff" stroke-width="2.5" opacity="0.22"/>
+<ellipse cx="-12" cy="30" rx="112" ry="40" transform="rotate(-38)" fill="none" stroke="#ffffff" stroke-width="1.5" opacity="0.1"/>
+<circle cx="-34" cy="46" r="45" fill="#dfe7f8" opacity="0.05"/>
+<circle cx="-18" cy="25" r="52" fill="#dfe7f8" opacity="0.1"/>
+</g></g>
+</svg>

@@ -10,12 +10,13 @@ This file will grow into the plain-steps guide for running, deploying, backing u
 | --- | --- |
 | `docs/` | The spec (`SCOPE.md`), the build brief (`PHASE1.md`), the progress log, the decisions log and the checkpoint reports |
 | `engine/` | Every game rule as plain code: scoring, calendar, schedule, standings, awards, power-up timing and receipts |
-| `app/` | The phone app. So far: the theme and the title screen |
+| `app/` | The phone app. So far: the theme, the intro animation and the title screen |
 | `firebase/` | The security rules, which decide what each phone may read and write |
 | `tests/rules/` | Tests that try to break those rules against a local copy of the database |
+| `tests/e2e/` | Tests that tap through the app in a browser at iPhone size |
 | `scripts/` | Small tools, like the ones that build the checkpoint reports |
 
-Still to come: the rest of the app's screens, `jobs/` (the timed work) and phone-size flow tests.
+Still to come: the rest of the app's screens and `jobs/` (the timed work).
 
 ## Run the tests
 
@@ -56,10 +57,16 @@ npm run checkpoint:b
 That rebuilds `docs/CHECKPOINT-B.md`: the plain-English list of what the rules allow and block.
 
 ```bash
+npm run test:e2e
+```
+
+That builds the app and taps through it in a browser at iPhone size.
+
+```bash
 npm run check
 ```
 
-That runs everything: the type checks, the engine tests and the security tests.
+That runs the type checks, the engine tests and the security tests.
 
 ## Run the app on your computer
 

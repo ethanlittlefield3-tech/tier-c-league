@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   test:
-    name: Type checks, engine tests and security-rule tests
+    name: Type checks and every test
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -42,3 +42,9 @@ jobs:
 
       - name: Security-rule tests (starts the Firestore emulator)
         run: npm run test:rules
+
+      - name: Install the test browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Phone-size flow tests (builds the app first)
+        run: npm run test:e2e

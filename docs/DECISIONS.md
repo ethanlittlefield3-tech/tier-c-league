@@ -12,6 +12,7 @@ Every rule that had to be interpreted, and who decided it. SCOPE.md is still the
 | R4 | 2026-11-25 | **Backing down on a receipt is free.** If you take the claim back before the proof deadline, the square stops counting and you lose no extra point. Only ignoring the request costs the extra 1. | SCOPE.md did not say whether a challenged square could still be changed. R6 settles the detail for screen time. |
 | R5 | 2026-11-25 | **Penalties survive Rule One.** Rule One zeroes the day's play (goals, screen time, beers, Aerial, Demolition), but a failed receipt's −1 and commish docks still count. | SCOPE.md's order of operations read as if Rule One wiped everything, which would let a player caught lying burn Rule One to erase it. |
 | R6 | 2026-11-25 | **Receipts on screen time: prove it, or back down to "not logged".** The player can upload the screenshot, fixing the number first for free. Or they can back down, which makes screen time not logged (−3) with no extra point. A new number with no screenshot does not close the request. | Follow-up to R4. A number that could change without proof could be nudged by 15 minutes every time it was challenged, and never proven. |
+| R7 | 2026-11-25 | **The new title screen sets the level of art for the whole app,** including the gold C badge in the logo. | The commish asked for more complex graphics on 2026-11-24. A higher-detail title screen was built, and the commish approved it. |
 
 ## Calls I made to close gaps (veto any)
 
@@ -55,6 +56,13 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 22. **Wheel:** as written, everyone tied for the lowest points spins. That includes a player who won their matchup on the beers tiebreak (Example 1 in Checkpoint A).
 23. **Check-in streaks:** a blank rest day and a no-show covered by Rule One are skipped: the streak neither grows nor breaks. Logging on a rest day adds to it.
 24. **Perfect-day streaks** skip rest days. A Rule One day is not perfect, so it ends the run.
+
+**Intro**
+
+26. **"The first open each day" goes by the phone's own calendar day.** The intro is decoration, so the phone's clock is fine. Nothing that affects a score reads it.
+27. **Skipping the intro still counts as having seen it,** so the rest of that day gets the 1-second version.
+28. **On the title, a tap anywhere enters.** The tap that skipped the intro is ignored for a third of a second, so one tap can't both skip and enter.
+29. **Any key press skips the intro too,** for keyboards and switch controls.
 
 **Calendar**
 

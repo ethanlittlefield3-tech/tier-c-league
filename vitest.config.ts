@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitest/config';
 
 // One config for the whole repo. Each part of the project is a "project" here.
-//   npm test            the engine: fast, needs nothing running
+//   npm test            the engine and the app's logic: fast, needs nothing running
 //   npm run test:rules  the security rules: starts the Firestore emulator first
 export default defineConfig({
   test: {
@@ -11,6 +11,13 @@ export default defineConfig({
           name: 'engine',
           environment: 'node',
           include: ['engine/test/**/*.test.ts'],
+        },
+      },
+      {
+        test: {
+          name: 'app',
+          environment: 'node',
+          include: ['app/test/**/*.test.ts'],
         },
       },
       {

@@ -25,8 +25,9 @@ A free phone app where friends compete on daily habits. One commish runs the lea
 
 ```bash
 npm install           # once
-npm test              # the engine tests: fast, nothing else needed
+npm test              # the engine and app logic tests: fast, nothing else needed
 npm run test:rules    # the security-rule tests: starts the Firestore emulator (needs Java 21)
+npm run test:e2e      # builds the app and taps through it at iPhone size (Playwright)
 npm run check         # type checks, engine tests and security-rule tests
 npm run checkpoint:a  # rebuild docs/CHECKPOINT-A.md from the engine tests
 npm run checkpoint:b  # rebuild docs/CHECKPOINT-B.md from the security-rule tests
@@ -40,3 +41,5 @@ npm run checkpoint:b  # rebuild docs/CHECKPOINT-B.md from the security-rule test
 - Write the rule tests before the code they test.
 - Security rules read time only from `calendar/` documents, never from a date string. Kit, sealed and week documents are filed by period (`w02`), not week number.
 - Job logs are public, because the repo is: log counts and IDs only, never names, recovery keys or photos.
+- Animations move whole layers and change only `transform` and `opacity`. The resting state of every CSS rule is the finished screen.
+- Flow tests freeze the clock (`page.clock`), so they never wait in real time.

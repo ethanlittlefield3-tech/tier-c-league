@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice">
+<defs>
+<filter id="t2-blur4" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4"/></filter>
+<linearGradient id="t2-beam" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e6efff" stop-opacity="0.36"/><stop offset="0.55" stop-color="#a9c8ff" stop-opacity="0.1"/><stop offset="1" stop-color="#a9c8ff" stop-opacity="0"/></linearGradient>
+<radialGradient id="t2-bloom"><stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/><stop offset="0.22" stop-color="#d6e6ff" stop-opacity="0.5"/><stop offset="1" stop-color="#7fb0ff" stop-opacity="0"/></radialGradient>
+<filter id="t2-blur2" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2"/></filter>
+</defs>
+<g filter="url(#t2-blur4)"><path d="M298 64L356 70L480 640L90 640Z" fill="url(#t2-beam)"/><path d="M312 67L338 70L330 560L220 560Z" fill="url(#t2-beam)" opacity="0.7"/></g>
+<circle cx="330" cy="64" r="74" fill="url(#t2-bloom)" opacity="0.85"/>
+<ellipse cx="330" cy="64" rx="120" ry="3.2" fill="#ffffff" opacity="0.4" filter="url(#t2-blur2)"/>
+<g transform="translate(330 64) rotate(5)"><rect x="-25.7" y="-10.6" width="9" height="6" rx="1" fill="#f6f9ff"/><rect x="-15.1" y="-10.6" width="9" height="6" rx="1" fill="#f6f9ff"/><rect x="-4.5" y="-10.6" width="9" height="6" rx="1" fill="#f6f9ff"/><rect x="6.1" y="-10.6" width="9" height="6" rx="1" fill="#f6f9ff"/><rect x="16.7" y="-10.6" width="9" height="6" rx="1" fill="#f6f9ff"/><rect x="-25.7" y="-3" width="9" height="6" rx="1" fill="#f6f9ff"/><rect x="-15.1" y="-3" width="9" height="6" rx="1" fill="#f6f9ff"/><rect x="-4.5" y="-3" width="9" height="6" rx="1" fill="#f6f9ff"/><rect x="6.1" y="-3" width="9" height="6" rx="1" fill="#f6f9ff"/><rect x="16.7" y="-3" width="9" height="6" rx="1" fill="#f6f9ff"/><rect x="-25.7" y="4.6" width="9" height="6" rx="1" fill="#f6f9ff"/><rect x="-15.1" y="4.6" width="9" height="6" rx="1" fill="#f6f9ff"/><rect x="-4.5" y="4.6" width="9" height="6" rx="1" fill="#f6f9ff"/><rect x="6.1" y="4.6" width="9" height="6" rx="1" fill="#f6f9ff"/><rect x="16.7" y="4.6" width="9" height="6" rx="1" fill="#f6f9ff"/></g>
+<circle cx="330" cy="64" r="18" fill="#ffffff" opacity="0.5" filter="url(#t2-blur4)"/>
+</svg>

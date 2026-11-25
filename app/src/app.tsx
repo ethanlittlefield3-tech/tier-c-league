@@ -1,6 +1,9 @@
+import { useState } from 'preact/hooks';
+import { Home } from './screens/Home.tsx';
 import { Title } from './screens/Title.tsx';
 
-/** The app shell. For now it shows the title screen; the other screens arrive in Step 3. */
+/** The app shell: the intro and title first, then the app itself. */
 export function App() {
-  return <Title />;
+  const [entered, setEntered] = useState(false);
+  return entered ? <Home /> : <Title onEnter={() => setEntered(true)} />;
 }

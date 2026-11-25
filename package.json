@@ -12,17 +12,18 @@
     "node": ">=22.18"
   },
   "scripts": {
-    "test": "vitest run --project engine",
+    "test": "vitest run --project engine --project app",
     "test:rules": "firebase --config firebase/firebase.json emulators:exec --only firestore --project demo-tier-c \"vitest run --project rules --no-file-parallelism\"",
-    "test:all": "npm test && npm run test:rules",
-    "test:watch": "vitest --project engine",
-    "typecheck": "tsc -p engine/tsconfig.json && tsc -p scripts/tsconfig.json && tsc -p tests/tsconfig.json && tsc -p app/tsconfig.json",
+    "test:all": "npm test && npm run test:rules && npm run test:e2e",
+    "test:watch": "vitest --project engine --project app",
+    "typecheck": "tsc -p engine/tsconfig.json && tsc -p scripts/tsconfig.json && tsc -p tests/tsconfig.json && tsc -p tests/e2e/tsconfig.json && tsc -p app/tsconfig.json",
     "check": "npm run typecheck && npm run test:all",
     "checkpoint:a": "vitest run --project engine --reporter=json --outputFile=.vitest/results.json && node scripts/checkpoint-a.ts",
     "checkpoint:b": "firebase --config firebase/firebase.json emulators:exec --only firestore --project demo-tier-c \"vitest run --project rules --no-file-parallelism --reporter=json --outputFile=.vitest/rules.json\" && node scripts/checkpoint-b.ts",
     "dev": "npm run dev -w app",
     "build": "npm run build -w app",
-    "art": "node scripts/art/title-scene.mjs"
+    "art": "node scripts/art/title-scene.mjs",
+    "test:e2e": "playwright test -c tests/e2e/playwright.config.ts --trace off"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^6.0.0",
@@ -30,6 +31,7 @@
     "firebase": "^13.4.0",
     "firebase-tools": "^15.37.0",
     "typescript": "^7.0.2",
-    "vitest": "^5.1.1"
+    "vitest": "^5.1.1",
+    "@playwright/test": "1.63.0"
   }
 }

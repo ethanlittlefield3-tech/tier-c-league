@@ -1,19 +1,75 @@
+/* The intro and the title screen.
+   Everything that moves is a whole layer changing only its position, size or
+   opacity. A phone can do that without redrawing the art, which is what keeps
+   it at 60 frames a second. The resting state of every rule below is the
+   finished title screen, so if an animation never runs the screen is still
+   right. */
+
 .title {
   position: fixed;
   inset: 0;
   overflow: hidden;
-  background: var(--navy-900);
+  background: #000000;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
 }
 
-.title-scene {
+.stage,
+.scene,
+.layer,
+.dim,
+.flash,
+.card {
   position: absolute;
   inset: 0;
 }
 
-.title-scene svg {
+.layer {
+  will-change: transform, opacity;
+}
+
+.layer svg {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+.dim {
+  background: #02040b;
+  opacity: 0;
+}
+
+.flash {
+  z-index: 6;
+  background: #ffffff;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Where the ball and the burst sit in the picture, so they grow from there. */
+.layer-ball {
+  transform-origin: 76.9% 38.6%;
+}
+
+.layer-impact {
+  transform-origin: 74.4% 46.4%;
+}
+
+/* ---- The logo, the button and the credit -------------------------------- */
+
+.title-glow {
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  bottom: 8%;
+  height: 34%;
+  background:
+    radial-gradient(closest-side at 30% 50%, rgba(31, 139, 255, 0.5), transparent),
+    radial-gradient(closest-side at 72% 56%, rgba(255, 138, 30, 0.45), transparent);
+  opacity: 0.55;
+  pointer-events: none;
 }
 
 .title-stack {
@@ -25,16 +81,27 @@
   flex-direction: column;
   align-items: center;
   gap: 12px;
+  visibility: hidden;
+}
+
+.title[data-phase='title'] .title-stack {
+  visibility: visible;
+}
+
+.lockup-wrap {
+  width: min(100%, 440px);
+  transform-origin: 50% 55%;
 }
 
 .title-lockup {
   display: block;
-  width: min(100%, 440px);
+  width: 100%;
   height: auto;
   overflow: visible;
 }
 
 .title-enter {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -51,6 +118,18 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink);
+  cursor: pointer;
+}
+
+/* A ring that breathes out from the button, to say "this is the way in". */
+.title-enter::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border: 2px solid var(--orange);
+  border-radius: inherit;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .title-enter:focus-visible {
@@ -78,4 +157,303 @@
 .title-credit svg {
   width: 18px;
   height: 18px;
+}
+
+/* ---- Part 1: the Nunchucks card, about 2 seconds ------------------------- */
+
+.card {
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  background: #000000;
+}
+
+.card-mark {
+  width: min(80vw, 330px);
+  aspect-ratio: 1;
+  animation: mark-spin 760ms cubic-bezier(0.16, 0.84, 0.3, 1) both;
+}
+
+.card-mark svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* The two handles swing in from wide apart: the chain whipping. */
+.mark-handle-a,
+.mark-handle-b {
+  transform-box: view-box;
+  transform-origin: 200px 250px;
+}
+
+.mark-handle-a {
+  animation: swing-a 760ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+.mark-handle-b {
+  animation: swing-b 760ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+.card-words {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transform: rotate(-3deg);
+  font-family: Bungee, Impact, 'Arial Black', sans-serif;
+  font-size: clamp(26px, 8.7vw, 36px);
+  line-height: 1;
+}
+
+.card-word-a {
+  color: #f5f1e8;
+  animation: stamp 240ms cubic-bezier(0.2, 0.9, 0.3, 1) 1050ms both;
+}
+
+.card-word-b {
+  color: #ffcf3f;
+  animation: stamp 240ms cubic-bezier(0.2, 0.9, 0.3, 1) 1230ms both;
+}
+
+.card-skip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: max(28px, env(safe-area-inset-bottom, 0px));
+  margin: 0;
+  text-align: center;
+  font-size: 13px;
+  color: #8b8b96;
+}
+
+.title[data-phase='card'] .flash {
+  animation: card-flash 380ms ease-out 700ms both;
+}
+
+/* ---- Part 2: the boost scene, about 2.5 seconds --------------------------
+   Times are a share of 2,500 ms: lights clunk on at 6%, 18% and 30%, the car
+   arrives between 36% and 66%, and the ball fills the screen by 86%. */
+
+.title[data-phase='boost'] .card {
+  pointer-events: none;
+  animation: fade-out 160ms linear both;
+}
+
+.title[data-phase='boost'] .dim {
+  animation: dim-clunk 2500ms linear both;
+}
+
+.title[data-phase='boost'] .layer-lights-left {
+  animation: clunk-1 2500ms linear both;
+}
+
+.title[data-phase='boost'] .layer-lights-right {
+  animation: clunk-2 2500ms linear both;
+}
+
+.title[data-phase='boost'] .layer-lights-all {
+  animation: clunk-3 2500ms linear both;
+}
+
+.title[data-phase='boost'] .layer-car {
+  animation: car-in 2500ms both;
+}
+
+.title[data-phase='boost'] .layer-ball-motion {
+  opacity: 0;
+}
+
+.title[data-phase='boost'] .layer-ball {
+  animation: ball-fly 2500ms both;
+}
+
+.title[data-phase='boost'] .layer-impact {
+  animation: impact-pop 2500ms both;
+}
+
+.title[data-phase='boost'] .flash {
+  animation: smash-flash 2500ms linear both;
+}
+
+.title[data-phase='boost'] .title-glow {
+  opacity: 0;
+}
+
+/* ---- Part 3: the title slams in ------------------------------------------ */
+
+.title[data-phase='title'][data-mode='full'][data-skipped='no'] .flash {
+  animation: fade-out 420ms ease-out both;
+}
+
+.title[data-phase='title'] .stage {
+  animation: shake 360ms linear 200ms both;
+}
+
+.title[data-phase='title'] .lockup-wrap {
+  animation: slam 420ms cubic-bezier(0.2, 0.9, 0.25, 1) both;
+}
+
+.title[data-phase='title'] .title-glow {
+  animation: glow 900ms ease-out 180ms both;
+}
+
+.title[data-phase='title'] .title-enter {
+  animation: pop-in 320ms cubic-bezier(0.2, 0.9, 0.3, 1.2) 620ms both;
+}
+
+.title[data-phase='title'] .title-enter::after {
+  animation: ring 2200ms ease-out 1400ms infinite;
+}
+
+.title[data-phase='title'] .title-credit {
+  animation: fade-in 400ms ease-out 760ms both;
+}
+
+/* ---- Reduce Motion: a simple fade ---------------------------------------- */
+
+.title[data-mode='fade'] .stage {
+  animation: fade-in 400ms ease-out both;
+}
+
+.title[data-mode='fade'] .lockup-wrap,
+.title[data-mode='fade'] .title-glow,
+.title[data-mode='fade'] .title-enter,
+.title[data-mode='fade'] .title-enter::after,
+.title[data-mode='fade'] .title-credit {
+  animation: none;
+}
+
+/* ---- The moves ----------------------------------------------------------- */
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes mark-spin {
+  0% { transform: rotate(-900deg) scale(0.08); opacity: 0; }
+  12% { opacity: 1; }
+  82% { transform: rotate(8deg) scale(1.14); }
+  92% { transform: rotate(-3deg) scale(0.95); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+
+@keyframes swing-a {
+  0% { transform: rotate(-80deg); }
+  72% { transform: rotate(-18deg); }
+  100% { transform: rotate(-27deg); }
+}
+
+@keyframes swing-b {
+  0% { transform: rotate(80deg); }
+  72% { transform: rotate(18deg); }
+  100% { transform: rotate(27deg); }
+}
+
+@keyframes card-flash {
+  0% { opacity: 0; }
+  12% { opacity: 0.95; }
+  100% { opacity: 0; }
+}
+
+@keyframes stamp {
+  0% { transform: scale(2.1); opacity: 0; }
+  70% { transform: scale(0.96); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes dim-clunk {
+  0%, 5.9% { opacity: 0.86; }
+  6%, 17.9% { opacity: 0.58; }
+  18%, 29.9% { opacity: 0.3; }
+  30%, 100% { opacity: 0; }
+}
+
+@keyframes clunk-1 {
+  0%, 5.9% { opacity: 0; }
+  6% { opacity: 1; }
+  8% { opacity: 0.5; }
+  10%, 100% { opacity: 1; }
+}
+
+@keyframes clunk-2 {
+  0%, 17.9% { opacity: 0; }
+  18% { opacity: 1; }
+  20% { opacity: 0.5; }
+  22%, 100% { opacity: 1; }
+}
+
+@keyframes clunk-3 {
+  0%, 29.9% { opacity: 0; }
+  30% { opacity: 1; }
+  32% { opacity: 0.55; }
+  34%, 100% { opacity: 1; }
+}
+
+/* The car comes in along the line of its own boost trail. */
+@keyframes car-in {
+  0%, 36% { transform: translate3d(-118%, 47%, 0); animation-timing-function: cubic-bezier(0.3, 0.55, 0.2, 1); }
+  66%, 100% { transform: translate3d(0, 0, 0); }
+}
+
+/* The ball waits by the car's path, then flies at the camera when it is hit. */
+@keyframes ball-fly {
+  0%, 66% { transform: translate3d(-3%, 5.5%, 0) scale(0.8); animation-timing-function: cubic-bezier(0.5, 0, 0.9, 0.5); }
+  86% { transform: translate3d(-27%, 11%, 0) scale(7.5); }
+  100% { transform: translate3d(-27%, 11%, 0) scale(9); }
+}
+
+@keyframes impact-pop {
+  0%, 65.9% { opacity: 0; transform: scale(0.2); }
+  66% { opacity: 1; transform: scale(0.4); }
+  70% { opacity: 1; transform: scale(1.5); }
+  76% { opacity: 1; transform: scale(1); }
+  /* The burst goes out as the ball passes in front of it. */
+  83%, 100% { opacity: 0; transform: scale(1); }
+}
+
+@keyframes smash-flash {
+  0%, 78% { opacity: 0; }
+  88%, 100% { opacity: 1; }
+}
+
+@keyframes slam {
+  0% { transform: scale(2.6); opacity: 0; }
+  55% { transform: scale(0.93); opacity: 1; }
+  78% { transform: scale(1.03); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  15% { transform: translate3d(-7px, 4px, 0); }
+  30% { transform: translate3d(6px, -5px, 0); }
+  45% { transform: translate3d(-5px, -3px, 0); }
+  60% { transform: translate3d(4px, 3px, 0); }
+  80% { transform: translate3d(-2px, 1px, 0); }
+}
+
+@keyframes glow {
+  0% { opacity: 0; transform: scale(0.6); }
+  30% { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 0.55; transform: scale(1); }
+}
+
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.9); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes ring {
+  0% { opacity: 0.7; transform: scale(1); }
+  70%, 100% { opacity: 0; transform: scale(1.22, 1.6); }
 }

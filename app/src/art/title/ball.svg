@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice">
+<defs>
+<radialGradient id="t6-ball" cx="0.34" cy="0.28" r="0.82"><stop offset="0" stop-color="#ffffff"/><stop offset="0.32" stop-color="#eaf0fb"/><stop offset="0.68" stop-color="#aebcdf"/><stop offset="1" stop-color="#55668f"/></radialGradient>
+<filter id="t6-blur2" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2"/></filter>
+</defs>
+<g transform="translate(0 -46)"><g transform="translate(300 372)">
+<circle r="58" fill="url(#t6-ball)"/>
+<path d="M11.3 -14Q28 -24 44 -38A58 58 0 0 1 52 22Q30 12 11.3 6Z" fill="#8fa2cf" opacity="0.5"/>
+<path d="M-6 16Q-4 36 2 57A58 58 0 0 0 52 22Q30 12 11.3 6Z" fill="#6f82b3" opacity="0.55"/>
+<path d="M-23.3 6Q-40 16 -51 25A58 58 0 0 0 2 57Q-4 36 -6 16Z" fill="#8597c4" opacity="0.5"/>
+<path d="M-6 -24L11.3 -14V6L-6 16L-23.3 6V-14Z" fill="#eef3fd" stroke="#7f8fb8" stroke-width="1.8" stroke-linejoin="round"/>
+<path d="M-6 -24Q-8 -42 -14 -56M11.3 -14Q28 -24 44 -38M11.3 6Q30 12 52 22M-6 16Q-4 36 2 57M-23.3 6Q-40 16 -51 25M-23.3 -14Q-40 -22 -49 -29" fill="none" stroke="#7f8fb8" stroke-width="1.8" stroke-linecap="round"/>
+<ellipse cx="-23" cy="-27" rx="17" ry="9" transform="rotate(-32 -23 -27)" fill="#ffffff" opacity="0.8" filter="url(#t6-blur2)"/>
+<circle cx="-33" cy="-35" r="3" fill="#ffffff"/>
+<path d="M29 -50.2A58 58 0 0 1 29 50.2" fill="none" stroke="#ff9d3d" stroke-width="3.2" stroke-linecap="round" opacity="0.9"/>
+<path d="M-53.6 22.2A58 58 0 0 0 -22.2 53.6" fill="none" stroke="#5aa9ff" stroke-width="3" stroke-linecap="round" opacity="0.85"/>
+<circle r="58" fill="none" stroke="#050914" stroke-width="2.6"/>
+</g></g>
+</svg>

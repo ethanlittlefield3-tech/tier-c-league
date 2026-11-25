@@ -1,6 +1,6 @@
 # Tier C League: progress log
 
-Last updated 2026-11-25, after Step 2, the first push to GitHub, the first green CI run and the start of Step 3.
+Last updated 2026-11-25, after Step 2, the first push to GitHub, the first green CI run and the intro animation.
 
 ## Plan change (commish ruling, 2026-11-25)
 
@@ -30,14 +30,17 @@ Last updated 2026-11-25, after Step 2, the first push to GitHub, the first green
 - **On GitHub** (2026-11-25). The repo is public, so before the first push every personal detail, private link and build-cost note was taken out of the files, example players got made-up names, and the saved history was rebuilt from the clean copy.
 - **CI** (2026-11-25): `.github/workflows/ci.yml` runs the type checks, the engine tests and the security-rule tests on GitHub for every push. The first run passed.
 - **Step 3 has started** (2026-11-25): `app/` is a Vite and Preact app with the theme colors and the title screen. The scene is layered vector art drawn by `scripts/art/title-scene.mjs`: about 340 shapes and 25 gradients, against about 40 shapes in the first concept.
+- **Art level approved** (2026-11-25, ruling R7). The new title screen is the standard for every screen.
+- **Intro animation** (2026-11-25): the Nunchucks card (2 s), the boost scene (2.5 s) and the title slam, exactly as SCOPE.md lists them. The full version plays on the first open each day and a 1-second version after that. A tap or a key skips it, sound starts only with Tap to enter, and Reduce Motion gets a fade. The scene is nine layers, and only whole layers move, which is what keeps it smooth on a phone.
+- **Phone-size flow tests** (2026-11-25): `tests/e2e/` runs the built app in a browser at iPhone size. 11 tests cover the intro. CI runs them on every push.
 
 ## Waiting on the commish
 
-1. **Art level.** A higher-detail title screen is built in the app (`app/src/screens/Title.tsx`, art from `npm run art`) and added to the concept-art canvas beside the old one. The commish approves that level, or asks for changes, before it is applied to the other screens.
+1. **Seeing the app on a phone.** The code is built in the cloud, so the simplest way to open the app on a phone is GitHub Pages. One step: in the repo, Settings, then Pages, then set Source to "GitHub Actions". After that a deploy workflow is added and every push updates the site.
 
 ## Next
 
-1. **Step 3: the app, against the local emulator.** Theme and intro, the install flow, then the screens: join or recover, Today, Match, Feed, League, Profile, Wheel, Commish and the mini draft.
+1. **Step 3, continued.** The install flow and the three icon options, then the screens: join or recover, Today, Match, Feed, League, Profile, Wheel, Commish and the mini draft. The join screen is next.
 2. **Rules still to write, each with its screen and its tests:** receipts and proofs, roster and goal votes, the wall, dares, the Wheel, the draft, and the remaining commish tools (approve joins, settle or unlock a week, moderation). They are in DATA-MODEL.md and refused until then.
 
 ## Questions for the commish, asked when each feature is built
