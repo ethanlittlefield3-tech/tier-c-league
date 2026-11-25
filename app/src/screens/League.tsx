@@ -1,6 +1,6 @@
 import { useAll, useDoc, useNow } from '../data/hooks.ts';
 import type { Me } from '../data/identity.ts';
-import { leagueDates } from '../today/model.ts';
+import { seasonDates } from '../today/model.ts';
 import './feed.css';
 import './league.css';
 
@@ -63,7 +63,7 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
   const standings = useDoc<{ rows?: Row[] }>(seasonPath ? `${seasonPath}/standings/current` : null);
   const weeks = useAll<WeekDoc>(seasonPath ? `${seasonPath}/weeks` : null);
   const players = useAll<{ displayName?: string }>(`${leaguePath}/players`);
-  const dates = season.data ? leagueDates(now, season.data.timeZone) : null;
+  const dates = season.data ? seasonDates(now, season.data) : null;
   const today = useDoc<{ period: string }>(seasonPath && dates ? `${seasonPath}/calendar/${dates.today}` : null);
 
   if (league.loading || season.loading || weeks.loading) {

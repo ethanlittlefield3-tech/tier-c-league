@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { breakdown, formatPoints, formatScreen, formatScreenShort, isRestDay, leagueDates, liveDayScore, pointsChip, scaleRowOf, screenScale, stepScreen, windowOf } from '../src/today/model.ts';
+import { breakdown, formatPoints, formatScreen, formatScreenShort, isRestDay, leagueDates, liveDayScore, seasonDates, pointsChip, scaleRowOf, screenScale, stepScreen, windowOf } from '../src/today/model.ts';
 
 const NY = 'America/New_York';
 const at = (iso: string) => new Date(iso).getTime();
@@ -10,6 +10,15 @@ describe("Which day is today", () => {
     // 3:30 am in London is still the evening before in New York.
     expect(leagueDates(at('2027-01-06T03:30:00Z'), NY)).toEqual({ today: '2027-01-05', yesterday: '2027-01-04' });
     expect(leagueDates(at('2027-01-06T05:00:00Z'), NY)).toEqual({ today: '2027-01-06', yesterday: '2027-01-05' });
+  });
+
+  it('In the fast test league, today follows its own clock: here, 8-minute days from kickoff', () => {
+    const startsAt = at('2027-01-06T15:00:00Z');
+    const season = { timeZone: NY, kickoff: '2027-01-04', fast: { startsAt, dayMinutes: 8 } };
+    expect(seasonDates(startsAt + 60_000, season)).toEqual({ today: '2027-01-04', yesterday: '2027-01-03' });
+    expect(seasonDates(startsAt + 17 * 60_000, season)).toEqual({ today: '2027-01-06', yesterday: '2027-01-05' });
+    // Any other season goes by its time zone.
+    expect(seasonDates(at('2027-01-06T03:30:00Z'), { timeZone: NY, kickoff: '2027-01-04' })).toEqual({ today: '2027-01-05', yesterday: '2027-01-04' });
   });
 });
 

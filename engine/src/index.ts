@@ -22,3 +22,4 @@ export * from './draft.ts';
 export * from './dares.ts';
 export * from './wheel.ts';
 export * from './settlement.ts';
+export * from './fast.ts';

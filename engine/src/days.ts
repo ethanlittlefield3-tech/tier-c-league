@@ -57,9 +57,11 @@ export function playerWeek(input: {
   adjustments: readonly { date: DateStr; amount: number; void: Square | null }[];
   now: Instant;
   timeZone?: string;
+  /** Today's date, when the caller knows it better than the time zone does: a fast test league. */
+  today?: DateStr;
 }): { cells: DayCell[]; totals: WeekTotals } {
   const days = [...input.days].sort((a, b) => (a.date < b.date ? -1 : 1));
-  const today = input.timeZone ? localDate(input.now, input.timeZone) : undefined;
+  const today = input.today ?? (input.timeZone ? localDate(input.now, input.timeZone) : undefined);
 
   const cells = days.map((day): DayCell => {
     const state = input.now < day.start ? 'future' : input.now < day.lock ? 'open' : 'locked';

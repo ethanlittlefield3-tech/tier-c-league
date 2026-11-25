@@ -221,12 +221,17 @@ Last updated 2026-11-25, after taking starter dares off the Wheel.
 - **Approve joins** (2026-11-25). Commish tools' joining switch has a third setting, With my approval. A new player types the code and a name as usual, and the phone asks instead of joining. It waits on "Asked to join", which it remembers when the app is closed, and it joins on its own once the commish taps Let in. Commish tools lists who is waiting, with Let in and Turn away, and each answer goes in the league log.
   - New rules: 8 rule tests. Weakening them 16 ways was caught 15 times; the other is still refused by the audit entry only the commish can write. 2 app tests and 4 flow tests.
 - **Settle a week from the app** (2026-11-25). If the weekly job runs late, Commish tools lists each finished week it hasn't counted, under "Waiting on the weekly job". Settle now counts the week on the commish's phone with the engine code the job uses, and posts the results as provisional, with a reason in the league log. The job checks them when it runs and makes the week final. The settlement code moved from the jobs into the engine, so both use one copy.
-  - New rule: 6 rule tests, 264 in all. Weakening it 13 ways was caught 12 times; the other is still refused by the audit entry only the commish can write. 1 flow test, which also runs the real job after.
+  - New rule: 5 rule tests, 263 in all. Weakening it 13 ways was caught 12 times; the other is still refused by the audit entry only the commish can write. 1 flow test, which also runs the real job after.
+- **The fast test league** (2026-11-25, PHASE1.md Step 4, for Checkpoint D). A button on GitHub, "Fast test week", makes a demo league whose days last 8 minutes, with the commish and three made-up players, then runs it for about 100 minutes. The made-up players log at their own times, set a Demolition on the commish, use Aerial and Full Boost, taunt, ask the commish for receipts, and spin, prove and vote on the Wheel. The weekly job settles the league every 2 minutes as it goes.
+  - The engine has a fast clock: the same calendar with each day squeezed into a few minutes. The app follows it on every screen, and Today says the league is fast. The calendar and weekly jobs honor it only in a demo league.
+  - 7 engine tests, 16 job tests, 1 app test and 1 flow test, which runs the real job against the local database and opens the league in the app.
+- **The README is current** (2026-11-25): what each folder holds, the demo league and the fast test week step by step, and what runs on its own.
 - **The shorter intro on reopening is on purpose:** the full intro plays on the first open each day, and a 1-second title after that (SCOPE.md, "Intro animation").
 
 ## Waiting on the commish
 
 0. **Optional: try every screen in the demo league,** on a computer. The steps come one at a time in the chat.
+   - **Checkpoint D can be run any time:** the "Fast test week" button, then watch on a computer. The README has the steps.
 1. **Phone check of the layout fix.** Open Tier C. If the area behind the clock is not solid navy, remove Tier C from the Home Screen and add it again from Safari. Have the recovery key ready first (Profile, Show my key), because a re-added app starts signed out. Then check that the title and the main page sit right, and that a touch doesn't move the whole screen.
 
 ## Next

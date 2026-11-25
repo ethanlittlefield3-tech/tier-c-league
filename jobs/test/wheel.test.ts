@@ -57,4 +57,9 @@ describe("The Wheel's draws", () => {
     const all = { ...existing, ...Object.fromEntries(again.map(({ draw }) => [draw.id, draw])) };
     expect(drawsDue({ period: 'w02', spinners: ['maya'], existing: all, redo: ['w02_maya_1'], pool, now: later, timeZone: NY, roll: rolls(2) })).toEqual([]);
   });
+
+  it("In the fast test league, proof is due by the end of the Sunday on the league's fast clock", () => {
+    const due = drawsDue({ period: 'w01', spinners: ['maya'], existing: {}, redo: [], pool, now: FINAL, timeZone: NY, dueOf: (drawnAt) => drawnAt + 48 * 60_000, roll: rolls(1) });
+    expect(due[0]?.draw.dueAt).toBe(FINAL + 48 * 60_000);
+  });
 });

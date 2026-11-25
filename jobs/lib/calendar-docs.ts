@@ -6,7 +6,7 @@
  * day, with its times turned into real timestamps.
  */
 import { addDays, weekdayIndex, type DateStr } from '../../engine/src/calendar.ts';
-import { regularCalendar, type SeasonPlan } from '../../engine/src/season.ts';
+import { regularCalendar, type CalendarDay, type SeasonPlan } from '../../engine/src/season.ts';
 
 const TIMES = ['start', 'sixPm', 'end', 'lock', 'nextEnd', 'periodStart', 'sundayStart', 'restOpens'] as const;
 
@@ -17,7 +17,12 @@ export interface CalendarDoc {
 
 /** Every day of the regular season, as documents for `calendar/{date}`. */
 export function calendarDocs(season: SeasonPlan): CalendarDoc[] {
-  return regularCalendar(season).map((day) => {
+  return calendarDocsFrom(regularCalendar(season));
+}
+
+/** Calendar days as documents, with their times as real timestamps. */
+export function calendarDocsFrom(days: CalendarDay[]): CalendarDoc[] {
+  return days.map((day) => {
     const data: Record<string, unknown> = { ...day };
     for (const field of TIMES) data[field] = new Date(day[field]);
     return { id: day.date, data };

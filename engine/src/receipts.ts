@@ -37,14 +37,18 @@ export interface ReceiptRequest {
   alreadyRequested: boolean;
   /** Requests this requester has already made in the current week. */
   usedThisWeek: number;
+  /** The target day's start and lock from its calendar, when known. A fast test league's days are only known this way. */
+  window?: { start: Instant; lock: Instant };
 }
 
 /** Anyone can ask on any claimed square of anyone else's day, until that day locks. 3 a week each. */
 export function canRequestReceipt(request: ReceiptRequest): Verdict {
   const no = (reason: string): Verdict => ({ ok: false, reason });
   if (request.ownDay) return no("You can't ask yourself for receipts.");
-  if (request.now < dayStart(request.target, request.timeZone)) return no("That day hasn't started yet.");
-  if (request.now >= dayLock(request.target, request.timeZone)) return no('That day locked at 12:00 pm.');
+  const start = request.window?.start ?? dayStart(request.target, request.timeZone);
+  const lock = request.window?.lock ?? dayLock(request.target, request.timeZone);
+  if (request.now < start) return no("That day hasn't started yet.");
+  if (request.now >= lock) return no('That day locked at 12:00 pm.');
   if (request.restDay && request.square !== 'screen') {
     return no('On a rest day, receipts cover screen time only.');
   }

@@ -11,7 +11,8 @@ import {
   formatScreen,
   formatScreenShort,
   isRestDay,
-  leagueDates,
+  fastOf,
+  seasonDates,
   liveDayScore,
   pointsChip,
   windowOf,
@@ -41,6 +42,7 @@ interface SeasonDoc {
   timeZone: string;
   kickoff: string;
   ruleOneIssue?: number[];
+  fast?: { startsAt?: number; dayMinutes?: number } | null;
 }
 
 interface WeekDoc {
@@ -130,7 +132,8 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
   const seasonId = league.data?.season ?? null;
   const seasonPath = seasonId ? `${leaguePath}/seasons/${seasonId}` : null;
   const season = useDoc<SeasonDoc>(seasonPath);
-  const dates = season.data ? leagueDates(now, season.data.timeZone) : null;
+  const dates = season.data ? seasonDates(now, season.data) : null;
+  const fast = season.data ? fastOf(season.data) : null;
 
   const todayCal = useDoc<CalendarDoc>(seasonPath && dates ? `${seasonPath}/calendar/${dates.today}` : null);
   const yesterdayCal = useDoc<CalendarDoc>(seasonPath && dates ? `${seasonPath}/calendar/${dates.yesterday}` : null);
@@ -331,6 +334,7 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
     adjustments: myFixes,
     now,
     timeZone: season.data.timeZone,
+    today: dates?.today,
   });
   const theirWeek = opponentId
     ? playerWeek({
@@ -342,12 +346,18 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
         adjustments: theirFixes,
         now,
         timeZone: season.data.timeZone,
+        today: dates?.today,
       })
     : null;
   const screenPointsShown = entry.screenMinutes === null ? null : score.screen.points;
 
   return (
     <div class="today" data-window={dayWindow}>
+      {fast && (
+        <p class="today-fast">
+          Fast test league: each day lasts {fast.dayMinutes} minutes, so noon and midnight come round on that clock.
+        </p>
+      )}
       {draftCard}
       {myDraw && (
         <section class="wheel-banner" aria-labelledby="wheel-card-title">

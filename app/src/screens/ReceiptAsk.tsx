@@ -115,6 +115,8 @@ export function ReceiptAsk(props: {
                 claimed: true,
                 alreadyRequested: false,
                 usedThisWeek: used(day.period).length,
+                // The day's own times, which a fast test league's days only have.
+                window: { start: day.start, lock: day.lock },
               });
               return (
                 <div class="receipt-row" key={square}>

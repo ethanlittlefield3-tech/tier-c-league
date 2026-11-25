@@ -7,7 +7,7 @@ import { receiptFixes, type Lane, type Square, type StoredReceipt } from '@tcl/e
 import { useDoc, usePeek, useWhere } from '../data/hooks.ts';
 import type { Me } from '../data/identity.ts';
 import type { CalDay } from '../today/kit.ts';
-import { leagueDates, type DayEntry } from '../today/model.ts';
+import { seasonDates, type DayEntry } from '../today/model.ts';
 import { playerWeek, type KitPlay } from '../today/week.ts';
 
 interface SeasonDoc {
@@ -28,7 +28,7 @@ export function useMatchup(me: Me, now: number) {
   const seasonId = league.data?.season ?? null;
   const seasonPath = seasonId ? `${leaguePath}/seasons/${seasonId}` : null;
   const season = useDoc<SeasonDoc>(seasonPath);
-  const dates = season.data ? leagueDates(now, season.data.timeZone) : null;
+  const dates = season.data ? seasonDates(now, season.data) : null;
   const todayCal = useDoc<ReceiptDay>(seasonPath && dates ? `${seasonPath}/calendar/${dates.today}` : null);
   const yesterdayCal = useDoc<ReceiptDay>(seasonPath && dates ? `${seasonPath}/calendar/${dates.yesterday}` : null);
   const period = todayCal.data?.period ?? null;
@@ -72,6 +72,7 @@ export function useMatchup(me: Me, now: number) {
           adjustments: [...myChanges.docs.map((found) => found.data), ...receiptFixes(myReceipts.docs.map((found) => found.data), now)],
           now,
           timeZone: season.data.timeZone,
+          today: dates?.today,
         })
       : null;
   const theirWeek =
@@ -85,6 +86,7 @@ export function useMatchup(me: Me, now: number) {
           adjustments: [...theirChanges.docs.map((found) => found.data), ...receiptFixes(theirReceipts.docs.map((found) => found.data), now)],
           now,
           timeZone: season.data.timeZone,
+          today: dates?.today,
         })
       : null;
 

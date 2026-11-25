@@ -1,6 +1,6 @@
 import { useDoc } from '../data/hooks.ts';
 import type { Me } from '../data/identity.ts';
-import { leagueDates } from '../today/model.ts';
+import { seasonDates } from '../today/model.ts';
 
 /**
  * Who you face this week, for the wall: just the opponent's id and name.
@@ -12,7 +12,7 @@ export function useOpponent(me: Me, now: number): { id: string | null; name: str
   const seasonId = league.data?.season ?? null;
   const seasonPath = seasonId ? `${leaguePath}/seasons/${seasonId}` : null;
   const season = useDoc<{ timeZone: string; kickoff: string }>(seasonPath);
-  const dates = season.data ? leagueDates(now, season.data.timeZone) : null;
+  const dates = season.data ? seasonDates(now, season.data) : null;
   const today = useDoc<{ period?: string }>(seasonPath && dates ? `${seasonPath}/calendar/${dates.today}` : null);
   const beforeKickoff = season.data !== null && dates !== null && dates.today < season.data.kickoff;
   const period = today.data?.period ?? (beforeKickoff ? 'w01' : null);

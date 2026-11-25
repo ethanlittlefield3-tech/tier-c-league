@@ -92,4 +92,9 @@ describe("A player's week, day by day", () => {
     const week = playerWeek(base);
     expect(week.cells.find((cell) => cell.today)?.date).toBe('2027-01-13');
   });
+
+  it('Marks the day it is told is today, as the fast test league tells it', () => {
+    const week = playerWeek({ ...base, today: '2027-01-12' });
+    expect(week.cells.find((cell) => cell.today)?.date).toBe('2027-01-12');
+  });
 });

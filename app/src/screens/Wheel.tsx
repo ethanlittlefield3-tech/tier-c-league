@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'preact/hooks';
-import { DODGE_PENALTY, PROOF_VOTE_HOURS, dareStatus } from '@tcl/engine';
+import { DODGE_PENALTY, PROOF_VOTE_HOURS, WEEKDAYS, dareStatus, fastDate, weekdayIndex } from '@tcl/engine';
 import { useAll, useDoc, useNow, usePeek, useWhere } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
 import { whyOf } from '../data/why.ts';
 import { shrinkPhoto } from '../receipts/photo.ts';
+import { fastOf, type SeasonClockDoc } from '../today/model.ts';
 import { Back, Heading } from '../ui/parts.tsx';
 import { timeLeft } from '../ui/when.ts';
 import { WheelArt } from '../wheel/WheelArt.tsx';
@@ -41,9 +42,10 @@ const TROUBLE: Record<Trouble, string> = {
   refused: 'That spin was not accepted.',
 };
 
-/** "Sunday 11:59 pm", in league time, for a deadline at midnight. */
-function dueText(dueAt: number, timeZone: string): string {
-  const day = new Intl.DateTimeFormat('en-US', { weekday: 'long', timeZone }).format(dueAt - 60_000);
+/** "Sunday 11:59 pm", in league time, for a deadline at midnight: on a fast test league's own clock if it has one. */
+function dueText(dueAt: number, season: SeasonClockDoc): string {
+  const fast = fastOf(season);
+  const day = fast ? WEEKDAYS[weekdayIndex(fastDate(fast.kickoff, fast, dueAt - 1))] : new Intl.DateTimeFormat('en-US', { weekday: 'long', timeZone: season.timeZone }).format(dueAt - 60_000);
   return `${day} 11:59 pm`;
 }
 
@@ -65,7 +67,7 @@ export function Wheel(props: { me: Me; onBack: () => void }) {
   const leaguePath = `leagues/${props.me.league}`;
   const league = useDoc<{ season?: string | null; members?: Record<string, boolean> }>(leaguePath);
   const seasonPath = league.data?.season ? `${leaguePath}/seasons/${league.data.season}` : null;
-  const season = useDoc<{ timeZone: string }>(seasonPath);
+  const season = useDoc<SeasonClockDoc>(seasonPath);
   const weeks = useAll<{ week: number; wheel?: Record<string, Draw> }>(seasonPath ? `${seasonPath}/weeks` : null);
   const spins = useAll<Spin>(seasonPath ? `${seasonPath}/spins` : null);
   const proofVotes = useWhere<ProofVote>(seasonPath ? `${seasonPath}/votes` : null, 'kind', 'proof');
@@ -96,7 +98,7 @@ export function Wheel(props: { me: Me; onBack: () => void }) {
                 votes={proofVotes.docs.map((found) => found.data).filter((vote) => vote.draw === draw.id)}
                 eligible={eligible}
                 name={name}
-                timeZone={season.data?.timeZone ?? 'America/New_York'}
+                season={season.data ?? { timeZone: 'America/New_York' }}
               />
             ))}
           </>
@@ -122,7 +124,7 @@ function DrawCard(props: {
   votes: ProofVote[];
   eligible: number;
   name: (player: string) => string;
-  timeZone: string;
+  season: SeasonClockDoc;
 }) {
   const now = useNow();
   const spun = props.spin !== null;
@@ -201,7 +203,7 @@ function DrawCard(props: {
       {status === 'spun' && (
         <>
           <p class="panel-text">
-            Proof is due by {dueText(props.draw.dueAt, props.timeZone)}, in {timeLeft(props.draw.dueAt - now)}. Then everyone else votes for {PROOF_VOTE_HOURS} hours.
+            Proof is due by {dueText(props.draw.dueAt, props.season)}, in {timeLeft(props.draw.dueAt - now)}. Then everyone else votes for {PROOF_VOTE_HOURS} hours.
           </p>
           {mine && (
             <label class="btn receipt-upload wheel-proof-upload" data-busy={busy}>
@@ -211,7 +213,7 @@ function DrawCard(props: {
           )}
         </>
       )}
-      {status === 'unspun' && <p class="panel-text">Proof is due by {dueText(props.draw.dueAt, props.timeZone)}, spun or not.</p>}
+      {status === 'unspun' && <p class="panel-text">Proof is due by {dueText(props.draw.dueAt, props.season)}, spun or not.</p>}
       {(status === 'voting' || status === 'counted' || status === 'redo') && (
         <div class="wheel-proof">
           {proofPhoto ? <img src={proofPhoto.photo} alt={`${mine ? 'Your' : `${who}'s`} dare proof`} /> : <p class="panel-text">Getting the photo…</p>}

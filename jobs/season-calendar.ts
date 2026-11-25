@@ -10,6 +10,7 @@
  */
 import { Timestamp, getFirestore, type DocumentData } from 'firebase-admin/firestore';
 import { connect } from './admin.ts';
+import { fastClockOf } from './lib/fast.ts';
 import { seasonSync } from './lib/season-sync.ts';
 
 const { app, emulator } = connect();
@@ -34,7 +35,13 @@ for (const league of leagues) {
   const calendar = await seasonRef.collection('calendar').get();
   const issue = season.get('ruleOneIssue');
   const sync = seasonSync({
-    settings: { status: season.get('status'), kickoff: season.get('kickoff'), regularWeeks: season.get('regularWeeks'), timeZone: season.get('timeZone') },
+    settings: {
+      status: season.get('status'),
+      kickoff: season.get('kickoff'),
+      regularWeeks: season.get('regularWeeks'),
+      timeZone: season.get('timeZone'),
+      fast: fastClockOf({ demo: league.get('demo') }, { fast: plain(season.get('fast') ?? {}) }) !== null,
+    },
     existing: calendar.docs.map((day) => ({ id: day.id, data: plain(day.data()) })),
     ruleOneIssue: Array.isArray(issue) ? issue.map((at) => Number(ms(at))) : null,
   });

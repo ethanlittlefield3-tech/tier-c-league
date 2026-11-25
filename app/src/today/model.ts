@@ -6,7 +6,7 @@
  * The phone's clock only decides what to show. Whether a save is accepted is
  * decided by the server, against the calendar (firebase/firestore.rules).
  */
-import { addDays, localDate, scoreDay, type DateStr, type DayLog, type DayScore, type Lane, type Square } from '@tcl/engine';
+import { addDays, fastDate, localDate, scoreDay, type DateStr, type DayLog, type DayScore, type FastClock, type Lane, type Square } from '@tcl/engine';
 
 /** What a player has logged for a day: three yes-or-no goals, screen minutes (or none yet) and beers. */
 export interface DayEntry {
@@ -21,6 +21,29 @@ export const BEERS_MAX = 30;
 
 export function leagueDates(now: number, timeZone: string): { today: DateStr; yesterday: DateStr } {
   const today = localDate(now, timeZone);
+  return { today, yesterday: addDays(today, -1) };
+}
+
+/** A season document's fields that decide its dates. */
+export interface SeasonClockDoc {
+  timeZone: string;
+  kickoff?: string;
+  /** Only a fast test league has this (DECISIONS.md, "The fast test league"). */
+  fast?: { startsAt?: number; dayMinutes?: number } | null;
+}
+
+/** The fast test league's clock, or `null` for a league on the real calendar. */
+export function fastOf(season: SeasonClockDoc): (FastClock & { kickoff: string }) | null {
+  const fast = season.fast;
+  if (!fast || !season.kickoff || typeof fast.startsAt !== 'number' || typeof fast.dayMinutes !== 'number' || fast.dayMinutes <= 0) return null;
+  return { kickoff: season.kickoff, startsAt: fast.startsAt, dayMinutes: fast.dayMinutes };
+}
+
+/** Today and yesterday in a season: by the league's time zone, or by a fast test league's own clock. */
+export function seasonDates(now: number, season: SeasonClockDoc): { today: DateStr; yesterday: DateStr } {
+  const fast = fastOf(season);
+  if (!fast) return leagueDates(now, season.timeZone);
+  const today = fastDate(fast.kickoff, fast, now);
   return { today, yesterday: addDays(today, -1) };
 }
 

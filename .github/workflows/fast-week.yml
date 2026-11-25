@@ -1,0 +1,65 @@
+name: Fast test week
+
+# Checkpoint D: a whole week in about an hour and a half. It makes a demo
+# league whose days last a few minutes each, with you and three made-up
+# players, then plays the made-up players and settles the weeks as it goes:
+# locks, reveals, results, receipts and the Wheel. Watch it on a computer
+# with the code and key from the Firebase console (the run's log says where).
+# Delete the league after with "Demo league", "delete". Started by hand from
+# the Actions tab.
+on:
+  workflow_dispatch:
+    inputs:
+      day_minutes:
+        description: How many minutes each day lasts (8 plays a week in about an hour)
+        required: false
+        default: '8'
+      lead_minutes:
+        description: Minutes before Monday of Week 1 starts, to get in first
+        required: false
+        default: '5'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fast-week
+  cancel-in-progress: false
+
+jobs:
+  fast:
+    name: Fast test week
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Check that the league's key is in GitHub Secrets
+        id: key
+        env:
+          KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -n "$KEY" ]; then
+            echo "present=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "The FIREBASE_SERVICE_ACCOUNT secret is not set yet. Skipping."
+          fi
+
+      - uses: actions/checkout@v6
+        if: steps.key.outputs.present == 'yes'
+
+      - uses: actions/setup-node@v6
+        if: steps.key.outputs.present == 'yes'
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+        if: steps.key.outputs.present == 'yes'
+
+      # The key is handed to this step only.
+      - name: Make the fast league and play its week
+        if: steps.key.outputs.present == 'yes'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          DAY_MINUTES: ${{ inputs.day_minutes }}
+          LEAD_MINUTES: ${{ inputs.lead_minutes }}
+        run: node jobs/fast-week.ts

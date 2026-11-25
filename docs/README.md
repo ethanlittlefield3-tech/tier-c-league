@@ -10,15 +10,15 @@ This file will grow into the plain-steps guide for running, deploying, backing u
 | --- | --- |
 | `docs/` | The spec (`SCOPE.md`), the build brief (`PHASE1.md`), the progress log, the decisions log and the checkpoint reports |
 | `engine/` | Every game rule as plain code: scoring, calendar, schedule, standings, awards, power-up timing and receipts |
-| `app/` | The phone app. So far: the theme, the install guide, the intro and title, joining or getting back into a league, the app's frame with its five tabs, and a first Profile |
+| `app/` | The phone app: the install guide, the intro, joining or getting back in, Today, Match, Feed, League, Profile, the draft, the Wheel of Shame and Commish tools |
 | `firebase/` | The security rules, which decide what each phone may read and write |
 | `tests/rules/` | Tests that try to break those rules against a local copy of the database |
 | `tests/e2e/` | Tests that tap through the app in a browser at iPhone size |
-| `jobs/` | Work that runs on GitHub with the league's key: making a league and publishing the security rules. The timed jobs come later |
+| `jobs/` | Work that runs on GitHub with the league's key: making a league, keeping the season calendar, settling the weeks and drawing the Wheel, the demo and fast test leagues, and publishing the security rules |
 | `scripts/` | Small tools: the ones that build the checkpoint reports, and the ones that draw the art and the icons |
-| `.github/workflows/` | What GitHub does on every push: run all the tests, then publish the app |
+| `.github/workflows/` | What GitHub does: on every push, run all the tests, then publish the app and the rules; every hour, the timed jobs; and the buttons in the Actions tab |
 
-Still to come: the rest of the app's screens, and the timed jobs.
+Still to come: push notifications, backups, and Phases 2 and 3.
 
 ## Run the tests
 
@@ -76,7 +76,7 @@ That runs everything: the type checks, then all three sets of tests.
 npm run dev
 ```
 
-That starts a local copy of the database and of sign-in, then the app, and prints two addresses. Open the "Local" one in a browser on the same computer. A phone on the same Wi-Fi can open the "Network" one. The local database starts empty each time, so there is no league to join yet: a script that makes a test league comes with the jobs in Step 4.
+That starts a local copy of the database and of sign-in, then the app, and prints two addresses. Open the "Local" one in a browser on the same computer. A phone on the same Wi-Fi can open the "Network" one. The local database starts empty each time. To try the app with a league in it, use the demo league below.
 
 ```bash
 npm run art
@@ -109,11 +109,40 @@ Leagues are made from GitHub, not from the app.
 3. The league code and the commish's recovery key are not shown on GitHub. Read them in the Firebase console, under **Firestore Database**: the code is the name of the document in `codes`, and the key is in `leagues`, your league, `keys`.
 4. In the app, tap **I'm already in a league** and enter both.
 
+## Trying every screen: the demo league
+
+The demo league is a league of its own, with you and five made-up players, a season in its third week, and the Wheel waiting for you.
+
+1. On GitHub, open **Actions**, choose **Demo league**, then **Run workflow** with **make**.
+2. When it finishes, its log says where to find the league code and the recovery key in the Firebase console. Neither is printed, because the log is public.
+3. On a computer, so your phone stays in your real league, open the app, tap **I'm already in a league** and enter both.
+4. When you're done, run **Demo league** again with **delete** and the league id the log printed. It refuses any league that isn't a demo.
+
+## Checkpoint D: a fast test week
+
+A week in about an hour and a half: a demo league whose days last 8 minutes, with you and three made-up players who log, set power-ups, ask you for receipts, spin the Wheel and vote on their own.
+
+1. On GitHub, open **Actions**, choose **Fast test week**, then **Run workflow**. The defaults are fine.
+2. Its log says where to find the code and key, as for the demo league. You have 5 minutes before Monday of Week 1 starts.
+3. Get in on a computer and play along: log your days, set a power-up, answer the receipts request. Today says it is a fast test league, and noon and midnight come round on its clock.
+4. About an hour in, Week 1 goes final and the Wheel is drawn. If you spin, prove your dare before the run ends, about 100 minutes in, so the made-up players can vote on it.
+5. Delete it after with **Demo league**, **delete**, and the league id from the log.
+
 ## Starting a season
 
 1. In the app, tap your badge, then **Commish tools**.
 2. Check the settings, then tap **Start the season**. The settings can change until the draft starts.
 3. Within the hour, the **Keep the season calendar** job writes the season's days. To run it now, open **Actions**, choose **Keep the season calendar**, then **Run workflow**.
+
+## What runs on its own
+
+| Job | When | What it does |
+| --- | --- | --- |
+| Keep the season calendar | Every hour | Writes the season's days and, once the draft is done, its schedule |
+| Settle the weeks | Every hour | Posts each week's results once its Sunday locks at noon on Monday, final at midnight on Tuesday; reveals Demolitions; draws the Wheel; keeps the standings; deletes proof photos after 14 days |
+| Keep the schedules running | Once a month | Records the date, because GitHub pauses scheduled jobs in a public repo after 60 days with no activity |
+
+GitHub can run a scheduled job late. If a week's results are late, Commish tools can settle it from your phone.
 
 ## Where the live rules come from
 

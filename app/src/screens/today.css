@@ -383,3 +383,15 @@
   font-weight: 700;
   color: #ff9aa2;
 }
+
+/* A fast test league says so, above everything else. */
+.today-fast {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 207, 63, 0.5);
+  border-radius: 10px;
+  background: rgba(255, 207, 63, 0.1);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--gold);
+}

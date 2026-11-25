@@ -225,6 +225,15 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 124. **The standings and the Wheel still wait for the job.** The standings' last tiebreaker is a sealed coin nobody can read, and a Wheel draw needs the job's own randomness, so both follow when the job next runs.
 125. **A week shows as "Waiting on the weekly job" once its Sunday locks with no results,** by the calendar the security rules read. The job runs every hour, so this is for when GitHub is late or down.
 
+**The fast test league** (new on 2026-11-25, not yet reviewed by the commish)
+
+126. **The fast test league is a demo league of its own,** made by the "Fast test week" button on GitHub, with the commish and three made-up players. Its days last 8 minutes unless set otherwise, so Week 1 plays out in about an hour. The run goes on until the Wheel's dare can be proven and voted on, about 100 minutes in all.
+127. **Only a demo league can run fast.** The fast clock is kept on the season, and the calendar job, the weekly job and the run itself ignore it in any league not marked as a demo. The commish's season settings can't set it, so it can never be switched on for a real league.
+128. **Every time keeps its place within the day:** 6 pm is three quarters through a fast day, and the noon lock comes half a day after it ends. The security rules read times only from the calendar, so they needed no change.
+129. **The made-up players play to a pattern.** Each logs at their own time of day. One sets a Demolition on the commish's Wednesday, one sets Aerial on Thursday, and one uses Full Boost on Friday. The commish's opponent taunts once, and asks for receipts on a goal the commish claims on Wednesday. A made-up spinner spins and proves their dare, and the made-up players vote that any proof counts.
+130. **During a fast test week, the weekly job runs every 2 minutes for that league,** and the made-up players take a turn every 30 seconds. A whole run reads about 15,000 documents, well inside the free 50,000 a day.
+131. **Watch it on a computer, like the demo.** Today says it is a fast test league. Proof votes still stay open 24 real hours, but the made-up players vote at once, so a vote is settled in minutes.
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.

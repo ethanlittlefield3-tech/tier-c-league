@@ -50,6 +50,8 @@ export function drawsDue(input: {
   pool: string[];
   now: number;
   timeZone: string;
+  /** When a dare drawn now is due, if not by the league's own Sunday: a fast test league's clock. */
+  dueOf?: (drawnAt: number) => number;
   /** A random whole number, fresh on every call. */
   roll: () => number;
 }): { draw: Draw; slice: number }[] {
@@ -63,7 +65,7 @@ export function drawsDue(input: {
   for (const { player, n } of wanted) {
     const id = `${input.period}_${player}_${n}`;
     if (input.existing[id] || due.some((made) => made.draw.id === id)) continue;
-    const draw: Draw = { id, player, n, pool: input.pool, drawnAt: input.now, dueAt: dareDue(input.now, input.timeZone) };
+    const draw: Draw = { id, player, n, pool: input.pool, drawnAt: input.now, dueAt: input.dueOf ? input.dueOf(input.now) : dareDue(input.now, input.timeZone) };
     due.push({ draw, slice: Math.abs(Math.trunc(input.roll())) % input.pool.length });
   }
   return due;

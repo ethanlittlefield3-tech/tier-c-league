@@ -16,11 +16,13 @@ export interface SeasonSettingsForSync {
   kickoff: string;
   regularWeeks: number;
   timeZone: string;
+  /** A demo league's fast test season keeps its own calendar (`fast.ts`). */
+  fast?: boolean;
 }
 
 export interface Sync {
   /** Why nothing is done, or `null`. */
-  skip: 'finished' | 'bad settings' | null;
+  skip: 'finished' | 'bad settings' | 'fast test season' | null;
   write: CalendarDoc[];
   remove: string[];
   /** When each Rule One arrives, if that changed. */
@@ -46,6 +48,7 @@ export function seasonSync(input: {
   const { settings } = input;
   const none: Sync = { skip: null, write: [], remove: [], ruleOneIssue: null };
   if (!LIVE.includes(settings.status)) return { ...none, skip: 'finished' };
+  if (settings.fast === true) return { ...none, skip: 'fast test season' };
   const valid =
     isDate(settings.kickoff) &&
     weekdayIndex(settings.kickoff) === 0 &&

@@ -49,6 +49,15 @@ describe('6. Receipts: asking for them', () => {
     expect(reason(request({ now: at(TUE, '12:00') }))).toMatch(/locked/);
   });
 
+  it("With the day's own start and lock from its calendar, as in the fast test league, those times decide instead", () => {
+    // A day that started a minute ago and locks in 11 minutes, whatever the wall clock says.
+    const now = at(MON, '20:00');
+    const window = { start: now - 60_000, lock: now + 11 * 60_000 };
+    expect(reason(request({ target: '2027-03-01', now, window }))).toBe('ok');
+    expect(reason(request({ target: '2027-03-01', now: window.lock, window }))).toMatch(/locked/);
+    expect(reason(request({ target: '2027-03-01', now: window.start - 1, window }))).toMatch(/started/);
+  });
+
   it('Each player gets 3 requests a week', () => {
     expect(reason(request({ usedThisWeek: 2 }))).toBe('ok');
     expect(reason(request({ usedThisWeek: 3 }))).toMatch(/used your 3 requests/);

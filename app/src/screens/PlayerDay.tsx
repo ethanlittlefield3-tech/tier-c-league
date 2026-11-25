@@ -1,7 +1,7 @@
 import { type Lane } from '@tcl/engine';
 import { useDoc, useNow, useWhere } from '../data/hooks.ts';
 import type { Me } from '../data/identity.ts';
-import { leagueDates } from '../today/model.ts';
+import { seasonDates } from '../today/model.ts';
 import type { KitPlay } from '../today/week.ts';
 import { Back, Heading } from '../ui/parts.tsx';
 import { ReceiptAsk } from './ReceiptAsk.tsx';
@@ -21,7 +21,7 @@ export function PlayerDay(props: { me: Me; player: string; onBack: () => void })
   const seasonId = league.data?.season ?? null;
   const seasonPath = seasonId ? `${leaguePath}/seasons/${seasonId}` : null;
   const season = useDoc<{ timeZone: string }>(seasonPath);
-  const dates = season.data ? leagueDates(now, season.data.timeZone) : null;
+  const dates = season.data ? seasonDates(now, season.data) : null;
   const todayCal = useDoc<ReceiptDay>(seasonPath && dates ? `${seasonPath}/calendar/${dates.today}` : null);
   const yesterdayCal = useDoc<ReceiptDay>(seasonPath && dates ? `${seasonPath}/calendar/${dates.yesterday}` : null);
   const profile = useDoc<{ displayName?: string }>(`${leaguePath}/players/${props.player}`);

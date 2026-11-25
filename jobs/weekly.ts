@@ -12,7 +12,8 @@
 import { randomInt } from 'node:crypto';
 import { FieldValue, Timestamp, getFirestore, type DocumentData } from 'firebase-admin/firestore';
 import { connect } from './admin.ts';
-import { DODGE_PENALTY, STARTER_DARES, dareStatus, receiptFixes, wheelPool, type StoredReceipt } from '../engine/src/index.ts';
+import { DODGE_PENALTY, STARTER_DARES, dareStatus, fastDareDue, receiptFixes, wheelPool, type StoredReceipt } from '../engine/src/index.ts';
+import { fastClockOf } from './lib/fast.ts';
 import { PROOF_DAYS, staleProofs } from './lib/proofs.ts';
 import { revealDemolitions, sameReveals } from './lib/reveals.ts';
 import { approvedDares, drawsDue, type Draw } from './lib/wheel.ts';
@@ -159,7 +160,10 @@ for (const league of leagues) {
       const spinners = (week.get('awards').wheel as string[]).filter((player) => player !== 'HOUSE');
       const needsDraw = spinners.some((player) => !existing[`${week.id}_${player}_1`]) || redo.length > 0;
       if (!needsDraw) continue;
-      const due = drawsDue({ period: week.id, spinners, existing, redo, pool: await poolNow(), now, timeZone: season.get('timeZone'), roll: () => randomInt(1_000_000_000) });
+      // A fast test league's dares are due on its own clock.
+      const fast = fastClockOf({ demo: league.get('demo') }, { fast: plain(season.get('fast') ?? {}) });
+      const dueOf = fast ? (drawnAt: number) => fastDareDue(String(season.get('kickoff')), fast, drawnAt) : undefined;
+      const due = drawsDue({ period: week.id, spinners, existing, redo, pool: await poolNow(), now, timeZone: season.get('timeZone'), dueOf, roll: () => randomInt(1_000_000_000) });
       if (due.length === 0) continue;
       const batch = db.batch();
       for (const { draw, slice } of due) {
