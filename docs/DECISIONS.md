@@ -352,6 +352,11 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 200. **A pick is right when the player picked wins;** a draw makes every pick on it wrong. Leaving a matchup unpicked is allowed.
 201. **The best record is the most right picks; a tie goes to whoever made fewer picks, and players still level share it.** The week's top picker gets a shoutout in the feed when the week goes final, and the season's best record earns Prophet once every regular week is final.
 
+**Phase 2: the trophy case** (new on 2026-11-25, not yet reviewed by the commish)
+
+202. **The trophy case fills in once a season's last regular week is final,** in League, and keeps every season for good. The playoff trophies, Champion, Finalist and the Whiff Bowl, come with the playoffs in Phase 3.
+203. **How each trophy is decided:** Regular-Season Leader is the top of the final standings, tiebreaks and all. Screen Time King is the lowest average screen time over the days it was logged, to the minute, among players who logged it on at least half the season's days, so one good day can't win it. Iron Streak is the longest check-in streak in the season. Demolition Derby, Brewmaster and MVP of the Season go to the most of each, at least one. Prophet is the best predictions record (call 201). A tie shares the trophy, and a trophy nobody qualifies for stays empty that season.
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.

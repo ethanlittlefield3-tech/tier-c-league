@@ -412,6 +412,12 @@ service cloud.firestore {
         allow read: if isMember(L);
       }
 
+      // ---- The trophy case (SCOPE.md, "Season trophy case") ---------------
+      // Each season's trophies, kept for good. Only the weekly job writes it.
+      match /trophies/{seasonId} {
+        allow read: if isMember(L);
+      }
+
       // ---- The suggestion box (SCOPE.md, "Suggestion box") ----------------
       // Anyone in the league posts an idea; everyone else upvotes it, each
       // with their own vote; the commish tags it Planned, Maybe or No. Its

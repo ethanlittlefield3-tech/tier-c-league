@@ -12,7 +12,7 @@
 import { randomInt } from 'node:crypto';
 import { FieldValue, Timestamp, getFirestore, type DocumentData } from 'firebase-admin/firestore';
 import { connect } from './admin.ts';
-import { DODGE_PENALTY, STARTER_DARES, STICKER_DAYS, addRecords, bestPickers, dareStatus, rematchResult, scorePicks, type PickRecord, fastDareDue, fastLeagueClock, receiptFixes, rivalRecords, wheelPool, zoneClock, type RivalWeek, type StoredReceipt } from '../engine/src/index.ts';
+import { DODGE_PENALTY, STARTER_DARES, STICKER_DAYS, addRecords, bestPickers, dareStatus, rematchResult, scorePicks, seasonTrophies, type PickRecord, type TrophyPlayer, fastDareDue, fastLeagueClock, receiptFixes, rivalRecords, wheelPool, zoneClock, type RivalWeek, type StoredReceipt } from '../engine/src/index.ts';
 import { fastClockOf } from './lib/fast.ts';
 import { PROOF_DAYS, staleProofs } from './lib/proofs.ts';
 import { revealDemolitions, sameReveals } from './lib/reveals.ts';
@@ -269,6 +269,10 @@ for (const league of leagues) {
     if (stale.length > 0) console.log(`League ${league.id}: ${stale.length} ${kind === 'proofs' ? 'receipt' : 'dare'} photo${stale.length === 1 ? '' : 's'} deleted after ${PROOF_DAYS} days.`);
   }
 
+  // The trophy case's facts, once the regular season is over (see below).
+  type TrophyFacts = { players: Record<string, TrophyPlayer>; prophets: { players: string[]; right: number } };
+  let trophyFacts: TrophyFacts | null = null;
+
   // Badges (SCOPE.md, "Garage and achievements"): once a week goes final,
   // each player's season is checked again. What is newly earned is kept for
   // good and announced in the league feed. One read of the season a week.
@@ -323,6 +327,12 @@ for (const league of leagues) {
         if (typeof doc.get('made') === 'number') (pickRecords[String(doc.get('player'))] ??= []).push({ made: Number(doc.get('made')), right: Number(doc.get('right') ?? 0) });
       }
       const prophets = bestPickers(Object.fromEntries(Object.entries(pickRecords).map(([player, list]) => [player, addRecords(list)])));
+      if (over) {
+        trophyFacts = {
+          players: Object.fromEntries(members.map((player) => [player, { days: history[player]?.days ?? [], weeks: history[player]?.weeks ?? [] }])),
+          prophets: { players: prophets, right: prophets.length ? addRecords(pickRecords[prophets[0]!] ?? []).right : 0 },
+        };
+      }
       const beers: Record<string, number> = {};
       for (const week of finals) for (const line of (week.get('lines') ?? []) as WeekLineStored[]) beers[line.player] = (beers[line.player] ?? 0) + line.beers;
       const mostBeers = Math.max(0, ...Object.values(beers));
@@ -409,6 +419,17 @@ for (const league of leagues) {
     .doc('current')
     .set({ rows: rows.map(({ coin: _coin, ...row }) => row), asOf: FieldValue.serverTimestamp() });
   console.log(`League ${league.id}, season ${seasonId}: standings for ${rows.length} players.`);
+
+  // The trophy case (SCOPE.md, "Season trophy case"): once every regular
+  // week is final, the regular season's trophies, kept for good.
+  // Set inside the badge step's closure, which TypeScript can't follow.
+  const facts = trophyFacts as TrophyFacts | null;
+  if (facts) {
+    const top = rows[0];
+    const trophies = seasonTrophies({ ...facts, leader: top ? { player: top.player, points: top.seasonPoints } : null });
+    await league.ref.collection('trophies').doc(seasonId).set({ season: seasonId, name: String(season.get('name') ?? seasonId), at: FieldValue.serverTimestamp(), trophies });
+    console.log(`League ${league.id}, season ${seasonId}: ${Object.keys(trophies).length} trophies awarded.`);
+  }
 }
 
 console.log(`Done: ${settledWeeks} week${settledWeeks === 1 ? '' : 's'} settled${emulator ? ' in the local emulator' : ''}.`);

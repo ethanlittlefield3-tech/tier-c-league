@@ -46,7 +46,7 @@ Where everything lives in Firestore, who can write it and who can read it. It co
 | `wall/{post}/comments/{id}` | The writer, on brags only. Taken down like a post. | Members | 1, rules today | `by`, `text` (1 to 280 characters), `at`, `deleted`, `audit` |
 | `taunts/{player}` | That player | That player | 1 | `saved` (custom taunts, with `{name}`) |
 | `suggestions/{idea}` | Any member, in their own name. Everyone else sets only their own vote; the commish sets only the tag. Taken down by its author, or by the commish with an audit entry, which blanks its words. | Members | 2, rules today | `by`, `text` (1 to 280 characters), `at`, `tag` (planned, maybe, no, or null), `votes` (each voter's `true`), `deleted`, `audit` |
-| `trophies/{season}` | Jobs | Members | 2 | One entry per trophy in SCOPE.md's trophy case |
+| `trophies/{season}` | The weekly job, once the season's last regular week is final | Members | 2, rules today | `season`, `name`, `at`, `trophies` (by trophy: `winners` and the `value` that won it; a trophy nobody won is left out) |
 
 ## In a season: `leagues/{league}/seasons/{season}/...`
 

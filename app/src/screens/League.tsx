@@ -3,6 +3,7 @@ import type { CarParts } from '../art/car/draw.ts';
 import { nemesisOf, recordText, type Rival } from '@tcl/engine';
 import { useAll, useDoc, useNow } from '../data/hooks.ts';
 import { Picks } from './Picks.tsx';
+import { TrophyCase } from './Trophies.tsx';
 import type { Me } from '../data/identity.ts';
 import { seasonDates } from '../today/model.ts';
 import './feed.css';
@@ -245,6 +246,8 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
           now={now}
         />
       )}
+
+      <TrophyCase me={props.me} name={name} />
 
       <section class="panel league-panel" aria-labelledby="rivals-title">
         <h2 id="rivals-title">Your rivalries</h2>

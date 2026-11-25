@@ -115,6 +115,37 @@ test.describe('Settling a week, and the League tab', () => {
     await expect(page.locator('.feed-event[data-kind="rematch"]').first()).toContainText(/^You won the rematch against Maya, 33–/);
   });
 
+  test("Once a season's last regular week is final, the weekly job fills the trophy case, and League shows it", async ({ page, request }) => {
+    const league = await createLeague(request, { name: 'Sunday Squad' });
+    const season = await startSeason(request, league);
+    // A season of one regular week, so that week ends it.
+    await patchDoc(request, season.path, { regularWeeks: 1 });
+    const key = await joinAs(page, league, 'Riley');
+    const me = String((await readDoc(request, `leagues/${league.id}/lookup/${key}`))?.player);
+    await setGoals(request, season, me, { mind: 'Read 20 pages', body: '10k steps', wildcard: 'No vaping' });
+    await addPlayer(request, league, season, 'maya', 'Maya');
+    await writeDoc(request, `${season.path}/weeks/w01`, { week: 1, mode: 'regular', pairs: [{ a: me, b: 'maya' }], targets: { [me]: ['maya'], maya: [me] } });
+    const dates = await finishWeekOne(request, season);
+    for (const date of dates.slice(0, 6)) {
+      await writeDoc(request, `${season.path}/days/${me}_${date}`, logged(me, date, { mind: true, body: true, wildcard: true }));
+      await writeDoc(request, `${season.path}/days/maya_${date}`, { ...logged('maya', date, { mind: true, body: false, wildcard: false }), beers: 2 });
+    }
+
+    expect(await runWeekly(league)).toContain('trophies awarded');
+    const trophies = (await readDoc(request, `leagues/${league.id}/trophies/s1`))?.trophies as Record<string, { winners: string[]; value: number }>;
+    expect(trophies.leader).toEqual({ winners: [me], value: 38 });
+    expect(trophies.mvp).toEqual({ winners: [me], value: 1 });
+    expect(trophies.brewmaster).toEqual({ winners: ['maya'], value: 12 });
+    expect(trophies.screenTimeKing?.winners.sort()).toEqual([me, 'maya'].sort());
+
+    await page.getByRole('button', { name: "I've saved it", exact: true }).click();
+    await tab(page, 'League').click();
+    const list = page.getByRole('list', { name: 'Season 1 trophies' });
+    await expect(list.getByRole('listitem').filter({ hasText: 'Regular-Season Leader' })).toContainText('You, 38 Season Points');
+    await expect(list.getByRole('listitem').filter({ hasText: 'Brewmaster' })).toContainText('Maya, 12 beers');
+    await expect(list.getByRole('listitem').filter({ hasText: 'Champion' })).toContainText('Comes with the playoffs');
+  });
+
   test('Before any week settles, League says when the standings start', async ({ page, request }) => {
     const league = await createLeague(request);
     await startSeason(request, league);
