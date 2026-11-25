@@ -543,9 +543,10 @@ service cloud.firestore {
           return get(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/calendar/$(date)).data;
         }
 
+        // A playoff reset day is nobody's day to log.
         function isOpen(date) {
           let day = cal(date);
-          return request.time >= day.start && request.time < day.lock;
+          return request.time >= day.start && request.time < day.lock && day.get('kind', 'play') != 'reset';
         }
 
         // A player's rest day is the one they moved it to, otherwise Sunday.
@@ -753,6 +754,18 @@ service cloud.firestore {
 
         match /calendar/{date} {
           allow read: if isMember(L);
+          // A holiday event (SCOPE.md, "Holiday events"): the commish puts one
+          // on a regular-season day, changes it or takes it off, before the
+          // day starts, in a season with holiday events on. Nothing else about
+          // the day changes, and the calendar job keeps it.
+          allow update: if isCommish(L)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['event', 'audit'])
+            && request.resource.data.event in ['double', 'dry', 'pass', null]
+            && resource.data.phase == 'regular'
+            && resource.data.get('kind', 'play') == 'play'
+            && request.time < resource.data.start
+            && get(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)).data.get('holidayEvents', false) == true
+            && audited(L, request.resource.data.audit, 'event.set', 'calendar/' + date);
         }
 
         match /weeks/{week} {
@@ -943,6 +956,15 @@ service cloud.firestore {
             && request.resource.data.removedStarters is list
             && request.resource.data.removedStarters.hasOnly([0, 1, 2, 3, 4, 5, 6, 7])
             && audited(L, request.resource.data.audit, 'wheel.starters', 'config/wheel');
+          // The Season Dare, which the Whiff Bowl's loser does: the commish
+          // picks it from the pool before the playoffs are seeded.
+          allow create, update: if isCommish(L)
+            && doc == 'seasonDare'
+            && request.resource.data.keys().hasOnly(['text', 'audit'])
+            && request.resource.data.text is string
+            && request.resource.data.text.size() >= 1 && request.resource.data.text.size() <= 200
+            && !exists(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/playoffs/bracket)
+            && audited(L, request.resource.data.audit, 'season.dare', 'config/seasonDare');
         }
 
         // ---- The Wheel of Shame --------------------------------------------------
@@ -1025,7 +1047,8 @@ service cloud.firestore {
             && asked.proofAt == null
             && asked.backedDownAt == null
             && request.time >= day.start && request.time < day.lock
-            && asked.deadline == (request.time < day.sixPm ? day.end : day.nextEnd)
+            // In the playoffs, proof is due by 6 pm the day after, when the day has locked.
+            && asked.deadline == (day.get('phase', 'regular') == 'playoff' ? day.lock + duration.value(6, 'h') : (request.time < day.sixPm ? day.end : day.nextEnd))
             && log != null
             && (asked.square == 'screen' ? log.data.screenMinutes != null : log.data.goals[asked.square] == true)
             && (asked.square == 'screen' || !isRestDay(day.period, asked.target, asked.date, day))
@@ -1108,6 +1131,11 @@ service cloud.firestore {
                   && play.keys().hasOnly(['player', 'item', 'period', 'date', 'lane', 'at'])
                   && play.lane in ['mind', 'body', 'wildcard']
                   && id == play.period + '_' + play.player + '_fullBoost')
+              || (play.item == 'fullBoost2'
+                  && play.keys().hasOnly(['player', 'item', 'period', 'date', 'lane', 'at'])
+                  && play.lane in ['mind', 'body', 'wildcard']
+                  && play.period == 'p01'
+                  && id == play.period + '_' + play.player + '_fullBoost2')
               || (play.item == 'rest'
                   && play.keys().hasOnly(['player', 'item', 'period', 'date', 'at'])
                   && id == play.period + '_' + play.player + '_rest')
@@ -1131,6 +1159,11 @@ service cloud.firestore {
                 && day.period == play.period && 'fullBoost' in day.kit
                 && request.time >= day.start && request.time < day.lock
                 && !isRestDay(play.period, play.player, play.date, day))
+              // The #1 seed's second Full Boost, in the semifinal only.
+              || (play.item == 'fullBoost2'
+                && day.period == play.period && 'fullBoost' in day.kit
+                && request.time >= day.start && request.time < day.lock
+                && get(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/playoffs/bracket).data.seeds[0] == play.player)
               // Rest day: a day of the same week that has not started. The
               // first move also needs the default Sunday to be still ahead.
               || (play.item == 'rest'
@@ -1149,7 +1182,7 @@ service cloud.firestore {
         function canUndo(old) {
           let day = cal(old.date);
           return ((old.item == 'aerial' || old.item == 'rest') && request.time < day.start)
-            || ((old.item == 'fullBoost' || old.item == 'ruleOne') && request.time < day.lock);
+            || ((old.item == 'fullBoost' || old.item == 'fullBoost2' || old.item == 'ruleOne') && request.time < day.lock);
         }
 
         // ---- Sealed items ---------------------------------------------------

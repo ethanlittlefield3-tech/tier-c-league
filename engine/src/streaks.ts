@@ -8,14 +8,14 @@ import type { DayScore } from './scoring.ts';
  * How a day counts toward a check-in streak:
  * - `in`: something was logged, so the streak grows.
  * - `out`: a goal day with nothing logged, so the streak breaks.
- * - `skip`: the streak neither grows nor breaks. A blank rest day and a
- *   no-show covered by Rule One both skip.
+ * - `skip`: the streak neither grows nor breaks. A blank rest day, a
+ *   no-show covered by Rule One, and a no-show on a Holiday Pass all skip.
  */
 export type StreakMark = 'in' | 'out' | 'skip';
 
 export function streakMark(day: DayScore): StreakMark {
   if (day.checkedIn) return 'in';
-  if (day.restDay || day.kind === 'ruleOne') return 'skip';
+  if (day.restDay || day.kind === 'ruleOne' || day.event?.kind === 'pass') return 'skip';
   return 'out';
 }
 

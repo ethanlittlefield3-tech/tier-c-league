@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
-import { DODGE_PENALTY, PROOF_VOTE_HOURS, WEEKDAYS, dareStatus, fastDate, weekdayIndex } from '@tcl/engine';
+import { DODGE_PENALTY, PROOF_VOTE_HOURS, WEEKDAYS, dareStatus, fastDate, isVideoDare, weekdayIndex } from '@tcl/engine';
 import { useAll, useDoc, useNow, usePeek, useWhere } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
@@ -205,6 +205,7 @@ function DrawCard(props: {
           <p class="panel-text">
             Proof is due by {dueText(props.draw.dueAt, props.season)}, in {timeLeft(props.draw.dueAt - now)}. Then everyone else votes for {PROOF_VOTE_HOURS} hours.
           </p>
+          {result && isVideoDare(result.dare) && <p class="fine-print">A video goes in the group chat. Upload a still from it here, and the league votes in the app.</p>}
           {mine && (
             <label class="btn receipt-upload wheel-proof-upload" data-busy={busy}>
               Upload proof
@@ -235,7 +236,9 @@ function DrawCard(props: {
       )}
       {status === 'dodged' && (
         <p class="wheel-dodged">
-          No proof by the deadline: {mine ? 'you lose' : `${who} loses`} {-DODGE_PENALTY} Season Points.
+          {props.draw.id.startsWith('p')
+            ? `No proof by the deadline: ${mine ? 'you dodged' : `${who} dodged`} the Season Dare.`
+            : `No proof by the deadline: ${mine ? 'you lose' : `${who} loses`} ${-DODGE_PENALTY} Season Points.`}
         </p>
       )}
       {error && (

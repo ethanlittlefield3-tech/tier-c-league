@@ -3,7 +3,7 @@
  * whole league can read, and the security rules refuse any that doesn't
  * (firebase/firestore.rules, "audited").
  */
-import { bountyText, makeRecoveryKey, receiptFixes, settleDue, weekPlayers, type BountyTarget, type GroupWeekInput, type Lane, type RumbleItem, type PlayerWeekData, type Square, type StoredReceipt, type WeekLineStored, type WeekMode } from '@tcl/engine';
+import { bountyText, makeRecoveryKey, receiptFixes, settleDue, weekPlayers, type BountyTarget, type GroupWeekInput, type HolidayEvent, type Lane, type RumbleItem, type PlayerWeekData, type Square, type StoredReceipt, type WeekLineStored, type WeekMode } from '@tcl/engine';
 import { collection, deleteField, doc, getDoc, getDocs, query, serverTimestamp, where, writeBatch, type Firestore } from 'firebase/firestore';
 import { connect } from './firebase.ts';
 import { trouble, type Me } from './identity.ts';
@@ -255,5 +255,35 @@ export const answerJoin = (me: Me, uid: string, name: string, letIn: boolean) =>
     const save = writeBatch(db);
     save.update(doc(league, 'joinRequests', uid), letIn ? { approved: true, audit } : { declined: true, audit });
     save.set(doc(league, 'audit', audit), auditEntry(me, letIn ? 'join.approve' : 'join.decline', `joinRequests/${uid}`, letIn ? `Let ${name} in` : `Turned ${name} away`));
+    await save.commit();
+  });
+
+/**
+ * The Season Dare the Whiff Bowl's loser does (SCOPE.md, "Playoffs"): the
+ * commish picks it from the pool before the playoffs are seeded. It goes in
+ * the audit log.
+ */
+export const setSeasonDare = (me: Me, season: string, text: string) =>
+  attempt(async (db) => {
+    const league = doc(db, 'leagues', me.league);
+    const audit = doc(collection(league, 'audit')).id;
+    const save = writeBatch(db);
+    save.set(doc(league, 'seasons', season, 'config', 'seasonDare'), { text, audit });
+    save.set(doc(league, 'audit', audit), auditEntry(me, 'season.dare', 'config/seasonDare', `Season Dare: ${text}`));
+    await save.commit();
+  });
+
+/**
+ * Puts a holiday event on a regular-season day before it starts, changes it,
+ * or takes it off with `null` (SCOPE.md, "Holiday events"). It goes in the
+ * audit log.
+ */
+export const setHolidayEvent = (me: Me, season: string, date: string, event: HolidayEvent | null, words: string) =>
+  attempt(async (db) => {
+    const league = doc(db, 'leagues', me.league);
+    const audit = doc(collection(league, 'audit')).id;
+    const save = writeBatch(db);
+    save.update(doc(league, 'seasons', season, 'calendar', date), { event, audit });
+    save.set(doc(league, 'audit', audit), auditEntry(me, 'event.set', `calendar/${date}`, words));
     await save.commit();
   });

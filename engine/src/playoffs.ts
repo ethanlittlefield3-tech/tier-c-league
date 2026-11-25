@@ -4,8 +4,8 @@
  * and sudden death if the final ties. Everyone else plays the Whiff Bowl on
  * the same days, for "not last".
  *
- * Each round is its own period, so its kit is fresh: `p1` the semifinals,
- * `p2` the final, `p3` sudden death. A reset day between the rounds belongs to
+ * Each round is its own period, so its kit is fresh: `p01` the semifinals,
+ * `p02` the final, `p03` sudden death. A reset day between the rounds belongs to
  * the final's period, so its power-ups can be set before it starts.
  */
 import { addDays, dayEnd, dayLock, dayStart, wallTimeToInstant, type DateStr } from './calendar.ts';
@@ -17,7 +17,7 @@ export interface PlayoffSettings {
   playoffSize: 2 | 4;
 }
 
-export const PLAYOFF_PERIODS = { semi: 'p1', final: 'p2', suddenDeath: 'p3' } as const;
+export const PLAYOFF_PERIODS = { semi: 'p01', final: 'p02', suddenDeath: 'p03' } as const;
 export type PlayoffPeriod = (typeof PLAYOFF_PERIODS)[keyof typeof PLAYOFF_PERIODS];
 
 const FULL_KIT: KitName[] = ['aerial', 'demolition', 'fullBoost'];
@@ -25,7 +25,7 @@ const FULL_KIT: KitName[] = ['aerial', 'demolition', 'fullBoost'];
 /** The rounds a season plays: semifinal and final with four, the final alone with two, none without playoffs. */
 export function playoffRounds(settings: PlayoffSettings): PlayoffPeriod[] {
   if (settings.playoffs === 'none') return [];
-  return settings.playoffSize === 4 ? ['p1', 'p2'] : ['p2'];
+  return settings.playoffSize === 4 ? ['p01', 'p02'] : ['p02'];
 }
 
 /**
@@ -36,9 +36,9 @@ export function playoffRounds(settings: PlayoffSettings): PlayoffPeriod[] {
 function playoffLayout(settings: PlayoffSettings): { offset: number; period: PlayoffPeriod; kind: 'play' | 'reset' }[] {
   if (settings.playoffs === 'none') return [];
   const run = (from: number, count: number, period: PlayoffPeriod) => Array.from({ length: count }, (_, at) => ({ offset: from + at, period, kind: 'play' as const }));
-  if (settings.playoffSize === 2) return [...run(0, 6, 'p2'), ...run(6, 1, 'p3')];
-  if (settings.playoffs === 'oneWeek') return [...run(0, 3, 'p1'), { offset: 3, period: 'p2', kind: 'reset' }, ...run(4, 3, 'p2'), ...run(7, 1, 'p3')];
-  return [...run(0, 6, 'p1'), { offset: 6, period: 'p2', kind: 'reset' }, ...run(7, 6, 'p2'), ...run(13, 1, 'p3')];
+  if (settings.playoffSize === 2) return [...run(0, 6, 'p02'), ...run(6, 1, 'p03')];
+  if (settings.playoffs === 'oneWeek') return [...run(0, 3, 'p01'), { offset: 3, period: 'p02', kind: 'reset' }, ...run(4, 3, 'p02'), ...run(7, 1, 'p03')];
+  return [...run(0, 6, 'p01'), { offset: 6, period: 'p02', kind: 'reset' }, ...run(7, 6, 'p02'), ...run(13, 1, 'p03')];
 }
 
 /** The first playoff Monday: the Monday after the last regular week. */
@@ -68,7 +68,7 @@ export function playoffCalendar(season: SeasonPlan & PlayoffSettings): CalendarD
       phase: 'playoff' as const,
       kind,
       mode: 'regular' as const,
-      kit: kind === 'play' && period !== 'p3' ? [...FULL_KIT] : [],
+      kit: kind === 'play' && period !== 'p03' ? [...FULL_KIT] : [],
       start,
       noon: wallTimeToInstant(date, 12, 0, zone),
       sixPm: wallTimeToInstant(date, LATE_REQUEST_HOUR, 0, zone),

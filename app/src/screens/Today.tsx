@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { LANES, daysLeft, isPairedMode, rumbleWeek, type WeekInput, paceSoFar, receiptFixes, receiptStatus, recentDailyAverage, weekPeriod, winMeter, type BountyTarget, type Lane, type Square, type StoredReceipt, type WeekMode } from '@tcl/engine';
+import { LANES, daysLeft, holidayOf, isPairedMode, rumbleWeek, type WeekInput, paceSoFar, receiptFixes, receiptStatus, recentDailyAverage, weekPeriod, winMeter, type BountyTarget, type Lane, type Square, type StoredReceipt, type WeekMode } from '@tcl/engine';
 import { useAll, useDoc, useNow, usePeek, useWhere } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
@@ -27,7 +27,7 @@ import './wheel.css';
 import { GoalMark } from './GoalMark.tsx';
 import { ScreenSheet } from './ScreenSheet.tsx';
 import { WeekStrip } from './WeekStrip.tsx';
-import { ModeBanner } from './ModeBanner.tsx';
+import { EventBanner, ModeBanner, PlayoffBanner } from './ModeBanner.tsx';
 import { RumblePanel } from './RumblePanel.tsx';
 import { rumbleDraws, useRumble } from './useRumble.ts';
 import { lateSyncRisk, useOnline } from '../ui/online.ts';
@@ -51,6 +51,11 @@ interface SeasonDoc {
 interface WeekDoc {
   week?: number;
   mode?: string;
+  /** A playoff round's week: its phase, round and the Whiff Bowl's racers. */
+  phase?: string;
+  round?: string;
+  racers?: string[];
+  pairs?: { a: string; b: string }[];
   targets?: Record<string, string[]>;
   teams?: { blue: string[]; orange: string[] };
   duos?: { a: string[]; b: string[] }[];
@@ -227,6 +232,12 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
     lockedSoFar,
   );
 
+  // The playoffs: the bracket, and the #1 seed's second Full Boost in the semifinal.
+  const playoffs = weekDoc.data?.phase === 'playoff';
+  const bracket = useDoc<{ seeds: string[]; outside: string[]; semis: { a: string; b: string | null }[] }>(seasonPath && playoffs ? `${seasonPath}/playoffs/bracket` : null);
+  const topSeed = playoffs && period === 'p01' && bracket.data?.seeds[0] === me;
+  const secondBoost = useDoc<Play>(seasonPath && topSeed ? `${seasonPath}/kit/p01_${me}_fullBoost2` : null);
+
   // Rumble: today's items and the Boots revealed so far.
   const rumble = useRumble({ seasonPath, active: mode === 'rumble', days: week.docs.map((found) => found.data), me, opponent: opponentId, now });
 
@@ -298,6 +309,11 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
   const shownBoost = shownLastWeek ? lastBoost.data : fullBoost.data;
   const shownAerial = shownLastWeek ? lastAerial.data : aerial.data;
   const boostLane = shownBoost && shownBoost.date === date ? (shownBoost.lane ?? null) : null;
+  // The #1 seed's second Full Boost, in the semifinal.
+  const secondLane = cal?.period === 'p01' && secondBoost.data && secondBoost.data.date === date ? (secondBoost.data.lane ?? null) : null;
+  const boostLanes = [boostLane, secondLane].flatMap((lane) => (lane ? [lane] : []));
+  // The day's holiday event, if the commish scheduled one.
+  const holiday = holidayOf(cal?.event);
   const aerialHere = shownAerial !== null && shownAerial.date === date;
   const ruleOneHere = ruleOnes.some((play) => play.date === date);
   // Commish docks, corrections and voids on this day.
@@ -308,7 +324,8 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
     restDay,
     locked: dayWindow === 'locked',
     aerial: aerialHere,
-    fullBoost: boostLane,
+    fullBoost: boostLanes,
+    event: holiday,
     ruleOne: ruleOneHere,
     voided: fixes.flatMap((change) => (change.void ? [change.void] : [])),
     adjustments: fixes.map((change) => change.amount).filter((amount) => amount !== 0),
@@ -544,6 +561,17 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
         />
       )}
 
+      {holiday && <EventBanner event={holiday} today={showing === 'today'} />}
+
+      {playoffs && weekDoc.data && (
+        <PlayoffBanner
+          me={me}
+          week={weekDoc.data}
+          bracket={bracket.data}
+          name={(player) => (player === me ? 'You' : (everyone.docs.find((found) => found.id === player)?.data.displayName ?? opponentProfile.data?.displayName ?? 'your opponent'))}
+        />
+      )}
+
       {mode !== 'regular' && weekDoc.data && (
         <ModeBanner
           me={me}
@@ -607,6 +635,7 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
           }
           vsHouse={targets.includes('HOUSE')}
           hitByDay={dates ? { [dates.today]: dayToday.data?.goals ?? {}, [dates.yesterday]: dayYesterday.data?.goals ?? {} } : {}}
+          secondBoost={topSeed ? { play: secondBoost.data } : null}
         />
       )}
 

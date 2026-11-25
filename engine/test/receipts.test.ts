@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
+import { receiptDue,
   MINUTE,
   canRequestReceipt,
   finalAt,
@@ -157,5 +157,19 @@ describe('6. Receipts: how a request ends', () => {
       { date: MON, amount: -1, void: 'body' },
       { date: MON, amount: -1, void: 'screen' },
     ]);
+  });
+});
+
+describe('Receipt deadlines from the calendar', () => {
+  const H = 3_600_000;
+  const day = { phase: 'regular', sixPm: 18 * H, end: 24 * H, nextEnd: 48 * H, lock: 36 * H };
+  it('Asked before 6 pm, proof is due at the end of that day; at 6 pm or later, the end of the next day', () => {
+    expect(receiptDue(day, 17 * H)).toBe(24 * H);
+    expect(receiptDue(day, 18 * H)).toBe(48 * H);
+  });
+
+  it('In the playoffs, proof is due by 6 pm the day after, when the day has locked, whenever it was asked', () => {
+    expect(receiptDue({ ...day, phase: 'playoff' }, 2 * H)).toBe(42 * H);
+    expect(receiptDue({ ...day, phase: 'playoff' }, 30 * H)).toBe(42 * H);
   });
 });

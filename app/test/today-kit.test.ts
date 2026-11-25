@@ -113,6 +113,11 @@ describe("The live score counts your own power-ups", () => {
     expect(liveDayScore({ par: 3, entry, restDay: false, locked: false, fullBoost: 'body' }).total).toBe(5);
   });
 
+  it("In a semifinal, the #1 seed's second Full Boost counts another missed goal on the same day", () => {
+    // Mind was hit; Body and Wildcard are boosted: 3 goals (+3) and 30 minutes (+3).
+    expect(liveDayScore({ par: 3, entry, restDay: false, locked: false, fullBoost: ['body', 'wildcard'] }).total).toBe(6);
+  });
+
   it('Rule One makes the day 0', () => {
     expect(liveDayScore({ par: 3, entry, restDay: false, locked: false, ruleOne: true }).total).toBe(0);
   });

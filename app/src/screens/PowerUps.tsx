@@ -93,6 +93,8 @@ export function PowerUps(props: {
   opponents: Opponent[];
   /** True when this week's opponent is The House. */
   vsHouse: boolean;
+  /** The #1 seed's second Full Boost in a playoff semifinal, when it is yours: played or not. */
+  secondBoost?: { play: Play | null } | null;
   /** The goals you have already marked hit, by day, so Full Boost offers only the ones you missed. */
   hitByDay: Record<string, Partial<Record<Lane, boolean>>>;
 }) {
@@ -367,6 +369,43 @@ export function PowerUps(props: {
           })}
           {boostHere.length === 0 && boostChoices.length === 0 && (
             <p class="power-done">{props.fullBoost ? `Used on ${longDay(props.fullBoost.date)}.` : 'Nothing to boost right now. It keeps until the end of the week.'}</p>
+          )}
+          {props.secondBoost && (
+            <div class="power-second" role="group" aria-label="Your second Full Boost">
+              <p>As the #1 seed, you have a second Full Boost this round.</p>
+              {(() => {
+                const second = props.secondBoost.play;
+                const open = props.openDays.filter((day) => day.period === period);
+                const here = second ? open.find((day) => day.date === second.date && canTakeBack(day, now)) : null;
+                if (second && here) {
+                  return (
+                    <>
+                      <p class="power-done">
+                        On {longDay(here.date)}: {LANE_NAMES[second.lane ?? 'mind']} counts as hit.
+                      </p>
+                      <button type="button" class="btn-quiet" disabled={busy} onClick={() => act((api) => api.takeBackFullBoost(props.where, period, true))}>
+                        Take back your second Full Boost
+                      </button>
+                    </>
+                  );
+                }
+                if (second) return <p class="power-done">Used on {longDay(second.date)}.</p>;
+                return open.map((day) => {
+                  const first = props.boosts[day.period];
+                  const missed = LANES.filter((lane) => props.hitByDay[day.date]?.[lane] !== true && !(first && first.date === day.date && first.lane === lane));
+                  return missed.length === 0 ? null : (
+                    <div class="power-lanes">
+                      {missed.map((lane) => (
+                        <button type="button" class="power-choice power-lane" disabled={busy} onClick={() => act((api) => api.playFullBoost(props.where, period, day.date, lane, true))}>
+                          <span>Count {LANE_NAMES[lane]}</span>
+                          <small>on {shortDay(day.date)}</small>
+                        </button>
+                      ))}
+                    </div>
+                  );
+                });
+              })()}
+            </div>
           )}
         </div>
       )}

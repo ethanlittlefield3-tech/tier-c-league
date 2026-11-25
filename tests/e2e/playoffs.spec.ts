@@ -46,22 +46,23 @@ async function pastPlayoffs(request: APIRequestContext) {
 test.describe('The playoffs', () => {
   test('The weekly job seeds the bracket from the standings, settles the semifinals and then the final, and crowns the champion with trophies and the league banner', async ({ request }) => {
     const { league, path, days, log } = await pastPlayoffs(request);
+    await writeDoc(request, `${path}/config/seasonDare`, { text: 'Sing the anthem at the next game', audit: 'a1' });
     // Semifinals: 1 Riley against 4 Jo, 2 Maya against 3 Sam. Jo and Maya win.
     // The Whiff Bowl: Kim, the best seed of three, is safe; Lee beats the commish, who logs nothing.
-    for (const date of days('p1')) {
+    for (const date of days('p01')) {
       for (const [player, count] of [['riley', 1], ['jo', 3], ['maya', 3], ['sam', 2], ['kim', 2], ['lee', 1]] as const) await log(player, date, count);
     }
     // The final: Maya beats Jo.
-    for (const date of days('p2')) {
+    for (const date of days('p02')) {
       await log('maya', date, 3);
       await log('jo', date, 2);
     }
 
     expect(await runWeekly(league)).toContain('playoffs seeded, 4 in and 3 in the Whiff Bowl.');
-    expect(await readDoc(request, `${path}/weeks/p1`)).toMatchObject({ phase: 'playoff', round: 'semi', pairs: [{ a: 'riley', b: 'jo' }, { a: 'maya', b: 'sam' }, { a: 'lee', b: league.commish }] });
+    expect(await readDoc(request, `${path}/weeks/p01`)).toMatchObject({ phase: 'playoff', round: 'semi', pairs: [{ a: 'riley', b: 'jo' }, { a: 'maya', b: 'sam' }, { a: 'lee', b: league.commish }] });
 
     expect(await runWeekly(league)).toContain('semifinals settled.');
-    expect(await readDoc(request, `${path}/weeks/p2`)).toMatchObject({ round: 'final', pairs: [{ a: 'jo', b: 'maya' }] });
+    expect(await readDoc(request, `${path}/weeks/p02`)).toMatchObject({ round: 'final', pairs: [{ a: 'jo', b: 'maya' }] });
     expect(((await readDoc(request, `${path}/playoffs/bracket`))?.whiff as { loser: string }).loser).toBe(league.commish);
 
     expect(await runWeekly(league)).toContain('champion crowned.');
@@ -76,5 +77,10 @@ test.describe('The playoffs', () => {
     await runWeekly(league);
     expect(Object.keys(((await readDoc(request, `leagues/${league.id}/players/maya`))?.badges ?? {}) as Record<string, unknown>)).toEqual(expect.arrayContaining(['champion', 'finalist']));
     expect(Object.keys(((await readDoc(request, `leagues/${league.id}/players/jo`))?.badges ?? {}) as Record<string, unknown>)).toContain('finalist');
+
+    // The Whiff Bowl's loser spins the Wheel, and it holds only the Season Dare the commish picked.
+    const final = await readDoc(request, `${path}/weeks/p02`);
+    expect(final).toMatchObject({ awards: { wheel: [league.commish] }, seasonDare: 'Sing the anthem at the next game' });
+    expect((final?.wheel as Record<string, { pool: string[] }>)[`p02_${league.commish}_1`]?.pool).toEqual(['Sing the anthem at the next game']);
   });
 });

@@ -1,4 +1,4 @@
-import { HOUSE, MODE_BLURBS, MODE_NAMES, bountyText, defaultBounty, type BountyTarget, type GroupMode } from '@tcl/engine';
+import { HOUSE, MODE_BLURBS, MODE_NAMES, bountyText, defaultBounty, type BountyTarget, type GroupMode, type HolidayEvent } from '@tcl/engine';
 import './group.css';
 
 /**
@@ -46,6 +46,62 @@ export function ModeBanner(props: {
         Week {props.week.week}: {MODE_NAMES[mode]}.
       </strong>{' '}
       {MODE_BLURBS[mode]} {detail} Match shows how it stands.
+    </p>
+  );
+}
+
+/**
+ * Today in the playoffs (SCOPE.md, "Playoffs"): your round and what it asks
+ * of you. A fresh kit each round, no Rule One, and no rest days.
+ */
+export function PlayoffBanner(props: {
+  me: string;
+  week: { round?: string; pairs?: { a: string; b: string }[]; racers?: string[] };
+  bracket: { seeds: string[]; outside: string[]; semis: { a: string; b: string | null }[] } | null;
+  name: (player: string) => string;
+}) {
+  const pair = (props.week.pairs ?? []).find((each) => each.a === props.me || each.b === props.me);
+  const them = pair ? (pair.a === props.me ? pair.b : pair.a) : null;
+  const inPlayoffs = props.bracket?.seeds.includes(props.me) ?? false;
+  const bye = props.bracket?.semis.some((game) => game.a === props.me && game.b === null) ?? false;
+  let title = 'The playoffs';
+  let detail = '';
+  if (props.week.round === 'semi') {
+    title = inPlayoffs ? 'Semifinal' : 'Whiff Bowl';
+    if (bye) detail = 'You have a bye into the final.';
+    else if (them) detail = inPlayoffs ? `You face ${props.name(them)}: the winner plays in the final.` : `You face ${props.name(them)}: win and you're safe.`;
+    else if (!inPlayoffs) detail = "You're safe in the Whiff Bowl this round.";
+  } else if (props.week.round === 'final') {
+    title = them ? 'The final' : 'Whiff Bowl';
+    if (them) detail = `You face ${props.name(them)}. Level points go to sudden death the day after.`;
+    else if (props.week.racers?.includes(props.me)) detail = "You race for not last: the fewest points over the final's days does the Season Dare.";
+    else detail = 'Your days still count for your streaks and badges.';
+  } else if (props.week.round === 'suddenDeath') {
+    title = 'Sudden death';
+    detail = them ? `If the final with ${props.name(them)} was level, the first to miss any goal today loses. No power-ups today.` : 'Only the finalists play it, if the final was level.';
+  }
+  return (
+    <p class="mode-banner" role="note">
+      <strong>{title}.</strong> {detail} A fresh kit each round, no Rule One and no rest days in the playoffs.
+    </p>
+  );
+}
+
+const EVENT_WORDS: Record<HolidayEvent, [string, string]> = {
+  double: ['Double Points Day', "The day's points count double, and an Aerial doubles them again."],
+  dry: ['Dry Day', 'Log 0 beers for +2.'],
+  pass: ['Holiday Pass', 'Logging nothing scores 0, not −5.'],
+};
+
+/** The day's holiday event (SCOPE.md, "Holiday events"), which the commish scheduled. */
+export function EventBanner(props: { event: HolidayEvent; today: boolean }) {
+  const [title, detail] = EVENT_WORDS[props.event];
+  return (
+    <p class="mode-banner event-banner" role="note" data-event={props.event}>
+      <strong>
+        {props.today ? 'Today' : 'Yesterday'}: {title}.
+      </strong>{' '}
+      {detail}
     </p>
   );
 }

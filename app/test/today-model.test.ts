@@ -179,6 +179,15 @@ describe('The day total', () => {
     expect(breakdown(magnet.b)).toBe('Goals +3 · screen +3 · beers 0 · Magnet −2');
   });
 
+  it('Says what a holiday event did to the day', () => {
+    const entry = { goals: { mind: true, body: false, wildcard: false }, screenMinutes: 30, beers: 0 };
+    expect(breakdown(liveDayScore({ par: 3, entry, restDay: false, locked: false, event: 'double' }))).toBe('Goals +1 · screen +3 · beers 0 · Double Points ×2');
+    expect(breakdown(liveDayScore({ par: 3, entry, restDay: false, locked: false, event: 'dry' }))).toBe('Goals +1 · screen +3 · beers 0 · Dry Day +2');
+    // A beer loses the Dry Day bonus, so it isn't named.
+    expect(breakdown(liveDayScore({ par: 3, entry: { ...entry, beers: 1 }, restDay: false, locked: false, event: 'dry' }))).toBe('Goals +1 · screen +3 · beers −1');
+    expect(breakdown(liveDayScore({ par: 3, entry: null, restDay: false, locked: true, event: 'pass' }))).toBe('Nothing logged, on a Holiday Pass: 0');
+  });
+
   it('Leaves out screen time while it is not logged, and says nothing when nothing is logged', () => {
     const entry = { goals: { mind: true, body: false, wildcard: false }, screenMinutes: null, beers: 0 };
     expect(breakdown(liveDayScore({ par: 3, entry, restDay: false, locked: false }))).toBe('Goals +1 · beers 0');

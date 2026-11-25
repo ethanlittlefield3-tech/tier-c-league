@@ -9,27 +9,27 @@ const days = (settings: { playoffs: 'none' | 'oneWeek' | 'twoWeeks'; playoffSize
 describe('The playoff calendar', () => {
   it('One week, top 4: semifinals Monday to Wednesday, a reset Thursday, the final Friday to Sunday, and sudden death the Monday after', () => {
     expect(days({ playoffs: 'oneWeek', playoffSize: 4 })).toEqual([
-      ['2027-02-15', 'p1', 'play', 'kit'],
-      ['2027-02-16', 'p1', 'play', 'kit'],
-      ['2027-02-17', 'p1', 'play', 'kit'],
-      ['2027-02-18', 'p2', 'reset', 'none'],
-      ['2027-02-19', 'p2', 'play', 'kit'],
-      ['2027-02-20', 'p2', 'play', 'kit'],
-      ['2027-02-21', 'p2', 'play', 'kit'],
-      ['2027-02-22', 'p3', 'play', 'none'],
+      ['2027-02-15', 'p01', 'play', 'kit'],
+      ['2027-02-16', 'p01', 'play', 'kit'],
+      ['2027-02-17', 'p01', 'play', 'kit'],
+      ['2027-02-18', 'p02', 'reset', 'none'],
+      ['2027-02-19', 'p02', 'play', 'kit'],
+      ['2027-02-20', 'p02', 'play', 'kit'],
+      ['2027-02-21', 'p02', 'play', 'kit'],
+      ['2027-02-22', 'p03', 'play', 'none'],
     ]);
   });
 
   it('Two weeks, top 4: semifinals Monday to Saturday, a reset Sunday, the final Monday to Saturday, and sudden death that Sunday', () => {
     const two = days({ playoffs: 'twoWeeks', playoffSize: 4 });
-    expect(two.filter((day) => day[1] === 'p1').map((day) => day[0])).toEqual(['2027-02-15', '2027-02-16', '2027-02-17', '2027-02-18', '2027-02-19', '2027-02-20']);
+    expect(two.filter((day) => day[1] === 'p01').map((day) => day[0])).toEqual(['2027-02-15', '2027-02-16', '2027-02-17', '2027-02-18', '2027-02-19', '2027-02-20']);
     expect(two.find((day) => day[2] === 'reset')?.[0]).toBe('2027-02-21');
-    expect(two.filter((day) => day[1] === 'p2' && day[2] === 'play').map((day) => day[0])).toEqual(['2027-02-22', '2027-02-23', '2027-02-24', '2027-02-25', '2027-02-26', '2027-02-27']);
-    expect(two.at(-1)).toEqual(['2027-02-28', 'p3', 'play', 'none']);
+    expect(two.filter((day) => day[1] === 'p02' && day[2] === 'play').map((day) => day[0])).toEqual(['2027-02-22', '2027-02-23', '2027-02-24', '2027-02-25', '2027-02-26', '2027-02-27']);
+    expect(two.at(-1)).toEqual(['2027-02-28', 'p03', 'play', 'none']);
   });
 
   it('Top 2: the final only, Monday to Saturday, with sudden death on Sunday; no playoffs means no playoff days', () => {
-    expect(days({ playoffs: 'oneWeek', playoffSize: 2 }).map((day) => day[1])).toEqual(['p2', 'p2', 'p2', 'p2', 'p2', 'p2', 'p3']);
+    expect(days({ playoffs: 'oneWeek', playoffSize: 2 }).map((day) => day[1])).toEqual(['p02', 'p02', 'p02', 'p02', 'p02', 'p02', 'p03']);
     expect(days({ playoffs: 'twoWeeks', playoffSize: 2 })).toHaveLength(7);
     expect(days({ playoffs: 'none', playoffSize: 4 })).toEqual([]);
   });
@@ -45,8 +45,8 @@ describe('The playoff calendar', () => {
   });
 
   it('A season knows its rounds: semifinal and final with four, the final alone with two', () => {
-    expect(playoffRounds({ playoffs: 'oneWeek', playoffSize: 4 })).toEqual(['p1', 'p2']);
-    expect(playoffRounds({ playoffs: 'twoWeeks', playoffSize: 2 })).toEqual(['p2']);
+    expect(playoffRounds({ playoffs: 'oneWeek', playoffSize: 4 })).toEqual(['p01', 'p02']);
+    expect(playoffRounds({ playoffs: 'twoWeeks', playoffSize: 2 })).toEqual(['p02']);
     expect(playoffRounds({ playoffs: 'none', playoffSize: 4 })).toEqual([]);
   });
 });

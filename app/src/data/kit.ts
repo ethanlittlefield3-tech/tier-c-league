@@ -38,15 +38,16 @@ export const cancelAerial = (where: Where, period: string) =>
     await deleteDoc(await kitDoc(where, `${period}_${where.player}_aerial`));
   });
 
-/** Counts a missed goal as hit on a day, or moves Full Boost there. */
-export const playFullBoost = (where: Where, period: string, date: string, lane: Lane) =>
+/** Counts a missed goal as hit on a day, or moves Full Boost there. `second` is the #1 seed's extra one in a playoff semifinal. */
+export const playFullBoost = (where: Where, period: string, date: string, lane: Lane, second = false) =>
   attempt(async () => {
-    await setDoc(await kitDoc(where, `${period}_${where.player}_fullBoost`), { player: where.player, item: 'fullBoost', period, date, lane, at: serverTimestamp() });
+    const item = second ? 'fullBoost2' : 'fullBoost';
+    await setDoc(await kitDoc(where, `${period}_${where.player}_${item}`), { player: where.player, item, period, date, lane, at: serverTimestamp() });
   });
 
-export const takeBackFullBoost = (where: Where, period: string) =>
+export const takeBackFullBoost = (where: Where, period: string, second = false) =>
   attempt(async () => {
-    await deleteDoc(await kitDoc(where, `${period}_${where.player}_fullBoost`));
+    await deleteDoc(await kitDoc(where, `${period}_${where.player}_${second ? 'fullBoost2' : 'fullBoost'}`));
   });
 
 /** Moves the rest day. It is never deleted: with no document, it is Sunday. */

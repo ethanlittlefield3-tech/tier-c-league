@@ -263,3 +263,18 @@
   color: var(--ink-soft);
   overflow-wrap: anywhere;
 }
+
+/* The champion, on the league banner until the next one. */
+.playoffs-banner {
+  margin: 10px 0 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: linear-gradient(90deg, rgba(244, 196, 48, 0.18), rgba(244, 196, 48, 0.04));
+  border: 1px solid rgba(244, 196, 48, 0.45);
+  font: italic 900 18px/1.2 var(--display);
+  color: var(--gold);
+}
+
+.playoffs-banner strong {
+  color: var(--ink);
+}

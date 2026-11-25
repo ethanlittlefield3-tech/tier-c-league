@@ -4,6 +4,7 @@ import { MODE_BLURBS, MODE_NAMES, nemesisOf, recordText, type GroupMode, type Ri
 import { groupLines, type GroupDoc } from '../group/words.ts';
 import { useAll, useDoc, useNow } from '../data/hooks.ts';
 import { Picks } from './Picks.tsx';
+import { Playoffs } from './Playoffs.tsx';
 import { TrophyCase } from './Trophies.tsx';
 import type { Me } from '../data/identity.ts';
 import { seasonDates } from '../today/model.ts';
@@ -72,7 +73,7 @@ function Notice(props: { title: string; children: string }) {
 export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
   const now = useNow();
   const leaguePath = `leagues/${props.me.league}`;
-  const league = useDoc<{ season?: string | null }>(leaguePath);
+  const league = useDoc<{ season?: string | null; banner?: { player: string; season: string } | null }>(leaguePath);
   const seasonId = league.data?.season ?? null;
   const seasonPath = seasonId ? `${leaguePath}/seasons/${seasonId}` : null;
   const season = useDoc<{ timeZone: string; regularWeeks: number; playoffs?: string }>(seasonPath);
@@ -176,6 +177,8 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
         )}
         <p class="panel-text">Season Points are every point you score, plus 5 for a 1v1 win and 2 for a draw, and group play's bonuses.</p>
       </section>
+
+      {seasonPath && <Playoffs league={props.me.league} seasonPath={seasonPath} me={props.me.player} name={name} banner={league.data?.banner ?? null} />}
 
       {thisWeek?.data.pairs && (
         <section class="panel league-panel" aria-labelledby="this-week-title">

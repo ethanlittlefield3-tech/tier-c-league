@@ -236,7 +236,8 @@ export function feedEvents(input: FeedInput): FeedEvent[] {
           outcome: status === 'counted' ? 'Counts' : "Doesn't count: spins again",
         });
       }
-      if (status === 'dodged') events.push({ id: `dodged-${draw.id}`, at: draw.dueAt, kind: 'wheel', text: `${who} dodged the dare: ${signed(DODGE_PENALTY)} Season Points` });
+      // The Season Dare, after the playoffs, costs no Season Points: the standings are final.
+      if (status === 'dodged') events.push({ id: `dodged-${draw.id}`, at: draw.dueAt, kind: 'wheel', text: draw.id.startsWith('p') ? `${who} dodged the Season Dare` : `${who} dodged the dare: ${signed(DODGE_PENALTY)} Season Points` });
     }
   }
 

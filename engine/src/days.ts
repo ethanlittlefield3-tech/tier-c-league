@@ -6,7 +6,7 @@
  */
 import { localDate, type DateStr, type Instant } from './calendar.ts';
 import { rumbleDay, type RumbleItem } from './rumble.ts';
-import { scoreDay, type DayInput, type DayLog, type DayScore, type Lane, type Square } from './scoring.ts';
+import { holidayOf, scoreDay, type DayInput, type DayLog, type DayScore, type Lane, type Square } from './scoring.ts';
 import { totalWeek, type WeekTotals } from './week.ts';
 
 /** What a day needs from its calendar entry. */
@@ -17,6 +17,8 @@ export interface CalendarTimes {
   phase: string;
   start: Instant;
   lock: Instant;
+  /** A holiday event the commish put on the day: double, dry or pass. */
+  event?: string | null;
 }
 
 /** A kit play: Aerial, Full Boost, a moved rest day, or a Rule One. */
@@ -84,6 +86,7 @@ function weekDays(input: WeekInput): { cell: Omit<DayCell, 'score'>; input: DayI
         demolitions: state === 'locked' ? input.demolitionsOn.filter((hit) => hit.date === day.date).map((hit) => hit.lane) : [],
         voided: fixes.flatMap((change) => (change.void ? [change.void] : [])),
         adjustments: fixes.map((change) => change.amount).filter((amount) => amount !== 0),
+        event: holidayOf(day.event),
       },
     };
   });

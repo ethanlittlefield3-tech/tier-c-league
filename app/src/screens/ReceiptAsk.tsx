@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { canRequestReceipt, isRestDay, receiptStatus, type Lane, type Square, type StoredReceipt } from '@tcl/engine';
+import { canRequestReceipt, isRestDay, receiptDue, receiptStatus, type Lane, type Square, type StoredReceipt } from '@tcl/engine';
 import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
 import { whyOf } from '../data/why.ts';
@@ -53,7 +53,7 @@ export function ReceiptAsk(props: {
     if (busy || slot === null) return;
     setBusy(true);
     setNote(null);
-    const deadline = Date.now() < day.sixPm ? day.end : day.nextEnd;
+    const deadline = receiptDue(day, Date.now());
     void loadData()
       .then((api) => api.askForReceipts(props.me, props.seasonId, { target: props.them.id, date: day.date, square, period: day.period, slot, deadline }))
       .then(() => setNote({ error: false, text: `Asked. ${props.them.name} has ${timeLeft(deadline - Date.now())} to prove it.` }))

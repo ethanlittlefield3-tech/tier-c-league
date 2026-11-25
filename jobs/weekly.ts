@@ -275,7 +275,8 @@ for (const league of leagues) {
         return { draw, status };
       });
       for (const { draw, status } of statuses) {
-        if (status === 'dodged') penalties[draw.player] = (penalties[draw.player] ?? 0) + DODGE_PENALTY;
+        // A dodged Season Dare comes after the season, so it costs no Season Points: only the sticker.
+        if (status === 'dodged' && week.get('phase') !== 'playoff') penalties[draw.player] = (penalties[draw.player] ?? 0) + DODGE_PENALTY;
         // A dodge also puts the Dare Dodger sticker on the car for a week from the deadline, once.
         if (status === 'dodged' && !(draw as Draw & { dodgedAt?: unknown }).dodgedAt) {
           const until = Timestamp.fromMillis(Number(ms(draw.dueAt)) + STICKER_DAYS * DAY);
@@ -293,7 +294,9 @@ for (const league of leagues) {
       // A fast test league's dares are due on its own clock.
       const fast = fastClockOf({ demo: league.get('demo') }, { fast: plain(season.get('fast') ?? {}) });
       const dueOf = fast ? (drawnAt: number) => fastDareDue(String(season.get('kickoff')), fast, drawnAt) : undefined;
-      const due = drawsDue({ period: week.id, spinners, existing, redo, pool: await poolNow(), now, timeZone: season.get('timeZone'), dueOf, roll: () => randomInt(1_000_000_000) });
+      // The Whiff Bowl's loser spins for the Season Dare the commish picked, if there is one.
+      const seasonDare = typeof week.get('seasonDare') === 'string' ? [String(week.get('seasonDare'))] : null;
+      const due = drawsDue({ period: week.id, spinners, existing, redo, pool: seasonDare ?? (await poolNow()), now, timeZone: season.get('timeZone'), dueOf, roll: () => randomInt(1_000_000_000) });
       if (due.length === 0) continue;
       const batch = db.batch();
       for (const { draw, slice } of due) {
@@ -579,7 +582,7 @@ async function playoffStep(
   let bracket = found.exists ? (found.data() as Bracket) : null;
   const days = calendar.filter((day) => day.phase === 'playoff') as unknown as (Parameters<typeof playerWeek>[0]['days'][number] & { kind: string; week: number })[];
   const roundDays = (period: string) => days.filter((day) => day.period === period && day.kind === 'play').sort((a, b) => a.start - b.start);
-  const locks = Object.fromEntries((['p1', 'p2', 'p3'] as const).filter((period) => roundDays(period).length > 0).map((period) => [period, roundDays(period).at(-1)!.lock]));
+  const locks = Object.fromEntries((['p01', 'p02', 'p03'] as const).filter((period) => roundDays(period).length > 0).map((period) => [period, roundDays(period).at(-1)!.lock]));
   const weekOf = (period: string) => Number(roundDays(period)[0]?.week ?? regularWeeks + 1);
   const lastRegular = regular.find((week) => Number(week.get('week')) === regularWeeks);
   const step = playoffDue({ bracket, regularDone: Boolean(lastRegular?.get('results')), locks, now });
@@ -591,35 +594,47 @@ async function playoffStep(
   if (step === 'seed') {
     bracket = seedBracket(ranked, settings);
     if (!bracket) return {};
-    if (bracket.size === 4) writeRound('p1');
+    if (bracket.size === 4) writeRound('p01');
     else {
-      writeRound('p2');
-      writeRound('p3');
+      writeRound('p02');
+      writeRound('p03');
     }
     console.log(`League ${league.id}, season ${seasonId}: playoffs seeded, ${bracket.seeds.length} in and ${bracket.outside.length} in the Whiff Bowl.`);
   } else if (step === 'semis') {
     const players = [...bracket!.semis, ...(bracket!.whiff?.pairs ?? [])].flatMap((game) => [game.a, game.b]).filter((player): player is string => player !== null);
-    const totals = await roundTotals(seasonRef, par, 'p1', roundDays('p1'), players, now);
+    const totals = await roundTotals(seasonRef, par, 'p01', roundDays('p01'), players, now);
     bracket = settleSemis(bracket!, totals);
-    batch.set(seasonRef.collection('weeks').doc('p1'), { status: 'final', results: roundResults([...bracket.semis, ...(bracket.whiff?.pairs ?? [])], totals), finalAt: FieldValue.serverTimestamp() }, { merge: true });
-    writeRound('p2');
-    writeRound('p3');
+    batch.set(seasonRef.collection('weeks').doc('p01'), { status: 'final', results: roundResults([...bracket.semis, ...(bracket.whiff?.pairs ?? [])], totals), finalAt: FieldValue.serverTimestamp() }, { merge: true });
+    writeRound('p02');
+    writeRound('p03');
     console.log(`League ${league.id}, season ${seasonId}: semifinals settled.`);
   } else if (step === 'final') {
     const final = bracket!.final!;
     const players = [final.a, ...(final.b ? [final.b] : []), ...(bracket!.whiff?.loser ? [] : (bracket!.whiff?.racers ?? []))];
-    const totals = await roundTotals(seasonRef, par, 'p2', roundDays('p2'), players, now);
+    const totals = await roundTotals(seasonRef, par, 'p02', roundDays('p02'), players, now);
     bracket = settleFinal(bracket!, totals);
-    batch.set(seasonRef.collection('weeks').doc('p2'), { status: 'final', results: bracket.champion ? roundResults([bracket.final!], totals) : {}, totals, finalAt: FieldValue.serverTimestamp() }, { merge: true });
+    // The Whiff Bowl's loser spins the Wheel for the Season Dare, or for the usual pool if none was picked.
+    const dare = bracket.whiff?.loser ? (await seasonRef.collection('config').doc('seasonDare').get()).get('text') : undefined;
+    batch.set(
+      seasonRef.collection('weeks').doc('p02'),
+      {
+        status: 'final',
+        results: bracket.champion ? roundResults([bracket.final!], totals) : {},
+        totals,
+        finalAt: FieldValue.serverTimestamp(),
+        ...(bracket.whiff?.loser ? { awards: { mvp: [], bust: [], wheel: [bracket.whiff.loser] }, ...(typeof dare === 'string' ? { seasonDare: dare } : {}) } : {}),
+      },
+      { merge: true },
+    );
     console.log(`League ${league.id}, season ${seasonId}: final ${bracket.suddenDeath ? 'level: sudden death' : 'settled'}.`);
   } else {
     const final = bracket!.final!;
     const pair = [final.a, final.b!];
-    const day = await roundTotals(seasonRef, par, 'p3', roundDays('p3'), pair, now);
-    const before = await roundTotals(seasonRef, par, 'p2', roundDays('p2'), pair, now);
+    const day = await roundTotals(seasonRef, par, 'p03', roundDays('p03'), pair, now);
+    const before = await roundTotals(seasonRef, par, 'p02', roundDays('p02'), pair, now);
     const round = Object.fromEntries(pair.map((player) => [player, { points: before[player]!.points, beers: before[player]!.beers + day[player]!.beers }]));
     bracket = settleSuddenDeath(bracket!, day, round);
-    batch.set(seasonRef.collection('weeks').doc('p3'), { status: 'final', results: roundResults([bracket.final!], day), finalAt: FieldValue.serverTimestamp() }, { merge: true });
+    batch.set(seasonRef.collection('weeks').doc('p03'), { status: 'final', results: roundResults([bracket.final!], day), finalAt: FieldValue.serverTimestamp() }, { merge: true });
     console.log(`League ${league.id}, season ${seasonId}: sudden death settled.`);
   }
   batch.set(bracketRef, bracket);

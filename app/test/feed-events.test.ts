@@ -196,6 +196,17 @@ describe('The live feed', () => {
     expect(events.map((event) => event.text)).toEqual(['Maya asked Sam for receipts: Mind goal, Tue']);
   });
 
+  it("A dodged Season Dare, after the playoffs, costs no Season Points, so the feed doesn't say it does", () => {
+    const H = 3_600_000;
+    const events = feedEvents({
+      ...none,
+      name,
+      now: 100 * H,
+      wheel: { eligible: 2, draws: [{ id: 'p02_sam_1', player: 'sam', dueAt: 50 * H }], spins: { p02_sam_1: { at: 2 * H, proofAt: null } }, votes: [] },
+    });
+    expect(events.filter((event) => event.kind === 'wheel').map((event) => event.text)).toContain('Sam dodged the Season Dare');
+  });
+
   it('The Wheel shows when it is spun, when proof is posted, and how the vote or the deadline ended it', () => {
     const H = 3_600_000;
     const draw = (player: string, dueAt: number) => ({ id: `w02_${player}_1`, player, n: 1, pool: [], drawnAt: 0, dueAt });

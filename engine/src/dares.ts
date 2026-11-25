@@ -20,3 +20,12 @@ export const DARE_MAX = 80;
 
 /** The longest goal, in characters. The security rules hold the same number. */
 export const GOAL_MAX = 60;
+
+/**
+ * A dare done on video. The app keeps photos only, to stay on the free plan
+ * (DECISIONS.md, the video decision): the video goes in the group chat, and a
+ * still from it is the proof the league votes on in the app.
+ */
+export function isVideoDare(dare: string): boolean {
+  return /\bvideos?\b/i.test(dare);
+}

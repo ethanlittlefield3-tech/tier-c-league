@@ -290,3 +290,23 @@
 .group-setting .btn {
   margin-top: 12px;
 }
+
+/* Holiday events: each scheduled day, with a way to take it off before it starts. */
+.holiday-list {
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+
+.holiday-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  border-bottom: 1px solid rgba(196, 216, 255, 0.12);
+}
+
+.panel .choice + .btn {
+  margin-top: 16px;
+}

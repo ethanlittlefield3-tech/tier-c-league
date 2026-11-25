@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 319 of 319 passing.
+- **Tests:** 329 of 329 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -334,12 +334,35 @@ At its step of the live draft, each player ranks the six modes, once each, in th
 
 ## The playoffs
 
-Everyone in the league reads the bracket. Only the weekly job writes it.
+Everyone in the league reads the bracket; only the weekly job writes it. Nobody logs on the reset day, a playoff day's receipt proof is due by 6 pm the day it locks, only the #1 seed plays a second Full Boost, and the commish's Season Dare is fixed once the bracket exists.
 
 **The playoff bracket**
 
 - Everyone in the league reads it, and nobody outside it
 - Only the weekly job writes it: no phone, not even the commish
+
+**Playing the playoffs**
+
+- Nobody logs on the reset day between the rounds, though it is open
+- Receipts on a playoff day are asked for before it locks, and proof is due by 6 pm the day after
+- The #1 seed gets a second Full Boost in the semifinal; nobody else does, and not in the final
+
+**The Season Dare**
+
+- Before the playoffs, the commish picks the Season Dare that the Whiff Bowl's loser does, with an audit entry
+- Nobody else picks it, it needs words and an audit entry, and it is fixed once the playoffs are seeded
+
+## Holiday events
+
+Only the commish puts one on a regular-season day, before it starts, with an audit entry, and only in a season with holiday events on.
+
+**Holiday events**
+
+- The commish puts one on a regular-season day before it starts, changes it, or takes it off, each with an audit entry
+- Only the three events: Double Points Day, Dry Day and Holiday Pass
+- Not on a day that has started, and not on a playoff day
+- Only the commish, only with an audit entry, and nothing else about the day changes
+- Not in a season with holiday events turned off
 
 ## Rumble
 

@@ -408,7 +408,7 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 
 **Phase 3: the playoffs** (new on 2026-11-25, not yet reviewed by the commish). Scoring readings here are also in "Still open".
 
-238. **Each playoff round is its own period, so its kit is fresh:** `p1` the semifinals, `p2` the final, `p3` sudden death. The reset day belongs to the final's period, so the final's Aerial and Demolition can be set on it, before the final starts. Sudden death has no kit: a Full Boost would undo "the first to miss any goal".
+238. **Each playoff round is its own period, so its kit is fresh:** `p01` the semifinals, `p02` the final, `p03` sudden death, named like the regular weeks' `w02`. The reset day belongs to the final's period, so the final's Aerial and Demolition can be set on it, before the final starts. Sudden death has no kit: a Full Boost would undo "the first to miss any goal".
 239. **Top 2 is always one week:** the final Monday to Saturday and sudden death on Sunday. The 1-week or 2-week setting only changes a top-4 playoff.
 240. **The #1 seed's extra Full Boost in the semifinal is a second Full Boost of their own.** Both can be used, even on the same day on two different goals.
 241. **With fewer players than playoff seeds, a missing seed is a bye** into the next round.
@@ -418,6 +418,18 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 245. **"Fewer beers in the round" in sudden death counts the final's days and the sudden-death day.** A no-show on the sudden-death day missed every goal.
 246. **Playoff results count in rivalry records and the 1v1 badges, as SCOPE.md says, but never in Season Points, ranks, the Bust or the Wheel.**
 247. **The champion's name goes on the league banner until the next champion,** with the Champion and Finalist badges and trophies, and the Whiff Bowl trophy for its loser. With no playoffs, the Season Points leader is champion once every regular week is final.
+248. **The reset day is everyone's day off: nothing is logged on it, and no round counts it.** Its kit choices are for the final, which starts the next day.
+249. **"Proof is due by 6 pm that day" means 6 pm on the day the playoff day locks,** six hours after its noon lock. A receipt for a playoff day can only be asked for before that lock, as on any day.
+250. **The #1 seed's second Full Boost is its own button under the first, in the semifinal only.** It can go on any open semifinal day, on any goal not already hit or boosted, and is taken back the same way. Today and the weekly job both count it.
+251. **The commish picks the Season Dare in Commish tools, from the pool as it stands:** the starter dares still on the Wheel and the draft's dares that weren't taken off. It can be changed until the playoffs are seeded, then it is fixed. Each pick goes in the audit log.
+252. **The Whiff Bowl's loser does the Season Dare through the Wheel,** once the final settles: a Wheel whose only slice is the Season Dare, so its proof, votes and deadline work as for any dare. A dodge still puts the Dare Dodger sticker on their car, but costs no Season Points, because the standings are final by then. If the commish never picked one, the loser spins the usual Wheel.
+253. **A holiday event lives on its calendar day,** where every phone and job already reads the day. The commish puts one on a regular-season day, changes it or takes it off until the day starts, with an audit entry; playoff days have none. One event a day. If the calendar is written again, the event stays.
+254. **Double Points Day doubles the day's base, the way an Aerial does: negatives too,** so a no-show is −10. **With an Aerial too, the base counts four times.** Demolitions, Rumble's Tornado, Punch and Spike, and docks are not doubled.
+255. **Dry Day's +2 is for a logged day with 0 beers,** rest days included. It is part of the base, so an Aerial doubles it. A no-show gets nothing.
+256. **On a Holiday Pass, a no-show and a blank rest day score 0.** Every goal still counts as missed, so a Demolition still lands, and docks still count. The day neither grows nor breaks a check-in streak, and it still counts as a no-show for badges like Clean Sheet.
+257. **Rule One on an event day still makes the day 0,** as on any day.
+258. **The video decision: dare videos stay in the group chat,** because the commish's ruling keeps the app on the free plan, with no Cloud Storage. A dare that says "video" tells its player to post the video in the group chat and upload a still from it as the proof. The vote stays in the app.
+259. **A dodged Season Dare says so without Season Points,** on the Wheel and in the feed (call 252).
 
 **Calendar**
 
@@ -437,7 +449,9 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 
 7. **Rumble's item rules. Built provisionally (calls 228 to 236):** equal odds; the order goals, then screen time and beers, then points; Swap's lane order; Freeze doubling "not logged" too; Magnet moving points but not the beer count; Spike not giving the point to you; rest days protecting both players from Boot, Spike and Swap; Rule One cancelling both items; flat no-show days; and no Boot when none is picked by noon. Each is one place in `engine/src/rumble.ts`.
 
-8. **The Whiff Bowl's shape and the playoff tie readings. Built provisionally (calls 242 to 245):** SCOPE.md says the Whiff Bowl is "a mini bracket on the same days, for 'not last'", but not how it pairs players or what decides its last round; it is built as round-one pairs, then a race among the losers. Seeds are fixed when the last week first posts.
+8. **The Whiff Bowl's shape and the playoff tie readings. Built provisionally (calls 242 to 245):** SCOPE.md says the Whiff Bowl is "a mini bracket on the same days, for 'not last'", but not how it pairs players or what decides its last round; it is built as round-one pairs, then a race among the losers. Seeds are fixed when the last week first posts. A dodged Season Dare costs no Season Points (call 252); the other reading would take 3 off the final standings.
+
+9. **Holiday events. Built provisionally (calls 254 to 256):** Double Points Day doubles negative days too and stacks with an Aerial (four times the base); Dry Day's +2 counts on rest days and an Aerial doubles it; and a Holiday Pass no-show still takes Demolitions and skips the check-in streak. The other readings would be doubling only good days, an Aerial and Double Points Day not stacking (or making three times), and a Holiday Pass day scoring a flat 0 whatever else happened. Each is one place in `engine/src/scoring.ts`.
 
 The receipts question that was here is now ruling R6.
 

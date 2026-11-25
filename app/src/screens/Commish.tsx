@@ -7,6 +7,8 @@ import { loadData } from '../data/load.ts';
 import { whyOf } from '../data/why.ts';
 import { Back, Field, Heading } from '../ui/parts.tsx';
 import { CommishGroupPlay } from './CommishGroupPlay.tsx';
+import { CommishHolidays } from './CommishHolidays.tsx';
+import { CommishSeasonDare } from './CommishSeasonDare.tsx';
 import { CommishPlayers } from './CommishPlayers.tsx';
 import { CommishModeration } from './CommishModeration.tsx';
 import { CommishScores } from './CommishScores.tsx';
@@ -333,6 +335,8 @@ export function Commish(props: { me: Me; onBack: () => void }) {
         {league.data && seasonId && season.data && <DraftControls me={props.me} seasonId={seasonId} status={season.data.status} members={Object.keys(league.data.members ?? {})} joiningOpen={league.data.joining !== 'closed'} groupWeeks={season.data.groupWeeks ?? []} />}
 
         {league.data && seasonId && season.data?.status === 'active' && <CommishGroupPlay me={props.me} seasonId={seasonId} />}
+        {league.data && seasonId && season.data?.status === 'active' && season.data.playoffs !== 'none' && <CommishSeasonDare me={props.me} seasonId={seasonId} />}
+        {league.data && seasonId && season.data?.status === 'active' && season.data.holidayEvents && <CommishHolidays me={props.me} seasonId={seasonId} />}
 
         {league.data && <CommishPlayers me={props.me} league={league.data} />}
         {league.data && seasonId && season.data && (

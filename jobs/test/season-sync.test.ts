@@ -58,8 +58,16 @@ describe('Keeping a season\'s calendar in step with its settings', () => {
   it('A season with playoffs gets its playoff days too: the rounds, the reset day and sudden death', () => {
     const sync = seasonSync({ settings: { ...SETTINGS, playoffs: 'oneWeek', playoffSize: 4 }, existing: [], ruleOneIssue: null });
     expect(sync.write).toHaveLength(42 + 8);
-    expect(sync.write.at(-1)).toMatchObject({ id: '2027-02-22', data: { period: 'p3', phase: 'playoff', kind: 'play' } });
+    expect(sync.write.at(-1)).toMatchObject({ id: '2027-02-22', data: { period: 'p03', phase: 'playoff', kind: 'play' } });
     expect(seasonSync({ settings: { ...SETTINGS, playoffs: 'none', playoffSize: 4 }, existing: [], ruleOneIssue: null }).write).toHaveLength(42);
+  });
+
+  it("A holiday event the commish put on a day stays on it when the calendar is written again", () => {
+    const existing = stored(SETTINGS).map((doc) => (doc.id === '2027-01-13' ? { ...doc, data: { ...doc.data, event: 'double', audit: 'a1' } } : doc));
+    expect(seasonSync({ settings: SETTINGS, existing, ruleOneIssue: null }).write).toEqual([]);
+    // Group-play modes arrive, so Week 2's days are written again, with the event kept.
+    const sync = seasonSync({ settings: { ...SETTINGS, modes: { 2: 'rumble' } }, existing, ruleOneIssue: null });
+    expect(sync.write.find((doc) => doc.id === '2027-01-13')?.data).toMatchObject({ mode: 'rumble', event: 'double', audit: 'a1' });
   });
 
   it('A finished season, or one with broken settings, is left alone', () => {

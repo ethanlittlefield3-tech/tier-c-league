@@ -6,7 +6,7 @@
  * The phone's clock only decides what to show. Whether a save is accepted is
  * decided by the server, against the calendar (firebase/firestore.rules).
  */
-import { RUMBLE_NAMES, addDays, fastDate, localDate, scoreDay, type DateStr, type DayLog, type DayScore, type FastClock, type Lane, type RumbleItem, type Square } from '@tcl/engine';
+import { RUMBLE_NAMES, addDays, fastDate, localDate, scoreDay, type DateStr, type DayLog, type DayScore, type FastClock, type HolidayEvent, type Lane, type RumbleItem, type Square } from '@tcl/engine';
 
 /** What a player has logged for a day: three yes-or-no goals, screen minutes (or none yet) and beers. */
 export interface DayEntry {
@@ -76,7 +76,10 @@ export function liveDayScore(input: {
   restDay: boolean;
   locked: boolean;
   aerial?: boolean;
-  fullBoost?: Lane | null;
+  /** The day's Full Boost lanes: the #1 seed can have two in the semifinal. */
+  fullBoost?: Lane | readonly Lane[] | null;
+  /** The day's holiday event, if the commish scheduled one. */
+  event?: HolidayEvent | null;
   ruleOne?: boolean;
   demolitions?: readonly Lane[];
   /** Squares the commish voided, and docks or corrections, for this day. */
@@ -94,6 +97,7 @@ export function liveDayScore(input: {
       demolitions: input.demolitions ?? [],
       voided: input.voided ?? [],
       adjustments: input.adjustments ?? [],
+      event: input.event ?? null,
     },
     { open: !input.locked },
   );
@@ -154,15 +158,18 @@ export function scaleRowOf(minutes: number | null): number | null {
 /** The day total, part by part: "Goals +2 · screen +1 · beers −1". */
 export function breakdown(score: DayScore): string {
   if (score.kind === 'ruleOne') return 'Rule One: the day scores 0';
-  if (score.kind === 'noShow') return `Nothing logged: ${formatPoints(score.total)}`;
-  if (score.kind === 'restNoLog') return `Nothing logged on a rest day: ${formatPoints(score.total)}`;
+  const pass = score.event?.kind === 'pass' ? ', on a Holiday Pass' : '';
+  if (score.kind === 'noShow') return `Nothing logged${pass}: ${formatPoints(score.total)}`;
+  if (score.kind === 'restNoLog') return `Nothing logged on a rest day${pass}: ${formatPoints(score.total)}`;
   if (score.kind === 'open') return '';
   const parts = [`Goals ${formatPoints(score.goalPoints)}`];
   if (score.screen.state === 'logged') parts.push(`screen ${formatPoints(score.screen.points)}`);
   if (score.screen.state === 'notLogged' || score.screen.state === 'voided') parts.push(`screen not logged ${formatPoints(score.screen.points)}`);
   parts.push(`beers ${formatPoints(score.beerPoints)}`);
   if (score.beerShift) parts.push(`Magnet ${formatPoints(score.beerShift)}`);
+  if (score.event?.kind === 'dry' && score.event.points > 0) parts.push(`Dry Day ${formatPoints(score.event.points)}`);
   if (score.aerial === 'doubled') parts.push('Aerial ×2');
+  if (score.event?.kind === 'double') parts.push('Double Points ×2');
   // Rumble's Tornado, Punch and Spike.
   for (const item of score.rumble) parts.push(`${RUMBLE_NAMES[item.item as RumbleItem] ?? item.item} ${formatPoints(item.points)}`);
   return parts.join(' · ');

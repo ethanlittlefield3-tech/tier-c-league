@@ -115,3 +115,15 @@ export function receiptFixes(receipts: readonly StoredReceipt[], now: Instant): 
     return effect.voided ? [{ date: receipt.date, amount: effect.adjustment, void: receipt.square }] : [];
   });
 }
+
+/**
+ * When proof is due for a receipt asked for at `now` on a day. In the
+ * playoffs it is 6 pm the day after, when the day has locked, so the reset
+ * day closes every receipt before the next round; otherwise it is the end of
+ * that day, or of the next day when asked at 6 pm or later. The rules check
+ * the same numbers from the same calendar document.
+ */
+export function receiptDue(day: { phase?: string; sixPm: Instant; end: Instant; nextEnd: Instant; lock: Instant }, now: Instant): Instant {
+  if (day.phase === 'playoff') return day.lock + 6 * 3_600_000;
+  return now < day.sixPm ? day.end : day.nextEnd;
+}

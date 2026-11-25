@@ -67,9 +67,13 @@ export function seasonSync(input: {
 
   const wanted = calendarDocs({ kickoff: settings.kickoff, regularWeeks: settings.regularWeeks, timeZone: settings.timeZone, modes: weekModes(settings.modes), playoffs: settings.playoffs, playoffSize: settings.playoffSize });
   const there = new Map(input.existing.map((doc) => [doc.id, doc.data]));
-  const write = wanted.filter((doc) => {
+  // A holiday event the commish put on a day, with its audit entry, stays on it.
+  const write = wanted.flatMap((doc) => {
     const stored = there.get(doc.id);
-    return !stored || Object.keys(doc.data).length !== Object.keys(stored).length || Object.entries(doc.data).some(([key, value]) => !same(stored[key], value));
+    const held = Object.fromEntries(HELD.flatMap((key) => (stored?.[key] !== undefined && stored[key] !== null ? [[key, stored[key]]] : [])));
+    const data = { ...doc.data, ...held } as typeof doc.data;
+    const changed = !stored || Object.keys(data).length !== Object.keys(stored).length || Object.entries(data).some(([key, value]) => !same(stored[key], value));
+    return changed ? [{ ...doc, data }] : [];
   });
   const keep = new Set(wanted.map((doc) => doc.id));
   const remove = input.existing.map((doc) => doc.id).filter((id) => !keep.has(id)).sort();
@@ -78,6 +82,9 @@ export function seasonSync(input: {
   const issueChanged = !same(input.ruleOneIssue, issue);
   return { skip: null, write, remove, ruleOneIssue: issueChanged ? issue : null };
 }
+
+/** A calendar day's fields that the commish writes, not the calendar job: a holiday event and its audit entry. */
+const HELD = ['event', 'audit'] as const;
 
 /** The modes the season keeps, by week number, with anything unknown left out. */
 export function weekModes(modes: Readonly<Record<number, string>> | null | undefined): Record<number, WeekMode> {

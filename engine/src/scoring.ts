@@ -35,6 +35,8 @@ export const RULES = {
   sideBonus: 3,
   /** Bounty Week: everyone, when the target is hit. */
   bountyBonus: 3,
+  /** Dry Day, a holiday event: a logged day with 0 beers. */
+  dryDay: 2,
   /** Alley: 1st, 2nd and 3rd place. */
   alleyBonus: [5, 3, 1],
   /** Alley: a goal day with no goals hit costs race points, never Season Points. */
@@ -93,6 +95,19 @@ export function hasAnythingLogged(log: DayLog | null | undefined): boolean {
   return LANES.some((lane) => log.goals[lane] === true);
 }
 
+/**
+ * Holiday events (SCOPE.md, "Holiday events"), which the commish puts on a
+ * regular-season day: Double Points Day, Dry Day (+2 for 0 beers) and Holiday
+ * Pass (a no-show scores 0, not -5).
+ */
+export const HOLIDAY_EVENTS = ['double', 'dry', 'pass'] as const;
+export type HolidayEvent = (typeof HOLIDAY_EVENTS)[number];
+
+/** A calendar day's event, or `null` for anything that isn't one. */
+export function holidayOf(value: unknown): HolidayEvent | null {
+  return (HOLIDAY_EVENTS as readonly unknown[]).includes(value) ? (value as HolidayEvent) : null;
+}
+
 export interface DayInput {
   /** The season's screen time par, 1 to 6. */
   par: number;
@@ -118,6 +133,8 @@ export interface DayInput {
   adjustments?: readonly number[];
   /** Rumble's items on this day, worked out for both players by `rumbleDay`. */
   rumble?: RumbleEffects;
+  /** The day's holiday event, if the commish scheduled one. */
+  event?: HolidayEvent | null;
 }
 
 /**
@@ -179,6 +196,11 @@ export interface DayScore {
   rumblePoints: number;
   beerShift: number;
   adjustmentPoints: number;
+  /**
+   * The day's holiday event and what it changed: Double Points Day's doubling,
+   * Dry Day's +2 (before an Aerial), or the points a Holiday Pass saved.
+   */
+  event: { kind: HolidayEvent; points: number } | null;
   perfect: boolean;
   /** Something was logged, so the day counts toward a check-in streak. */
   checkedIn: boolean;
@@ -264,6 +286,7 @@ export function scoreDay(input: DayInput, options: ScoreOptions = {}): DayScore 
       rumblePoints: 0,
       beerShift: 0,
       adjustmentPoints,
+      event: input.event ? { kind: input.event, points: 0 } : null,
       perfect: false,
       checkedIn,
     };
@@ -271,27 +294,36 @@ export function scoreDay(input: DayInput, options: ScoreOptions = {}): DayScore 
 
   // Steps 2 and 3. The base. A no-show or a blank rest day is flat: goal and
   // screen items can't change it, but Magnet's beers still land on it.
+  // Holiday events: Dry Day's +2 is part of the base, and a Holiday Pass
+  // makes a no-show's flat base 0.
   const beerShift = rumble.beerShift ?? 0;
+  const holiday = input.event ?? null;
+  let eventBase = 0;
   let kind: DayKind;
   let base: number;
   if (checkedIn) {
     kind = 'played';
-    base = goalPoints + screen.points + beerPoints + beerShift;
+    eventBase = holiday === 'dry' && beers === 0 ? RULES.dryDay : 0;
+    base = goalPoints + screen.points + beerPoints + beerShift + eventBase;
   } else if (open) {
     kind = 'open';
     base = beerShift;
   } else if (restDay) {
     // Logging nothing on a rest day counts as screen time not logged.
     kind = 'restNoLog';
-    base = RULES.screenNotLogged + beerShift;
+    eventBase = holiday === 'pass' ? -RULES.screenNotLogged : 0;
+    base = RULES.screenNotLogged + eventBase + beerShift;
   } else {
     kind = 'noShow';
-    base = RULES.noShow + beerShift;
+    eventBase = holiday === 'pass' ? -RULES.noShow : 0;
+    base = RULES.noShow + eventBase + beerShift;
   }
 
-  // Step 4. Aerial doubles the base, negatives too.
+  // Step 4. Aerial doubles the base, negatives too, and Double Points Day
+  // doubles it again.
   const aerial = input.aerial === true;
   const aerialPoints = aerial ? base : 0;
+  const doublePoints = holiday === 'double' ? base + aerialPoints : 0;
 
   // Step 5. Demolitions. A rest day makes them fizzle; Full Boost blocks.
   const demolitions = targets.map((lane) => {
@@ -314,7 +346,7 @@ export function scoreDay(input: DayInput, options: ScoreOptions = {}): DayScore 
 
   // Step 6. Docks and corrections last, never doubled.
   return {
-    total: base + aerialPoints + demolitionPoints + rumblePoints + adjustmentPoints,
+    total: base + aerialPoints + doublePoints + demolitionPoints + rumblePoints + adjustmentPoints,
     kind,
     restDay,
     goals,
@@ -331,6 +363,7 @@ export function scoreDay(input: DayInput, options: ScoreOptions = {}): DayScore 
     rumblePoints,
     beerShift,
     adjustmentPoints,
+    event: holiday ? { kind: holiday, points: holiday === 'double' ? doublePoints : eventBase } : null,
     perfect,
     checkedIn,
   };

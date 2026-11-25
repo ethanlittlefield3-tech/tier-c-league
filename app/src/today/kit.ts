@@ -18,6 +18,8 @@ export interface CalDay {
   periodStart: number;
   sundayStart: number;
   restOpens: number;
+  /** A holiday event the commish put on the day: double, dry or pass. */
+  event?: string | null;
 }
 
 const notStarted = (day: CalDay, now: number) => now < day.start;

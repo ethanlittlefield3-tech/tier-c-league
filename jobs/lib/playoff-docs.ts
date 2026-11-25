@@ -26,14 +26,14 @@ const played = (games: readonly BracketGame[]) => games.filter((game): game is B
 
 /** A round's week document, from the bracket as it stands. */
 export function roundDoc(bracket: Bracket, period: PlayoffPeriod, week: number): RoundDoc {
-  const games = period === 'p1' ? [...played(bracket.semis), ...played(bracket.whiff?.pairs ?? [])] : bracket.final ? played([bracket.final]) : [];
+  const games = period === 'p01' ? [...played(bracket.semis), ...played(bracket.whiff?.pairs ?? [])] : bracket.final ? played([bracket.final]) : [];
   const targets: Record<string, string[]> = {};
   for (const game of games) {
     targets[game.a] = [game.b];
     targets[game.b] = [game.a];
   }
-  const round = period === 'p1' ? 'semi' : period === 'p2' ? 'final' : 'suddenDeath';
-  const racers = period === 'p2' && bracket.whiff && !bracket.whiff.loser && bracket.whiff.racers.length > 0 ? { racers: [...bracket.whiff.racers] } : {};
+  const round = period === 'p01' ? 'semi' : period === 'p02' ? 'final' : 'suddenDeath';
+  const racers = period === 'p02' && bracket.whiff && !bracket.whiff.loser && bracket.whiff.racers.length > 0 ? { racers: [...bracket.whiff.racers] } : {};
   return { week, period, phase: 'playoff', round, mode: 'regular', pairs: games.map(({ a, b }) => ({ a, b })), targets, ...racers };
 }
 
@@ -50,9 +50,9 @@ export function playoffDue(input: {
   const due = (period: PlayoffPeriod) => locks[period] !== undefined && now >= locks[period]! + SIX_HOURS;
   if (!bracket) return input.regularDone ? 'seed' : null;
   if (bracket.champion) return null;
-  if (bracket.size === 4 && bracket.semis.some((game) => !game.winner)) return due('p1') ? 'semis' : null;
-  if (bracket.final && !bracket.final.winner && !bracket.suddenDeath) return due('p2') ? 'final' : null;
-  if (bracket.suddenDeath) return due('p3') ? 'suddenDeath' : null;
+  if (bracket.size === 4 && bracket.semis.some((game) => !game.winner)) return due('p01') ? 'semis' : null;
+  if (bracket.final && !bracket.final.winner && !bracket.suddenDeath) return due('p02') ? 'final' : null;
+  if (bracket.suddenDeath) return due('p03') ? 'suddenDeath' : null;
   return null;
 }
 
