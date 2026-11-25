@@ -1,0 +1,76 @@
+name: Demo league
+
+# A demo league for trying every screen before Season 1: you and five
+# made-up players, a season under way, and the Wheel waiting for you. "make"
+# builds one and settles its weeks; "delete" removes one, and refuses any
+# league that is not a demo. Started by hand from the Actions tab.
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Make a new demo league, or delete one
+        type: choice
+        options: [make, delete]
+        default: make
+      league:
+        description: 'For "delete": the demo league id the "make" run printed'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: demo-league
+  cancel-in-progress: false
+
+jobs:
+  demo:
+    name: Demo league
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check that the league's key is in GitHub Secrets
+        id: key
+        env:
+          KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -n "$KEY" ]; then
+            echo "present=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "The FIREBASE_SERVICE_ACCOUNT secret is not set yet. Skipping."
+          fi
+
+      - uses: actions/checkout@v6
+        if: steps.key.outputs.present == 'yes'
+
+      - uses: actions/setup-node@v6
+        if: steps.key.outputs.present == 'yes'
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+        if: steps.key.outputs.present == 'yes'
+
+      # The key is handed to each step that needs it, and to no other.
+      - name: Make the demo league
+        id: make
+        if: steps.key.outputs.present == 'yes' && inputs.action == 'make'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node jobs/demo-league.ts
+
+      - name: Settle its weeks, draw its Wheel and fill its standings
+        if: steps.key.outputs.present == 'yes' && inputs.action == 'make'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          LEAGUE_ID: ${{ steps.make.outputs.league }}
+        run: node jobs/weekly.ts
+
+      - name: Delete the demo league
+        if: steps.key.outputs.present == 'yes' && inputs.action == 'delete'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          DEMO_LEAGUE_ID: ${{ inputs.league }}
+        run: node jobs/delete-demo.ts

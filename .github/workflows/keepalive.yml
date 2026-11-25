@@ -1,0 +1,40 @@
+name: Keep the schedules running
+
+# GitHub pauses scheduled workflows in a public repo after 60 days with no
+# activity in it. During a season nobody may push for months, which would
+# quietly stop the calendar, settlement and Wheel jobs. So once a month this
+# records the date in .github/keepalive and pushes it, which counts as
+# activity. It pushes with the workflow's own token, which starts no other
+# workflow, so nothing is rebuilt or redeployed.
+on:
+  schedule:
+    - cron: '41 9 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: keepalive
+  cancel-in-progress: false
+
+jobs:
+  keepalive:
+    name: Record the date
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Record the date and push it
+        run: |
+          date -u +%Y-%m-%d > .github/keepalive
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/keepalive
+          if git diff --cached --quiet; then
+            echo "Already recorded today."
+          else
+            git commit -m "Keep the scheduled jobs running"
+            git push
+          fi

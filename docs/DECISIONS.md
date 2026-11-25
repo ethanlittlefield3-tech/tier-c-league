@@ -180,7 +180,7 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 96. **Backed-down and failed receipts count like the commish's fixes** in every score. Today words them as receipts, not as the commish.
 97. **The deadline comes from the calendar of the day asked about.** Asked before 6 pm that day, proof is due by its end. Asked after 6 pm, or the next morning before the noon lock, it is due by the end of the next day.
 98. **The 3 requests a week count by the week of the day asked about.**
-99. **Match offers receipts on your opponent's day,** today and yesterday until noon. The rules let anyone ask on anyone's day, as SCOPE.md says. A way to open another player's day comes later.
+99. **Receipts are offered on Match for your opponent, and on anyone's day from League:** tap a name in the standings, or in the list of everyone before the standings start. Today and yesterday until noon, as SCOPE.md says.
 100. **Proof photos are shrunk on the phone** to a JPEG of up to 300 KB: at most 1600 pixels on the long side, smaller if it still doesn't fit.
 101. **Ruling R6 on the phone:** while a screen-time receipt is open, Today keeps that day reachable and its screen time editable, even after the lock. Only the number can change.
 102. **Receipts show in the live feed** when asked, and again when proven, backed down from, or left past the deadline.
@@ -204,6 +204,14 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 
 112. **Unlocking a final week hands it back to the weekly job,** which counts it again with any late fixes within the hour and makes it final again. The commish's phone doesn't recount it.
 113. **A dare taken off the Wheel stays out of future draws;** a wheel already drawn keeps its slices. The draft's results say it was taken off.
+
+**The demo league** (new on 2026-11-25, not yet reviewed by the commish)
+
+114. **The demo league is a league of its own, marked as a demo,** made and deleted with a button on GitHub ("Demo league"). The delete job refuses any league not marked as a demo, so it can never remove a real one.
+115. **Open the demo on a computer,** so the phone stays in the real league. A phone holds one league at a time.
+116. **The made-up players don't play on.** After it's made, the hourly jobs keep its calendar, results and Wheel going, but nobody logs for them.
+
+117. **A monthly keepalive keeps the schedules running.** GitHub pauses scheduled jobs in a public repo after 60 days with no activity, which a quiet season could reach. Once a month a job records the date in `.github/keepalive` and pushes it with its own token, which starts no other workflow.
 
 **Calendar**
 

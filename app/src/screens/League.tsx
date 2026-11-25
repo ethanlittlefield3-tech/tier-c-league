@@ -1,6 +1,7 @@
 import { useAll, useDoc, useNow } from '../data/hooks.ts';
 import type { Me } from '../data/identity.ts';
 import { leagueDates } from '../today/model.ts';
+import './feed.css';
 import './league.css';
 
 interface Row {
@@ -52,7 +53,7 @@ function Notice(props: { title: string; children: string }) {
  * and the schedule. The standings come from the weekly job, once each week
  * settles at noon on the Monday after.
  */
-export function League(props: { me: Me }) {
+export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
   const now = useNow();
   const leaguePath = `leagues/${props.me.league}`;
   const league = useDoc<{ season?: string | null }>(leaguePath);
@@ -95,7 +96,18 @@ export function League(props: { me: Me }) {
       <section class="panel league-panel" aria-labelledby="standings-title">
         <h2 id="standings-title">Standings</h2>
         {rows.length === 0 ? (
-          <p class="panel-text">The standings start once Week 1 settles, at noon on the Monday after it ends.</p>
+          <>
+            <p class="panel-text">The standings start once Week 1 settles, at noon on the Monday after it ends.</p>
+            <div class="league-people" role="group" aria-label="Everyone in the league">
+              {players.docs
+                .filter((found) => found.id !== props.me.player)
+                .map((found) => (
+                  <button key={found.id} type="button" class="feed-chip" aria-label={`${found.data.displayName ?? 'Player'}'s day`} onClick={() => props.onPlayer?.(found.id)}>
+                    {found.data.displayName ?? 'Player'}
+                  </button>
+                ))}
+            </div>
+          </>
         ) : (
           <table class="standings">
             <thead>
@@ -120,7 +132,13 @@ export function League(props: { me: Me }) {
                 <tr data-me={row.player === props.me.player}>
                   <td class="standings-rank">{row.rank}</td>
                   <td>
-                    {name(row.player)}
+                    {row.player === props.me.player ? (
+                      name(row.player)
+                    ) : (
+                      <button type="button" class="standings-name" aria-label={`${name(row.player)}'s day`} onClick={() => props.onPlayer?.(row.player)}>
+                        {name(row.player)}
+                      </button>
+                    )}
                     {row.tieBreak && <span class="standings-tie">{TIEBREAK[row.tieBreak]}</span>}
                   </td>
                   <td class="num standings-points">{row.seasonPoints}</td>

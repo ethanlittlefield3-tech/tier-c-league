@@ -9,6 +9,7 @@ import { Draft } from './Draft.tsx';
 import { Feed } from './Feed.tsx';
 import { League } from './League.tsx';
 import { Match } from './Match.tsx';
+import { PlayerDay } from './PlayerDay.tsx';
 import { Profile } from './Profile.tsx';
 import { Today } from './Today.tsx';
 import { Wheel } from './Wheel.tsx';
@@ -58,6 +59,7 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
   const [logOpen, setLogOpen] = useState(false);
   const [draftOpen, setDraftOpen] = useState(false);
   const [wheelOpen, setWheelOpen] = useState(false);
+  const [dayOf, setDayOf] = useState<string | null>(null);
   const [backFromProfile, setBackFromProfile] = useState(false);
   const meButton = useRef<HTMLButtonElement>(null);
 
@@ -65,6 +67,10 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
   useEffect(() => {
     if (!profileOpen && backFromProfile) meButton.current?.focus({ preventScroll: true });
   }, [profileOpen, backFromProfile]);
+
+  if (dayOf) {
+    return <PlayerDay me={props.me} player={dayOf} onBack={() => setDayOf(null)} />;
+  }
 
   if (wheelOpen) {
     return <Wheel me={props.me} onBack={() => setWheelOpen(false)} />;
@@ -117,7 +123,7 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
         </p>
       )}
       <main class="frame-body" key={tab}>
-        {tab === 'today' ? <Today me={props.me} onDraft={() => setDraftOpen(true)} onWheel={() => setWheelOpen(true)} /> : tab === 'match' ? <Match me={props.me} /> : tab === 'feed' ? <Feed me={props.me} onWheel={() => setWheelOpen(true)} /> : tab === 'league' ? <League me={props.me} /> : <Soon tab={current} />}
+        {tab === 'today' ? <Today me={props.me} onDraft={() => setDraftOpen(true)} onWheel={() => setWheelOpen(true)} /> : tab === 'match' ? <Match me={props.me} /> : tab === 'feed' ? <Feed me={props.me} onWheel={() => setWheelOpen(true)} /> : tab === 'league' ? <League me={props.me} onPlayer={setDayOf} /> : <Soon tab={current} />}
       </main>
       <nav class="frame-tabs" aria-label="Main">
         {TABS.map((info) => {

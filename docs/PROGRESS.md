@@ -1,6 +1,6 @@
 # Tier C League: progress log
 
-Last updated 2026-11-25, after Commish tools, part 3.
+Last updated 2026-11-25, after the demo league.
 
 ## Plan change (commish ruling, 2026-11-25)
 
@@ -186,7 +186,8 @@ Last updated 2026-11-25, after Commish tools, part 3.
   - The weekly job deletes proof photos after 14 days, reading only their times.
   - New rules: 17 rule tests, 226 in all. Weakening them 22 ways was caught 20 times, after 5 missing tests were added. The other 2, proof from someone else and proof after the deadline, are still refused, because the same save must mark the receipt proven, which only its player can do before the deadline.
   - 1 engine test, 6 logic tests, 2 job tests and 5 flow tests.
-  - Not yet: asking on a player other than your opponent (the rules allow it; the screen for another player's day comes later), and the push alerts for a request and its last hour, which come with notifications.
+  - Anyone's day is one tap from League, with "Receipts?" on what they claimed (added after the demo league).
+  - Not yet: the push alerts for a request and its last hour, which come with notifications.
 - **The Wheel of Shame, part 1: the sealed draw and the live spin** (2026-11-25).
   - When a week goes final, the hourly weekly job draws a dare for each of its lowest scorers, with real randomness, and seals it. The wheel's slices are the draft's dares that stand, then starter dares to fill it to 16.
   - The spinner gets a card on Today. Everyone gets a banner on Feed. The Wheel screen shows the wheel, drawn for this app, with "Spin the Wheel" for the spinner and "Waiting for Riley to spin" for everyone else.
@@ -208,15 +209,24 @@ Last updated 2026-11-25, after Commish tools, part 3.
   - Take a dare off the Wheel, with a reason: future draws leave it out, and the draft's results say so.
   - Both go in the league log. New rules: 5 rule tests, 248 in all. Weakening them 8 ways was caught 6 times. The other 2, letting anyone unlock a week or remove a dare, are still refused because the save also needs an audit entry only the commish can write.
   - 1 job test and 2 flow tests that run the real weekly job.
+- **A demo league for trying every screen** (2026-11-25), for Checkpoint C:
+  - A new GitHub button, Actions, "Demo league", makes a league of its own: the commish and five made-up players, a season in its third week, two weeks of logs, goals, the schedule, dares, wall posts, power-ups, and a receipt waiting on the commish. The weekly job then settles it, so the standings fill in and the commish, last both weeks, spins the Wheel.
+  - The same button, with "delete" and the league id, removes it. It refuses any league that isn't a demo.
+  - Like "Create a league", it never prints the code or the key; both are in the Firebase console.
+  - 5 job tests, and 2 flow tests that run the real jobs and tap through the result.
+- **Anyone's day, and a keepalive** (2026-11-25).
+  - In League, each name in the standings opens that player's day: what they claimed today, and yesterday until noon, with "Receipts?" on each square. Before the standings start, everyone is listed instead. 1 flow test.
+  - A monthly job, "Keep the schedules running", records the date and pushes it, because GitHub pauses scheduled jobs in a public repo after 60 days with no activity, which a quiet season could reach.
 - **The shorter intro on reopening is on purpose:** the full intro plays on the first open each day, and a 1-second title after that (SCOPE.md, "Intro animation").
 
 ## Waiting on the commish
 
+0. **Optional: try every screen in the demo league,** on a computer. The steps come one at a time in the chat.
 1. **Phone check of the layout fix.** Open Tier C. If the area behind the clock is not solid navy, remove Tier C from the Home Screen and add it again from Safari. Have the recovery key ready first (Profile, Show my key), because a re-added app starts signed out. Then check that the title and the main page sit right, and that a touch doesn't move the whole screen.
 
 ## Next
 
-1. **Step 3, continued.** Every Phase 1 screen now exists. Still to come in Commish tools: approve joins (a waiting list for new players), mark a player as left (waits on the mid-season question below), settle a week from the app when the job runs late, and taking a starter dare off the Wheel. Then the commish's phone check of every screen (Checkpoint C).
+1. **Step 3, continued.** Every Phase 1 screen now exists, and the demo league lets the commish try them all. Still to come in Commish tools: approve joins (a waiting list for new players), mark a player as left (waits on the mid-season question below), settle a week from the app when the job runs late, and taking a starter dare off the Wheel. Then the commish's phone check of every screen (Checkpoint C).
    - **Push alerts** wait on one thing from the commish: a Cloud Messaging web push key, made in the Firebase console. The app will ask for it one step at a time when that feature is next.
    - **Still to add to joining:** the notifications step (with push alerts), a commish's "approve joins" switch, and a way to make a league. Leagues are made by a setup script, which is built with the jobs in Step 4.
    - **Offline start** comes with the offline step: a service worker that keeps the app's files on the phone, so it opens with no signal. Chrome on Android only offers its one-tap Install button once that exists. Until then Android installs from the browser menu, which the guide explains.

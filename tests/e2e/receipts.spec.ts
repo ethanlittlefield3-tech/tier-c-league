@@ -1,7 +1,7 @@
 import { expect, test, type APIRequestContext, type Browser, type Page } from '@playwright/test';
 import { weekday } from '../../app/src/feed/events.ts';
 import { enterAsCommish, joinAs } from './helpers.ts';
-import { createLeague, readDoc, setGoals, setWindow, startSeason, thisWeek, writeDoc, type TestLeague, type TestSeason } from './league.ts';
+import { createLeague, quietPlayer, readDoc, setGoals, setWindow, startSeason, thisWeek, writeDoc, type TestLeague, type TestSeason } from './league.ts';
 
 const button = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
 const tab = (page: Page, name: string) => page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name, exact: true });
@@ -159,5 +159,30 @@ test.describe('Receipts', () => {
     // Only the number: the goals on that locked day stay as they were.
     expect((await readDoc(request, `${season.path}/days/${riley.player}_${season.yesterday}`))?.goals).toEqual({ mind: true, body: false, wildcard: false });
     await riley.phone.context().close();
+  });
+
+  test("From League, anyone's day is a tap away, with Receipts? on what they claimed, not just your opponent's", async ({ page, request, browser }) => {
+    const setup = await rivals(page, request, browser);
+    const { league, season } = setup;
+    await quietPlayer(request, league, 'sam', 'Sam');
+    await setGoals(request, season, 'sam', { mind: 'A course lesson', body: 'A run', wildcard: 'Call family' });
+    await writeDoc(request, `${season.path}/days/sam_${season.today}`, {
+      player: 'sam',
+      date: season.today,
+      goals: { mind: false, body: true, wildcard: false },
+      screenMinutes: null,
+      beers: 0,
+      firstAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    await tab(page, 'League').click();
+    await page.getByRole('group', { name: 'Everyone in the league' }).getByRole('button', { name: "Sam's day" }).click();
+    await expect(page.getByRole('heading', { name: "Sam's day" })).toBeVisible();
+    const receipts = page.getByRole('region', { name: 'Receipts?' });
+    await receipts.getByRole('button', { name: 'Ask for receipts: Body · A run' }).click();
+    await expect(receipts.getByRole('status')).toContainText('Asked. Sam has');
+    await expect.poll(async () => (await readDoc(request, `${season.path}/receipts/sam_${season.today}_body`))?.by).toBe(league.commish);
+    await setup.riley.phone.context().close();
   });
 });
