@@ -1,12 +1,14 @@
 name: Keep the season calendar
 
-# Writes each league's season calendar from its settings: the days, when each
-# one starts and locks, and when each Rule One arrives. The security rules
-# read every deadline from these. Then, once a league's draft is done, it
-# builds the schedule from the rival picks and the season goes active. It runs
-# every hour, so a change the commish makes in season setup, or the end of the
-# draft, is in place within the hour. It can also be started by hand from the
-# Actions tab ("Run workflow").
+# Once a league's draft is done, builds the schedule from the rival picks and
+# the group-play vote, and the season goes active. Then writes each league's
+# season calendar from its settings: the days, when each one starts and locks,
+# which power-ups each week's mode allows, and when each Rule One arrives. The
+# security rules read every deadline from these. The schedule goes first so a
+# finished draft's group-play weeks get their power-ups in the same run. It
+# runs every hour, so a change the commish makes in season setup, or the end
+# of the draft, is in place within the hour. It can also be started by hand
+# from the Actions tab ("Run workflow").
 on:
   schedule:
     - cron: '17 * * * *'
@@ -49,15 +51,15 @@ jobs:
         if: steps.key.outputs.present == 'yes'
 
       # The key is handed to this one step only.
-      - name: Write the calendar
-        if: steps.key.outputs.present == 'yes'
-        env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: node jobs/season-calendar.ts
-
-      # The key is handed to this one step only.
       - name: Build the schedule
         if: steps.key.outputs.present == 'yes'
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: node jobs/schedule.ts
+
+      # The key is handed to this one step only.
+      - name: Write the calendar
+        if: steps.key.outputs.present == 'yes'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node jobs/season-calendar.ts

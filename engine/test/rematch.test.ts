@@ -8,10 +8,12 @@ describe('Rematch challenges', () => {
     expect(rematchFor('riley', week('final', 'loss'))).toEqual({ to: 'maya', points: 18, against: 22 });
   });
 
-  it('Not after a win or a draw, not against The House, and not before the week is final', () => {
+  it('Not after a win or a draw, not against The House or a squad, and not before the week is final', () => {
     expect(rematchFor('riley', week('final', 'win'))).toBeNull();
     expect(rematchFor('riley', week('final', 'draw'))).toBeNull();
     expect(rematchFor('riley', week('final', 'loss', 'HOUSE'))).toBeNull();
+    // A Team Week or 2v2 loss was to a side, not one player.
+    expect(rematchFor('riley', week('final', 'loss', 'GROUP'))).toBeNull();
     expect(rematchFor('riley', week('provisional', 'loss'))).toBeNull();
     expect(rematchFor('riley', null)).toBeNull();
   });

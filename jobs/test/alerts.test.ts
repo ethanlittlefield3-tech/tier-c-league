@@ -143,6 +143,43 @@ describe('Alerts: things that happen', () => {
     ]);
   });
 
+  it("A Team Week or 2v2 result compares the sides' averages", () => {
+    const side = (name: string, players: string[], points: number) => ({ name, players, points, beers: 0 });
+    const weeks = [
+      {
+        id: 'w03',
+        week: 3,
+        status: 'final',
+        finalAt: now - 60_000,
+        results: {
+          alex: { opponent: 'GROUP', points: 39, opponentPoints: 35.5, outcome: 'win' as const, mode: 'teamWeek', side: side('orange', ['alex'], 36), against: side('blue', ['maya'], 35.5) },
+          maya: { opponent: 'GROUP', points: 30, opponentPoints: 36, outcome: 'loss' as const, mode: 'twoVTwo', side: side('duo', ['maya', 'sam'], 30), against: side('house', ['HOUSE'], 33.25) },
+        },
+        awards: { mvp: [], bust: [], wheel: ['maya'] },
+      },
+    ];
+    expect(alertsDue(run(now, { weeks })).map((alert) => [alert.player, alert.title, alert.body])).toEqual([
+      ['alex', 'Week 3: you won', 'Orange averaged 36–35.5 against Blue.'],
+      ['maya', 'Week 3: you lost', 'Your duo averaged 30–33.3 against the House duo. You spin the Wheel of Shame.'],
+    ]);
+  });
+
+  it('A Bounty, Alley or Drop Shot result says how the mode went', () => {
+    const week = (id: string, n: number, alex: Record<string, unknown>, group?: { mode: string; target?: { kind: string } }) => ({ id, week: n, status: 'final', finalAt: now - 60_000, results: { alex: { opponent: 'GROUP', points: 30, opponentPoints: 0, ...alex } as never }, awards: { mvp: [], bust: [], wheel: [] }, ...(group ? { group } : {}) });
+    const weeks = [
+      week('w03', 3, { outcome: 'none', mode: 'bounty', bonus: 3, bounty: { counted: 9, broke: false, hit: true } }, { mode: 'bounty', target: { kind: 'hits' } }),
+      week('w04', 4, { outcome: 'none', mode: 'bounty', bonus: 0, bounty: { counted: 0, broke: true, hit: false } }, { mode: 'bounty', target: { kind: 'dry' } }),
+      week('w05', 5, { outcome: 'none', mode: 'alley', bonus: 3, race: { points: 26, walls: 1, place: 2 } }),
+      week('w06', 6, { opponent: 'maya', outcome: 'win', mode: 'dropShot', opponentPoints: 28, floor: { hits: 7, tiles: 3, opponentHits: 4, opponentTiles: 2 } }),
+    ];
+    expect(alertsDue(run(now, { weeks })).map((alert) => [alert.title, alert.body])).toEqual([
+      ['Week 3: the Bounty was hit', '+3 for everyone. You added 9.'],
+      ['Week 4: the Bounty was missed', 'No bonus this week. You broke it.'],
+      ['Week 5: 2nd in the Alley', '26 race points: +3.'],
+      ['Week 6: you won', '3 tiles to 2 against Maya.'],
+    ]);
+  });
+
   it('Everyone else hears when a spinner spins the Wheel, and when their dare proof is up to vote on', () => {
     const spins = [{ id: 'w02_alex_1', player: 'alex', at: now - 60_000, proofAt: null }];
     expect(alertsDue(run(now, { spins })).map((alert) => `${alert.player}:${alert.title}`)).toEqual(['maya:Alex is spinning the Wheel of Shame']);

@@ -3,7 +3,7 @@
  * whole league can read, and the security rules refuse any that doesn't
  * (firebase/firestore.rules, "audited").
  */
-import { HOUSE, makeRecoveryKey, receiptFixes, settleDue, type PlayerWeekData, type Square, type StoredReceipt, type WeekLineStored } from '@tcl/engine';
+import { makeRecoveryKey, receiptFixes, settleDue, weekPlayers, type GroupWeekInput, type PlayerWeekData, type Square, type StoredReceipt, type WeekLineStored, type WeekMode } from '@tcl/engine';
 import { collection, deleteField, doc, getDoc, getDocs, query, serverTimestamp, where, writeBatch, type Firestore } from 'firebase/firestore';
 import { connect } from './firebase.ts';
 import { trouble, type Me } from './identity.ts';
@@ -128,12 +128,14 @@ export const settleWeekNow = (me: Me, season: string, period: string, reason: st
     ]);
     const week = weekDoc.data() ?? {};
     const pairs = (week.pairs ?? []) as { a: string; b: string }[];
+    // A group-play week's mode and what it plays with: squads, duos, the Bounty or the whole roster.
+    const group: GroupWeekInput = { mode: (week.mode ?? 'regular') as WeekMode, teams: week.teams ?? null, duos: week.duos ?? null, bounty: week.bounty ?? null, roster: week.roster ?? null };
+    const playing = weekPlayers({ ...group, pairs });
     const days = calendar.docs.map((day) => plain(day.data())) as SettleDays;
     const sunday = days.find((day) => day.dayIndex === 6);
-    if (pairs.length === 0 || !sunday) return false;
+    if (playing.length === 0 || !sunday) return false;
 
     const now = Date.now();
-    const playing = [...new Set(pairs.flatMap((pair) => [pair.a, pair.b]))].filter((player) => player !== HOUSE);
     const players: Record<string, PlayerWeekData> = {};
     const demolitions: Demolition[] = [];
     await Promise.all(
@@ -167,7 +169,7 @@ export const settleWeekNow = (me: Me, season: string, period: string, reason: st
     }
 
     const data = settings.data() ?? {};
-    const settled = settleDue({ week: Number(week.week), period, par: Number(data.par), timeZone: String(data.timeZone), days, pairs, players, demolitions, earlier, now });
+    const settled = settleDue({ ...group, week: Number(week.week), period, par: Number(data.par), timeZone: String(data.timeZone), days, pairs, players, demolitions, earlier, now });
     if (!settled) return false;
 
     const audit = doc(collection(league, 'audit')).id;
@@ -178,6 +180,7 @@ export const settleWeekNow = (me: Me, season: string, period: string, reason: st
       house: settled.house,
       awards: settled.awards,
       lines: settled.lines,
+      group: settled.group,
       sunday: sunday.date,
       ...(week.settledAt ? {} : { settledAt: serverTimestamp() }),
       audit,

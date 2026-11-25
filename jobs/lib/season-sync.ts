@@ -9,6 +9,7 @@
  */
 import { isValidTimeZone, weekStart, weekdayIndex, isDate } from '../../engine/src/calendar.ts';
 import { ruleOneIssueWeeks } from '../../engine/src/kit.ts';
+import { WEEK_MODES, type WeekMode } from '../../engine/src/schedule.ts';
 import { calendarDocs, type CalendarDoc } from './calendar-docs.ts';
 
 export interface SeasonSettingsForSync {
@@ -18,6 +19,8 @@ export interface SeasonSettingsForSync {
   timeZone: string;
   /** A demo league's fast test season keeps its own calendar (`fast.ts`). */
   fast?: boolean;
+  /** Each group-play week's mode, once the draft has given them out. */
+  modes?: Readonly<Record<number, string>>;
 }
 
 export interface Sync {
@@ -58,7 +61,7 @@ export function seasonSync(input: {
     isValidTimeZone(settings.timeZone);
   if (!valid) return { ...none, skip: 'bad settings' };
 
-  const wanted = calendarDocs({ kickoff: settings.kickoff, regularWeeks: settings.regularWeeks, timeZone: settings.timeZone });
+  const wanted = calendarDocs({ kickoff: settings.kickoff, regularWeeks: settings.regularWeeks, timeZone: settings.timeZone, modes: weekModes(settings.modes) });
   const there = new Map(input.existing.map((doc) => [doc.id, doc.data]));
   const write = wanted.filter((doc) => {
     const stored = there.get(doc.id);
@@ -70,4 +73,13 @@ export function seasonSync(input: {
   const issue = ruleOneIssueWeeks(settings.regularWeeks).map((week) => new Date(weekStart(settings.kickoff, week, settings.timeZone)));
   const issueChanged = !same(input.ruleOneIssue, issue);
   return { skip: null, write, remove, ruleOneIssue: issueChanged ? issue : null };
+}
+
+/** The modes the season keeps, by week number, with anything unknown left out. */
+export function weekModes(modes: Readonly<Record<number, string>> | null | undefined): Record<number, WeekMode> {
+  const out: Record<number, WeekMode> = {};
+  for (const [week, mode] of Object.entries(modes ?? {})) {
+    if (Number.isInteger(Number(week)) && (WEEK_MODES as readonly string[]).includes(mode)) out[Number(week)] = mode as WeekMode;
+  }
+  return out;
 }

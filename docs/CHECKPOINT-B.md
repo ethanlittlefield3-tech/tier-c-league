@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 306 of 306 passing.
+- **Tests:** 307 of 307 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -359,6 +359,7 @@ If the weekly job runs late, the commish can post a finished week's results as p
 - Not before the week's Sunday locks, and the Sunday named has to be that week's
 - The results stay provisional: only the weekly job makes a week final, and the commish never posts over a final week
 - Only the commish, only with the audit entry, and nothing but the results change
+- A group-play week's results come with its summary: the sides, the Bounty, the race or the floors
 - Results the job already posted can be posted again; they keep the time they were first posted
 
 **Removing a dare**

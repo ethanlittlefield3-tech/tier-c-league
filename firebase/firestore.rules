@@ -771,11 +771,13 @@ service cloud.firestore {
           allow update: if isCommish(L)
             && resource.data.get('status', null) != 'final'
             && request.resource.data.status == 'provisional'
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'results', 'house', 'awards', 'lines', 'settledAt', 'sunday', 'audit'])
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'results', 'house', 'awards', 'lines', 'group', 'settledAt', 'sunday', 'audit'])
             && request.resource.data.results is map
             && request.resource.data.lines is list
             && request.resource.data.awards is map
             && (request.resource.data.house == null || request.resource.data.house is map)
+            // A group-play week's summary: its sides, Bounty, race or floors.
+            && (request.resource.data.get('group', null) == null || request.resource.data.group is map)
             && request.resource.data.settledAt == resource.data.get('settledAt', request.time)
             && weekOver(week, request.resource.data.sunday)
             && audited(L, request.resource.data.audit, 'week.settle', 'weeks/' + week);

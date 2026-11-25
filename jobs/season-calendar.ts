@@ -11,7 +11,7 @@
 import { Timestamp, getFirestore, type DocumentData } from 'firebase-admin/firestore';
 import { connect } from './admin.ts';
 import { fastClockOf } from './lib/fast.ts';
-import { seasonSync } from './lib/season-sync.ts';
+import { seasonSync, weekModes } from './lib/season-sync.ts';
 import { calendarStamp } from './lib/week-reads.ts';
 
 const { app, emulator } = connect();
@@ -39,6 +39,8 @@ for (const league of leagues) {
     regularWeeks: season.get('regularWeeks'),
     timeZone: season.get('timeZone'),
     fast: fastClockOf({ demo: league.get('demo') }, { fast: plain(season.get('fast') ?? {}) }) !== null,
+    // Each group-play week's mode, once the schedule job has given them out.
+    modes: weekModes(season.get('modes') as Record<number, string> | undefined),
   };
   // A finished, fast or unworkable season is left alone without reading its calendar.
   const early = seasonSync({ settings, existing: [], ruleOneIssue: null });

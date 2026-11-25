@@ -72,8 +72,10 @@ export interface AlertInput {
     week: number;
     status?: string;
     finalAt?: number;
-    results?: Record<string, { opponent: string; points: number; opponentPoints: number; outcome: 'win' | 'draw' | 'loss' }>;
+    results?: Record<string, WeekResult>;
     awards?: { mvp: string[]; bust: string[]; wheel: string[] };
+    /** A group-play week's summary: the Bounty's target, for one. */
+    group?: { mode: string; target?: { kind: string } };
     reveals?: { player: string; target: string; date: string; lane: string; outcome: string; at: number }[];
   }[];
   /** Demolition reveals already alerted, by key. */
@@ -86,8 +88,49 @@ export interface AlertInput {
   news: { id: string; kind: string; player: string; at: number; data?: { badge?: string; rank?: Rank; from?: Rank | null } }[];
 }
 
+/** A player's result in a final week, with what its mode adds. */
+export interface WeekResult {
+  opponent: string;
+  points: number;
+  opponentPoints: number;
+  outcome: 'win' | 'draw' | 'loss' | 'none';
+  mode?: string;
+  bonus?: number;
+  side?: { name: string; players: string[]; points: number };
+  against?: { name: string; players: string[]; points: number };
+  floor?: { tiles: number; opponentTiles: number };
+  race?: { points: number; place: number };
+  bounty?: { counted: number; broke: boolean; hit: boolean };
+}
+
 const HOUR = 3_600_000;
 const LANE: Record<string, string> = { mind: 'Mind', body: 'Body', wildcard: 'Wildcard', screen: 'screen time' };
+
+/** A score, or a side's average to one decimal place. */
+const number = (value: number) => (Number.isInteger(value) ? String(value) : String(Math.round(value * 10) / 10));
+const capital = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
+const ordinal = (place: number) => `${place}${place % 10 === 1 && place % 100 !== 11 ? 'st' : place % 10 === 2 && place % 100 !== 12 ? 'nd' : place % 10 === 3 && place % 100 !== 13 ? 'rd' : 'th'}`;
+
+/** How a week went for one player, by its mode: the alert's title after "Week n:", and its body. */
+export function resultWords(result: WeekResult, name: (player: string) => string, target?: { kind: string }): { title: string; body: string } {
+  const outcome = result.outcome === 'win' ? 'you won' : result.outcome === 'loss' ? 'you lost' : 'a draw';
+  if (result.bounty) {
+    // A count target adds up what each player did; a day target is kept or broken.
+    const part = target && target.kind !== 'hits' ? (result.bounty.broke ? 'You broke it.' : 'You kept it.') : `You added ${result.bounty.counted}.`;
+    return { title: `the Bounty was ${result.bounty.hit ? 'hit' : 'missed'}`, body: `${result.bounty.hit ? '+3 for everyone.' : 'No bonus this week.'} ${part}` };
+  }
+  if (result.race) {
+    return { title: `${ordinal(result.race.place)} in the Alley`, body: `${result.race.points} race points${result.bonus ? `: +${result.bonus}` : ''}.` };
+  }
+  if (result.side && result.against) {
+    const them = result.against.name === 'house' ? 'the House duo' : result.mode === 'teamWeek' ? capital(result.against.name) : result.against.players.map(name).join(' and ');
+    const us = result.mode === 'teamWeek' ? capital(result.side.name) : 'Your duo';
+    return { title: outcome, body: `${us} averaged ${number(result.side.points)}–${number(result.against.points)} against ${them}.` };
+  }
+  const against = result.opponent === HOUSE ? 'The House' : name(result.opponent);
+  if (result.floor) return { title: outcome, body: `${result.floor.tiles} tiles to ${result.floor.opponentTiles} against ${against}.` };
+  return { title: outcome, body: `${result.points}–${result.opponentPoints} against ${against}.` };
+}
 
 /** "Tue Jan 5" */
 function dayText(date: string): string {
@@ -227,10 +270,9 @@ export function alertsDue(input: AlertInput): Alert[] {
     const recap = [week.awards?.mvp.length ? `MVP: ${week.awards.mvp.map(name).join(', ')}.` : '', week.awards?.bust.length ? `Bust: ${week.awards.bust.map(name).join(', ')}.` : ''].filter(Boolean).join(' ');
     for (const [player, result] of Object.entries(week.results)) {
       if (!input.players[player]) continue;
-      const against = result.opponent === HOUSE ? 'The House' : name(result.opponent);
-      const outcome = result.outcome === 'win' ? 'you won' : result.outcome === 'loss' ? 'you lost' : 'a draw';
+      const words = resultWords(result, name, week.group?.target);
       const spins = week.awards?.wheel.includes(player) ? ' You spin the Wheel of Shame.' : '';
-      add({ player, category: 'matchup', key: `result-${week.id}`, title: `Week ${week.week}: ${outcome}`, body: `${result.points}–${result.opponentPoints} against ${against}. ${recap}${spins}`.trim(), screen: 'league', expires: (week.finalAt ?? now) + 24 * HOUR });
+      add({ player, category: 'matchup', key: `result-${week.id}`, title: `Week ${week.week}: ${words.title}`, body: `${words.body} ${recap}${spins}`.replace(/\s+/g, ' ').trim(), screen: 'league', expires: (week.finalAt ?? now) + 24 * HOUR });
     }
   }
 

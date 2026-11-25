@@ -55,6 +55,8 @@ describe('Settling a week from the app', () => {
       { player: 'p1', points: 9, beers: 1, perfectDays: 1 },
       { player: 'p2', points: 4, beers: 2, perfectDays: 0 },
     ],
+    // A 1v1 week has no group-play summary.
+    group: null,
     settledAt: now(),
     sunday,
     ...extra,
@@ -91,6 +93,11 @@ describe('Settling a week from the app', () => {
     await assertFails(settle(dev1(), week1, results(SUN1, { lines: {} })));
     await assertFails(settle(dev1(), week1, results(SUN1, { awards: 'MVP: p1' })));
     await assertFails(settle(dev1(), week1, results(SUN1, { house: 'p1' })));
+  });
+
+  it("A group-play week's results come with its summary: the sides, the Bounty, the race or the floors", async () => {
+    await assertFails(settle(dev1(), week1, results(SUN1, { group: 'alley' })));
+    await assertSucceeds(settle(dev1(), week1, results(SUN1, { group: { mode: 'alley', race: [] } })));
   });
 
   it('Results the job already posted can be posted again; they keep the time they were first posted', async () => {

@@ -2,6 +2,7 @@ import { execFile } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { expect, test, type Browser, type Page } from '@playwright/test';
+import { addDays } from '../../engine/src/calendar.ts';
 import { enterAsCommish, joinAs } from './helpers.ts';
 import { createLeague, daresUnderway, draftUnderway, membersOf, patchDoc, quietPlayer, readDoc, rivalPicksUnderway, seasonInSetup, writeDoc, type TestLeague } from './league.ts';
 
@@ -10,10 +11,17 @@ const tab = (page: Page, name: string) => page.getByRole('navigation', { name: '
 const HOUR = 3_600_000;
 const run = promisify(execFile);
 const scheduleJob = fileURLToPath(new URL('../../jobs/schedule.ts', import.meta.url));
+const calendarJob = fileURLToPath(new URL('../../jobs/season-calendar.ts', import.meta.url));
 
 /** Runs the real schedule job against the local database, for one league. */
 async function runSchedule(league: TestLeague): Promise<string> {
   const { stdout } = await run(process.execPath, [scheduleJob], { env: { ...process.env, FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080', GCLOUD_PROJECT: 'demo-tier-c', LEAGUE_ID: league.id } });
+  return stdout;
+}
+
+/** Runs the real calendar job against the local database, for one league. */
+async function runCalendar(league: TestLeague): Promise<string> {
+  const { stdout } = await run(process.execPath, [calendarJob], { env: { ...process.env, FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080', GCLOUD_PROJECT: 'demo-tier-c', LEAGUE_ID: league.id } });
   return stdout;
 }
 
@@ -121,6 +129,14 @@ test.describe('The draft', () => {
     expect((await readDoc(request, `${season.path}/weeks/w03`))?.mode).toBe('dropShot');
     expect((await readDoc(request, `${season.path}/weeks/w05`))?.mode).toBe('alley');
     expect((await readDoc(request, `${season.path}/weeks/w04`))?.mode).toBe('regular');
+    // The Alley is the whole league at once, and the season keeps each group-play week's mode.
+    expect((await readDoc(request, `${season.path}/weeks/w05`))?.roster).toEqual(expect.arrayContaining([riley.player, league.commish]));
+    expect((await readDoc(request, season.path))?.modes).toEqual({ 3: 'dropShot', 5: 'alley' });
+    // The calendar job then gives those weeks' days their power-ups: none at all in the Alley.
+    expect(await runCalendar(league)).toContain('42 days written');
+    expect(await readDoc(request, `${season.path}/calendar/${addDays(season.kickoff, 28)}`)).toMatchObject({ mode: 'alley', kit: [] });
+    expect(await readDoc(request, `${season.path}/calendar/${addDays(season.kickoff, 14)}`)).toMatchObject({ mode: 'dropShot', kit: ['aerial', 'demolition', 'fullBoost'] });
+    expect(await readDoc(request, `${season.path}/calendar/${addDays(season.kickoff, 7)}`)).toMatchObject({ mode: 'regular', kit: ['aerial', 'demolition', 'fullBoost'] });
     await riley.phone.context().close();
   });
 

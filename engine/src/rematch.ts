@@ -4,7 +4,7 @@
  * week wins: the winner earns the Payback badge, and the loser's car wears an
  * "L" for a week. It never changes a score.
  */
-import { HOUSE } from './schedule.ts';
+import { againstPlayer } from './schedule.ts';
 
 /** The last day of the race week a challenge can be made on: its Wednesday (day 2, counting Monday as 0). */
 export const REMATCH_LAST_DAY = 2;
@@ -16,12 +16,12 @@ export function rematchResult(from: string, to: string, fromPoints: number, toPo
   return { winner: null, loser: null };
 }
 
-/** Who a player can challenge after a week: whoever beat them in it, once it is final. Never The House. */
+/** Who a player can challenge after a week: whoever beat them in it, once it is final. Never The House, a squad or a duo. */
 export function rematchFor(
   player: string,
   week: { status?: string; results?: Record<string, { opponent: string; outcome: string; points?: number; opponentPoints?: number }> } | null | undefined,
 ): { to: string; points: number; against: number } | null {
   const result = week?.status === 'final' ? week.results?.[player] : undefined;
-  if (!result || result.outcome !== 'loss' || result.opponent === HOUSE) return null;
+  if (!result || result.outcome !== 'loss' || !againstPlayer(result.opponent)) return null;
   return { to: result.opponent, points: result.points ?? 0, against: result.opponentPoints ?? 0 };
 }

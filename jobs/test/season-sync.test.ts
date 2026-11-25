@@ -45,6 +45,16 @@ describe('Keeping a season\'s calendar in step with its settings', () => {
     expect(sync.write.map((doc) => doc.id)).toEqual(['2027-02-15', '2027-02-16', '2027-02-17', '2027-02-18', '2027-02-19', '2027-02-20', '2027-02-21']);
   });
 
+  it("Each group-play week's days carry its mode and its power-ups: none in Rumble or the Alley, no Demolition in Bounty Week", () => {
+    const sync = seasonSync({ settings: { ...SETTINGS, modes: { 2: 'rumble', 3: 'bounty', 4: 'alley', 5: 'teamWeek' } }, existing: [], ruleOneIssue: null });
+    const week = (n: number) => sync.write.filter((doc) => doc.data.week === n).map((doc) => [doc.data.mode, doc.data.kit]);
+    for (const day of week(1)) expect(day).toEqual(['regular', ['aerial', 'demolition', 'fullBoost']]);
+    expect(week(2)).toContainEqual(['rumble', []]);
+    expect(week(3)).toContainEqual(['bounty', ['aerial', 'fullBoost']]);
+    expect(week(4)).toContainEqual(['alley', []]);
+    expect(week(5)).toContainEqual(['teamWeek', ['aerial', 'demolition', 'fullBoost']]);
+  });
+
   it('A finished season, or one with broken settings, is left alone', () => {
     expect(seasonSync({ settings: { ...SETTINGS, status: 'done' }, existing: [], ruleOneIssue: null }).skip).toBe('finished');
     expect(seasonSync({ settings: { ...SETTINGS, kickoff: '2027-01-05' }, existing: [], ruleOneIssue: null }).skip).toBe('bad settings');

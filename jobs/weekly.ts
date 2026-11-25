@@ -17,11 +17,14 @@ import { fastClockOf } from './lib/fast.ts';
 import { PROOF_DAYS, staleProofs } from './lib/proofs.ts';
 import { revealDemolitions, sameReveals } from './lib/reveals.ts';
 import { approvedDares, drawsDue, type Draw } from './lib/wheel.ts';
-import { settleDue, standingsFrom, type PlayerWeekData, type WeekLineStored } from './lib/settle.ts';
+import { settleDue, standingsFrom, type GroupWeekInput, type PlayerWeekData, type WeekLineStored } from './lib/settle.ts';
 import { badgeUpdate, seasonBadgeData } from './lib/badge-facts.ts';
 import { reactionCount } from './lib/activity.ts';
 import { matchupOf, withWeek, type RankEntry } from './lib/ranks.ts';
 import { weekReads } from './lib/week-reads.ts';
+import { drawDuos } from './lib/duos.ts';
+import { weekPlayers } from '../engine/src/group.ts';
+import type { WeekMode } from '../engine/src/schedule.ts';
 
 const { app, emulator } = connect();
 const db = getFirestore(app);
@@ -53,8 +56,16 @@ for (const league of leagues) {
 
   let wentFinal = false;
   for (const week of weeks) {
-    const pairs = week.get('pairs') as { a: string; b: string }[] | undefined;
-    if (!Array.isArray(pairs) || pairs.length === 0) continue;
+    const pairs = (week.get('pairs') ?? []) as { a: string; b: string }[];
+    const mode = (week.get('mode') ?? 'regular') as WeekMode;
+    const group: GroupWeekInput = {
+      mode,
+      teams: week.get('teams') ?? null,
+      duos: week.get('duos') ?? null,
+      bounty: week.get('bounty') ?? null,
+      roster: week.get('roster') ?? null,
+    };
+    if (weekPlayers({ ...group, pairs }).length === 0) continue;
     if (week.get('status') === 'final') {
       addEarlier((week.get('lines') ?? []) as WeekLineStored[]);
       continue;
@@ -63,10 +74,21 @@ for (const league of leagues) {
     const days = calendar.filter((day) => day.period === period) as unknown as Parameters<typeof settleDue>[0]['days'];
     if (days.length === 0) continue;
 
+    // 2v2: the duos are drawn once the week starts on its Monday, at random or as "frenemies".
+    const monday = Math.min(...days.map((day) => day.start));
+    const order = [...(group.roster ?? [])].map((player) => ({ player, key: randomInt(1_000_000_000) })).sort((a, b) => a.key - b.key).map((item) => item.player);
+    const rivals = ((weeks.find((found) => Number(found.get('week')) === 1)?.get('pairs') ?? []) as { a: string; b: string }[]);
+    const drawn = drawDuos({ mode, duos: group.duos, pairing: week.get('pairing'), rivals, order, start: monday, now });
+    if (drawn) {
+      await week.ref.set({ duos: drawn.duos, targets: drawn.targets, drawnAt: FieldValue.serverTimestamp() }, { merge: true });
+      group.duos = drawn.duos;
+      console.log(`League ${league.id}, ${period}: ${drawn.duos.length} 2v2 matchup${drawn.duos.length === 1 ? '' : 's'} drawn.`);
+    }
+
     // This period's Demolitions: one query, and nothing more while none can be revealed or settled.
     const sealed = await seasonRef.collection('sealed').where('period', '==', period).get();
     const demolitions = sealed.docs.filter((item) => item.get('kind') === 'demolition').map((item) => plain(item.data()) as unknown as Parameters<typeof settleDue>[0]['demolitions'][number]);
-    const reads = weekReads({ days, pairs, demolitions, now });
+    const reads = weekReads({ days, players: weekPlayers({ ...group, pairs }), demolitions, now });
     if (!reads) continue;
 
     const players: Record<string, PlayerWeekData> = {};
@@ -94,6 +116,7 @@ for (const league of leagues) {
     }
 
     const settled = settleDue({
+      ...group,
       week: Number(week.get('week')),
       period,
       par: season.get('par'),
@@ -114,6 +137,7 @@ for (const league of leagues) {
         house: settled.house,
         awards: settled.awards,
         lines: settled.lines,
+        group: settled.group,
         ...(week.get('settledAt') ? {} : { settledAt: FieldValue.serverTimestamp() }),
         ...(settled.status === 'final' ? { finalAt: FieldValue.serverTimestamp() } : {}),
       },

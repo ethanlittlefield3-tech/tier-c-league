@@ -4,7 +4,7 @@
  * any repeat. With an odd count, one player a week faces The House. The
  * group-play vote's modes fill the season's group-play weeks.
  */
-import { HOUSE, buildSchedule, checkRivalPicks, groupWeekModes, modeStandings, week1Pairs, weekPeriod } from '../../engine/src/index.ts';
+import { HOUSE, buildSchedule, checkRivalPicks, groupWeekModes, isPairedMode, modeStandings, week1Pairs, weekPeriod } from '../../engine/src/index.ts';
 
 export interface DraftState {
   step: string;
@@ -20,13 +20,19 @@ export interface WeekDoc {
   period: string;
   mode: string;
   pairs: { a: string; b: string }[];
-  /** Who each player faces, which is who they may demolish. `HOUSE` for a bye. */
+  /**
+   * Who each player may demolish: their opponent (`HOUSE` for a bye), or in
+   * Team Week anyone on the other squad. 2v2's are set when its duos are
+   * drawn on the Monday; the Bounty and the Alley have no Demolition.
+   */
   targets: Record<string, string[]>;
   /** Team Week's squads, which hold for the season. */
   teams?: { blue: string[]; orange: string[] };
+  /** Everyone in a 2v2, Bounty or Alley week: the weeks with no 1v1 pairs and no squads. */
+  roster?: string[];
 }
 
-export type ScheduleResult = { skip: string } | { weeks: { id: string; data: WeekDoc }[] };
+export type ScheduleResult = { skip: string } | { weeks: { id: string; data: WeekDoc }[]; modes: Record<number, string> };
 
 export function scheduleDocs(input: {
   status: unknown;
@@ -48,8 +54,9 @@ export function scheduleDocs(input: {
 
   const pairs = week1Pairs(draft);
   if (checkRivalPicks(draft.order, pairs) !== null) return { skip: 'bad-picks' };
+  const plans = buildSchedule({ picks: pairs, weeks, modes: groupWeekModes(groupWeeksOf(input.groupWeeks, weeks), modeStandings(input.rankings ?? {}, input.commish ?? null)) });
   return {
-    weeks: buildSchedule({ picks: pairs, weeks, modes: groupWeekModes(groupWeeksOf(input.groupWeeks, weeks), modeStandings(input.rankings ?? {}, input.commish ?? null)) }).map((plan) => {
+    weeks: plans.map((plan) => {
       const targets: Record<string, string[]> = {};
       for (const [a, b] of plan.pairs) {
         targets[a] = [b];
@@ -57,8 +64,16 @@ export function scheduleDocs(input: {
       }
       const period = weekPeriod(plan.week);
       const teams = plan.mode === 'teamWeek' ? (draft.squads ?? splitSquads(draft.order)) : null;
-      return { id: period, data: { week: plan.week, period, mode: plan.mode, pairs: plan.pairs.map(([a, b]) => ({ a, b })), targets, ...(teams ? { teams } : {}) } };
+      // Team Week: anyone on the other squad can be demolished.
+      if (teams) {
+        for (const player of teams.blue) targets[player] = [...teams.orange];
+        for (const player of teams.orange) targets[player] = [...teams.blue];
+      }
+      const roster = !isPairedMode(plan.mode) && !teams ? [...draft.order] : null;
+      return { id: period, data: { week: plan.week, period, mode: plan.mode, pairs: plan.pairs.map(([a, b]) => ({ a, b })), targets, ...(teams ? { teams } : {}), ...(roster ? { roster } : {}) } };
     }),
+    // The season keeps each group-play week's mode, so its calendar gets the right power-ups.
+    modes: Object.fromEntries(plans.filter((plan) => plan.mode !== 'regular').map((plan) => [plan.week, plan.mode])),
   };
 }
 

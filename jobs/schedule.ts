@@ -2,7 +2,7 @@
  * Builds each league's schedule once its draft is done: every regular week
  * with its matchups, and then the season goes active.
  *
- *   On GitHub:  every hour, after the season calendar (Actions, "Keep the season calendar"), and by hand
+ *   On GitHub:  every hour, before the season calendar (Actions, "Keep the season calendar"), and by hand
  *   Locally:    FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 node jobs/schedule.ts
  *
  * Safe to run any number of times: the weeks and the season's move to active
@@ -43,7 +43,8 @@ for (const league of leagues) {
     });
     if ('weeks' in plan) {
       for (const week of plan.weeks) tx.set(seasonRef.collection('weeks').doc(week.id), week.data, { merge: true });
-      tx.update(seasonRef, { status: 'active', scheduledAt: FieldValue.serverTimestamp() });
+      // The season keeps each group-play week's mode, so the calendar job gives those days their power-ups.
+      tx.update(seasonRef, { status: 'active', scheduledAt: FieldValue.serverTimestamp(), modes: plan.modes });
     }
     return plan;
   });

@@ -66,6 +66,20 @@ describe('Building the schedule after the draft', () => {
     expect(plain[2]?.data.teams).toEqual({ blue: ['a', 'c'], orange: ['b', 'd'] });
   });
 
+  it("Team Week's players may demolish anyone on the other squad; 2v2, Bounty and Alley weeks list the whole league; the season keeps each week's mode", () => {
+    const rankings = { a: ['teamWeek', 'twoVTwo', 'bounty', 'alley', 'rumble', 'dropShot'] };
+    const squads = { blue: ['a', 'd'], orange: ['b', 'c'] };
+    const result = scheduleDocs({ status: 'draft', regularWeeks: 6, groupWeeks: [2, 3, 4, 5], rankings, commish: 'a', draft: { ...done(['a', 'b', 'c', 'd'], { a: 'b', c: 'd' }), squads } });
+    if ('skip' in result) throw new Error(result.skip);
+    expect(result.modes).toEqual({ 2: 'teamWeek', 3: 'twoVTwo', 4: 'bounty', 5: 'alley' });
+    expect(result.weeks[1]?.data.targets).toEqual({ a: ['b', 'c'], d: ['b', 'c'], b: ['a', 'd'], c: ['a', 'd'] });
+    // The 2v2 duos are drawn on the week's Monday, so nobody has a target before then.
+    expect(result.weeks[2]?.data).toMatchObject({ mode: 'twoVTwo', roster: ['a', 'b', 'c', 'd'], targets: {} });
+    expect(result.weeks[3]?.data).toMatchObject({ mode: 'bounty', roster: ['a', 'b', 'c', 'd'], targets: {} });
+    expect(result.weeks[4]?.data).toMatchObject({ mode: 'alley', roster: ['a', 'b', 'c', 'd'], targets: {} });
+    expect(result.weeks[0]?.data.roster).toBeUndefined();
+  });
+
   it('Without group-play weeks, every week is a normal 1v1 week', () => {
     const weeks = weeksOf(scheduleDocs({ status: 'draft', regularWeeks: 6, groupWeeks: [], draft: done(['a', 'b', 'c', 'd'], { a: 'b', c: 'd' }) }));
     expect(weeks).toHaveLength(6);
