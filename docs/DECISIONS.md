@@ -337,6 +337,10 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 194. **Everyone but its author upvotes an idea, once each, and can take the vote back.** The commish tags each idea Planned, Maybe or No, or clears the tag; a tag isn't a change to the game, so it needs no reason in the league log.
 195. **An idea's author can take it down, and so can the commish, as on the wall:** that goes in the league log. Nobody edits an idea.
 
+**Phase 2: storylines** (new on 2026-11-25, not yet reviewed by the commish)
+
+196. **A week's recap in the feed carries up to 3 storylines, the biggest news first:** a win streak of 3 or more snapped, the leader beaten (whoever had the most Season Points going in, alone at the top), a win streak reaching 3 or more, a first win after 2 or more losses, a blowout of 20 or more, and a win by a single point. They are worked out on each phone from the season's results, so they need no job. Weeks against The House make no stories, and don't count in streaks.
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.

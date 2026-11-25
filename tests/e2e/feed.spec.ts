@@ -221,6 +221,8 @@ test.describe('Feed and the wall', () => {
     const results = feed.locator('.feed-event[data-kind="results"]');
     await expect(results.locator('.feed-event-text')).toContainText('Week 1 results are in');
     await expect(results.locator('.feed-event-detail')).toHaveText(/You beat Riley 30–24\nMVP: You · Bust: Riley · Spins the Wheel: Riley/);
+    // Too close for a blowout, too far for a photo finish, and only Week 1: no storyline yet.
+    await expect(results.getByRole('list', { name: 'Storylines' })).toHaveCount(0);
     const spotlight = results.getByRole('list', { name: 'Spotlight' }).getByRole('listitem');
     await expect(spotlight).toHaveText(['MVPYou', 'BustRiley']);
     await expect(spotlight.first().locator('.feed-spotlight-car')).toHaveAttribute('data-car', 'dart cobalt');

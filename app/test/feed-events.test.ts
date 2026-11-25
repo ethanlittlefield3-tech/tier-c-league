@@ -98,6 +98,17 @@ describe('The live feed', () => {
     ]);
   });
 
+  it("A week's results carry its storylines, the biggest news first", () => {
+    const events = feedEvents({
+      ...none,
+      name,
+      weeks: [
+        { id: 'w01', data: { week: 1, settledAt: 5, results: { maya: { opponent: 'jordan', points: 32, opponentPoints: 10, outcome: 'win' }, jordan: { opponent: 'maya', points: 10, opponentPoints: 32, outcome: 'loss' } } } },
+      ],
+    });
+    expect(events[0]?.headlines).toEqual(['Maya crushed Jordan by 22']);
+  });
+
   it('A rematch shows when it is made, and again with the winner and the score once its week is settled', () => {
     const events = feedEvents({
       ...none,

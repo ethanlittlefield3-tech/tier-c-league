@@ -4,7 +4,8 @@
  * from the league's own data, so it moves the moment anything happens.
  * Badges earned and rank changes come from the jobs' news in `feed/`.
  */
-import { BADGES, DODGE_PENALTY, PROOF_VOTE_HOURS, RANK_NAMES, dareStatus, rankMove, type DemolitionOutcome, type Lane, type Rank, type Square } from '@tcl/engine';
+import { BADGES, DODGE_PENALTY, PROOF_VOTE_HOURS, RANK_NAMES, dareStatus, rankMove, storylines, type DemolitionOutcome, type Lane, type Rank, type Square } from '@tcl/engine';
+import { storyText } from './stories.ts';
 
 export interface FeedEvent {
   id: string;
@@ -15,6 +16,8 @@ export interface FeedEvent {
   detail?: string;
   /** How a revealed Demolition went. */
   outcome?: string;
+  /** A week's storylines, the biggest news first (SCOPE.md, "Season storylines"). */
+  headlines?: string[];
   /** The week's MVP and Bust, shown with their cars (SCOPE.md, "MVP and Bust"). */
   spotlight?: { mvp: string[]; bust: string[] };
 }
@@ -24,6 +27,7 @@ interface Result {
   points: number;
   opponentPoints: number;
   outcome: 'win' | 'draw' | 'loss';
+  seasonPoints?: number;
 }
 
 export interface FeedInput {
@@ -153,7 +157,10 @@ export function feedEvents(input: FeedInput): FeedEvent[] {
       ].filter(Boolean);
       if (honors.length > 0) lines.push(honors.join(' · '));
       const spotlight = awards && (awards.mvp.length > 0 || awards.bust.length > 0) ? { spotlight: { mvp: awards.mvp, bust: awards.bust } } : {};
-      events.push({ id: `results-${id}`, at: data.settledAt, kind: 'results', text: `Week ${data.week} results are in`, detail: lines.join('\n'), ...spotlight });
+      // Storylines from the season so far, up to this week.
+      const settledWeeks = input.weeks.filter((each) => each.data.results).map((each) => ({ week: each.data.week, results: each.data.results! }));
+      const headlines = storylines(settledWeeks, data.week).map((story) => storyText(story, name));
+      events.push({ id: `results-${id}`, at: data.settledAt, kind: 'results', text: `Week ${data.week} results are in`, detail: lines.join('\n'), ...(headlines.length ? { headlines } : {}), ...spotlight });
     }
     if (typeof data.finalAt === 'number') {
       events.push({ id: `final-${id}`, at: data.finalAt, kind: 'results', text: `Week ${data.week} is final` });

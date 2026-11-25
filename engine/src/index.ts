@@ -32,3 +32,4 @@ export * from './rivalries.ts';
 export * from './meter.ts';
 export * from './stickers.ts';
 export * from './rematch.ts';
+export * from './storylines.ts';

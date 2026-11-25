@@ -376,3 +376,28 @@
 .feed-event[data-kind='rematch'] {
   border-left-color: #ff5a66;
 }
+
+/* A week's storylines: short headlines in the recap. */
+.feed-headlines {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feed-headlines li {
+  position: relative;
+  padding-left: 16px;
+  font: italic 800 14px/1.45 var(--display);
+  color: var(--gold);
+}
+
+.feed-headlines li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 0.6em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}

@@ -158,6 +158,13 @@ function EventRow(props: { event: FeedEvent; now: number; name: Names; carOf: Ca
         <span class="feed-meta"> · {ago(props.now - event.at)}</span>
       </p>
       {event.detail && <p class="feed-event-detail">{event.detail}</p>}
+      {event.headlines && (
+        <ul class="feed-headlines" aria-label="Storylines">
+          {event.headlines.map((headline) => (
+            <li key={headline}>{headline}</li>
+          ))}
+        </ul>
+      )}
       {event.spotlight && (
         <ul class="feed-spotlight" aria-label="Spotlight">
           {[...event.spotlight.mvp.map((player) => ({ player, award: 'MVP' })), ...event.spotlight.bust.map((player) => ({ player, award: 'Bust' }))].map(({ player, award }) => (
