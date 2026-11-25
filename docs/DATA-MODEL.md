@@ -79,7 +79,7 @@ Where everything lives in Firestore, who can write it and who can read it. It co
 | `draft/state` | The commish, with an audit entry. Each player makes their own rival pick when it is their turn. | Members | 1 and 3, rules today | `step` (goals, rivals, dares, done), `order` (drawn at random when the draft starts), `left` (who is still unpicked, in draft order), `picks` (each picker's rival), `turnStartedAt` (when the current pick's 2-minute clock started), `startedAt`, `votesCloseAt`, `audit`. Phase 3: captains' picks. |
 | `predictions/{period}_{player}` | That player, before Sunday 11:59 pm | That player; everyone after the deadline | 2 | `picks`, `at` |
 | `pokes/{date}_{player}` | That player, once a day, dated today, to this week's opponent (not The House). Never changed. | Members | 2, rules today | `player`, `to`, `date`, `at` |
-| `rematches/{id}` | The challenger | Members | 2 | `from`, `to`, `period`, `status`, `winner` |
+| `rematches/{lost}_{player}` | The loser of that final week, against the player who beat them (never The House), on the race week's Monday to Wednesday. The weekly job settles it when the race week is final. | Members | 2, rules today | `from`, `to`, `lost`, `period` (the race week), `date`, `at`. The job: `winner` (or null on level points), `points`, `settledAt` |
 
 ## Choices worth knowing
 

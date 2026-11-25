@@ -98,6 +98,23 @@ describe('The live feed', () => {
     ]);
   });
 
+  it('A rematch shows when it is made, and again with the winner and the score once its week is settled', () => {
+    const events = feedEvents({
+      ...none,
+      name,
+      rematches: [
+        { id: 'w02_jordan', data: { from: 'jordan', to: 'maya', period: 'w03', at: 5, winner: 'jordan', points: { jordan: 25, maya: 20 }, settledAt: 50 } },
+        { id: 'w02_sam', data: { from: 'sam', to: 'me', period: 'w03', at: 6, winner: null, points: { sam: 18, me: 18 }, settledAt: 51 } },
+      ],
+    });
+    expect(events.map((event) => event.text)).toEqual([
+      'The rematch between Sam and you ended level, 18–18',
+      'Jordan won the rematch against Maya, 25–20',
+      'Sam challenged you to a rematch: most points in Week 3 wins',
+      'Jordan challenged Maya to a rematch: most points in Week 3 wins',
+    ]);
+  });
+
   it('A bye week reads as a game against The House', () => {
     const events = feedEvents({
       ...none,

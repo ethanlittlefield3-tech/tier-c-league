@@ -737,6 +737,38 @@ service cloud.firestore {
             && request.resource.data.to in get(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/weeks/$(cal(request.resource.data.date).period)).data.targets[request.resource.data.player];
         }
 
+        // ---- Rematch challenges (SCOPE.md, "Rematch challenge") --------------
+        // After a final week's loss, the loser challenges the winner to a side
+        // race the next week, by that week's Wednesday. Once per loss, filed
+        // under the lost week and the loser. The weekly job settles it.
+        match /rematches/{rematch} {
+          allow read: if isMember(L);
+          allow create: if request.resource.data.keys().hasOnly(['from', 'to', 'lost', 'period', 'date', 'at'])
+            && request.resource.data.lost is string
+            && request.resource.data.from is string
+            && request.resource.data.date is string
+            && rematch == request.resource.data.lost + '_' + request.resource.data.from
+            && isPlayer(L, request.resource.data.from)
+            && request.resource.data.at == request.time
+            && isToday(request.resource.data.date)
+            && cal(request.resource.data.date).period == request.resource.data.period
+            && cal(request.resource.data.date).dayIndex <= 2
+            && lostTo(request.resource.data.lost, request.resource.data.period, request.resource.data.from, request.resource.data.to);
+        }
+
+        // The challenger lost that week, now final, to this player (never The
+        // House), and the race is the week after it.
+        function lostTo(lost, period, from, to) {
+          let before = get(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/weeks/$(lost)).data;
+          let race = get(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/weeks/$(period)).data;
+          return before.status == 'final'
+            && race.week == before.week + 1
+            && to is string
+            && to != 'HOUSE'
+            && before.results[from].outcome == 'loss'
+            && before.results[from].opponent == to;
+        }
+
         // The day is today: it has started and not yet ended.
         function isToday(date) {
           let day = cal(date);

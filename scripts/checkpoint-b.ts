@@ -40,6 +40,7 @@ const AREAS: [file: string, heading: string, blurb: string][] = [
   ['wall', 'The wall', 'Everyone in the league reads it. You post, comment and react in your own name. Nobody edits a post, and only its author or the commish takes it down.'],
   ['feed', 'The league feed', "The jobs' news, like a badge earned or a rank changed. Everyone in the league reads it; no phone writes it."],
   ['pokes', 'Pokes', "One a day, to this week's opponent, dated today and in your own name. Never changed."],
+  ['rematches', 'Rematch challenges', 'After a final week, the loser challenges the winner to a side race the next week, by its Wednesday, once. Only the weekly job settles it.'],
   ['rivals', 'Rivalry records', "Everyone in the league reads each player's all-time record. Only the weekly job writes it."],
   ['garage', 'The Garage', 'You change only your own car, and only to parts from the catalog, each in its own slot. A part a badge unlocks goes on once that badge is earned.'],
 ];

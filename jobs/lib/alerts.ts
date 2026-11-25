@@ -56,6 +56,8 @@ export interface AlertInput {
   kit: { player: string; item: string; period?: string; date: string }[];
   /** How many Rule Ones each player has been handed so far. */
   ruleOnesIssued: number;
+  /** Rematch challenges since the last run. */
+  rematches?: { id: string; from: string; to: string; at: number }[];
   /** Pokes since the last run. */
   pokes?: { id: string; player: string; to: string; at: number }[];
   /** Wall posts made since the last run. */
@@ -166,6 +168,12 @@ export function alertsDue(input: AlertInput): Alert[] {
   for (const post of input.wall) {
     if (!inWindow(post.at) || post.deleted || !post.to || post.to === post.by || !input.players[post.to] || (post.kind !== 'taunt' && post.kind !== 'quick')) continue;
     add({ player: post.to, category: 'social', key: `taunt-${post.id}`, title: name(post.by), body: post.text.split('{name}').join(name(post.to)), screen: 'feed', expires: post.at + 24 * HOUR });
+  }
+
+  // ---- Social: a rematch challenge ----------------------------------------
+  for (const race of input.rematches ?? []) {
+    if (!inWindow(race.at) || !input.players[race.to]) continue;
+    add({ player: race.to, category: 'social', key: `rematch-${race.id}`, title: 'Rematch!', body: `${name(race.from)} challenged you to a side race this week: most points wins.`, screen: 'match', expires: race.at + 48 * HOUR });
   }
 
   // ---- Social: a poke, "you awake?" ----------------------------------------

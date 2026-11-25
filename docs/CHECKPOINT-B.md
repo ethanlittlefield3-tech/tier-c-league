@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 282 of 282 passing.
+- **Tests:** 287 of 287 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -463,6 +463,18 @@ One a day, to this week's opponent, dated today and in your own name. Never chan
 - Nobody pokes anyone but this week's opponent: not another player, and not The House
 - A poke is dated today, sent in your own name and filed under it, stamped with the real time, and says nothing else
 - Everyone in the league can read pokes; nobody changes or deletes one, and nobody outside the league reads them
+
+## Rematch challenges
+
+After a final week, the loser challenges the winner to a side race the next week, by its Wednesday, once. Only the weekly job settles it.
+
+**Rematch challenges**
+
+- After a final week, the loser challenges the player who beat them to a side race the next week, once
+- The winner cannot challenge, nobody challenges a player who did not beat them, and never The House
+- Only once the lost week is final, for the week right after it, which is this week, dated today and by its Wednesday
+- A challenge is in your own name, filed under the lost week and you, dated today with the real time, and says nothing else
+- Everyone in the league can read challenges; nobody changes or deletes one, and nobody outside the league reads them
 
 ## Rivalry records
 

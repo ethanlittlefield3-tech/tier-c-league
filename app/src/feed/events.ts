@@ -9,7 +9,7 @@ import { BADGES, DODGE_PENALTY, PROOF_VOTE_HOURS, RANK_NAMES, dareStatus, rankMo
 export interface FeedEvent {
   id: string;
   at: number;
-  kind: 'checkIn' | 'power' | 'dock' | 'reveal' | 'results' | 'receipt' | 'wheel' | 'badge' | 'rank';
+  kind: 'checkIn' | 'power' | 'dock' | 'reveal' | 'results' | 'receipt' | 'wheel' | 'badge' | 'rank' | 'rematch';
   text: string;
   /** A second line: a dock's reason, or a week's scores and awards. */
   detail?: string;
@@ -50,6 +50,8 @@ export interface FeedInput {
   }[];
   /** The time now, to tell a receipt or a dare left past its deadline. */
   now?: number;
+  /** Rematch challenges, and how their side races ended. */
+  rematches?: { id: string; data: { from: string; to: string; period: string; at?: number | null; winner?: string | null; points?: Record<string, number>; settledAt?: number | null } }[];
   /** The jobs' news: badges earned and rank changes. */
   news?: { id: string; data: { kind: string; player: string; at?: number | null; data?: { badge?: string; rank?: Rank; from?: Rank | null } } }[];
   /** The Wheel of Shame's latest draws, their spins and the votes on their proof. */
@@ -155,6 +157,21 @@ export function feedEvents(input: FeedInput): FeedEvent[] {
     }
     if (typeof data.finalAt === 'number') {
       events.push({ id: `final-${id}`, at: data.finalAt, kind: 'results', text: `Week ${data.week} is final` });
+    }
+  }
+
+  for (const { id, data } of input.rematches ?? []) {
+    const week = Number(data.period.slice(1));
+    if (typeof data.at === 'number') {
+      events.push({ id: `rematch-${id}`, at: data.at, kind: 'rematch', text: `${name(data.from)} challenged ${object(name(data.to))} to a rematch: most points in Week ${week} wins` });
+    }
+    if (typeof data.settledAt === 'number') {
+      const of = (player: string) => points(data.points?.[player] ?? 0);
+      const loser = data.winner === data.from ? data.to : data.from;
+      const text = data.winner
+        ? `${name(data.winner)} won the rematch against ${object(name(loser))}, ${of(data.winner)}–${of(loser)}`
+        : `The rematch between ${name(data.from)} and ${object(name(data.to))} ended level, ${of(data.from)}–${of(data.to)}`;
+      events.push({ id: `rematch-result-${id}`, at: data.settledAt, kind: 'rematch', text });
     }
   }
 

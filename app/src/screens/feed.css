@@ -372,3 +372,7 @@
   font-size: 14px;
   color: var(--ink);
 }
+
+.feed-event[data-kind='rematch'] {
+  border-left-color: #ff5a66;
+}

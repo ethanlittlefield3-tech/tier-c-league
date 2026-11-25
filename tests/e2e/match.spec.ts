@@ -32,6 +32,23 @@ const mayaLogs = (request: APIRequestContext, path: string, date: string, entry:
   writeDoc(request, `${path}/days/maya_${date}`, { player: 'maya', date, ...entry, firstAt: new Date(), updatedAt: new Date() });
 
 test.describe('Match', () => {
+  test('After a loss, you can challenge the winner to a rematch: a side race the next week, by its Wednesday', async ({ page, request }) => {
+    const { season, me } = await onMatch(page, request);
+    // Last week Maya beat you, and it is final. Today is this week's Tuesday.
+    await writeDoc(request, `${season.path}/weeks/w01`, {
+      week: 1,
+      mode: 'regular',
+      status: 'final',
+      results: { [me]: { player: me, opponent: 'maya', outcome: 'loss', points: 18, opponentPoints: 22 }, maya: { player: 'maya', opponent: me, outcome: 'win', points: 22, opponentPoints: 18 } },
+    });
+    await patchDoc(request, `${season.path}/calendar/${season.today}`, { dayIndex: 1 });
+    const panel = page.getByRole('region', { name: 'Rematch?' });
+    await expect(panel).toContainText('Maya beat you 22–18 in Week 1.');
+    await panel.getByRole('button', { name: 'Challenge Maya' }).click();
+    await expect(page.getByRole('region', { name: 'Rematch on' })).toContainText('You challenged Maya after Week 1.');
+    await expect.poll(async () => (await readDoc(request, `${season.path}/rematches/w01_${me}`))?.to).toBe('maya');
+  });
+
   test('You can poke your opponent once a day, and the league keeps it', async ({ page, request }) => {
     const { season, me } = await onMatch(page, request);
     await button(page, 'Poke Maya').click();

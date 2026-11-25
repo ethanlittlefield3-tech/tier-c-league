@@ -31,3 +31,4 @@ export * from './badges.ts';
 export * from './rivalries.ts';
 export * from './meter.ts';
 export * from './stickers.ts';
+export * from './rematch.ts';

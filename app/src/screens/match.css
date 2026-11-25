@@ -311,3 +311,22 @@
 .match-poke .field-error {
   margin-top: 8px;
 }
+
+/* A rematch: the side race the week after a loss. */
+.match-rematch {
+  margin-top: 14px;
+  padding: 16px;
+  border: 1px solid rgba(255, 90, 102, 0.35);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255, 90, 102, 0.14), rgba(17, 30, 73, 0.6));
+}
+
+.match-rematch h2 {
+  margin: 0 0 6px;
+  font: italic 900 20px/1.1 var(--display);
+}
+
+.match-rematch .btn {
+  width: 100%;
+  margin-top: 12px;
+}

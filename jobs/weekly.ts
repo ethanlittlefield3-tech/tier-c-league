@@ -12,7 +12,7 @@
 import { randomInt } from 'node:crypto';
 import { FieldValue, Timestamp, getFirestore, type DocumentData } from 'firebase-admin/firestore';
 import { connect } from './admin.ts';
-import { DODGE_PENALTY, STARTER_DARES, STICKER_DAYS, dareStatus, fastDareDue, fastLeagueClock, receiptFixes, rivalRecords, wheelPool, zoneClock, type RivalWeek, type StoredReceipt } from '../engine/src/index.ts';
+import { DODGE_PENALTY, STARTER_DARES, STICKER_DAYS, dareStatus, rematchResult, fastDareDue, fastLeagueClock, receiptFixes, rivalRecords, wheelPool, zoneClock, type RivalWeek, type StoredReceipt } from '../engine/src/index.ts';
 import { fastClockOf } from './lib/fast.ts';
 import { PROOF_DAYS, staleProofs } from './lib/proofs.ts';
 import { revealDemolitions, sameReveals } from './lib/reveals.ts';
@@ -142,6 +142,25 @@ for (const league of leagues) {
           await league.ref.collection('feed').doc(`rank_${line.player}_${seasonId}_${period}`).set({ at: FieldValue.serverTimestamp(), kind: 'rank', player: line.player, data: { rank: ranked.rank, from: before ?? null } });
         }
       }
+      // Rematches raced this week: most points wins, and the loser's car
+      // wears an L for a week. Counted again if the week is unlocked.
+      const races = await seasonRef.collection('rematches').where('period', '==', period).get();
+      for (const race of races.docs) {
+        const from = String(race.get('from'));
+        const to = String(race.get('to'));
+        const pointsOf = (player: string) => settled.lines.find((line) => line.player === player)?.points ?? 0;
+        const result = rematchResult(from, to, pointsOf(from), pointsOf(to));
+        await race.ref.update({ winner: result.winner, points: { [from]: pointsOf(from), [to]: pointsOf(to) }, settledAt: FieldValue.serverTimestamp() });
+        if (result.loser && !race.get('settledAt')) {
+          await league.ref
+            .collection('players')
+            .doc(result.loser)
+            .update({ 'stickers.L': { until: Timestamp.fromMillis(now + STICKER_DAYS * DAY) } })
+            .catch((error: { code?: number }) => {
+              if (error.code !== 5) throw error;
+            });
+        }
+      }
       wentFinal = true;
     }
     console.log(`League ${league.id}, ${period}: ${settled.status}, ${settled.lines.length} players.`);
@@ -240,7 +259,7 @@ for (const league of leagues) {
   // good and announced in the league feed. One read of the season a week.
   if (wentFinal) {
     const fresh = await (async () => {
-      const [allWeeks, days, kit, fixes, asked, sealed, wall] = await Promise.all([
+      const [allWeeks, days, kit, fixes, asked, sealed, wall, races] = await Promise.all([
         seasonRef.collection('weeks').get(),
         seasonRef.collection('days').get(),
         seasonRef.collection('kit').get(),
@@ -248,7 +267,13 @@ for (const league of leagues) {
         seasonRef.collection('receipts').get(),
         seasonRef.collection('sealed').where('kind', '==', 'demolition').get(),
         league.ref.collection('wall').get(),
+        seasonRef.collection('rematches').get(),
       ]);
+      const rematchWins: Record<string, number> = {};
+      for (const race of races.docs) {
+        const winner = race.get('winner');
+        if (typeof winner === 'string') rematchWins[winner] = (rematchWins[winner] ?? 0) + 1;
+      }
       const finals = allWeeks.docs.filter((week) => week.get('status') === 'final' && week.get('results')).sort((a, b) => Number(a.get('week')) - Number(b.get('week')));
       const fast = fastClockOf({ demo: league.get('demo') }, { fast: plain(season.get('fast') ?? {}) });
       const clock = fast ? fastLeagueClock(String(season.get('kickoff')), fast) : zoneClock(String(season.get('timeZone')));
@@ -297,6 +322,7 @@ for (const league of leagues) {
           reactionsReceived: mine.reduce((sum, post) => sum + reactionCount(post), 0),
           daresCompleted: daresDone[player] ?? 0,
           reachedGrandChamp: ((found.get('rankHistory') ?? []) as RankEntry[]).some((entry) => entry.rank === 'grandChamp'),
+          rematchesWon: rematchWins[player] ?? 0,
         });
         if (update.fresh.length === 0) continue;
         await profile.set({ badges: Object.fromEntries(update.fresh.map((badge) => [badge, { at: FieldValue.serverTimestamp(), season: seasonId }])) }, { merge: true });

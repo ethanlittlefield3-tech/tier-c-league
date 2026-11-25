@@ -87,6 +87,34 @@ test.describe('Settling a week, and the League tab', () => {
     expect((await readDoc(request, `${season.path}/standings/current`))?.rows).toEqual(before);
   });
 
+  test('The weekly job settles a rematch with its week: most points wins Payback, the loser wears an L for a week, and the feed says so', async ({ page, request }) => {
+    const league = await createLeague(request, { name: 'Sunday Squad' });
+    const season = await startSeason(request, league);
+    const key = await joinAs(page, league, 'Riley');
+    const me = String((await readDoc(request, `leagues/${league.id}/lookup/${key}`))?.player);
+    await setGoals(request, season, me, { mind: 'Read 20 pages', body: '10k steps', wildcard: 'No vaping' });
+    await addPlayer(request, league, season, 'maya', 'Maya');
+    await writeDoc(request, `${season.path}/weeks/w01`, { week: 1, mode: 'regular', pairs: [{ a: me, b: 'maya' }], targets: { [me]: ['maya'], maya: [me] } });
+    const dates = await finishWeekOne(request, season);
+    for (const date of dates.slice(0, 6)) {
+      await writeDoc(request, `${season.path}/days/${me}_${date}`, logged(me, date, { mind: true, body: true, wildcard: true }));
+      await writeDoc(request, `${season.path}/days/maya_${date}`, logged('maya', date, { mind: true, body: false, wildcard: false }));
+    }
+    // Maya challenged Riley to a side race in Week 1.
+    await writeDoc(request, `${season.path}/rematches/w00_maya`, { from: 'maya', to: me, lost: 'w00', period: 'w01', date: dates[0]!, at: new Date() });
+
+    await runWeekly(league);
+    const race = await readDoc(request, `${season.path}/rematches/w00_maya`);
+    expect(race?.winner).toBe(me);
+    expect((race?.points as Record<string, number>)[me]).toBe(33);
+    expect(Object.keys(((await readDoc(request, `leagues/${league.id}/players/${me}`))?.badges ?? {}) as object)).toContain('payback');
+    expect(((await readDoc(request, `leagues/${league.id}/players/maya`))?.stickers as { L?: unknown } | undefined)?.L).toBeTruthy();
+
+    await page.getByRole('button', { name: "I've saved it", exact: true }).click();
+    await tab(page, 'Feed').click();
+    await expect(page.locator('.feed-event[data-kind="rematch"]').first()).toContainText(/^You won the rematch against Maya, 33–/);
+  });
+
   test('Before any week settles, League says when the standings start', async ({ page, request }) => {
     const league = await createLeague(request);
     await startSeason(request, league);

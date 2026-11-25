@@ -91,6 +91,13 @@ describe('Alerts: things that happen', () => {
     expect(alertsDue(run(now, { wall })).map((alert) => [alert.player, alert.title, alert.body, alert.category])).toEqual([['alex', 'Maya', 'Your boost is empty, Alex.', 'social']]);
   });
 
+  it('A rematch challenge reaches the player challenged at once, and opens Match', () => {
+    const rematches = [{ id: 'w01_maya', from: 'maya', to: 'alex', at: now - 60_000 }];
+    expect(alertsDue(run(now, { rematches })).map((alert) => [alert.player, alert.title, alert.body, alert.category, alert.screen])).toEqual([
+      ['alex', 'Rematch!', 'Maya challenged you to a side race this week: most points wins.', 'social', 'match'],
+    ]);
+  });
+
   it('A poke arrives at once, as "you awake?", and opens Today', () => {
     const pokes = [
       { id: '2027-01-13_maya', player: 'maya', to: 'alex', at: now - 60_000 },

@@ -187,6 +187,8 @@ describe('Badges: power-ups, social and career', () => {
     expect(has({ daresCompleted: 3 }, 'wheelSurvivor')).toBe(true);
     expect(has({ reachedGrandChamp: true }, 'grandChamp')).toBe(true);
     expect(has({ commishSeasons: 1 }, 'commish')).toBe(true);
+    expect(has({ rematchesWon: 1 }, 'payback')).toBe(true);
+    expect(has({ rematchesWon: 0 }, 'payback')).toBe(false);
   });
 
   it('Badges from features still to come are never earned yet', () => {

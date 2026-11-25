@@ -70,6 +70,7 @@ export function Feed(props: { me: Me; onWheel?: () => void }) {
   // The jobs' news: badges earned and rank changes.
   const news = useLatest<NonNullable<FeedInput['news']>[number]['data']>(`${leaguePath}/feed`, 'at', 20);
   const spins = useAll<Spin>(seasonPath ? `${seasonPath}/spins` : null);
+  const rematches = useAll<NonNullable<FeedInput['rematches']>[number]['data']>(seasonPath ? `${seasonPath}/rematches` : null);
   const proofVotes = useWhere<ProofVote & { at?: number | null }>(seasonPath ? `${seasonPath}/votes` : null, 'kind', 'proof');
   const opponent = useOpponent(props.me, now);
   const isCommish = league.data?.commish === props.me.player || league.data?.coCommish === props.me.player;
@@ -87,6 +88,7 @@ export function Feed(props: { me: Me; onWheel?: () => void }) {
     weeks: weeks.docs,
     receipts: receipts.docs,
     news: news.docs,
+    rematches: rematches.docs,
     now,
     wheel: wheel
       ? {

@@ -1,8 +1,8 @@
-import { LANES, nemesisOf, recordText, type Lane, type Rival } from '@tcl/engine';
+import { LANES, REMATCH_LAST_DAY, nemesisOf, recordText, rematchFor, weekPeriod, type Lane, type Rival } from '@tcl/engine';
 import { CarArt } from '../art/car/CarArt.tsx';
 import type { CarParts } from '../art/car/draw.ts';
 import { useState } from 'preact/hooks';
-import { useDoc, useNow } from '../data/hooks.ts';
+import { useDoc, useNow, useWhere } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
 import { whyOf } from '../data/why.ts';
@@ -56,6 +56,77 @@ function Poke(props: { me: Me; seasonId: string; date: string; to: string; name:
   );
 }
 
+interface Race {
+  from: string;
+  to: string;
+  lost: string;
+  period: string;
+}
+
+/**
+ * A rematch (SCOPE.md, "Rematch challenge"): after a loss, challenge the
+ * winner to a side race this week, by Wednesday. Most points wins; the winner
+ * gets the Payback decal, and the loser wears an L for a week.
+ */
+function Rematch(props: { me: Me; seasonId: string; week: number; period: string; dayIndex: number; date: string }) {
+  const seasonPath = `leagues/${props.me.league}/seasons/${props.seasonId}`;
+  const lost = props.week > 1 ? weekPeriod(props.week - 1) : null;
+  const before = useDoc<{ status?: string; results?: Record<string, { opponent: string; outcome: string; points?: number; opponentPoints?: number }> }>(lost ? `${seasonPath}/weeks/${lost}` : null);
+  const races = useWhere<Race>(`${seasonPath}/rematches`, 'period', props.period);
+  const mine = races.docs.map((found) => found.data).find((race) => race.from === props.me.player || race.to === props.me.player) ?? null;
+  const offer = rematchFor(props.me.player, before.data);
+  const rival = mine ? (mine.from === props.me.player ? mine.to : mine.from) : (offer?.to ?? null);
+  const rivalProfile = useDoc<{ displayName?: string }>(rival ? `leagues/${props.me.league}/players/${rival}` : null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const name = rivalProfile.data?.displayName ?? 'your rival';
+  const stakes = 'Most points this week wins: the winner gets the Payback decal, and the loser wears an L for a week.';
+
+  if (races.loading || before.loading) return null;
+  if (mine) {
+    return (
+      <section class="match-rematch" aria-labelledby="rematch-title">
+        <h2 id="rematch-title">Rematch on</h2>
+        <p class="panel-text">
+          {mine.from === props.me.player ? `You challenged ${name} after Week ${props.week - 1}.` : `${name} challenged you after Week ${props.week - 1}.`} {stakes}
+        </p>
+      </section>
+    );
+  }
+  if (!offer || !lost || props.dayIndex > REMATCH_LAST_DAY) return null;
+  const send = () => {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    void loadData()
+      .then((api) => api.challenge(props.me, props.seasonId, { lost, period: props.period, date: props.date, to: offer.to }))
+      .catch((failure: unknown) => setError(REMATCH_TROUBLE[whyOf(failure)]))
+      .finally(() => setBusy(false));
+  };
+  return (
+    <section class="match-rematch" aria-labelledby="rematch-title">
+      <h2 id="rematch-title">Rematch?</h2>
+      <p class="panel-text">
+        {name} beat you {offer.against}–{offer.points} in Week {props.week - 1}. Challenge them to a side race this week, by Wednesday. {stakes}
+      </p>
+      {error && (
+        <p class="field-error" role="alert">
+          {error}
+        </p>
+      )}
+      <button type="button" class="btn" disabled={busy} onClick={send}>
+        {busy ? 'Challenging' : `Challenge ${name}`}
+      </button>
+    </section>
+  );
+}
+
+const REMATCH_TROUBLE: Record<Trouble, string> = {
+  'not-open': 'The league is not open yet.',
+  offline: 'No answer from the league. Check your signal and try again.',
+  refused: 'The league said no: a rematch is for the week right after a loss, by its Wednesday.',
+};
+
 function Notice(props: { title: string; children: string }) {
   return (
     <section class="today-notice">
@@ -105,9 +176,16 @@ export function Match(props: { me: Me }) {
     );
   }
   if (!match.seasonId || !match.season) return <Notice title="No season yet">Your commish sets up the season. Your matchups show here from kickoff.</Notice>;
+  const rematch =
+    match.today && match.dates ? <Rematch me={props.me} seasonId={match.seasonId} week={match.today.week} period={match.today.period} dayIndex={match.today.dayIndex} date={match.dates.today} /> : null;
   if (!match.today || !match.myWeek) return <Notice title="No matchup today">There is no week in play today. Check the League tab for what is next.</Notice>;
   if (match.vsHouse) {
-    return <Notice title="You face The House">The House scores the league's average for the week, worked out when the week settles. Every point you score still counts.</Notice>;
+    return (
+      <div class="match">
+        {rematch}
+        <Notice title="You face The House">The House scores the league's average for the week, worked out when the week settles. Every point you score still counts.</Notice>
+      </div>
+    );
   }
   if (!match.opponent || !match.theirWeek) return <Notice title="No opponent yet">Your opponent shows here once the schedule is out, after the draft.</Notice>;
 
@@ -147,6 +225,8 @@ export function Match(props: { me: Me }) {
           All-time against {them.name}: {recordText(mine.data?.rivals?.[them.id])}
         </p>
       </section>
+
+      {rematch}
 
       <section class="match-day" aria-labelledby="match-day-title">
         <div class="match-day-head">

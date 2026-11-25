@@ -144,7 +144,7 @@ for (const league of leagues) {
   const activitySince = typeof ms(state.activitySince) === 'number' ? Number(ms(state.activitySince)) : now - HOUR;
   // Reactions and comments are bundled: their posts are looked at once an hour.
   const activityDue = now - activitySince >= 55 * MIN;
-  const [wall, asked, dueSoon, docks, spun, proven, changed, active, news, poked] = await Promise.all([
+  const [wall, asked, dueSoon, docks, spun, proven, changed, active, news, poked, challenged] = await Promise.all([
     league.ref.collection('wall').where('at', '>', after).get(),
     seasonRef.collection('receipts').where('requestedAt', '>', after).get(),
     seasonRef.collection('receipts').where('deadline', '>', stamp(since + HOUR)).where('deadline', '<=', stamp(now + HOUR)).get(),
@@ -155,6 +155,7 @@ for (const league of leagues) {
     activityDue ? league.ref.collection('wall').where('activityAt', '>', stamp(activitySince)).get() : null,
     league.ref.collection('feed').where('at', '>', after).get(),
     seasonRef.collection('pokes').where('at', '>', after).get(),
+    seasonRef.collection('rematches').where('at', '>', after).get(),
   ]);
   const today = calendar.find((day) => day.date === clock.dateOf(now)) ?? calendar.at(-1);
   const weekIds = today ? [today.week, today.week - 1].filter((week) => week >= 1).map(weekPeriod) : [];
@@ -179,7 +180,7 @@ for (const league of leagues) {
   const passedPairs = pairs.filter((pair) => moved.has(pair.a) || moved.has(pair.b));
   const closeNow = checks.some((check) => check.kind === 'close' && check.day.period === today?.period);
   const anything =
-    checks.length > 0 || !wall.empty || !asked.empty || !dueSoon.empty || !docks.empty || !spun.empty || !proven.empty || newReveals.length > 0 || finalNow || draftNow || passedPairs.length > 0 || (active !== null && !active.empty) || !news.empty || !poked.empty || Object.keys(held).length > 0;
+    checks.length > 0 || !wall.empty || !asked.empty || !dueSoon.empty || !docks.empty || !spun.empty || !proven.empty || newReveals.length > 0 || finalNow || draftNow || passedPairs.length > 0 || (active !== null && !active.empty) || !news.empty || !poked.empty || !challenged.empty || Object.keys(held).length > 0;
   let leadsAfter: Record<string, Lead> = leadsBefore;
   let closeSent = (state.closeSent as { period?: string; players?: string[] } | undefined)?.period === today?.period ? ((state.closeSent as { players?: string[] }).players ?? []) : [];
   let seen = (state.seen ?? {}) as Record<string, number>;
@@ -216,6 +217,7 @@ for (const league of leagues) {
       ruleOnesIssued: issued.filter((at) => Number(ms(at)) <= now).length,
       wall: wall.docs.map((post) => ({ id: post.id, ...plain(post.data()) })) as unknown as AlertInput['wall'],
       pokes: poked.docs.map((poke) => ({ id: poke.id, ...plain(poke.data()) })) as unknown as AlertInput['pokes'],
+      rematches: challenged.docs.map((race) => ({ id: race.id, ...plain(race.data()) })) as unknown as AlertInput['rematches'],
       receipts: [...new Map([...asked.docs, ...dueSoon.docs].map((receipt) => [receipt.id, { id: receipt.id, ...plain(receipt.data()) }])).values()] as unknown as AlertInput['receipts'],
       docks: docks.docs.map((dock) => ({ id: dock.id, ...plain(dock.data()) })) as unknown as AlertInput['docks'],
       weeks,

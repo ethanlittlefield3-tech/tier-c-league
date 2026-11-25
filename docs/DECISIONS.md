@@ -287,7 +287,7 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 165. **Trash Talker counts taunts and quick-chat lines aimed at someone.** Show-Off and Fan Favorite count each reaction from others (a fire, a skull and a beer are three).
 166. **Recovering Addict: the week's average logged screen time lower than the week before, 3 weeks in a row.**
 167. **Commish: whoever is the commish (not the co-commish) when a week of a season goes final.** Brewmaster and Sweep are decided once every regular week of the season is final.
-168. **Badges from features still to come** (group play, predictions, rematches and the playoffs) are listed in Profile with "Comes with…", and earned once those features ship.
+168. **Badges from features still to come** (group play, predictions and the playoffs) are listed in Profile with "Comes with…", and earned once those features ship. Payback is earned since rematches shipped (call 191).
 169. **Each new badge, and each rank change, is news in the league feed,** made by the weekly job. The alerts job sends it to its player under Progress.
 170. **Profile lists the part each badge unlocks, and the Garage puts it on your car** (calls 171 to 175).
 
@@ -323,6 +323,13 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 **Phase 2: stickers** (new on 2026-11-25, not yet reviewed by the commish)
 
 188. **A sticker goes on high up behind the door, at a slight tilt,** and comes off by itself a week later: the time it comes off is kept with it. A dodge puts the Dare Dodger sticker on (a white feather on yellow) for a week from the dare's deadline (SCOPE.md, "Wheel of Shame"); the rematch's "L" is a white L on red. Profile says why your car wears one.
+
+**Phase 2: rematch challenges** (new on 2026-11-25, not yet reviewed by the commish). A rematch never changes a score.
+
+189. **After a final week's loss to a player, the loser can challenge them once,** to a side race in the week right after, by that week's Wednesday. Results go final early Tuesday, so that leaves at least a day and a half, and a late challenge can't wait to see who is ahead. Never against The House.
+190. **The challenged player doesn't have to accept:** SCOPE.md has the loser challenge, and nothing to accept. They hear about it at once, under Social.
+191. **Most points in the race week wins;** level points means nobody wins. The winner, whichever side, earns the Payback badge (and its decal), and the loser's car wears an L for a week from when the week goes final. A week unlocked and counted again settles its rematches again.
+192. **Rematches show in the feed:** the challenge, and the result once the race week is final. Match shows the challenge offer, and the race while it is on.
 
 **Calendar**
 
