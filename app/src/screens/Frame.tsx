@@ -4,6 +4,7 @@ import { TAB_ICONS, type Tab } from '../art/tabIcons.tsx';
 import type { Me } from '../data/identity.ts';
 import { initialOf } from '../join/name.ts';
 import { Commish } from './Commish.tsx';
+import { Match } from './Match.tsx';
 import { Profile } from './Profile.tsx';
 import { Today } from './Today.tsx';
 import './frame.css';
@@ -88,7 +89,7 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
         </button>
       </header>
       <main class="frame-body" key={tab}>
-        {tab === 'today' ? <Today me={props.me} /> : <Soon tab={current} />}
+        {tab === 'today' ? <Today me={props.me} /> : tab === 'match' ? <Match me={props.me} /> : <Soon tab={current} />}
       </main>
       <nav class="frame-tabs" aria-label="Main">
         {TABS.map((info) => {

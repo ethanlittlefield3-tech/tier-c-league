@@ -1,0 +1,258 @@
+/* Match: you in team blue, your opponent in team orange. Their cards are the
+   same as Today's, but read-only, and a goal they hit fills orange. */
+
+.match {
+  max-width: 460px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.match-board {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 18px 14px 14px;
+  border-radius: 22px;
+  border: 1px solid rgba(196, 216, 255, 0.16);
+  background:
+    radial-gradient(80% 120% at 0% 0%, rgba(31, 139, 255, 0.28), transparent 60%),
+    radial-gradient(80% 120% at 100% 0%, rgba(255, 138, 30, 0.24), transparent 60%),
+    linear-gradient(180deg, #13245a, #0a1330);
+}
+
+.match-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.match-badge {
+  width: 56px;
+  height: 56px;
+}
+
+.match-name {
+  max-width: 100%;
+  font-weight: 700;
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.match-points {
+  font: italic 900 38px/1 var(--display);
+}
+
+.match-side[data-team='blue'] .match-points {
+  color: #7cc4ff;
+}
+
+.match-side[data-team='orange'] .match-points {
+  color: #ffc47c;
+}
+
+.match-vs {
+  font: italic 900 20px/1 var(--display);
+  color: var(--ink-soft);
+}
+
+.match-lead {
+  grid-column: 1 / -1;
+  margin: 6px 0 0;
+  text-align: center;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.match-day {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.match-day-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.match-day h2 {
+  margin: 0;
+  font: italic 900 22px/1.1 var(--display);
+  overflow-wrap: anywhere;
+}
+
+.match-day-total {
+  margin: 0;
+  font: italic 900 30px/1 var(--display);
+  white-space: nowrap;
+}
+
+.match-day-total span {
+  margin-left: 6px;
+  font: 500 14px/1 var(--body);
+  color: var(--ink-soft);
+}
+
+.match-day-total[data-sign='down'] {
+  color: #ff9aa2;
+}
+
+.match-notes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.match-notes:empty {
+  display: none;
+}
+
+.match-note {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 138, 30, 0.18);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #ffc47c;
+}
+
+.match-note-rest {
+  background: rgba(255, 207, 63, 0.16);
+  color: var(--gold);
+}
+
+/* Read-only: no pointer, and a hit goal in team orange. */
+.match-squares .square {
+  cursor: default;
+}
+
+.match-squares .square-goal[data-state='hit'] {
+  border-color: #ffc47c;
+  background: linear-gradient(180deg, #f08a2a, #c85f0c);
+  box-shadow: 0 8px 24px rgba(255, 138, 30, 0.3);
+}
+
+.match-squares .square-goal[data-state='hit'] .goal-mark-hit {
+  color: #c85f0c;
+}
+
+.match-squares .square-chip.match-chip {
+  background: #c85f0c;
+}
+
+.match-beers {
+  margin: 0;
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+.match-beers strong {
+  color: #ffc47c;
+}
+
+.match-week h2 {
+  margin: 0 0 10px;
+}
+
+.match-letters,
+.match-row {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  align-items: center;
+  gap: 6px;
+}
+
+.match-letters {
+  grid-template-columns: 64px repeat(7, 1fr);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+.match-letters span[data-today='true'] {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.match-row {
+  margin-top: 6px;
+}
+
+.match-row-name {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.match-row[data-team='blue'] .match-row-name {
+  color: #7cc4ff;
+}
+
+.match-row[data-team='orange'] .match-row-name {
+  color: #ffc47c;
+}
+
+.match-cells {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.match-cells li {
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  border: 1px solid rgba(124, 150, 220, 0.35);
+  background: #17245a;
+  font: italic 900 13px/1 var(--display);
+}
+
+.match-row[data-team='blue'] .match-cells li[data-sign='up'] {
+  border-color: transparent;
+  background: linear-gradient(180deg, #4a8ff5, #2f6fe0);
+}
+
+.match-row[data-team='orange'] .match-cells li[data-sign='up'] {
+  border-color: transparent;
+  background: linear-gradient(180deg, #f08a2a, #c85f0c);
+}
+
+.match-cells li[data-sign='down'] {
+  border-color: transparent;
+  background: linear-gradient(180deg, #e2525e, #b02a37);
+}
+
+.match-cells li[data-state='future'] {
+  border-style: dashed;
+  background: transparent;
+}
+
+.match-secret {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px dashed rgba(255, 154, 162, 0.5);
+  font-size: 14px;
+  line-height: 1.45;
+  color: #ffc9cd;
+}

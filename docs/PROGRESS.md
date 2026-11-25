@@ -1,6 +1,6 @@
 # Tier C League: progress log
 
-Last updated 2026-11-25, after Today's week strip and scoreboard.
+Last updated 2026-11-25, after the Match tab.
 
 ## Plan change (commish ruling, 2026-11-25)
 
@@ -116,6 +116,13 @@ Last updated 2026-11-25, after Today's week strip and scoreboard.
   - Each day is scored by the engine with everything on it: power-ups, commish docks and voids, and Demolitions once their day locks. A Demolition aimed at you is sealed until noon, so the phone looks for it once after each noon: about 7 reads a week.
   - Against The House, the scoreboard says so; The House's number comes with the weekly settlement job.
   - 7 logic tests and 4 flow tests.
+- **Match** (2026-11-25): this week's matchup.
+  - The score with both badges, you in blue and your opponent in orange, and who leads.
+  - Their day, live, as four read-only cards in team orange: screen time with its points, their goals, beers, and their day total. Rest day, Aerial and Rule One show when they apply.
+  - Both weeks side by side, day by day.
+  - Your own sealed Demolition on them shows here, to you alone.
+  - In a bye week, Match says you face The House. Before the schedule exists, it says the opponent comes after the draft.
+  - 6 flow tests.
 - **The shorter intro on reopening is on purpose:** the full intro plays on the first open each day, and a 1-second title after that (SCOPE.md, "Intro animation").
 
 ## Waiting on the commish
@@ -124,7 +131,7 @@ Last updated 2026-11-25, after Today's week strip and scoreboard.
 
 ## Next
 
-1. **Step 3, continued.** Next: Match (your opponent's live day), then Feed, League, the rest of Profile, Wheel, the rest of Commish tools and the mini draft.
+1. **Step 3, continued.** Next: the rest of Commish tools (the audit log, keys, joining), the offline banner, Feed and the wall, League, the weekly settlement job, receipts, the mini draft and the Wheel.
    - **Still to add to joining:** the notifications step (with push alerts), a commish's "approve joins" switch, and a way to make a league. Leagues are made by a setup script, which is built with the jobs in Step 4.
    - **Offline start** comes with the offline step: a service worker that keeps the app's files on the phone, so it opens with no signal. Chrome on Android only offers its one-tap Install button once that exists. Until then Android installs from the browser menu, which the guide explains.
 2. **Before real players join:** limit the app's web key to the app's own address in the Google Cloud console, and look at App Check, which stops other programs from using the database's free daily allowance.

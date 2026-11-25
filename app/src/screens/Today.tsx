@@ -20,6 +20,7 @@ import {
 import type { CalDay } from '../today/kit.ts';
 import { playerWeek, type KitPlay } from '../today/week.ts';
 import { PowerUps, type Play } from './PowerUps.tsx';
+import { GoalMark } from './GoalMark.tsx';
 import { ScreenSheet } from './ScreenSheet.tsx';
 import { WeekStrip } from './WeekStrip.tsx';
 import './today.css';
@@ -76,31 +77,6 @@ function sheetDate(date: string): string {
   const [year, month, day] = date.split('-').map(Number) as [number, number, number];
   const weekday = (new Date(Date.UTC(year, month - 1, day)).getUTCDay() + 6) % 7;
   return `${(DAY_NAMES[weekday] ?? '').slice(0, 3)} ${shortDate(date)}`;
-}
-
-/** The ring, check, bolt or "Rest" in the corner of a goal card. */
-function GoalMark(props: { state: string }) {
-  if (props.state === 'rest') return <span class="goal-mark goal-mark-rest">Rest</span>;
-  if (props.state === 'boosted') {
-    return (
-      <span class="goal-mark goal-mark-boost">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M13 3 6 13h5l-1 8 7-10h-5Z" fill="currentColor" />
-        </svg>
-        Boost
-      </span>
-    );
-  }
-  if (props.state === 'hit') {
-    return (
-      <span class="goal-mark goal-mark-hit">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="m6 12.5 4 4 8-9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-      </span>
-    );
-  }
-  return <span class="goal-mark" />;
 }
 
 /** A mug of beer, drawn for this app. */
