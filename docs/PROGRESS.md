@@ -1,6 +1,6 @@
 # Tier C League: progress log
 
-Last updated 2026-11-26, after the rest of Commish tools.
+Last updated 2026-11-26, after offline mode.
 
 ## Plan change (commish ruling, 2026-11-25)
 
@@ -131,6 +131,12 @@ Last updated 2026-11-26, after the rest of Commish tools.
   - Today's day total now includes the commish's fixes, and shows them ("Commish: −1").
   - 5 flow tests with two phones: what the commish does is checked on the other player's phone.
   - Still to come with their features: approving joins, the draft controls, settling a week from the app, and moderation.
+- **Offline mode** (2026-11-26, from PHASE1.md's Step 3).
+  - The phone keeps its own copy of the league's data and of saves it hasn't sent, so the app opens and logging works with no signal. Everything goes through when the signal is back.
+  - With no signal, a strip under the header says so. Today's save line says the log is kept on this phone.
+  - If an unsent save could miss the noon lock (offline, something waiting, the lock within 3 hours), Today warns: "This day locks at 12:00 pm. Get a signal before then…"
+  - Fixed on the way, a real bug: two quick taps could lose one, and a quick second tap on a brand-new day could be refused. Each tap now builds on the phone's last save, not on what the screen last showed. A test reproduces it, and fails with the old behavior.
+  - 3 logic tests and 3 flow tests that cut the browser's connection.
 - **The shorter intro on reopening is on purpose:** the full intro plays on the first open each day, and a 1-second title after that (SCOPE.md, "Intro animation").
 
 ## Waiting on the commish
@@ -139,7 +145,7 @@ Last updated 2026-11-26, after the rest of Commish tools.
 
 ## Next
 
-1. **Step 3, continued.** Next: the offline banner, Feed and the wall, League, the weekly settlement job, receipts, the mini draft and the Wheel.
+1. **Step 3, continued.** Next: the weekly settlement job and League (standings and the schedule), then Feed and the wall, receipts, the mini draft and the Wheel.
    - **Still to add to joining:** the notifications step (with push alerts), a commish's "approve joins" switch, and a way to make a league. Leagues are made by a setup script, which is built with the jobs in Step 4.
    - **Offline start** comes with the offline step: a service worker that keeps the app's files on the phone, so it opens with no signal. Chrome on Android only offers its one-tap Install button once that exists. Until then Android installs from the browser menu, which the guide explains.
 2. **Before real players join:** limit the app's web key to the app's own address in the Google Cloud console, and look at App Check, which stops other programs from using the database's free daily allowance.

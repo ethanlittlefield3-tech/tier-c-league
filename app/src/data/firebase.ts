@@ -9,7 +9,7 @@
  */
 import { initializeApp } from 'firebase/app';
 import { browserLocalPersistence, connectAuthEmulator, indexedDBLocalPersistence, initializeAuth, signInAnonymously } from 'firebase/auth';
-import { connectFirestoreEmulator, initializeFirestore, type Firestore } from 'firebase/firestore';
+import { connectFirestoreEmulator, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, type Firestore } from 'firebase/firestore';
 import { backend } from './backend.ts';
 
 export interface Connection {
@@ -34,7 +34,16 @@ async function open(): Promise<Connection> {
 
   const app = initializeApp(where.options);
   const auth = initializeAuth(app, { persistence: [indexedDBLocalPersistence, browserLocalPersistence] });
-  const db = initializeFirestore(app, {});
+  // The phone keeps its own copy of what it has read and the saves it hasn't
+  // sent yet, so the app works with no signal and catches up when it's back
+  // (PHASE1.md, "Offline"). If the phone can't keep a copy, it simply works
+  // online only.
+  let db: Firestore;
+  try {
+    db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+  } catch {
+    db = initializeFirestore(app, {});
+  }
   if (where.emulators) {
     const host = window.location.hostname;
     connectAuthEmulator(auth, `http://${host}:${where.emulators.authPort}`, { disableWarnings: true });

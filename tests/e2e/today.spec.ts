@@ -111,6 +111,22 @@ test.describe('Today', () => {
     await expect(total(page)).toContainText('−1');
   });
 
+  test('Quick taps all land: a second tap never undoes the first', async ({ page, request }) => {
+    const { season, player } = await onToday(page, request);
+    // Three goals and two beers, one right after another, before the screen can redraw.
+    await page.evaluate(() => {
+      const tap = (selector: string) => document.querySelector<HTMLButtonElement>(selector)!.click();
+      tap('.square-goal[data-lane="mind"]');
+      tap('.square-goal[data-lane="body"]');
+      tap('.square-goal[data-lane="wildcard"]');
+      tap('button[aria-label="One beer more"]');
+      tap('button[aria-label="One beer more"]');
+    });
+    await saved(page);
+    await expect.poll(async () => (await dayDoc(request, season, player, season.today))?.goals).toEqual({ mind: true, body: true, wildcard: true });
+    expect((await dayDoc(request, season, player, season.today))?.beers).toBe(2);
+  });
+
   test('A full day adds up the way the engine scores it', async ({ page, request }) => {
     await onToday(page, request);
     await goal(page, 'mind').click();

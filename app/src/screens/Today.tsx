@@ -1,4 +1,4 @@
-import { useRef, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { LANES, weekPeriod, type Lane, type Square } from '@tcl/engine';
 import { useDoc, useNow, usePeek, useWhere } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
@@ -23,6 +23,7 @@ import { PowerUps, type Play } from './PowerUps.tsx';
 import { GoalMark } from './GoalMark.tsx';
 import { ScreenSheet } from './ScreenSheet.tsx';
 import { WeekStrip } from './WeekStrip.tsx';
+import { lateSyncRisk, useOnline } from '../ui/online.ts';
 import './today.css';
 
 interface LeagueDoc {
@@ -114,6 +115,10 @@ export function Today(props: { me: Me }) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const screenCard = useRef<HTMLButtonElement>(null);
+  const online = useOnline();
+  // The last entry this phone saved, by day. Taps build on it rather than on
+  // what the screen last showed, so a quick second tap never undoes the first.
+  const lastSaved = useRef<{ date: string; entry: DayEntry } | null>(null);
 
   const leaguePath = `leagues/${props.me.league}`;
   const league = useDoc<LeagueDoc>(leaguePath);
@@ -178,6 +183,11 @@ export function Today(props: { me: Me }) {
     lockedSoFar,
   );
 
+  // Once the server has every save, the screen is the truth again.
+  useEffect(() => {
+    if (!day.pending) lastSaved.current = null;
+  }, [day.pending, day.data]);
+
   if (league.loading || season.loading || (seasonPath && (todayCal.loading || yesterdayCal.loading))) {
     return (
       <div class="waiting today-waiting" aria-busy="true">
@@ -225,16 +235,28 @@ export function Today(props: { me: Me }) {
     adjustments: fixes.map((change) => change.amount).filter((amount) => amount !== 0),
   });
 
+  /** What the next save starts from: this phone's last save for the day, if the screen hasn't caught up with it yet. */
+  const base = (): DayEntry => (lastSaved.current && lastSaved.current.date === date ? lastSaved.current.entry : entry);
+
   const save = (next: DayEntry) => {
     if (!editable || !date || !seasonId) return;
+    // A day is new only if neither the server nor this phone has saved it yet.
+    const isNew = !day.data && !(lastSaved.current && lastSaved.current.date === date);
+    lastSaved.current = { date, entry: next };
     setError(null);
     void loadData()
-      .then((api) => api.saveDay({ league: props.me.league, season: seasonId, player: props.me.player, date, entry: next, isNew: !day.data }))
+      .then((api) => api.saveDay({ league: props.me.league, season: seasonId, player: props.me.player, date, entry: next, isNew }))
       .catch((failure: unknown) => setError(TROUBLE[whyOf(failure)]));
   };
 
-  const toggleGoal = (lane: Lane) => save({ ...entry, goals: { ...entry.goals, [lane]: !entry.goals[lane] } });
-  const setBeers = (beers: number) => save({ ...entry, beers: Math.min(BEERS_MAX, Math.max(0, beers)) });
+  const toggleGoal = (lane: Lane) => {
+    const from = base();
+    save({ ...from, goals: { ...from.goals, [lane]: !from.goals[lane] } });
+  };
+  const setBeers = (change: number) => {
+    const from = base();
+    save({ ...from, beers: Math.min(BEERS_MAX, Math.max(0, from.beers + change)) });
+  };
   const closeSheet = () => {
     setSheetOpen(false);
     screenCard.current?.focus({ preventScroll: true });
@@ -242,7 +264,8 @@ export function Today(props: { me: Me }) {
 
   const totalNote =
     dayWindow === 'locked' ? 'Final' : score.kind === 'open' ? 'Nothing logged yet' : restDay ? 'So far, on your rest day' : 'So far';
-  const status = error ?? (day.pending ? 'Saving' : day.data ? 'Saved' : '');
+  const status = error ?? (day.pending ? (online ? 'Saving' : 'Saved on this phone. It goes through when you are back online.') : day.data ? 'Saved' : '');
+  const lateRisk = lateSyncRisk({ online, pending: day.pending, lock: cal?.lock ?? null, now });
   const logsOf = (docs: { data: DayEntry & { date: string } }[]) => Object.fromEntries(docs.map((found) => [found.data.date, found.data]));
   const weekDays = week.docs.map((found) => found.data);
   const myDemolition = sealed.docs.map((found) => found.data).find((play) => play.period === period && play.target === opponentId) ?? null;
@@ -341,14 +364,14 @@ export function Today(props: { me: Me }) {
           </p>
         </div>
         <div class="beer-controls">
-          <button type="button" class="step" aria-label="One beer less" disabled={!editable || entry.beers === 0} onClick={() => setBeers(entry.beers - 1)}>
+          <button type="button" class="step" aria-label="One beer less" disabled={!editable || entry.beers === 0} onClick={() => setBeers(-1)}>
             {'\u2212'}
           </button>
           <p class="beer-count" aria-live="polite">
             <span class="sr-only">Beers: </span>
             {entry.beers}
           </p>
-          <button type="button" class="step" aria-label="One beer more" disabled={!editable || entry.beers >= BEERS_MAX} onClick={() => setBeers(entry.beers + 1)}>
+          <button type="button" class="step" aria-label="One beer more" disabled={!editable || entry.beers >= BEERS_MAX} onClick={() => setBeers(1)}>
             +
           </button>
         </div>
@@ -373,6 +396,12 @@ export function Today(props: { me: Me }) {
         ))}
       </section>
 
+      {lateRisk && (
+        <p class="notice today-late" role="alert">
+          <strong>This day locks at 12:00 pm.</strong>
+          Get a signal before then, or what you logged on this phone won't count.
+        </p>
+      )}
       <p class={error ? 'today-status today-status-error' : 'today-status'} role="status">
         {status}
       </p>
@@ -426,7 +455,7 @@ export function Today(props: { me: Me }) {
           par={season.data.par}
           editable={editable}
           onSave={(minutes) => {
-            save({ ...entry, screenMinutes: minutes });
+            save({ ...base(), screenMinutes: minutes });
             closeSheet();
           }}
           onClose={closeSheet}

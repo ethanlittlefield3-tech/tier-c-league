@@ -167,6 +167,8 @@ Nothing is open. The receipts question that was here is now ruling R6.
 - **The status bar is solid ("black"), not see-through ("black-translucent").** On iOS 26 the see-through one makes iOS add the status bar's height at the bottom too, so the whole app sits too high. Apple's advice in WebKit bug 317153 is to drop it. The status bar now shows the app's navy.
 - **The page itself never scrolls.** `html` and `body` are locked, and `#app` is the one thing that scrolls. A drag can't leave the whole screen shifted, and full-screen pages like the title can't move.
 - **After the keyboard closes, the page goes back to the top.** iOS can leave a Home Screen app scrolled up after typing.
+- **The phone keeps its own copy of the league's data** (Firestore's offline cache), so the app opens and logs with no signal. The server still decides: a save that arrives after the lock is refused.
+- **The late-sync warning starts 3 hours before the lock,** when the phone is offline with a save waiting.
 - **The fonts are served by the app,** not fetched from a font website. The first screen waits on nobody else, the app can start with no signal once offline start is built, and no other company sees who opens the app. Both fonts are open (SIL Open Font License).
 - **Launch pictures are drawn for a list of screen sizes** (`app/launch-screens.ts`), because iOS only uses a picture that matches the screen exactly. A new iPhone size needs one new row and `npm run icons`. Until then that phone starts on a plain screen and everything else works.
 - **The installed app stays upright on Android.** iPhones and iPads decide for themselves and ignore the request.

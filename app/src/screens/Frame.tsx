@@ -8,6 +8,7 @@ import { Commish } from './Commish.tsx';
 import { Match } from './Match.tsx';
 import { Profile } from './Profile.tsx';
 import { Today } from './Today.tsx';
+import { useOnline } from '../ui/online.ts';
 import './frame.css';
 
 interface TabInfo {
@@ -84,6 +85,7 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
   }
 
   const current = TABS.find((info) => info.id === tab) ?? TABS[0]!;
+  const online = useOnline();
   return (
     <div class="frame" data-tab={tab}>
       <header class="frame-top">
@@ -95,6 +97,11 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
           <PlayerBadge initial={initialOf(props.me.displayName)} />
         </button>
       </header>
+      {!online && (
+        <p class="offline" role="status">
+          No signal. What you log is kept on this phone and goes through when you're back online.
+        </p>
+      )}
       <main class="frame-body" key={tab}>
         {tab === 'today' ? <Today me={props.me} /> : tab === 'match' ? <Match me={props.me} /> : <Soon tab={current} />}
       </main>
