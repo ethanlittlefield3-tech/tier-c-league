@@ -44,7 +44,6 @@ Where everything lives in Firestore, who can write it and who can read it. It co
 | `wall/{post}/comments/{id}` | The author | Members | 1 | `by`, `text`, `at`, `deleted` |
 | `wall/{post}/reactions/{player}` | That player | Members | 1 | `fire`, `skull`, `beer` |
 | `taunts/{player}` | That player | That player | 1 | `saved` (custom taunts, with `{name}`) |
-| `dares/{dare}` | The commish (starters) and each player (one per season) | Members | 1 | `text`, `by`, `source`, `status` (active, vetoed, retired), `season` |
 | `suggestions/{idea}` | Any member. The commish tags it. | Members | 2 | `by`, `text`, `at`, `tag` (planned, maybe, no), `votes` |
 | `rivalries/{pair}` | Jobs | Members | 2 | `a`, `b`, `wins`, `draws`, `lastMet` |
 | `trophies/{season}` | Jobs | Members | 2 | One entry per trophy in SCOPE.md's trophy case |
@@ -70,7 +69,8 @@ Where everything lives in Firestore, who can write it and who can read it. It co
 | `receiptSlots/{period}_{player}_{n}` | The requester, with the receipt | Members | 1 | `receipt`. Three slots a week is the limit of 3 requests. |
 | `proofs/{id}` | The player who owes the proof, before the deadline | Members | 1 | `photo` (300 KB or less), `at`. Jobs delete it after 14 days. |
 | `spins/{id}` | The spinner, by tapping Spin | Members | 1 | `player`, `period`, `at`. Its existence is what unseals the Wheel draw. |
-| `votes/{voter}_goal_{player}_{lane}_{version}` | That voter, while the draft's votes are open. One vote each, which can be changed. | Members | 1, rules today | `voter`, `kind` (goal), `player`, `lane`, `version`, `choice` (approve or veto), `at`. Nobody votes on their own goal, and a vote is for the goal's current version. Still to come: dare vetoes and dare proof. Phase 3: the group-play ranking. |
+| `dares/{player}` | That player, from the draft's dares step until its votes close | Members | 1, rules today | `text` (1 to 80 characters), `version`. Whether it stands is worked out from `votes/`. The Wheel's pool is these plus the 8 starter dares, which are kept in the engine (`engine/src/dares.ts`). |
+| `votes/{voter}_goal_{player}_{lane}_{version}` and `votes/{voter}_dare_{player}_{version}` | That voter, while the draft's votes are open. One vote each, which can be changed. | Members | 1, rules today | `voter`, `kind` (goal or dare), `player`, `lane` (goals only), `version`, `choice` (approve or veto), `at`. Nobody votes on their own, and a vote is for the current words. Still to come: dare proof. Phase 3: the group-play ranking. |
 | `draft/state` | The commish, with an audit entry. Each player makes their own rival pick when it is their turn. | Members | 1 and 3, rules today | `step` (goals, rivals, dares, done), `order` (drawn at random when the draft starts), `left` (who is still unpicked, in draft order), `picks` (each picker's rival), `turnStartedAt` (when the current pick's 2-minute clock started), `startedAt`, `votesCloseAt`, `audit`. Phase 3: captains' picks. |
 | `predictions/{period}_{player}` | That player, before Sunday 11:59 pm | That player; everyone after the deadline | 2 | `picks`, `at` |
 | `pokes/{date}_{player}` | That player, once a day | Members | 2 | `to`, `at` |

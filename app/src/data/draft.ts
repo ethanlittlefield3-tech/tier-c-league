@@ -163,3 +163,19 @@ export const voteOnGoal = (me: Me, season: string, input: { player: string; lane
     const id = `${me.player}_goal_${input.player}_${input.lane}_${input.version}`;
     await setDoc(doc(db, 'leagues', me.league, 'seasons', season, 'votes', id), { voter: me.player, kind: 'goal', ...input, at: serverTimestamp() });
   });
+
+/** Saves your dare for the Wheel. New words get a new version, so the old votes stop counting. */
+export const saveDare = (me: Me, season: string, text: string) =>
+  attempt(async (db) => {
+    const ref = doc(db, 'leagues', me.league, 'seasons', season, 'dares', me.player);
+    const before = (await getDoc(ref)).data() as { text: string; version: number } | undefined;
+    const words = text.trim().replace(/\s+/g, ' ');
+    await setDoc(ref, { text: words, version: !before ? 1 : before.text === words ? before.version : before.version + 1 });
+  });
+
+/** Approve or veto one version of someone else's dare. Voting again changes the vote. */
+export const voteOnDare = (me: Me, season: string, input: { player: string; version: number; choice: 'approve' | 'veto' }) =>
+  attempt(async (db) => {
+    const id = `${me.player}_dare_${input.player}_${input.version}`;
+    await setDoc(doc(db, 'leagues', me.league, 'seasons', season, 'votes', id), { voter: me.player, kind: 'dare', ...input, at: serverTimestamp() });
+  });

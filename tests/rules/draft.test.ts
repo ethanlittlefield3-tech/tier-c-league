@@ -237,3 +237,86 @@ describe('Rival picks', () => {
     await assertFails(pick(dev1(), 'p2', 'p3', ['p1']));
   });
 });
+
+const dares = (player: string) => `${season}/dares/${player}`;
+const dare = (text: string, version = 1) => ({ text, version });
+const dareVoteId = (voter: string, player: string, version: number) => `${voter}_dare_${player}_${version}`;
+const dareVote = (voter: string, player: string, version: number, choice: 'approve' | 'veto') => ({ voter, kind: 'dare', player, version, choice, at: now() });
+
+/** The draft at its dares step, with votes open and Maya's (p2's) dare in. */
+async function inDaresStep() {
+  await seedLeague();
+  await asJob(async (db) => {
+    await db.doc(season).update({ status: 'draft' });
+    await db.doc(STATE).set({ step: 'dares', order: ['p2', 'p3', 'p1'], left: ['p1'], picks: { p2: 'p3' }, turnStartedAt: new Date(), startedAt: new Date(), votesCloseAt: inHours(24) });
+    await db.doc(dares('p2')).set(dare('Wear a cape to the gym.'));
+  });
+}
+
+describe('Dares at the draft', () => {
+  beforeEach(inDaresStep);
+
+  it('At the dares step, each player adds one dare for the Wheel', async () => {
+    await assertSucceeds(dev3().doc(dares('p3')).set(dare('Post your worst selfie.')));
+  });
+
+  it('A dare is 1 to 80 characters', async () => {
+    await assertFails(dev3().doc(dares('p3')).set(dare('')));
+    await assertFails(dev3().doc(dares('p3')).set(dare('x'.repeat(81))));
+    await assertSucceeds(dev3().doc(dares('p3')).set(dare('x'.repeat(80))));
+  });
+
+  it("Nobody adds a dare in someone else's name, the commish included", async () => {
+    await assertFails(dev3().doc(dares('p2')).set(dare('Nap', 2)));
+    await assertFails(dev1().doc(dares('p3')).set(dare('Nap')));
+  });
+
+  it("Changing a dare's words gives it a new version, so votes on the old words stop counting", async () => {
+    await assertSucceeds(dev2().doc(dares('p2')).set(dare('Wear a cape to work.', 2)));
+    await assertFails(dev2().doc(dares('p2')).set(dare('Wear a cape all day.', 2)));
+  });
+
+  it('Dares wait for the dares step, and close when the votes close', async () => {
+    await asJob((db) => db.doc(STATE).update({ step: 'rivals' }));
+    await assertFails(dev3().doc(dares('p3')).set(dare('Post your worst selfie.')));
+    await asJob((db) => db.doc(STATE).update({ step: 'done', votesCloseAt: inHours(-1) }));
+    await assertFails(dev3().doc(dares('p3')).set(dare('Post your worst selfie.')));
+  });
+
+  it('After the live draft ends, a late dare is still welcome until the votes close', async () => {
+    await asJob((db) => db.doc(STATE).update({ step: 'done' }));
+    await assertSucceeds(dev3().doc(dares('p3')).set(dare('Post your worst selfie.')));
+  });
+
+  it("Players vote approve or veto on each other's dares, never their own and never in someone else's name", async () => {
+    await assertSucceeds(dev3().doc(`${season}/votes/${dareVoteId('p3', 'p2', 1)}`).set(dareVote('p3', 'p2', 1, 'veto')));
+    await assertFails(dev2().doc(`${season}/votes/${dareVoteId('p2', 'p2', 1)}`).set(dareVote('p2', 'p2', 1, 'approve')));
+    await assertFails(dev3().doc(`${season}/votes/${dareVoteId('p1', 'p2', 1)}`).set(dareVote('p1', 'p2', 1, 'veto')));
+  });
+
+  it("A vote is for the dare's current words", async () => {
+    await dev2().doc(dares('p2')).set(dare('Wear a cape to work.', 2));
+    await assertFails(dev3().doc(`${season}/votes/${dareVoteId('p3', 'p2', 1)}`).set(dareVote('p3', 'p2', 1, 'veto')));
+    await assertSucceeds(dev3().doc(`${season}/votes/${dareVoteId('p3', 'p2', 2)}`).set(dareVote('p3', 'p2', 2, 'veto')));
+  });
+
+  it('Votes on dares wait for the dares step too', async () => {
+    await asJob((db) => db.doc(STATE).update({ step: 'rivals' }));
+    await assertFails(dev3().doc(`${season}/votes/${dareVoteId('p3', 'p2', 1)}`).set(dareVote('p3', 'p2', 1, 'veto')));
+  });
+
+  it('Votes on dares close when the votes close', async () => {
+    await asJob((db) => db.doc(STATE).update({ votesCloseAt: inHours(-1) }));
+    await assertFails(dev3().doc(`${season}/votes/${dareVoteId('p3', 'p2', 1)}`).set(dareVote('p3', 'p2', 1, 'veto')));
+  });
+
+  it('A dare vote has no lane, and is filed under its own name', async () => {
+    await assertFails(dev3().doc(`${season}/votes/${dareVoteId('p3', 'p2', 1)}`).set({ ...dareVote('p3', 'p2', 1, 'veto'), lane: 'mind' }));
+    await assertFails(dev3().doc(`${season}/votes/p3_goal_p2_mind_1`).set(dareVote('p3', 'p2', 1, 'veto')));
+  });
+
+  it('Everyone in the league can see the dares; nobody outside can', async () => {
+    await assertSucceeds(dev3().doc(dares('p2')).get());
+    await assertFails(stranger().doc(dares('p2')).get());
+  });
+});

@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 177 of 177 passing.
+- **Tests:** 189 of 189 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -272,6 +272,21 @@ The commish runs it, and every change goes in the audit log. Players set their o
 - Picks happen only during the rival-pick step
 - A pick changes nothing else in the draft
 - The commish can make a missed pick for a player, and it goes in the audit log
+
+**Dares at the draft**
+
+- At the dares step, each player adds one dare for the Wheel
+- A dare is 1 to 80 characters
+- Nobody adds a dare in someone else's name, the commish included
+- Changing a dare's words gives it a new version, so votes on the old words stop counting
+- Dares wait for the dares step, and close when the votes close
+- After the live draft ends, a late dare is still welcome until the votes close
+- Players vote approve or veto on each other's dares, never their own and never in someone else's name
+- A vote is for the dare's current words
+- Votes on dares wait for the dares step too
+- Votes on dares close when the votes close
+- A dare vote has no lane, and is filed under its own name
+- Everyone in the league can see the dares; nobody outside can
 
 ## Standings
 

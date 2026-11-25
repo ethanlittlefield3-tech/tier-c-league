@@ -139,10 +139,13 @@ test.describe('Today', () => {
   });
 
   test('What you logged is still there the next time the app opens', async ({ page, request }) => {
-    await onToday(page, request);
+    const { season, player } = await onToday(page, request);
     await goal(page, 'body').click();
     await button(page, 'One beer more').click();
+    await expect(page.locator('.beer-count')).toContainText('1');
     await saved(page);
+    // The server has both before the app closes.
+    await expect.poll(async () => (await dayDoc(request, season, player, season.today))?.beers).toBe(1);
     await page.reload();
     await tapToEnter(page);
     await expect(goal(page, 'body')).toHaveAttribute('aria-pressed', 'true');

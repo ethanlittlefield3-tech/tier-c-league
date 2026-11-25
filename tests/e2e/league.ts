@@ -210,6 +210,22 @@ export async function rivalPicksUnderway(request: APIRequestContext, season: { p
   });
 }
 
+/** The draft at its dares step: the rival picks are in, in pairs down the order, and votes are open for 24 hours. */
+export async function daresUnderway(request: APIRequestContext, season: { path: string }, order: string[]): Promise<void> {
+  await patchDoc(request, season.path, { status: 'draft' });
+  const picks: { [player: string]: Plain } = {};
+  for (let i = 0; i + 1 < order.length; i += 2) picks[order[i]!] = order[i + 1]!;
+  await writeDoc(request, `${season.path}/draft/state`, {
+    step: 'dares',
+    order,
+    left: order.length % 2 === 1 ? [order[order.length - 1]!] : [],
+    picks,
+    turnStartedAt: new Date(),
+    startedAt: new Date(),
+    votesCloseAt: new Date(Date.now() + 24 * 3_600_000),
+  });
+}
+
 /** A player who never opens the app: a profile and a place in the league. */
 export async function quietPlayer(request: APIRequestContext, league: TestLeague, id: string, name: string): Promise<void> {
   await writeDoc(request, `leagues/${league.id}/players/${id}`, { displayName: name, joinedAt: new Date() });

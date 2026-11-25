@@ -407,16 +407,16 @@ service cloud.firestore {
             && request.resource.data.keys().hasOnly(['goals'])
             && request.resource.data.goals.keys().hasOnly(['mind', 'body', 'wildcard'])
             && request.resource.data.goals.keys().hasAll(['mind', 'body', 'wildcard'])
-            && validGoal(request.resource.data.goals.mind, resource == null ? null : resource.data.goals.mind)
-            && validGoal(request.resource.data.goals.body, resource == null ? null : resource.data.goals.body)
-            && validGoal(request.resource.data.goals.wildcard, resource == null ? null : resource.data.goals.wildcard);
+            && validWords(request.resource.data.goals.mind, resource == null ? null : resource.data.goals.mind, 60)
+            && validWords(request.resource.data.goals.body, resource == null ? null : resource.data.goals.body, 60)
+            && validWords(request.resource.data.goals.wildcard, resource == null ? null : resource.data.goals.wildcard, 60);
         }
 
-        // A goal is 1 to 60 characters. New words need a new version, so the
-        // votes on the old words no longer count.
-        function validGoal(after, before) {
+        // A goal or a dare: 1 to `most` characters, with a version. New words
+        // need a new version, so the votes on the old words no longer count.
+        function validWords(after, before, most) {
           return after.keys().hasOnly(['text', 'version'])
-            && after.text is string && after.text.size() >= 1 && after.text.size() <= 60
+            && after.text is string && after.text.size() >= 1 && after.text.size() <= most
             && after.version is int
             && (before == null
                   ? after.version == 1
@@ -425,23 +425,47 @@ service cloud.firestore {
                       : after.version == before.version + 1));
         }
 
+        // ---- Dares ----------------------------------------------------------
+        // One dare per player for the Wheel (SCOPE.md, draft step 5), added
+        // from the draft's dares step and changeable until its votes close.
+        // The whole league can see them and votes on them, like goals.
+        match /dares/{P} {
+          allow read: if isMember(L);
+          allow create, update: if isPlayer(L, P)
+            && votesOpen()
+            && draft().step in ['dares', 'done']
+            && validWords(request.resource.data, resource == null ? null : resource.data, 80);
+        }
+
         // ---- Votes ----------------------------------------------------------
-        // Approve or veto on someone else's goal, one vote each, which can be
-        // changed while the draft's votes are open. A vote is for one version
-        // of the goal: new words start a new vote.
+        // Approve or veto on someone else's goal or dare, one vote each, which
+        // can be changed while the draft's votes are open. A vote is for one
+        // version of the words: new words start a new vote.
         match /votes/{V} {
           allow read: if isMember(L);
           allow create, update: if isPlayer(L, request.resource.data.voter)
-            && request.resource.data.keys().hasOnly(['voter', 'kind', 'player', 'lane', 'version', 'choice', 'at'])
-            && request.resource.data.kind == 'goal'
             && request.resource.data.choice in ['approve', 'veto']
             && request.resource.data.at == request.time
             && request.resource.data.player != request.resource.data.voter
-            && request.resource.data.lane in ['mind', 'body', 'wildcard']
             && request.resource.data.version is int
-            && V == request.resource.data.voter + '_goal_' + request.resource.data.player + '_' + request.resource.data.lane + '_' + string(request.resource.data.version)
             && votesOpen()
-            && get(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/roster/$(request.resource.data.player)).data.goals[request.resource.data.lane].version == request.resource.data.version;
+            && (goalVote(V, request.resource.data) || dareVote(V, request.resource.data));
+        }
+
+        function goalVote(V, vote) {
+          return vote.kind == 'goal'
+            && vote.keys().hasOnly(['voter', 'kind', 'player', 'lane', 'version', 'choice', 'at'])
+            && vote.lane in ['mind', 'body', 'wildcard']
+            && V == vote.voter + '_goal_' + vote.player + '_' + vote.lane + '_' + string(vote.version)
+            && get(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/roster/$(vote.player)).data.goals[vote.lane].version == vote.version;
+        }
+
+        function dareVote(V, vote) {
+          return vote.kind == 'dare'
+            && vote.keys().hasOnly(['voter', 'kind', 'player', 'version', 'choice', 'at'])
+            && V == vote.voter + '_dare_' + vote.player + '_' + string(vote.version)
+            && draft().step in ['dares', 'done']
+            && get(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/dares/$(vote.player)).data.version == vote.version;
         }
 
         // ---- Standings --------------------------------------------------------

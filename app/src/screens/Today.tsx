@@ -209,7 +209,9 @@ export function Today(props: { me: Me; onDraft?: () => void }) {
       <p>
         {draftState.data?.step === 'goals'
           ? "Set your three goals for the season, and vote on everyone else's."
-          : draftVotesOpen
+          : draftState.data?.step === 'dares'
+            ? "Add your dare for the Wheel, and vote on everyone else's."
+            : draftVotesOpen
             ? `Goals and votes are open for ${timeLeft((draftState.data?.votesCloseAt ?? now) - now)} more.`
             : 'Follow the draft as it happens.'}
       </p>

@@ -6,6 +6,7 @@ import { loadData } from '../data/load.ts';
 import { whyOf } from '../data/why.ts';
 import { Back, Field, Heading } from '../ui/parts.tsx';
 import { timeLeft } from '../ui/when.ts';
+import { Dares, type DareVote } from './Dares.tsx';
 import { RivalPicks } from './RivalPicks.tsx';
 import './draft.css';
 
@@ -170,9 +171,14 @@ export function Draft(props: { me: Me; onBack: () => void }) {
                 ? "Set your three goals, then vote on everyone else's. A goal vetoed by more than half the league needs new words."
                 : step === 'done'
                   ? 'The draft is done.'
-                  : `The live draft has moved on to ${STEP[step ?? 'goals']}.`}
+                  : step === 'dares'
+                    ? "Add one dare for the Wheel, and vote on everyone else's. A dare vetoed by more than half the league stays off the Wheel."
+                    : `The live draft has moved on to ${STEP[step ?? 'goals']}.`}
             </p>
             {draft.data.left && seasonId && <RivalPicks me={props.me} seasonId={seasonId} state={draft.data} name={name} isCommish={isCommish} />}
+            {(step === 'dares' || step === 'done') && seasonId && (
+              <Dares me={props.me} seasonId={seasonId} open={!closed} members={members} votes={votes.docs.map((found) => found.data as unknown as DareVote)} eligible={eligible} name={name} />
+            )}
             {closed ? (
               <Results members={members} rosters={rosters.docs} votes={allVotes} eligible={eligible} name={name} me={props.me.player} />
             ) : (

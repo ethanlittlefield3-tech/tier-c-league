@@ -151,6 +151,12 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 79. **The schedule is built by the hourly season job once the commish finishes the draft,** and the season goes active then. The Draft screen shows Week 1 as soon as the picks are in, worked out by the same engine.
 80. **Until Phase 3, the scheduled group-play weeks are normal 1v1 weeks,** as PHASE1.md says, so they don't change the schedule yet.
 
+**The draft, part 3: dares** (new on 2026-11-25, not yet reviewed by the commish)
+
+81. **A dare is up to 80 characters,** and a goal up to 60.
+82. **Dares open at the live draft's dares step** and, like goals, can be added or re-worded until the votes close. A dare vetoed by more than half the league stays off the Wheel.
+83. **The 8 starter dares are kept in the app's engine, not the database,** so every league has them from the start with nothing to load. A way for the commish to change them comes with moderation.
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.

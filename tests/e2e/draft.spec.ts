@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { enterAsCommish, joinAs } from './helpers.ts';
-import { createLeague, draftUnderway, membersOf, quietPlayer, readDoc, rivalPicksUnderway, seasonInSetup, writeDoc, type TestLeague } from './league.ts';
+import { createLeague, daresUnderway, draftUnderway, membersOf, patchDoc, quietPlayer, readDoc, rivalPicksUnderway, seasonInSetup, writeDoc, type TestLeague } from './league.ts';
 
 const button = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
 const tab = (page: Page, name: string) => page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name, exact: true });
@@ -217,5 +217,44 @@ test.describe('The draft', () => {
     expect([league.commish, 'jo']).toContain((state?.picks as Record<string, string>).sam);
     expect(await readDoc(request, `leagues/${league.id}/audit/${String(state?.audit)}`)).toMatchObject({ action: 'draft.update', by: league.commish, reason: 'A missed pick, made at random' });
     await expect(page.locator('.draft-pairs li')).toHaveCount(2);
+  });
+
+  test("At the dares step, each player adds a dare for the Wheel and votes on everyone else's; a vetoed dare needs new words", async ({ page, request, browser }) => {
+    const league = await createLeague(request);
+    const season = await seasonInSetup(request, league);
+    const riley = await joins(browser, request, league, 'Riley');
+    await daresUnderway(request, season, [league.commish, riley.player]);
+
+    // Riley adds a dare.
+    await expect(riley.phone.locator('.draft-card')).toContainText('Add your dare for the Wheel');
+    await button(riley.phone, 'Open the draft').click();
+    await riley.phone.getByLabel('Your dare', { exact: true }).fill('Wear a cape to the gym');
+    await button(riley.phone, 'Save my dare').click();
+    await expect(riley.phone.getByText('Saved. Everyone else can vote on it now.')).toBeVisible();
+    await expect.poll(async () => readDoc(request, `${season.path}/dares/${riley.player}`)).toEqual({ text: 'Wear a cape to the gym', version: 1 });
+
+    // Alex, the commish, vetoes it. With two players, one vote decides.
+    await enterAsCommish(page, league);
+    await button(page, 'Open the draft').click();
+    await button(page, "Veto Riley's dare").click();
+    await expect(button(page, "Veto Riley's dare")).toHaveAttribute('aria-pressed', 'true');
+    await expect(riley.phone.getByTestId('my-dare-tally')).toHaveText('Vetoed: 0 approve, 1 veto. Change the words and save.');
+
+    // New words start a fresh vote, and this time Alex approves.
+    await riley.phone.getByLabel('Your dare', { exact: true }).fill('Wear a cape to work');
+    await button(riley.phone, 'Save my dare').click();
+    await expect(riley.phone.getByTestId('my-dare-tally')).toHaveText('Voting: 0 approve, 0 veto');
+    await expect(page.locator('[data-dare]')).toContainText('Wear a cape to work');
+    await button(page, "Approve Riley's dare").click();
+    await expect(riley.phone.getByTestId('my-dare-tally')).toHaveText('Approved: 1 approve, 0 veto');
+    await expect(riley.phone.getByText("Alex hasn't added a dare yet.")).toBeVisible();
+
+    // When the votes close, everyone sees the dares and how their votes ended.
+    await patchDoc(request, `${season.path}/draft/state`, { votesCloseAt: new Date(Date.now() - 1000) });
+    await riley.phone.clock.fastForward(31_000);
+    await expect(riley.phone.getByRole('heading', { name: 'Dares for the Wheel' })).toBeVisible();
+    await expect(riley.phone.locator('[data-dare] .draft-tally')).toHaveText(['Approved: 1 approve, 0 veto']);
+    await expect(button(riley.phone, 'Save my dare')).toHaveCount(0);
+    await riley.phone.context().close();
   });
 });
