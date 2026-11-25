@@ -32,6 +32,22 @@ const mayaLogs = (request: APIRequestContext, path: string, date: string, entry:
   writeDoc(request, `${path}/days/maya_${date}`, { player: 'maya', date, ...entry, firstAt: new Date(), updatedAt: new Date() });
 
 test.describe('Match', () => {
+  test('Your all-time record against your opponent shows on Match; whoever has beaten you most is your nemesis, with a skull here and in League', async ({ page, request }) => {
+    const { league, me } = await onMatch(page, request);
+    await expect(page.locator('.match-record')).toHaveText('All-time against Maya: 0–0–0');
+    await expect(page.locator('.match-nemesis')).toHaveCount(0);
+
+    await patchDoc(request, `leagues/${league.id}/players/${me}`, { rivals: { maya: { win: 1, draw: 0, loss: 2, lastMet: { season: 's1', week: 1 } } } });
+    await expect(page.locator('.match-record')).toHaveText('All-time against Maya: 1–0–2');
+    await expect(page.locator('.match-side[data-team="orange"] .match-nemesis')).toHaveText('💀 Nemesis');
+
+    await tab(page, 'League').click();
+    const rivalries = page.getByRole('region', { name: 'Your rivalries' });
+    await expect(rivalries.getByRole('listitem').first()).toContainText('Maya');
+    await expect(rivalries.getByRole('img', { name: 'your nemesis' })).toHaveCount(1);
+    await expect(rivalries.locator('.rivals-record')).toHaveText('1–0–2');
+  });
+
   test("Your car faces your opponent's across the score, each in its own paint, theirs on team orange", async ({ page, request }) => {
     const { league } = await onMatch(page, request);
     const car = (team: string) => page.locator(`.match-side[data-team="${team}"] .match-car`);

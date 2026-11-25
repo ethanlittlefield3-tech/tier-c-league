@@ -39,7 +39,7 @@ const logged = (player: string, date: string, goals: { mind: boolean; body: bool
 });
 
 test.describe('Settling a week, and the League tab', () => {
-  test("After a week ends, the job settles it: results, Season Points and the standings show in League, by each player's car", async ({ page, request }) => {
+  test("After a week ends, the job settles it: results, Season Points, the standings by each player's car, and each player's all-time rivalry record show in League", async ({ page, request }) => {
     const league = await createLeague(request, { name: 'Sunday Squad' });
     const season = await startSeason(request, league);
     const key = await joinAs(page, league, 'Riley');
@@ -59,6 +59,9 @@ test.describe('Settling a week, and the League tab', () => {
     // Riley: 6 a day for 6 days, and Sunday is a rest day with nothing logged: -3. 33.
     expect((week?.results as Record<string, { points: number; outcome: string; seasonPoints: number }>)[me]).toMatchObject({ points: 33, outcome: 'win', seasonPoints: 38 });
     expect((week?.awards as { mvp: string[] }).mvp).toEqual([me]);
+    // Each side's all-time record against the other.
+    expect((await readDoc(request, `leagues/${league.id}/players/${me}`))?.rivals).toEqual({ maya: { win: 1, draw: 0, loss: 0, lastMet: { season: 's1', week: 1 } } });
+    expect(((await readDoc(request, `leagues/${league.id}/players/maya`))?.rivals as Record<string, { loss: number }>)[me]?.loss).toBe(1);
 
     await page.getByRole('button', { name: "I've saved it", exact: true }).click();
     await tab(page, 'League').click();
@@ -73,6 +76,10 @@ test.describe('Settling a week, and the League tab', () => {
     await expect(page.locator('.result-head').first()).toContainText('Final');
     await expect(page.locator('.result-awards').first()).toContainText('MVP: You.');
     await expect(page.locator('.result-awards').first()).toContainText('Spins the Wheel: Maya.');
+    const rivalries = page.getByRole('region', { name: 'Your rivalries' });
+    await expect(rivalries.getByRole('listitem')).toHaveCount(1);
+    await expect(rivalries.getByRole('listitem').first()).toContainText('Maya');
+    await expect(rivalries.locator('.rivals-record')).toHaveText('1–0–0');
 
     // Running it again changes nothing.
     const before = (await readDoc(request, `${season.path}/standings/current`))?.rows;

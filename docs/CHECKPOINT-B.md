@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 276 of 276 passing.
+- **Tests:** 278 of 278 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -452,6 +452,15 @@ The jobs' news, like a badge earned or a rank changed. Everyone in the league re
 
 - Everyone in the league reads the jobs' news of badges and rank changes; nobody outside can
 - Only the jobs write it: nobody in the league can add, change or remove news, the commish included
+
+## Rivalry records
+
+Everyone in the league reads each player's all-time record. Only the weekly job writes it.
+
+**Rivalry records**
+
+- Everyone in the league can read a player's rivalry record; nobody outside it can
+- Only the weekly job writes them: nobody can change their own record, or anyone else's
 
 ## The Garage
 

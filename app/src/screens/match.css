@@ -24,7 +24,9 @@
     linear-gradient(180deg, #13245a, #0a1330);
 }
 
+/* Both sides line up from the top, so the cars sit level even when one side has a nemesis tag. */
 .match-side {
+  align-self: start;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -274,4 +276,23 @@
   font-size: 14px;
   line-height: 1.45;
   color: #ffc9cd;
+}
+
+/* Your opponent is your nemesis: whoever has beaten you most. */
+.match-nemesis {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 90, 102, 0.18);
+  font: italic 800 12px/1.4 var(--display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #ff9aa2;
+}
+
+.match-record {
+  grid-column: 1 / -1;
+  margin: 2px 0 0;
+  font-size: 13px;
+  text-align: center;
+  color: var(--ink-soft);
 }

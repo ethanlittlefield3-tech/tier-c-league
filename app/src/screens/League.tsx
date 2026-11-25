@@ -1,5 +1,6 @@
 import { CarArt } from '../art/car/CarArt.tsx';
 import type { CarParts } from '../art/car/draw.ts';
+import { nemesisOf, recordText, type Rival } from '@tcl/engine';
 import { useAll, useDoc, useNow } from '../data/hooks.ts';
 import type { Me } from '../data/identity.ts';
 import { seasonDates } from '../today/model.ts';
@@ -64,7 +65,7 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
   const season = useDoc<{ timeZone: string; regularWeeks: number }>(seasonPath);
   const standings = useDoc<{ rows?: Row[] }>(seasonPath ? `${seasonPath}/standings/current` : null);
   const weeks = useAll<WeekDoc>(seasonPath ? `${seasonPath}/weeks` : null);
-  const players = useAll<{ displayName?: string; car?: Partial<CarParts> }>(`${leaguePath}/players`);
+  const players = useAll<{ displayName?: string; car?: Partial<CarParts>; rivals?: Record<string, Rival> }>(`${leaguePath}/players`);
   const dates = season.data ? seasonDates(now, season.data) : null;
   const today = useDoc<{ period: string }>(seasonPath && dates ? `${seasonPath}/calendar/${dates.today}` : null);
 
@@ -92,6 +93,12 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
     return `${tally.win}–${tally.draw}–${tally.loss}`;
   };
   const rows = standings.data?.rows ?? [];
+  const carOf = (player: string) => players.docs.find((found) => found.id === player)?.data.car;
+  // Your all-time record against each player you have met, most meetings first.
+  const myRivals = players.docs.find((found) => found.id === props.me.player)?.data.rivals ?? {};
+  const nemesis = nemesisOf(myRivals);
+  const rivals = Object.entries(myRivals).sort(([a, x], [b, y]) => y.win + y.draw + y.loss - (x.win + x.draw + x.loss) || name(a).localeCompare(name(b)));
+  const skull = <span class="nemesis" role="img" aria-label="your nemesis" title="Your nemesis">💀</span>;
 
   return (
     <div class="league">
@@ -134,7 +141,7 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
                 <tr data-me={row.player === props.me.player}>
                   <td class="standings-rank">{row.rank}</td>
                   <td class="standings-who">
-                    <CarArt parts={players.docs.find((found) => found.id === row.player)?.data.car} bare class="standings-car" />
+                    <CarArt parts={carOf(row.player)} bare class="standings-car" />
                     {row.player === props.me.player ? (
                       name(row.player)
                     ) : (
@@ -142,6 +149,7 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
                         {name(row.player)}
                       </button>
                     )}
+                    {row.player === nemesis && skull}
                     {row.tieBreak && <span class="standings-tie">{TIEBREAK[row.tieBreak]}</span>}
                   </td>
                   <td class="num standings-points">{row.seasonPoints}</td>
@@ -226,6 +234,28 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
       )}
 
       {!thisWeek?.data.pairs && settled.length === 0 && upcoming.length === 0 && <p class="fine-print">The schedule appears after the draft.</p>}
+      <section class="panel league-panel" aria-labelledby="rivals-title">
+        <h2 id="rivals-title">Your rivalries</h2>
+        {rivals.length === 0 ? (
+          <p class="panel-text">Your all-time record against each player shows here once a week you played them is final.</p>
+        ) : (
+          <ul class="rivals">
+            {rivals.map(([player, rival]) => (
+              <li key={player} data-nemesis={player === nemesis}>
+                <CarArt parts={carOf(player)} bare class="standings-car" />
+                <span class="rivals-name">
+                  {name(player)}
+                  {player === nemesis && skull}
+                </span>
+                <span class="rivals-record" aria-label={`${rival.win} won, ${rival.draw} drawn, ${rival.loss} lost`}>
+                  {recordText(rival)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+        <p class="panel-text">Wins, draws and losses, every season. The skull marks your nemesis: whoever has beaten you most.</p>
+      </section>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { LANES, type Lane } from '@tcl/engine';
+import { LANES, nemesisOf, recordText, type Lane, type Rival } from '@tcl/engine';
 import { CarArt } from '../art/car/CarArt.tsx';
 import type { CarParts } from '../art/car/draw.ts';
 import { useDoc, useNow } from '../data/hooks.ts';
@@ -58,7 +58,7 @@ function WeekRow(props: { who: string; team: 'blue' | 'orange'; cells: DayCell[]
 export function Match(props: { me: Me }) {
   const now = useNow();
   const match = useMatchup(props.me, now);
-  const mine = useDoc<{ car?: Partial<CarParts> }>(`leagues/${props.me.league}/players/${props.me.player}`);
+  const mine = useDoc<{ car?: Partial<CarParts>; rivals?: Record<string, Rival> }>(`leagues/${props.me.league}/players/${props.me.player}`);
 
   if (match.loading) {
     return (
@@ -96,9 +96,20 @@ export function Match(props: { me: Me }) {
         <div class="match-side" data-team="orange">
           <CarArt parts={them.car} team="orange" class="match-car match-car-them" />
           <span class="match-name">{them.name}</span>
+          {nemesisOf(mine.data?.rivals) === them.id && (
+            <span class="match-nemesis">
+              <span role="img" aria-hidden="true">
+                💀
+              </span>{' '}
+              Nemesis
+            </span>
+          )}
           <span class="match-points">{formatPoints(match.theirWeek.totals.points)}</span>
         </div>
         <p class="match-lead">{leadText(match.myWeek.totals, match.theirWeek.totals, them.name)}</p>
+        <p class="match-record">
+          All-time against {them.name}: {recordText(mine.data?.rivals?.[them.id])}
+        </p>
       </section>
 
       <section class="match-day" aria-labelledby="match-day-title">

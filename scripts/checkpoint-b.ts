@@ -39,6 +39,7 @@ const AREAS: [file: string, heading: string, blurb: string][] = [
   ['wheel', 'The Wheel of Shame', 'The job seals each draw. Nobody reads it until its spinner taps Spin, once.'],
   ['wall', 'The wall', 'Everyone in the league reads it. You post, comment and react in your own name. Nobody edits a post, and only its author or the commish takes it down.'],
   ['feed', 'The league feed', "The jobs' news, like a badge earned or a rank changed. Everyone in the league reads it; no phone writes it."],
+  ['rivals', 'Rivalry records', "Everyone in the league reads each player's all-time record. Only the weekly job writes it."],
   ['garage', 'The Garage', 'You change only your own car, and only to parts from the catalog, each in its own slot. A part a badge unlocks goes on once that badge is earned.'],
 ];
 

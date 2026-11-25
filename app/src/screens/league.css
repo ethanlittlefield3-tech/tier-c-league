@@ -152,3 +152,40 @@
   width: 100%;
   height: auto;
 }
+
+/* Your nemesis: a skull by their name. */
+.nemesis {
+  margin-left: 6px;
+  font-size: 15px;
+}
+
+/* Your rivalries: your all-time record against each player. */
+.rivals {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rivals li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(196, 216, 255, 0.12);
+}
+
+.rivals li[data-nemesis='true'] {
+  color: #ff9aa2;
+}
+
+.rivals-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.rivals-record {
+  font: italic 900 18px/1 var(--display);
+  white-space: nowrap;
+}

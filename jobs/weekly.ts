@@ -12,7 +12,7 @@
 import { randomInt } from 'node:crypto';
 import { FieldValue, Timestamp, getFirestore, type DocumentData } from 'firebase-admin/firestore';
 import { connect } from './admin.ts';
-import { DODGE_PENALTY, STARTER_DARES, dareStatus, fastDareDue, fastLeagueClock, receiptFixes, wheelPool, zoneClock, type StoredReceipt } from '../engine/src/index.ts';
+import { DODGE_PENALTY, STARTER_DARES, dareStatus, fastDareDue, fastLeagueClock, receiptFixes, rivalRecords, wheelPool, zoneClock, type RivalWeek, type StoredReceipt } from '../engine/src/index.ts';
 import { fastClockOf } from './lib/fast.ts';
 import { PROOF_DAYS, staleProofs } from './lib/proofs.ts';
 import { revealDemolitions, sameReveals } from './lib/reveals.ts';
@@ -299,6 +299,31 @@ for (const league of leagues) {
       return news.length;
     })();
     if (fresh > 0) console.log(`League ${league.id}: ${fresh} badge${fresh === 1 ? '' : 's'} earned.`);
+  }
+
+  // Rivalry records (SCOPE.md, "Rivalry record"): once a week goes final,
+  // each player's all-time head-to-head is worked out again from every final
+  // week of every season, and kept on their profile, which the screens that
+  // show players already read.
+  if (wentFinal) {
+    const finals: RivalWeek[] = [];
+    for (const each of (await league.ref.collection('seasons').get()).docs) {
+      for (const week of (await each.ref.collection('weeks').where('status', '==', 'final').get()).docs) {
+        if (week.get('results')) finals.push({ season: each.id, week: Number(week.get('week')), results: week.get('results') });
+      }
+    }
+    const records = rivalRecords(finals);
+    for (const player of members) {
+      await league.ref
+        .collection('players')
+        .doc(player)
+        .update({ rivals: records[player] ?? {} })
+        .catch((error: { code?: number }) => {
+          // A member with no profile has nothing to keep.
+          if (error.code !== 5) throw error;
+        });
+    }
+    console.log(`League ${league.id}: rivalry records from ${finals.length} final week${finals.length === 1 ? '' : 's'}.`);
   }
 
   // The standings, from every week with results. Each player's sealed coin

@@ -302,6 +302,12 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 177. **Your goal explosion plays the next time you open the app after a week you won goes final:** your car drives onto a stage, the explosion bursts over it, and the score shows. It plays once per week on each phone, before a rank change from the same week. A draw or a loss plays nothing. A phone that joins with weeks already final plays nothing old, but a phone in use before Week 1 does play a Week 1 win.
 178. **Each week in a player's rank history also keeps how the matchup ended and the other side's points,** so the phone needs no extra read to know a week was won.
 
+**Phase 2: rivalries** (new on 2026-11-25, not yet reviewed by the commish)
+
+179. **Rivalry records are all-time and 1v1 only:** every final week two players met, across every season (the playoffs too, once they exist, as SCOPE.md says). Weeks against The House don't count. The weekly job works them out again from every final week whenever a week goes final, so a week the commish unlocks and counts again is reflected.
+180. **Your nemesis is whoever has beaten you most.** A tie goes to whoever you have the worse record against, then to the one you met last. Nobody is your nemesis until someone has beaten you. The skull shows by their name in the standings and your rivalries in League, and on Match when you face them, with your all-time record against them.
+181. **Each player's records are kept on their own profile** (`rivals`), which League and Match already read, instead of the separate `rivalries` collection DATA-MODEL.md first sketched: no extra reads.
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.
