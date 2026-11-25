@@ -80,7 +80,7 @@ function OpenInSafari(props: { device: Device }) {
       <h1>Open this page in Safari</h1>
       <p class="install-lead">On an {props.device === 'ipad' ? 'iPad' : 'iPhone'}, Tier C League is set up from Safari.</p>
       <p class="install-link">{address}</p>
-      <button class="install-button" type="button" onClick={copy}>
+      <button class="btn" type="button" onClick={copy}>
         {copied === 'yes' ? 'Copied' : 'Copy the link'}
       </button>
       <p class="install-help" role="status">
@@ -129,7 +129,7 @@ function InstallOnAndroid(props: { onSkip?: () => void }) {
       <h1>Install Tier C</h1>
       <p class="install-lead">It runs as its own app from your Home screen.</p>
       {offered && (
-        <button class="install-button" type="button" onClick={install}>
+        <button class="btn" type="button" onClick={install}>
           Install
         </button>
       )}
@@ -145,7 +145,7 @@ function InstallOnAndroid(props: { onSkip?: () => void }) {
           It is a new icon on your Home screen.
         </Step>
       </ol>
-      <button class="install-later" type="button" onClick={props.onSkip}>
+      <button class="btn-quiet" type="button" onClick={props.onSkip}>
         Not now
       </button>
     </>

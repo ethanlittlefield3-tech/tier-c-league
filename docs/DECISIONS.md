@@ -72,6 +72,14 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 33. **A computer browser goes straight in.** There is nothing to install.
 34. **Icon A is the stand-in** until the commish picks from the three options.
 
+**Joining and getting back in** (new on 2026-11-25, not yet reviewed by the commish)
+
+35. **A refused join gives the likely reasons, not the exact one:** "It may be full (12 players) or closed to new players." A phone that is not in the league yet is not allowed to read which it is.
+36. **A phone that was signed out says why,** and opens on "get back in" with the league code already filled in. Only the key has to be typed.
+37. **There is no going back from the recovery key screen.** "I've saved it" is the only way on, so nobody skips past their key by accident.
+38. **Names are tidied before they are saved:** spaces at the ends go, and a run of spaces becomes one. An emoji counts as two of the 24 characters, because that is how the security rules count.
+39. **Codes and keys can be typed in any case, with or without dashes.** A 0, O, 1 or I gets a hint about look-alikes, since neither codes nor keys ever use them.
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.
@@ -99,6 +107,8 @@ Nothing is open. The receipts question that was here is now ruling R6.
 - **The commish never edits a player's day.** A dock, void or correction is its own document with a reason, and it cannot be edited or deleted. Undoing one means entering the opposite correction.
 - **A day records when it was first logged,** so the Early Bird badge in Phase 2 needs no new data.
 
+- **The database library loads in the background while the intro plays.** It is the biggest piece of the app (about 165 kB zipped), so the first screen never waits on it.
+- **The app waits 15 seconds for the database, then says there is no answer.** Without that, a save made with no signal would wait forever without a word.
 - **The fonts are served by the app,** not fetched from a font website. The first screen waits on nobody else, the app can start with no signal once offline start is built, and no other company sees who opens the app. Both fonts are open (SIL Open Font License).
 - **Launch pictures are drawn for a list of screen sizes** (`app/launch-screens.ts`), because iOS only uses a picture that matches the screen exactly. A new iPhone size needs one new row and `npm run icons`. Until then that phone starts on a plain screen and everything else works.
 - **The installed app stays upright on Android.** iPhones and iPads decide for themselves and ignore the request.

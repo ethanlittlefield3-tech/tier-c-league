@@ -10,7 +10,7 @@ This file will grow into the plain-steps guide for running, deploying, backing u
 | --- | --- |
 | `docs/` | The spec (`SCOPE.md`), the build brief (`PHASE1.md`), the progress log, the decisions log and the checkpoint reports |
 | `engine/` | Every game rule as plain code: scoring, calendar, schedule, standings, awards, power-up timing and receipts |
-| `app/` | The phone app. So far: the theme, the install guide, the intro animation and the title screen |
+| `app/` | The phone app. So far: the theme, the install guide, the intro and title, and joining or getting back into a league |
 | `firebase/` | The security rules, which decide what each phone may read and write |
 | `tests/rules/` | Tests that try to break those rules against a local copy of the database |
 | `tests/e2e/` | Tests that tap through the app in a browser at iPhone size |
@@ -61,7 +61,7 @@ That rebuilds `docs/CHECKPOINT-B.md`: the plain-English list of what the rules a
 npm run test:e2e
 ```
 
-That builds the app and taps through it in a browser at iPhone size.
+That starts a local copy of the database and of sign-in, builds the app to use them, and taps through it in a browser at iPhone size. Nothing real is touched. It needs Java 21, like the security-rule tests.
 
 ```bash
 npm run check
@@ -75,7 +75,7 @@ That runs everything: the type checks, then all three sets of tests.
 npm run dev
 ```
 
-That starts the app and prints two addresses. Open the "Local" one in a browser on the same computer. A phone on the same Wi-Fi can open the "Network" one.
+That starts a local copy of the database and of sign-in, then the app, and prints two addresses. Open the "Local" one in a browser on the same computer. A phone on the same Wi-Fi can open the "Network" one. The local database starts empty each time, so there is no league to join yet: a script that makes a test league comes with the jobs in Step 4.
 
 ```bash
 npm run art

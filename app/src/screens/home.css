@@ -1,21 +1,9 @@
 .home {
-  min-height: 100%;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 24px max(16px, env(safe-area-inset-left, 0px));
-  text-align: center;
 }
 
-.home h1 {
-  margin: 0;
-  font: italic 900 44px/1 var(--display);
-}
-
-.home p {
-  margin: 0;
-  color: var(--ink-soft);
+.home-badge {
+  width: 112px;
+  height: 112px;
+  margin-bottom: 16px;
 }

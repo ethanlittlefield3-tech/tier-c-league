@@ -27,7 +27,7 @@ A free phone app where friends compete on daily habits. One commish runs the lea
 npm install           # once
 npm test              # the engine and app logic tests: fast, nothing else needed
 npm run test:rules    # the security-rule tests: starts the Firestore emulator (needs Java 21)
-npm run test:e2e      # builds the app and taps through it at iPhone size (Playwright)
+npm run test:e2e      # starts the Firebase emulators, builds the app and taps through it at iPhone size (Playwright)
 npm run check         # everything: type checks, then all three sets of tests
 npm run checkpoint:a  # rebuild docs/CHECKPOINT-A.md from the engine tests
 npm run checkpoint:b  # rebuild docs/CHECKPOINT-B.md from the security-rule tests
@@ -46,4 +46,5 @@ npm run icons         # redraw the app icon and launch pictures (scripts/art/ico
 - Animations move whole layers and change only `transform` and `opacity`. The resting state of every CSS rule is the finished screen.
 - Flow tests freeze the clock (`page.clock`), so they never wait in real time. A flow test that needs the app itself calls `fromHomeScreen(page)` first, because a phone's browser only gets the install guide.
 - `app/public/icons/` and `app/public/launch/` are drawn by `npm run icons`. Never edit them by hand. A new iPhone screen size is one row in `app/launch-screens.ts`.
+- Only `app/src/data/` imports the Firebase library. Screens get it through `loadData()`, which fetches it in the background, so the first screen never waits on it. Flow tests run against the emulators (`--mode emulator`), and a test that needs a league makes its own with `createLeague`.
 - The app loads nothing from another website: fonts and art are served by the app itself. A flow test fails if that changes.

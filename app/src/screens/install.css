@@ -176,44 +176,7 @@
   text-wrap: pretty;
 }
 
-/* ---- Buttons and the link ------------------------------------------------ */
-
-.install-button {
-  min-width: 220px;
-  height: 52px;
-  margin-top: 18px;
-  padding: 0 30px;
-  border: 0;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #3fa0ff, var(--blue-deep));
-  box-shadow:
-    0 0 24px rgba(31, 139, 255, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
-  font: italic 800 17px/1 var(--display);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #ffffff;
-  cursor: pointer;
-}
-
-.install-later {
-  min-height: 44px;
-  margin-top: 10px;
-  padding: 0 18px;
-  border: 0;
-  background: none;
-  font-size: 15px;
-  color: var(--ink-soft);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
-}
-
-.install-button:focus-visible,
-.install-later:focus-visible {
-  outline: 3px solid var(--ink);
-  outline-offset: 3px;
-}
+/* ---- The link ------------------------------------------------------------ */
 
 .install-link {
   width: 100%;

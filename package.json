@@ -20,10 +20,10 @@
     "check": "npm run typecheck && npm run test:all",
     "checkpoint:a": "vitest run --project engine --reporter=json --outputFile=.vitest/results.json && node scripts/checkpoint-a.ts",
     "checkpoint:b": "firebase --config firebase/firebase.json emulators:exec --only firestore --project demo-tier-c \"vitest run --project rules --no-file-parallelism --reporter=json --outputFile=.vitest/rules.json\" && node scripts/checkpoint-b.ts",
-    "dev": "npm run dev -w app",
+    "dev": "firebase --config firebase/firebase.json emulators:exec --only auth,firestore --project demo-tier-c \"npm run dev -w app -- --mode emulator\"",
     "build": "npm run build -w app",
     "art": "node scripts/art/title-scene.mjs",
-    "test:e2e": "playwright test -c tests/e2e/playwright.config.ts --trace off",
+    "test:e2e": "firebase --config firebase/firebase.json emulators:exec --only auth,firestore --project demo-tier-c \"playwright test -c tests/e2e/playwright.config.ts --trace off\"",
     "icons": "node scripts/art/icons.mjs"
   },
   "devDependencies": {

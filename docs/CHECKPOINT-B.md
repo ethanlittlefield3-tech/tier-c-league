@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 137 of 137 passing.
+- **Tests:** 138 of 138 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -65,6 +65,7 @@ A device is in a league only while its claim holds the player's current recovery
 - A player cannot change someone else's profile
 - A player cannot give themselves badges, ranks or unlocked parts: those come from the jobs
 - A display name must be 1 to 24 characters
+- An accented letter counts as one character and an emoji as two
 - A device's push settings can be read and written by that device only
 
 ## Daily logs

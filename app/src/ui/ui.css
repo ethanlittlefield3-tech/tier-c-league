@@ -1,0 +1,227 @@
+/* Pieces every screen shares: the page frame, buttons, text fields and
+   notices. Screens add their own layout on top. */
+
+/* ---- The page frame ------------------------------------------------------ */
+
+.screen {
+  position: relative;
+  min-height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  padding: calc(18px + env(safe-area-inset-top, 0px)) max(20px, env(safe-area-inset-right, 0px))
+    calc(28px + env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px));
+  background: var(--navy-900);
+  overflow-x: hidden;
+}
+
+.screen-body {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.screen h1 {
+  margin: 0;
+  font: italic 900 27px/1.08 var(--display);
+  letter-spacing: 0.01em;
+  text-wrap: balance;
+}
+
+.screen h1:focus {
+  outline: none;
+}
+
+.lead {
+  margin: 8px 0 0;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+.fine-print {
+  margin: 14px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+/* ---- Buttons -------------------------------------------------------------- */
+
+.btn {
+  min-width: 220px;
+  min-height: 52px;
+  box-sizing: border-box;
+  margin-top: 18px;
+  padding: 0 30px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #3fa0ff, var(--blue-deep));
+  box-shadow:
+    0 0 24px rgba(31, 139, 255, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  font: italic 800 17px/1 var(--display);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+/* The second choice on a screen: the same shape, drawn as an outline. */
+.btn-second {
+  background: rgba(10, 19, 48, 0.92);
+  box-shadow: inset 0 0 0 2px rgba(159, 208, 255, 0.55);
+  color: var(--ink);
+}
+
+.btn[disabled] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.btn-quiet {
+  min-height: 44px;
+  margin-top: 10px;
+  padding: 0 18px;
+  border: 0;
+  background: none;
+  font-size: 15px;
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.btn:focus-visible,
+.btn-quiet:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+
+/* ---- Text fields ---------------------------------------------------------- */
+
+.field {
+  width: 100%;
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.field label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* 16px or more, or an iPhone zooms the whole page in when the field is tapped. */
+.field input {
+  width: 100%;
+  height: 56px;
+  box-sizing: border-box;
+  padding: 0 16px;
+  border: 2px solid rgba(196, 216, 255, 0.22);
+  border-radius: 14px;
+  background: var(--navy-800);
+  font: 600 20px/1 var(--body);
+  color: var(--ink);
+  outline: none;
+}
+
+.field input::placeholder {
+  color: rgba(167, 181, 217, 0.5);
+}
+
+.field input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 4px rgba(31, 139, 255, 0.22);
+}
+
+.field input[aria-invalid='true'] {
+  border-color: var(--red);
+}
+
+/* Codes and keys: wide-spaced capitals, so each character is easy to check. */
+.field input.field-code {
+  font: italic 800 24px/1 var(--display);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.field-help {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+.field-error {
+  font-size: 14px;
+  line-height: 1.4;
+  color: #ff9aa2;
+}
+
+/* ---- Notices -------------------------------------------------------------- */
+
+.notice {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 207, 63, 0.4);
+  border-radius: 12px;
+  background: rgba(255, 207, 63, 0.1);
+  font-size: 14px;
+  line-height: 1.45;
+  text-align: left;
+  color: var(--ink);
+}
+
+.notice strong {
+  display: block;
+  margin-bottom: 2px;
+}
+
+/* ---- Waiting -------------------------------------------------------------- */
+
+.waiting {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: var(--ink-soft);
+  font-size: 15px;
+}
+
+/* A ring of boost: half blue, half orange. Only the whole ring turns. */
+.waiting-ring {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 4px solid transparent;
+  border-top-color: var(--blue);
+  border-right-color: var(--orange);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .waiting-ring {
+    animation: waiting-turn 0.9s linear infinite;
+  }
+}
+
+@keyframes waiting-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}

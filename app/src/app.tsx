@@ -1,9 +1,9 @@
-import { useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import { installState, shouldSuggestInstall, type Guide } from './install/state.ts';
 import { surroundings } from './install/surroundings.ts';
 import { deviceDay } from './intro/mode.ts';
-import { Home } from './screens/Home.tsx';
 import { Install } from './screens/Install.tsx';
+import { Session, loadData } from './screens/Session.tsx';
 import { Title } from './screens/Title.tsx';
 import { recall, remember } from './storage.ts';
 
@@ -12,7 +12,7 @@ const LATER_KEY = 'tcl.install.later';
 
 /**
  * The app shell. A phone's browser gets the install guide. Everywhere else it
- * is the intro and title first, then the app itself.
+ * is the intro and title first, then the way into a league, then the app.
  */
 export function App() {
   const [install] = useState(() => installState(surroundings()));
@@ -23,6 +23,11 @@ export function App() {
   });
   const [entered, setEntered] = useState(false);
 
+  // Fetch the database code while the intro plays, so it is ready by "Tap to enter".
+  useEffect(() => {
+    if (guide === 'none') void loadData().catch(() => undefined);
+  }, [guide]);
+
   if (guide !== 'none') {
     const later = () => {
       remember(LATER_KEY, deviceDay(new Date()));
@@ -30,5 +35,5 @@ export function App() {
     };
     return <Install device={install.device} guide={guide} onSkip={later} />;
   }
-  return entered ? <Home /> : <Title onEnter={() => setEntered(true)} />;
+  return entered ? <Session /> : <Title onEnter={() => setEntered(true)} />;
 }

@@ -1,6 +1,6 @@
 # Tier C League: progress log
 
-Last updated 2026-11-25, after the app went live on GitHub Pages with its install flow.
+Last updated 2026-11-25, after the join and recovery screens.
 
 ## Plan change (commish ruling, 2026-11-25)
 
@@ -48,19 +48,32 @@ Last updated 2026-11-25, after the app went live on GitHub Pages with its instal
   - The fonts now come from the app itself, so the first screen waits on no other website and works offline later.
   - 20 logic tests and 19 flow tests cover it. Breaking the install rules 11 different ways on purpose made a test fail every time.
 
-- **Finding a profile from its recovery key** (2026-11-25). Step 2 left a gap: a new phone had no way to learn which player a recovery key belonged to. Each key is now on file under its own name (`lookup/{key}`), written and replaced in the same save as the key. 14 new rule tests, 137 in all. Weakening the new rules 11 ways was caught 11 times.
+- **Finding a profile from its recovery key** (2026-11-25). Step 2 left a gap: a new phone had no way to learn which player a recovery key belonged to. Each key is now on file under its own name (`lookup/{key}`), written and replaced in the same save as the key. 15 new rule tests, 138 in all. Weakening the new rules 11 ways was caught 11 times.
+
+- **Join or recover** (2026-11-25), the first screens that use the database:
+  - Joining: the league code, a display name with a live badge, then the recovery key to save. It is one save that the rules accept or refuse whole.
+  - Getting back in: the league code and the recovery key. The key changes, and every other device is signed out.
+  - A phone that was signed out says why, and opens on "get back in" with the league code filled in.
+  - The next open goes straight in. A wrong code, a mistyped key, a look-alike character, a full league and a closed league each get their own plain message.
+  - The live site has no database yet, so its way in says "The league is not open yet."
+  - 13 logic tests and 14 flow tests. The flow tests run against a local copy of the database and sign-in, so nothing real is touched.
+  - Not covered by a test: the "not open yet" notice, because the tests always have a database. It was checked by eye.
 
 ## Waiting on the commish
 
-Neither of these blocks the build.
+None of these blocks the build.
 
 1. **Pick an icon: A, B or C.** A is in place. The sooner the better, because an iPhone keeps the icon from the day the app was added.
 2. **Phone check of the install.** On an iPhone: open the live address in Safari, follow the three taps, then open Tier C from the Home Screen. Things only a real phone can show: the icon and its label, the launch picture, whether the intro is smooth, and the sound on Tap to enter.
 
+3. **Decide when the database gets set up.** Every screen from here on needs one. PHASE1.md planned for the commish to try them on a phone over Wi-Fi from a computer, but this build runs in a cloud workspace a phone cannot reach. Two ways forward:
+   - **Set up the free Firebase project now** (Step 5, items 1 to 3, moved up). About 10 minutes of clicking, one step at a time. After that every new screen works on the commish's phone the day it is built. Recommended.
+   - **Wait until Step 5.** Until then the commish reviews screens as pictures, and the live site stops at "The league is not open yet."
+
 ## Next
 
-1. **Step 3, continued.** The screens: join or recover, Today, Match, Feed, League, Profile, Wheel, Commish and the mini draft. The join screen is next.
-   - **A decision is coming with the join screen.** The screens after it need a database. PHASE1.md planned for the commish to try them on a phone over Wi-Fi from a computer, but this build runs in a cloud workspace a phone cannot reach. So either the free Firebase project (Step 5, items 1 to 3) moves up, or the commish reviews those screens as pictures and clips until Step 5.
+1. **Step 3, continued.** The screens: Today, Match, Feed, League, Profile, Wheel, Commish and the mini draft. Today is next.
+   - **Still to add to joining:** the notifications step (with push alerts), a commish's "approve joins" switch, and a way to make a league. Leagues are made by a setup script, which is built with the jobs in Step 4.
    - **Offline start** comes with the offline step: a service worker that keeps the app's files on the phone, so it opens with no signal. Chrome on Android only offers its one-tap Install button once that exists. Until then Android installs from the browser menu, which the guide explains.
 2. **Rules still to write, each with its screen and its tests:** receipts and proofs, roster and goal votes, the wall, dares, the Wheel, the draft, and the remaining commish tools (approve joins, settle or unlock a week, moderation). They are in DATA-MODEL.md and refused until then.
 

@@ -301,6 +301,14 @@ describe('Profiles and devices', () => {
   it('A display name must be 1 to 24 characters', async () => {
     await assertFails(dev2().doc(`${league}/players/p2`).update({ displayName: '' }));
     await assertFails(dev2().doc(`${league}/players/p2`).update({ displayName: 'x'.repeat(25) }));
+    await assertSucceeds(dev2().doc(`${league}/players/p2`).update({ displayName: 'x'.repeat(24) }));
+  });
+
+  it('An accented letter counts as one character and an emoji as two', async () => {
+    await assertSucceeds(dev2().doc(`${league}/players/p2`).update({ displayName: '\u00e9'.repeat(24) }));
+    await assertFails(dev2().doc(`${league}/players/p2`).update({ displayName: '\u00e9'.repeat(25) }));
+    await assertSucceeds(dev2().doc(`${league}/players/p2`).update({ displayName: '\u{1F525}'.repeat(12) }));
+    await assertFails(dev2().doc(`${league}/players/p2`).update({ displayName: '\u{1F525}'.repeat(13) }));
   });
 
   it("A device's push settings can be read and written by that device only", async () => {

@@ -39,5 +39,11 @@ function headTags(): Plugin {
 export default defineConfig({
   base: './',
   plugins: [preact(), headTags()],
+  build: {
+    // The database library is one big piece (about 165 kB zipped). It is not
+    // part of the first screen: the app fetches it in the background while the
+    // intro plays. So the usual "this piece is large" warning does not apply.
+    chunkSizeWarningLimit: 700,
+  },
   server: { port: 5173 },
 });
