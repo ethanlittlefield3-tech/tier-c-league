@@ -339,7 +339,7 @@ for (const league of leagues) {
         par: Number(season.get('par')),
         clock,
         calendar: calendar as never,
-        weeks: finals.map((week) => ({ period: week.id, results: week.get('results'), awards: week.get('awards'), reveals: week.get('reveals') ?? [] })),
+        weeks: finals.map((week) => ({ period: week.id, results: week.get('results'), awards: week.get('awards'), reveals: week.get('reveals') ?? [], group: week.get('group') ?? null })),
         players,
       });
       // The season is over once every regular week is final: then the most beers is a shame badge.

@@ -46,6 +46,12 @@ describe("A season's badge history", () => {
     expect(seasonBadgeData(group).maya!.weeks[0]).toMatchObject({ opponent: null, outcome: 'loss' });
   });
 
+  it("A group-play week carries each player's group-play feats, for the badges", () => {
+    const alley = season({ weeks: [{ period: 'w01', results: { alex: { ...result('GROUP', 30, 0, 'win'), outcome: 'none', mode: 'alley', race: { points: 30, walls: 0, place: 1 } }, maya: { ...result('GROUP', 10, 0, 'loss'), outcome: 'none', mode: 'alley', race: { points: 6, walls: 2, place: 2 } } } }] });
+    expect(seasonBadgeData(alley).alex!.weeks[0]).toMatchObject({ feats: ['alleyCat'] });
+    expect(seasonBadgeData(alley).maya!.weeks[0]).toMatchObject({ feats: [] });
+  });
+
   it('Beating the player who led the standings going into the week counts as beating the leader', () => {
     const two = season({
       calendar: [...calendar, ...calendar.map((day) => ({ ...day, period: 'w02', date: day.date.replace('-0', '-1'), start: day.start + 7 * 24 * H, lock: day.lock + 7 * 24 * H }))],

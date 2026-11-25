@@ -781,6 +781,35 @@ service cloud.firestore {
             && request.resource.data.settledAt == resource.data.get('settledAt', request.time)
             && weekOver(week, request.resource.data.sunday)
             && audited(L, request.resource.data.audit, 'week.settle', 'weeks/' + week);
+          // Until a group-play week starts on its Monday, the commish sets a
+          // Bounty Week's target, or switches a 2v2 week between a random
+          // draw and frenemies.
+          allow update: if isCommish(L)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['bounty', 'pairing', 'audit'])
+            && request.time < cal(resource.data.monday).start
+            && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['bounty'])
+                || (resource.data.mode == 'bounty'
+                    && (request.resource.data.get('bounty', null) == null || validBounty(request.resource.data.bounty, week))))
+            && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['pairing'])
+                || (resource.data.mode == 'twoVTwo' && request.resource.data.get('pairing', null) in ['random', 'frenemies']))
+            && audited(L, request.resource.data.audit, 'week.groupPlay', 'weeks/' + week);
+        }
+
+        // A Bounty Week's target: goals hit in a lane (or any lane), a day of
+        // that week with no beers, or a day under a screen-time limit.
+        function validBounty(b, period) {
+          return b is map
+            && ((b.kind == 'hits'
+                  && b.keys().hasOnly(['kind', 'lane', 'count']) && b.keys().hasAll(['kind', 'lane', 'count'])
+                  && b.lane in ['mind', 'body', 'wildcard', 'any']
+                  && b.count is int && b.count >= 1 && b.count <= 216)
+              || (b.kind == 'dry'
+                  && b.keys().hasOnly(['kind', 'date']) && b.date is string
+                  && cal(b.date).period == period)
+              || (b.kind == 'screen'
+                  && b.keys().hasOnly(['kind', 'date', 'minutes']) && b.date is string
+                  && cal(b.date).period == period
+                  && b.minutes is int && b.minutes >= 15 && b.minutes <= 1440 && b.minutes % 15 == 0));
         }
 
         // A week is over once its Sunday locks, by the calendar.

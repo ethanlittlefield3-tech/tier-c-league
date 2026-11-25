@@ -1,6 +1,6 @@
 # Tier C League: progress log
 
-Last updated 2026-11-25, after group play's screens.
+Last updated 2026-11-25, after group play's badges and settings.
 
 ## Plan change (commish ruling, 2026-11-25)
 
@@ -230,6 +230,8 @@ Last updated 2026-11-25, after group play's screens.
 - **Alerts, part 1: on the phone** (2026-11-25). Profile has an Alerts panel: turn them on with a tap, switch each of the 7 kinds on or off, and set quiet hours. A new player is offered alerts right under their recovery key. A service worker shows the alerts, opens the app at the right screen when one is tapped, and keeps the app's files on the phone so it opens with no signal. The push token is fetched again on every open.
   - New rules for devices: a phone signs up only as the player its claim holds. 4 new rule tests and 1 rewritten. Weakening the rule 14 ways was caught 13 times; the other is still refused by the checks on each field. 3 engine tests and 5 flow tests.
   - Sending them is next: the tick job, every 10 minutes. Alerts also wait on the Cloud Messaging web push key from the commish.
+- **Group play, part 4: badges, the commish's settings and the Sunday alert** (2026-11-25, Phase 3). The six group-play badges are earned from settled weeks. In Commish tools the commish sets each Bounty Week's target, with the most the league can reach shown, and switches a 2v2 week to frenemies, until the week starts. At 7 pm the Sunday before a group-play week everyone hears the mode and their part in it (DECISIONS.md, calls 225 to 227).
+  - 4 rule tests. Weakening the rule 12 ways was caught 11 times; the other, letting any member save, is still refused because the save also needs an audit entry only the commish can write. 6 engine tests, 3 job tests and 1 flow test.
 - **Group play, part 3: the screens** (2026-11-25, Phase 3). Match shows a group-play week as its mode's live board: both squads' averages in Team Week, your duo first in 2v2, the Bounty's target and a live bar, the Alley's lane with everyone single file, and the two Drop Shot floors under the 1v1. Today names the mode and what it means for you, and Demolition can aim at anyone on the other side. League, the feed and the highlight reel word each settled mode its own way, and the schedule names each group-play week's mode (DECISIONS.md, calls 222 to 224).
   - 7 app tests, 1 engine test, and 6 flow tests at iPhone size.
 - **Group play, part 2: the jobs** (2026-11-25, Phase 3). The schedule job gives the season each group-play week's mode, with the whole league on the 2v2, Bounty and Alley weeks and Team Week's squads able to demolish each other; the calendar job then gives those days their power-ups. The weekly job draws the 2v2 duos once the week starts on Monday, settles every mode, and keeps each week's summary for League and the feed, and the commish's phone can do the same if the job runs late. Result alerts say how each mode went (DECISIONS.md, calls 220 and 221).

@@ -287,7 +287,7 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 165. **Trash Talker counts taunts and quick-chat lines aimed at someone.** Show-Off and Fan Favorite count each reaction from others (a fire, a skull and a beer are three).
 166. **Recovering Addict: the week's average logged screen time lower than the week before, 3 weeks in a row.**
 167. **Commish: whoever is the commish (not the co-commish) when a week of a season goes final.** Brewmaster and Sweep are decided once every regular week of the season is final.
-168. **Badges from features still to come** (group play, predictions and the playoffs) are listed in Profile with "Comes with…", and earned once those features ship. Payback is earned since rematches shipped (call 191).
+168. **Badges from features still to come** (group play, predictions and the playoffs) are listed in Profile with "Comes with…", and earned once those features ship. Payback is earned since rematches shipped (call 191), and the six group-play badges since group play shipped (call 225).
 169. **Each new badge, and each rank change, is news in the league feed,** made by the weekly job. The alerts job sends it to its player under Progress.
 170. **Profile lists the part each badge unlocks, and the Garage puts it on your car** (calls 171 to 175).
 
@@ -389,6 +389,9 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 222. **Match shows a group-play week as its mode's live board:** both squads' averages, your duo first, the Bounty's target with a live bar, the Alley's lane with everyone single file, and under a Drop Shot 1v1 both floors. Every number is the engine's, from everyone's logs, the same way the weekly job will settle it. One difference: in group play a Demolition shows on the boards, and on Today, once the weekly job reveals it, within the hour after its day locks; a 1v1's shows at noon, since the phone can look at that one sealed Demolition itself.
 223. **Drop Shot's floors count only days that have locked.** Today shows the hits it would land if it ended as it stands, and they land at the lock.
 224. **In Team Week and 2v2, Demolition asks who first,** from anyone on the other side, then the day and the goal, as in a 1v1.
+225. **The group-play badges go to everyone tied for them:** Rumble Royale to the most points in the league in a Rumble week; Team Player and Dynamic Duo to the winning side; Bounty Hunter to the top contributor to a count target, hit or missed, with at least one hit (a day target is kept or broken, so it has no top contributor); Floor Breaker to the most tiles broken in a Drop Shot week, at least one; Alley Cat to 1st in the Alley.
+226. **The commish sets each Bounty Week's target and each 2v2 week's pairing in Commish tools, until the week starts at 12:00 am on its Monday.** Each change goes in the audit log, with the target in words. Left alone, the Bounty is call 216's default and the duos are drawn at random.
+227. **At 7 pm the Sunday before a group-play week, everyone gets a Matchup alert about it:** the mode in a line, and their part in it (their squad, how the duos are drawn, the Bounty's target, no power-ups in the Alley).
 
 **Calendar**
 

@@ -6,6 +6,7 @@ import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
 import { whyOf } from '../data/why.ts';
 import { Back, Field, Heading } from '../ui/parts.tsx';
+import { CommishGroupPlay } from './CommishGroupPlay.tsx';
 import { CommishPlayers } from './CommishPlayers.tsx';
 import { CommishModeration } from './CommishModeration.tsx';
 import { CommishScores } from './CommishScores.tsx';
@@ -201,7 +202,7 @@ function SeasonSetup(props: { me: Me; seasonId: string | null; season: SeasonDoc
             </button>
           ))}
         </div>
-        <p class="panel-text">Until group play is built, these weeks run as normal 1v1 weeks.</p>
+        <p class="panel-text">On draft day, the league's vote gives each of these weeks a mode.</p>
       </section>
 
       <section class="panel">
@@ -330,6 +331,8 @@ export function Commish(props: { me: Me; onBack: () => void }) {
         )}
 
         {league.data && seasonId && season.data && <DraftControls me={props.me} seasonId={seasonId} status={season.data.status} members={Object.keys(league.data.members ?? {})} joiningOpen={league.data.joining !== 'closed'} groupWeeks={season.data.groupWeeks ?? []} />}
+
+        {league.data && seasonId && season.data?.status === 'active' && <CommishGroupPlay me={props.me} seasonId={seasonId} />}
 
         {league.data && <CommishPlayers me={props.me} league={league.data} />}
         {league.data && seasonId && season.data && (

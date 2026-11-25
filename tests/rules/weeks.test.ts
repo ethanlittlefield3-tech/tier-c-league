@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
-import { SAT1, SUN1, SUN2, asJob, assertFails, assertSucceeds, auditEntry, dev1, dev2, league, now, season, seedLeague, startEmulator, stopEmulator, type Db } from './harness.ts';
+import { MON2, MON3, SAT1, SUN1, SUN2, TUE2, TUE3, asJob, assertFails, assertSucceeds, auditEntry, dev1, dev2, league, now, season, seedLeague, startEmulator, stopEmulator, type Db } from './harness.ts';
 
 beforeAll(startEmulator);
 afterAll(stopEmulator);
@@ -106,6 +106,57 @@ describe('Settling a week from the app', () => {
     await assertFails(settle(dev1(), week1, results(SUN1)));
     const { settledAt: _settledAt, ...again } = results(SUN1);
     await assertSucceeds(settle(dev1(), week1, again));
+  });
+});
+
+describe("A group-play week's settings", () => {
+  const week3 = `${season}/weeks/w03`;
+  const week2 = `${season}/weeks/w02`;
+  const set = (db: Db, path: string, change: Record<string, unknown>, by = 'p1') => audited(db, path, change, 'week.groupPlay', path.slice(path.indexOf('weeks/')), by);
+
+  beforeEach(async () => {
+    await seedLeague();
+    await asJob((db) => db.doc(week3).set({ week: 3, mode: 'bounty', monday: MON3, pairs: [], roster: ['p1', 'p2', 'p3'], targets: {} }));
+  });
+
+  it("Before a Bounty Week starts, the commish sets its target, with an audit entry: goals hit, a day with no beers, or a day under a screen-time limit", async () => {
+    await assertSucceeds(set(dev1(), week3, { bounty: { kind: 'hits', lane: 'body', count: 18 } }));
+    await seedLeague();
+    await asJob((db) => db.doc(week3).set({ week: 3, mode: 'bounty', monday: MON3, pairs: [], targets: {} }));
+    await assertSucceeds(set(dev1(), week3, { bounty: { kind: 'dry', date: TUE3 } }));
+    await seedLeague();
+    await asJob((db) => db.doc(week3).set({ week: 3, mode: 'bounty', monday: MON3, pairs: [], targets: {} }));
+    await assertSucceeds(set(dev1(), week3, { bounty: { kind: 'screen', date: TUE3, minutes: 120 } }));
+  });
+
+  it('A target must make sense: a lane and a count from 1, or a day of that week, and a limit in 15-minute steps', async () => {
+    await assertFails(set(dev1(), week3, { bounty: { kind: 'hits', lane: 'body', count: 0 } }));
+    await assertFails(set(dev1(), week3, { bounty: { kind: 'hits', lane: 'elbow', count: 10 } }));
+    await assertFails(set(dev1(), week3, { bounty: { kind: 'dry', date: TUE2 } }));
+    await assertFails(set(dev1(), week3, { bounty: { kind: 'screen', date: TUE3, minutes: 100 } }));
+    await assertFails(set(dev1(), week3, { bounty: { kind: 'dry', date: TUE3, extra: true } }));
+  });
+
+  it('Not once the week has started, not for another mode, not by anyone else, not without the audit entry, and nothing else changes', async () => {
+    await asJob((db) => db.doc(week2).set({ week: 2, mode: 'bounty', monday: MON2, pairs: [], targets: {} }));
+    await assertFails(set(dev1(), week2, { bounty: { kind: 'hits', lane: 'any', count: 10 } }));
+    await asJob((db) => db.doc(week3).update({ mode: 'alley' }));
+    await assertFails(set(dev1(), week3, { bounty: { kind: 'hits', lane: 'any', count: 10 } }));
+    await asJob((db) => db.doc(week3).update({ mode: 'bounty' }));
+    await assertFails(set(dev2(), week3, { bounty: { kind: 'hits', lane: 'any', count: 10 } }, 'p2'));
+    await assertFails(dev1().doc(week3).update({ bounty: { kind: 'hits', lane: 'any', count: 10 } }));
+    await assertFails(set(dev1(), week3, { bounty: { kind: 'hits', lane: 'any', count: 10 }, mode: 'alley' }));
+  });
+
+  it('Before a 2v2 week starts, the commish switches it to frenemies or back to a random draw', async () => {
+    // A Bounty Week has no duos to pair.
+    await assertFails(set(dev1(), week3, { pairing: 'frenemies' }));
+    await asJob((db) => db.doc(week3).update({ mode: 'twoVTwo' }));
+    await assertFails(set(dev1(), week3, { pairing: 'chaos' }));
+    await assertFails(set(dev1(), week3, { bounty: { kind: 'hits', lane: 'any', count: 10 } }));
+    await assertSucceeds(set(dev1(), week3, { pairing: 'frenemies' }));
+    await asJob((db) => db.doc(week2).set({ week: 2, mode: 'twoVTwo', monday: MON2, pairs: [], targets: {} }));
+    await assertFails(set(dev1(), week2, { pairing: 'frenemies' }));
   });
 });
 

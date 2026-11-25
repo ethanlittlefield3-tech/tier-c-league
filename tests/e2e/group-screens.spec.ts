@@ -1,6 +1,7 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
-import { joinAs } from './helpers.ts';
-import { addPlayer, createLeague, futureDays, patchDoc, readDoc, setGoals, startSeason, thisWeek, writeDoc } from './league.ts';
+import { enterAsCommish, joinAs } from './helpers.ts';
+import { addDays } from '../../engine/src/calendar.ts';
+import { addPlayer, createLeague, futureDays, listIds, patchDoc, readDoc, setGoals, startSeason, thisWeek, writeDoc } from './league.ts';
 
 const button = (page: Page, name: string | RegExp) => page.getByRole('button', { name, exact: typeof name === 'string' });
 const tab = (page: Page, name: string) => page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name, exact: true });
@@ -127,6 +128,36 @@ test.describe('Group play on the phone', () => {
     await expect(floors.getByRole('img', { name: "Maya's floor: 1 of 20 tiles broken" })).toBeVisible();
     await expect(floors.getByRole('img', { name: 'Your floor: 0 of 20 tiles broken' })).toBeVisible();
     await expect(floors.locator('.group-lead')).toContainText("You've landed 2 hits; Maya has landed 0.");
+  });
+
+  test("Before a group-play week starts, the commish sets a Bounty Week's target and switches a 2v2 week to frenemies, and each goes in the audit log", async ({ page, request }) => {
+    const league = await createLeague(request, { name: 'Sunday Squad' });
+    const season = await startSeason(request, league);
+    for (const [id, name] of [['maya', 'Maya'], ['sam', 'Sam']] as const) await addPlayer(request, league, season, id, name);
+    const monday3 = addDays(thisWeek(season).dates[0]!, 7);
+    const monday4 = addDays(monday3, 7);
+    await writeDoc(request, `${season.path}/weeks/w03`, { week: 3, mode: 'bounty', monday: monday3, pairs: [], roster: [league.commish, 'maya', 'sam'], targets: {} });
+    await writeDoc(request, `${season.path}/weeks/w04`, { week: 4, mode: 'twoVTwo', monday: monday4, pairs: [], roster: [league.commish, 'maya', 'sam'], targets: {} });
+    await enterAsCommish(page, league);
+    await button(page, 'Your profile, Alex').click();
+    await button(page, 'Commish tools').click();
+
+    const bounty = page.getByRole('form', { name: 'Week 3: Bounty Week' });
+    await expect(bounty).toContainText('No target set yet, so it is: 36 goals hit across the league.');
+    await bounty.getByLabel('Goal').selectOption('body');
+    await expect(bounty).toContainText('The most the league can reach, with one rest day each: 18.');
+    await bounty.getByLabel('How many').fill('15');
+    await bounty.getByRole('button', { name: 'Set the target' }).click();
+    await expect.poll(async () => (await readDoc(request, `${season.path}/weeks/w03`))?.bounty).toEqual({ kind: 'hits', lane: 'body', count: 15 });
+    await expect(bounty).toContainText('The target: 15 Body hits across the league.');
+
+    const duos = page.getByRole('group', { name: 'Week 4: 2v2' });
+    await duos.getByRole('button', { name: 'Frenemies: your Week 1 rival' }).click();
+    await expect.poll(async () => (await readDoc(request, `${season.path}/weeks/w04`))?.pairing).toBe('frenemies');
+    await expect(duos.getByRole('button', { name: 'Frenemies: your Week 1 rival' })).toHaveAttribute('aria-pressed', 'true');
+
+    const audit = await Promise.all((await listIds(request, `leagues/${league.id}/audit`)).map((id) => readDoc(request, `leagues/${league.id}/audit/${id}`)));
+    expect(audit.filter((entry) => entry?.action === 'week.groupPlay').map((entry) => entry?.reason).sort()).toEqual(['2v2 duos: frenemies', 'Bounty target: 15 Body hits across the league']);
   });
 
   test("League lists a settled group-play week by its mode's own lines, and the schedule names each group-play week's mode", async ({ page, request }) => {

@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 307 of 307 passing.
+- **Tests:** 311 of 311 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -361,6 +361,13 @@ If the weekly job runs late, the commish can post a finished week's results as p
 - Only the commish, only with the audit entry, and nothing but the results change
 - A group-play week's results come with its summary: the sides, the Bounty, the race or the floors
 - Results the job already posted can be posted again; they keep the time they were first posted
+
+**A group-play week's settings**
+
+- Before a Bounty Week starts, the commish sets its target, with an audit entry: goals hit, a day with no beers, or a day under a screen-time limit
+- A target must make sense: a lane and a count from 1, or a day of that week, and a limit in 15-minute steps
+- Not once the week has started, not for another mode, not by anyone else, not without the audit entry, and nothing else changes
+- Before a 2v2 week starts, the commish switches it to frenemies or back to a random draw
 
 **Removing a dare**
 

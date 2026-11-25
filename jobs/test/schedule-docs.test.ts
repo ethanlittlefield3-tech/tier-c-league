@@ -80,6 +80,11 @@ describe('Building the schedule after the draft', () => {
     expect(result.weeks[0]?.data.roster).toBeUndefined();
   });
 
+  it("Each week keeps the date of its Monday, which the rules read to close a week's group-play settings when it starts", () => {
+    const weeks = weeksOf(scheduleDocs({ status: 'draft', regularWeeks: 3, kickoff: '2027-01-04', draft: done(['a', 'b', 'c', 'd'], { a: 'b', c: 'd' }) }));
+    expect(weeks.map((week) => week.data.monday)).toEqual(['2027-01-04', '2027-01-11', '2027-01-18']);
+  });
+
   it('Without group-play weeks, every week is a normal 1v1 week', () => {
     const weeks = weeksOf(scheduleDocs({ status: 'draft', regularWeeks: 6, groupWeeks: [], draft: done(['a', 'b', 'c', 'd'], { a: 'b', c: 'd' }) }));
     expect(weeks).toHaveLength(6);

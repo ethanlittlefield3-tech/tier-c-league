@@ -40,6 +40,7 @@ for (const league of leagues) {
       groupWeeks: season.get('groupWeeks'),
       rankings,
       commish: typeof league.get('commish') === 'string' ? String(league.get('commish')) : null,
+      kickoff: season.get('kickoff'),
     });
     if ('weeks' in plan) {
       for (const week of plan.weeks) tx.set(seasonRef.collection('weeks').doc(week.id), week.data, { merge: true });

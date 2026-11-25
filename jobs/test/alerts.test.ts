@@ -73,6 +73,20 @@ describe('Alerts: daily', () => {
     expect(alertsDue(input).map((alert) => `${alert.player}:${alert.title}`).sort()).toEqual(['alex:Rest day: Sun Jan 17', 'maya:Rest day: Wed Jan 13']);
   });
 
+  it("At 7 pm on the Sunday before a group-play week, everyone hears next week's mode and their part in it", () => {
+    const sunday = at('2027-01-17', 19, 4);
+    const told = (nextWeek: AlertInput['nextWeek']) => alertsDue(run(sunday, { nextWeek })).filter((alert) => alert.key.startsWith('mode-')).map((alert) => [alert.player, alert.title, alert.body]);
+    expect(told({ id: 'w03', week: 3, mode: 'teamWeek', teams: { blue: ['alex'], orange: ['maya'] } })).toEqual([
+      ['alex', 'Next week: Team Week', "The league split in half, blue against orange. +3 each on the winning team. You're on Blue."],
+      ['maya', 'Next week: Team Week', "The league split in half, blue against orange. +3 each on the winning team. You're on Orange."],
+    ]);
+    expect(told({ id: 'w03', week: 3, mode: 'bounty', roster: ['alex', 'maya'], bounty: null })[0]?.[2]).toBe('The whole league chases one shared target. +3 for everyone if it is hit. The target: 24 goals hit across the league.');
+    expect(told({ id: 'w03', week: 3, mode: 'twoVTwo', roster: ['alex', 'maya'], pairing: 'frenemies' })[0]?.[2]).toBe('Duos face duos. +3 each on the winning duo. The duos are drawn at midnight: frenemies, so you play alongside your Week 1 rival.');
+    expect(told({ id: 'w03', week: 3, mode: 'regular' })).toEqual([]);
+    // Not at any other time.
+    expect(alertsDue(run(at('2027-01-17', 18, 4), { nextWeek: { id: 'w03', week: 3, mode: 'alley' } })).filter((alert) => alert.key.startsWith('mode-'))).toEqual([]);
+  });
+
   it('On Saturday at 8 pm, anyone with Aerial unused hears it is the last chance', () => {
     const input = run(at('2027-01-16', 20, 2), { kit: [{ player: 'alex', item: 'aerial', period: 'w02', date: '2027-01-14' }] });
     expect(keys(input)).toEqual(['maya:aerial-w02']);

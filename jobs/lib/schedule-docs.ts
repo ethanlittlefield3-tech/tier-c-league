@@ -4,7 +4,7 @@
  * any repeat. With an odd count, one player a week faces The House. The
  * group-play vote's modes fill the season's group-play weeks.
  */
-import { HOUSE, buildSchedule, checkRivalPicks, groupWeekModes, isPairedMode, modeStandings, week1Pairs, weekPeriod } from '../../engine/src/index.ts';
+import { HOUSE, addDays, isDate, buildSchedule, checkRivalPicks, groupWeekModes, isPairedMode, modeStandings, week1Pairs, weekPeriod } from '../../engine/src/index.ts';
 
 export interface DraftState {
   step: string;
@@ -30,6 +30,8 @@ export interface WeekDoc {
   teams?: { blue: string[]; orange: string[] };
   /** Everyone in a 2v2, Bounty or Alley week: the weeks with no 1v1 pairs and no squads. */
   roster?: string[];
+  /** The week's Monday: the rules close its group-play settings when that day starts. */
+  monday?: string;
 }
 
 export type ScheduleResult = { skip: string } | { weeks: { id: string; data: WeekDoc }[]; modes: Record<number, string> };
@@ -43,6 +45,8 @@ export function scheduleDocs(input: {
   /** The group-play vote's rankings, by voter. */
   rankings?: Record<string, unknown>;
   commish?: string | null;
+  /** The season's first Monday, for each week's Monday. */
+  kickoff?: unknown;
 }): ScheduleResult {
   if (input.status !== 'draft') return { skip: 'not-in-draft' };
   const draft = input.draft;
@@ -70,7 +74,8 @@ export function scheduleDocs(input: {
         for (const player of teams.orange) targets[player] = [...teams.blue];
       }
       const roster = !isPairedMode(plan.mode) && !teams ? [...draft.order] : null;
-      return { id: period, data: { week: plan.week, period, mode: plan.mode, pairs: plan.pairs.map(([a, b]) => ({ a, b })), targets, ...(teams ? { teams } : {}), ...(roster ? { roster } : {}) } };
+      const monday = typeof input.kickoff === 'string' && isDate(input.kickoff) ? { monday: addDays(input.kickoff, 7 * (plan.week - 1)) } : {};
+      return { id: period, data: { week: plan.week, period, mode: plan.mode, pairs: plan.pairs.map(([a, b]) => ({ a, b })), targets, ...(teams ? { teams } : {}), ...(roster ? { roster } : {}), ...monday } };
     }),
     // The season keeps each group-play week's mode, so its calendar gets the right power-ups.
     modes: Object.fromEntries(plans.filter((plan) => plan.mode !== 'regular').map((plan) => [plan.week, plan.mode])),

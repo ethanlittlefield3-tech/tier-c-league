@@ -197,7 +197,7 @@ for (const league of leagues) {
     // The timed alerts' days: each player's logs, and this week's power-ups.
     const logDates = [...new Set(checks.filter((check) => check.kind === 'log' || check.kind === 'lastCall').map((check) => check.day.date))];
     const logs = logDates.length ? docs(await db.getAll(...logDates.flatMap((date) => members.map((player) => seasonRef.collection('days').doc(`${player}_${date}`))))) : [];
-    const periods = [...new Set(checks.filter((check) => check.kind !== 'log').map((check) => check.day.period))];
+    const periods = [...new Set(checks.filter((check) => check.kind !== 'log' && check.kind !== 'mode').map((check) => check.day.period))];
     const kit = periods.length
       ? [
           ...(await Promise.all(periods.map((period) => seasonRef.collection('kit').where('period', '==', period).get()))).flatMap((snapshot) => snapshot.docs.map((play) => plain(play.data()))),
@@ -205,6 +205,9 @@ for (const league of leagues) {
         ]
       : [];
     const issued = (season.get('ruleOneIssue') ?? []) as unknown[];
+    // At 7 pm on Sunday, next week, for its group-play mode.
+    const modeCheck = checks.find((check) => check.kind === 'mode');
+    const nextWeek = modeCheck ? await seasonRef.collection('weeks').doc(weekPeriod((modeCheck.day as AlertDay & { week: number }).week + 1)).get() : null;
 
     const input: AlertInput = {
       since,
@@ -225,6 +228,7 @@ for (const league of leagues) {
       spins: [...new Map([...spun.docs, ...proven.docs].map((spin) => [spin.id, { id: spin.id, ...plain(spin.data()) }])).values()].map((spin) => ({ proofAt: null, ...spin })) as unknown as AlertInput['spins'],
       draftAt,
       news: news.docs.map((item) => ({ id: item.id, ...plain(item.data()) })) as unknown as AlertInput['news'],
+      nextWeek: nextWeek?.exists ? ({ id: nextWeek.id, ...plain(nextWeek.data()!) } as unknown as AlertInput['nextWeek']) : null,
     };
     alerts = alertsDue(input);
 

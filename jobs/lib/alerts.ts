@@ -14,6 +14,8 @@ import { WEEKDAYS, addDays, weekdayIndex } from '../../engine/src/calendar.ts';
 import type { LeagueClock } from '../../engine/src/clock.ts';
 import { RANK_NAMES, rankMove, type Rank } from '../../engine/src/ranks.ts';
 import { HOUSE } from '../../engine/src/schedule.ts';
+import { MODE_BLURBS, MODE_NAMES, type GroupMode } from '../../engine/src/modes.ts';
+import { bountyText, defaultBounty, type BountyTarget } from '../../engine/src/group.ts';
 
 export type Screen = 'today' | 'match' | 'feed' | 'league' | 'wheel' | 'draft';
 
@@ -84,6 +86,16 @@ export interface AlertInput {
   spins: { id: string; player: string; at: number; proofAt: number | null }[];
   /** When the live draft starts, if it is set. */
   draftAt: number | null;
+  /** Next week, read only for the 7 pm Sunday alert about a group-play mode. */
+  nextWeek?: {
+    id: string;
+    week: number;
+    mode?: string;
+    teams?: { blue: string[]; orange: string[] };
+    roster?: string[];
+    bounty?: BountyTarget | null;
+    pairing?: string;
+  } | null;
   /** The jobs' news since the last run: badges earned and rank changes. */
   news: { id: string; kind: string; player: string; at: number; data?: { badge?: string; rank?: Rank; from?: Rank | null } }[];
 }
@@ -145,7 +157,7 @@ function restDayOf(input: AlertInput, player: string, day: AlertDay): string {
   return moved?.date ?? addDays(day.date, 6 - day.dayIndex);
 }
 
-export type TimedKind = 'log' | 'lastCall' | 'rest' | 'aerial' | 'close';
+export type TimedKind = 'log' | 'lastCall' | 'rest' | 'aerial' | 'close' | 'mode';
 
 /**
  * The timed alerts' moments that came round since the last run: what the job
@@ -161,6 +173,8 @@ export function timedChecks(input: { since: number; now: number; clock: LeagueCl
     if (day.dayIndex === 0 && due(input.clock.timeOf(day.date, 9))) checks.push({ kind: 'rest', day });
     if (day.dayIndex === 5 && due(input.clock.timeOf(day.date, 20))) checks.push({ kind: 'aerial', day });
     if ((day.dayIndex === 5 || day.dayIndex === 6) && due(input.clock.timeOf(day.date, 18))) checks.push({ kind: 'close', day });
+    // 7 pm the Sunday before a group-play week: what next week's mode is.
+    if (day.dayIndex === 6 && due(input.clock.timeOf(day.date, 19))) checks.push({ kind: 'mode', day });
   }
   return checks;
 }
@@ -175,6 +189,22 @@ export function alertsDue(input: AlertInput): Alert[] {
   const add = (alert: Alert) => {
     if (alert.expires > now) alerts.push(alert);
   };
+
+  // ---- Matchup: next week's group-play mode, at 7 pm the Sunday before -----
+  const next = input.nextWeek;
+  const nextMode = next?.mode as GroupMode | undefined;
+  if (next && nextMode && nextMode in MODE_NAMES && timedChecks(input).some((check) => check.kind === 'mode')) {
+    const sunday = timedChecks(input).find((check) => check.kind === 'mode')!.day;
+    for (const player of members) {
+      let detail = '';
+      if (nextMode === 'teamWeek' && next.teams) detail = next.teams.blue.includes(player) ? "You're on Blue." : next.teams.orange.includes(player) ? "You're on Orange." : '';
+      if (nextMode === 'twoVTwo') detail = `The duos are drawn at midnight${next.pairing === 'frenemies' ? ': frenemies, so you play alongside your Week 1 rival' : ', at random'}.`;
+      if (nextMode === 'bounty') detail = `The target: ${bountyText(next.bounty ?? defaultBounty((next.roster ?? members).length))}.`;
+      if (nextMode === 'alley') detail = 'No power-ups; Rule One still works.';
+      if (nextMode === 'rumble') detail = 'Your item arrives at midnight each day.';
+      add({ player, category: 'matchup', key: `mode-${next.id}`, title: `Next week: ${MODE_NAMES[nextMode]}`, body: `${MODE_BLURBS[nextMode]} ${detail}`.trim(), screen: 'today', expires: sunday.lock });
+    }
+  }
 
   // ---- Daily: 9 pm and 11 am the next day ----------------------------------
   for (const { kind, day } of timedChecks(input)) {

@@ -68,12 +68,12 @@ export const BADGES: readonly Badge[] = [
   { id: 'airMail', name: 'Air Mail', group: 'powerups', how: 'An Aerial day worth +10 or more', unlocks: [part('boost', 'jet', 'Jet boost trail')] },
   { id: 'clutch', name: 'Clutch', group: 'powerups', how: 'Won a week in which you used Rule One', unlocks: [part('decal', 'fourLeaf', 'Four-leaf decal')] },
   // Group play (Phase 3)
-  { id: 'rumbleRoyale', name: 'Rumble Royale', group: 'group', how: 'Most points in the league in a Rumble week', unlocks: [part('explosion', 'thunder', 'Thunder goal explosion')], later: 'group play' },
-  { id: 'teamPlayer', name: 'Team Player', group: 'group', how: 'Won a Team Week', unlocks: [part('decal', 'squad', 'Squad decal')], later: 'group play' },
-  { id: 'dynamicDuo', name: 'Dynamic Duo', group: 'group', how: 'Won a 2v2', unlocks: [part('boost', 'twinTurbo', 'Twin-turbo boost trail')], later: 'group play' },
-  { id: 'bountyHunter', name: 'Bounty Hunter', group: 'group', how: 'Top contributor in a Bounty Week', unlocks: [part('decal', 'wantedPoster', 'Wanted-poster decal')], later: 'group play' },
-  { id: 'floorBreaker', name: 'Floor Breaker', group: 'group', how: 'Most tiles broken in a Drop Shot week', unlocks: [part('explosion', 'shatter', 'Shatter goal explosion')], later: 'group play' },
-  { id: 'alleyCat', name: 'Alley Cat', group: 'group', how: 'Won the Alley', unlocks: [part('body', 'noodle', 'Noodle body')], later: 'group play' },
+  { id: 'rumbleRoyale', name: 'Rumble Royale', group: 'group', how: 'Most points in the league in a Rumble week', unlocks: [part('explosion', 'thunder', 'Thunder goal explosion')] },
+  { id: 'teamPlayer', name: 'Team Player', group: 'group', how: 'Won a Team Week', unlocks: [part('decal', 'squad', 'Squad decal')] },
+  { id: 'dynamicDuo', name: 'Dynamic Duo', group: 'group', how: 'Won a 2v2', unlocks: [part('boost', 'twinTurbo', 'Twin-turbo boost trail')] },
+  { id: 'bountyHunter', name: 'Bounty Hunter', group: 'group', how: 'Top contributor in a Bounty Week', unlocks: [part('decal', 'wantedPoster', 'Wanted-poster decal')] },
+  { id: 'floorBreaker', name: 'Floor Breaker', group: 'group', how: 'Most tiles broken in a Drop Shot week', unlocks: [part('explosion', 'shatter', 'Shatter goal explosion')] },
+  { id: 'alleyCat', name: 'Alley Cat', group: 'group', how: 'Won the Alley', unlocks: [part('body', 'noodle', 'Noodle body')] },
   // Social
   { id: 'trashTalker', name: 'Trash Talker', group: 'social', how: '50 taunts sent', unlocks: [part('topper', 'megaphone', 'Megaphone topper')] },
   { id: 'showOff', name: 'Show-Off', group: 'social', how: '10 brags with 3 or more reactions each', unlocks: [part('boost', 'spotlight', 'Spotlight boost trail')] },

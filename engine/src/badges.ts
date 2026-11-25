@@ -54,6 +54,46 @@ export interface BadgeWeek {
   bust: boolean;
   /** This player's Demolitions that landed this week. */
   demolitionsLanded: number;
+  /** Group-play badges this week earned (`groupFeats`). */
+  feats?: string[];
+}
+
+/** The group-play badges, each earned by a feat in one settled week. */
+export const GROUP_FEATS = ['rumbleRoyale', 'teamPlayer', 'dynamicDuo', 'bountyHunter', 'floorBreaker', 'alleyCat'] as const;
+
+/**
+ * Each player's group-play feats in one settled week (SCOPE.md, "Badges",
+ * Group play). Everyone tied for the top earns it.
+ * - Rumble Royale: the most points in the league in a Rumble week.
+ * - Team Player and Dynamic Duo: the winning side of a Team Week or a 2v2.
+ * - Bounty Hunter: the top contributor to a count target, hit or missed. A
+ *   day target is kept or broken, so it has no top contributor.
+ * - Floor Breaker: the most tiles broken in a Drop Shot week, at least one.
+ * - Alley Cat: 1st in the Alley.
+ */
+export function groupFeats(week: {
+  results: Record<string, { outcome: string; points: number; mode?: string; floor?: { tiles: number }; race?: { place: number } }>;
+  group?: { mode: string; target?: { kind: string }; contributions?: Record<string, number> } | null;
+}): Record<string, string[]> {
+  const feats: Record<string, string[]> = {};
+  const give = (player: string, feat: string) => (feats[player] ??= []).push(feat);
+  const entries = Object.entries(week.results);
+  const mode = week.group?.mode ?? entries.find(([, result]) => result.mode)?.[1].mode;
+  const top = (value: (player: string) => number, floor = Number.NEGATIVE_INFINITY) => {
+    const best = Math.max(...entries.map(([player]) => value(player)));
+    return best >= floor ? entries.map(([player]) => player).filter((player) => value(player) === best) : [];
+  };
+  if (mode === 'rumble') for (const player of top((player) => week.results[player]!.points)) give(player, 'rumbleRoyale');
+  if (mode === 'teamWeek' || mode === 'twoVTwo') {
+    for (const [player, result] of entries) if (result.outcome === 'win') give(player, mode === 'teamWeek' ? 'teamPlayer' : 'dynamicDuo');
+  }
+  if (mode === 'bounty' && week.group?.target?.kind === 'hits') {
+    const counted = week.group.contributions ?? {};
+    for (const player of top((player) => counted[player] ?? 0, 1)) give(player, 'bountyHunter');
+  }
+  if (mode === 'dropShot') for (const player of top((player) => week.results[player]!.floor?.tiles ?? 0, 1)) give(player, 'floorBreaker');
+  if (mode === 'alley') for (const [player, result] of entries) if (result.race?.place === 1) give(player, 'alleyCat');
+  return feats;
 }
 
 export interface BadgeFacts {
@@ -177,6 +217,9 @@ export function earnedBadges(facts: BadgeFacts): string[] {
   earn('rivalryKing', [...winsOver.values()].some((count) => count >= 5));
   earn('payback', (facts.rematchesWon ?? 0) >= 1);
   earn('prophet', facts.bestPicker === true);
+
+  // Group play: each from a feat in one week.
+  for (const feat of GROUP_FEATS) earn(feat, weeks.some((week) => week.feats?.includes(feat)));
 
   // Power-ups
   earn('demolisher', weeks.reduce((sum, week) => sum + week.demolitionsLanded, 0) >= 3);

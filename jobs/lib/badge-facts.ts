@@ -4,7 +4,7 @@
  * the season and passes it in; `badges.ts` in the engine decides what has
  * been earned. Pure.
  */
-import { earnedBadges, type BadgeDay, type BadgeFacts, type BadgeWeek } from '../../engine/src/badges.ts';
+import { earnedBadges, groupFeats, type BadgeDay, type BadgeFacts, type BadgeWeek } from '../../engine/src/badges.ts';
 import type { LeagueClock } from '../../engine/src/clock.ts';
 import { playerWeek, type CalendarTimes, type KitPlay } from '../../engine/src/days.ts';
 import { againstPlayer } from '../../engine/src/schedule.ts';
@@ -23,8 +23,10 @@ export interface SeasonForBadges {
   /** Its final weeks, in order. */
   weeks: {
     period: string;
-    results: Record<string, Pick<MatchResult, 'opponent' | 'points' | 'opponentPoints' | 'outcome' | 'seasonPoints'>>;
+    results: Record<string, Pick<MatchResult, 'opponent' | 'points' | 'opponentPoints' | 'outcome' | 'seasonPoints' | 'mode' | 'floor' | 'race'>>;
     awards?: { mvp: string[]; bust: string[] };
+    /** A group-play week's summary, for its badges. */
+    group?: { mode: string; target?: { kind: string }; contributions?: Record<string, number> } | null;
     reveals?: { player: string; outcome: string }[];
   }[];
   /** Each player's season: logs (with when each day was first logged), power-ups, fixes, and Demolitions aimed at them. */
@@ -52,6 +54,8 @@ export function seasonBadgeData(input: SeasonForBadges): Record<string, { days: 
       const data = input.players[player] ?? { logs: {}, kit: [], adjustments: [], demolitionsOn: [] };
       cells[player] = playerWeek({ par: input.par, days, logs: data.logs, kit: data.kit, demolitionsOn: data.demolitionsOn, adjustments: data.adjustments, now: after }).cells;
     }
+    // Group-play badges earned this week.
+    const feats = groupFeats({ results: week.results, group: week.group ?? null });
     // The standings leaders going into this week: the most Season Points so far.
     const top = Math.max(0, ...Object.values(seasonPoints));
     const leaders = top > 0 ? Object.keys(seasonPoints).filter((player) => seasonPoints[player] === top) : [];
@@ -97,6 +101,7 @@ export function seasonBadgeData(input: SeasonForBadges): Record<string, { days: 
         mvp: week.awards?.mvp.includes(player) ?? false,
         bust: week.awards?.bust.includes(player) ?? false,
         demolitionsLanded: (week.reveals ?? []).filter((reveal) => reveal.player === player && reveal.outcome === 'landed').length,
+        feats: feats[player] ?? [],
       });
     }
     for (const [player, result] of Object.entries(week.results)) seasonPoints[player] = (seasonPoints[player] ?? 0) + result.seasonPoints;

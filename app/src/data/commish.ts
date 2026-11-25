@@ -3,7 +3,7 @@
  * whole league can read, and the security rules refuse any that doesn't
  * (firebase/firestore.rules, "audited").
  */
-import { makeRecoveryKey, receiptFixes, settleDue, weekPlayers, type GroupWeekInput, type PlayerWeekData, type Square, type StoredReceipt, type WeekLineStored, type WeekMode } from '@tcl/engine';
+import { bountyText, makeRecoveryKey, receiptFixes, settleDue, weekPlayers, type BountyTarget, type GroupWeekInput, type PlayerWeekData, type Square, type StoredReceipt, type WeekLineStored, type WeekMode } from '@tcl/engine';
 import { collection, deleteField, doc, getDoc, getDocs, query, serverTimestamp, where, writeBatch, type Firestore } from 'firebase/firestore';
 import { connect } from './firebase.ts';
 import { trouble, type Me } from './identity.ts';
@@ -188,6 +188,22 @@ export const settleWeekNow = (me: Me, season: string, period: string, reason: st
     save.set(doc(league, 'audit', audit), auditEntry(me, 'week.settle', `weeks/${period}`, reason));
     await save.commit();
     return true;
+  });
+
+/**
+ * A group-play week's settings, until it starts on its Monday: a Bounty
+ * Week's target, or whether a 2v2 week's duos are drawn at random or as
+ * frenemies. Each goes in the audit log.
+ */
+export const setGroupPlay = (me: Me, season: string, period: string, change: { bounty: BountyTarget } | { pairing: 'random' | 'frenemies' }) =>
+  attempt(async (db) => {
+    const league = doc(db, 'leagues', me.league);
+    const audit = doc(collection(league, 'audit')).id;
+    const reason = 'bounty' in change ? `Bounty target: ${bountyText(change.bounty)}` : `2v2 duos: ${change.pairing === 'frenemies' ? 'frenemies' : 'a random draw'}`;
+    const save = writeBatch(db);
+    save.update(doc(league, 'seasons', season, 'weeks', period), { ...change, audit });
+    save.set(doc(league, 'audit', audit), auditEntry(me, 'week.groupPlay', `weeks/${period}`, reason));
+    await save.commit();
   });
 
 /** Takes a player's dare off the Wheel. Draws already made keep their wheel. */

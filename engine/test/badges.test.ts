@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BADGES, STARTER_PARTS, unlockedParts } from '../src/achievements.ts';
-import { earnedBadges, type BadgeDay, type BadgeFacts, type BadgeWeek } from '../src/badges.ts';
+import { earnedBadges, groupFeats, type BadgeDay, type BadgeFacts, type BadgeWeek } from '../src/badges.ts';
 
 /** A logged goal day: every goal hit, 30 minutes of screen time, no beers. */
 function day(index: number, extra: Partial<BadgeDay> = {}): BadgeDay {
@@ -154,6 +154,40 @@ describe('Badges: matchups', () => {
   it('Rivalry King: 5 all-time wins over the same player', () => {
     expect(has({ weeks: [1, 2, 3, 4, 5].map((n) => week(n)) }, 'rivalryKing')).toBe(true);
     expect(has({ weeks: [1, 2, 3, 4, 5].map((n) => week(n, { opponent: n === 5 ? 'sam' : 'maya' })) }, 'rivalryKing')).toBe(false);
+  });
+});
+
+describe('Badges: group play', () => {
+  const result = (outcome: string, points: number, extra: Record<string, unknown> = {}) => ({ outcome, points, ...extra });
+
+  it("Rumble Royale: the most points in the league in a Rumble week, every tied player", () => {
+    const feats = groupFeats({ results: { a: result('win', 30, { mode: 'rumble' }), b: result('loss', 30, { mode: 'rumble' }), c: result('win', 12, { mode: 'rumble' }) } });
+    expect(feats).toEqual({ a: ['rumbleRoyale'], b: ['rumbleRoyale'] });
+  });
+
+  it('Team Player and Dynamic Duo: on the winning side of a Team Week or a 2v2', () => {
+    expect(groupFeats({ results: { a: result('win', 20, { mode: 'teamWeek' }), b: result('loss', 25, { mode: 'teamWeek' }) } })).toEqual({ a: ['teamPlayer'] });
+    expect(groupFeats({ results: { a: result('win', 20, { mode: 'twoVTwo' }), b: result('draw', 25, { mode: 'twoVTwo' }) } })).toEqual({ a: ['dynamicDuo'] });
+  });
+
+  it('Bounty Hunter: the top contributor to a count target, hit or missed; a day target has no top contributor', () => {
+    const results = { a: result('none', 20, { mode: 'bounty' }), b: result('none', 25, { mode: 'bounty' }) };
+    expect(groupFeats({ results, group: { mode: 'bounty', target: { kind: 'hits' }, contributions: { a: 6, b: 4 } } })).toEqual({ a: ['bountyHunter'] });
+    expect(groupFeats({ results, group: { mode: 'bounty', target: { kind: 'dry' }, contributions: { a: 1, b: 1 } } })).toEqual({});
+  });
+
+  it('Floor Breaker: the most tiles broken in a Drop Shot week, at least one; Alley Cat: 1st in the Alley', () => {
+    const floor = (tiles: number) => ({ hits: tiles * 2, tiles, opponentHits: 0, opponentTiles: 0 });
+    expect(groupFeats({ results: { a: result('win', 20, { mode: 'dropShot', floor: floor(4) }), b: result('loss', 25, { mode: 'dropShot', floor: floor(2) }), c: result('win', 9, { mode: 'dropShot', floor: floor(4) }) } })).toEqual({ a: ['floorBreaker'], c: ['floorBreaker'] });
+    expect(groupFeats({ results: { a: result('none', 20, { mode: 'dropShot', floor: floor(0) }) } })).toEqual({});
+    expect(groupFeats({ results: { a: result('none', 20, { mode: 'alley', race: { points: 20, walls: 0, place: 1 } }), b: result('none', 22, { mode: 'alley', race: { points: 18, walls: 2, place: 2 } }) } })).toEqual({ a: ['alleyCat'] });
+  });
+
+  it("A week's group-play feats earn their badges", () => {
+    for (const badge of ['rumbleRoyale', 'teamPlayer', 'dynamicDuo', 'bountyHunter', 'floorBreaker', 'alleyCat']) {
+      expect(has({ weeks: [week(1, { opponent: null, outcome: 'none', feats: [badge] })] }, badge)).toBe(true);
+    }
+    expect(has({ weeks: [week(1)] }, 'teamPlayer')).toBe(false);
   });
 });
 
