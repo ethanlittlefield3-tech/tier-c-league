@@ -33,10 +33,11 @@ Last updated 2026-11-25, after Step 2, the first push to GitHub, the first green
 - **Art level approved** (2026-11-25, ruling R7). The new title screen is the standard for every screen.
 - **Intro animation** (2026-11-25): the Nunchucks card (2 s), the boost scene (2.5 s) and the title slam, exactly as SCOPE.md lists them. The full version plays on the first open each day and a 1-second version after that. A tap or a key skips it, sound starts only with Tap to enter, and Reduce Motion gets a fade. The scene is nine layers, and only whole layers move, which is what keeps it smooth on a phone.
 - **Phone-size flow tests** (2026-11-25): `tests/e2e/` runs the built app in a browser at iPhone size. 11 tests cover the intro. CI runs them on every push.
+- **The intro is approved, and GitHub Pages is on** (2026-11-25). `.github/workflows/deploy-pages.yml` publishes the app after the CI tests pass on main, so the commish can open every change on a phone.
 
 ## Waiting on the commish
 
-1. **Seeing the app on a phone.** The code is built in the cloud, so the simplest way to open the app on a phone is GitHub Pages. One step: in the repo, Settings, then Pages, then set Source to "GitHub Actions". After that a deploy workflow is added and every push updates the site.
+Nothing right now.
 
 ## Next
 

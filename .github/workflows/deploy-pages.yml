@@ -1,0 +1,55 @@
+name: Deploy the app
+
+# Publishes the app to GitHub Pages, but only after the CI tests have passed
+# on main. It can also be started by hand from the Actions tab ("Run workflow").
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time, and never cancel one that is half way through.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build and publish
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # The exact commit the tests passed on.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build the app
+        run: npm run build
+
+      - uses: actions/configure-pages@v6
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: app/dist
+
+      - name: Publish
+        id: deployment
+        uses: actions/deploy-pages@v5

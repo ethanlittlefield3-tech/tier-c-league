@@ -57,7 +57,7 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 23. **Check-in streaks:** a blank rest day and a no-show covered by Rule One are skipped: the streak neither grows nor breaks. Logging on a rest day adds to it.
 24. **Perfect-day streaks** skip rest days. A Rule One day is not perfect, so it ends the run.
 
-**Intro**
+**Intro** (the commish saw the intro on 2026-11-25 and vetoed none of these)
 
 26. **"The first open each day" goes by the phone's own calendar day.** The intro is decoration, so the phone's clock is fine. Nothing that affects a score reads it.
 27. **Skipping the intro still counts as having seen it,** so the rest of that day gets the 1-second version.
