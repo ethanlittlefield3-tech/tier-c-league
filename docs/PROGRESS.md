@@ -84,12 +84,16 @@ Last updated 2026-11-25, after Today's first part.
   - The flow tests start a season with its whole calendar from the same code the season job will use, and can open or lock any day, so they pass at any hour. 15 new flow tests, 75 in all. 13 new logic tests.
   - Still to come on Today: the scoreboard against your opponent, the power-up tray, the rest-day picker and the week bars.
 
+- **iPhone layout fix** (2026-11-25), from the commish's first phone check. On the Home Screen app, the title and the main page sat a little too high, and a touch that missed the button moved the whole screen. Other developers report the same thing on iOS 26 with the status bar set to "black-translucent", which this app used: iOS adds the status bar's height at the bottom as well, and can leave the page scrolled up after the keyboard closes. Three fixes:
+  - The status bar is now solid navy, above the page (Apple's own advice for this bug).
+  - The page itself can no longer scroll or bounce. Only the app's own content scrolls, and the title doesn't move at all.
+  - When the keyboard closes, the page goes back to the top.
+  - 5 flow tests guard the fixes, but the bug only shows on a real iPhone, so the commish's next phone check is the real test. iOS may only pick up the new status bar after the app is removed from the Home Screen and added again.
+- **The shorter intro on reopening is on purpose:** the full intro plays on the first open each day, and a 1-second title after that (SCOPE.md, "Intro animation").
+
 ## Waiting on the commish
 
-1. **Get into the league** (one step at a time):
-   - Read the league code and the recovery key in the Firebase console.
-   - Open Tier C from the iPhone's Home Screen, tap "I'm already in a league", and enter both. The key changes on the way in, so save the new one.
-2. **Phone check of the install**, done along the way: the icon and its label, the launch picture, whether the intro is smooth, and the sound on Tap to enter.
+1. **Phone check of the layout fix.** Open Tier C. If the area behind the clock is not solid navy, remove Tier C from the Home Screen and add it again from Safari. Have the recovery key ready first (Profile, Show my key), because a re-added app starts signed out. Then check that the title and the main page sit right, and that a touch doesn't move the whole screen.
 
 ## Next
 

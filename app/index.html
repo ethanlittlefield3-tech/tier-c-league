@@ -17,7 +17,11 @@
     <meta name="apple-mobile-web-app-title" content="Tier C" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- "black", not "black-translucent". With translucent, iOS 26 lays the page
+         under the status bar and then adds the status bar's height at the
+         bottom too, so the whole app sits too high. Apple's advice is to drop
+         translucent: the status bar becomes solid theme navy, above the page. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
 
     <!-- Night-arena navy from the first instant, so the screen never flashes white. -->
     <style>

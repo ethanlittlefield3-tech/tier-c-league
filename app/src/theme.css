@@ -20,10 +20,22 @@
   color-scheme: dark;
 }
 
+/* The page itself never scrolls or bounces. Only #app scrolls, so on an
+   iPhone a drag can't leave the whole screen shifted, and a fixed screen like
+   the title can't move at all. */
 html,
-body,
+body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 #app {
   height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 body {
