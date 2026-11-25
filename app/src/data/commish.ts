@@ -3,7 +3,7 @@
  * whole league can read, and the security rules refuse any that doesn't
  * (firebase/firestore.rules, "audited").
  */
-import { bountyText, makeRecoveryKey, receiptFixes, settleDue, weekPlayers, type BountyTarget, type GroupWeekInput, type PlayerWeekData, type Square, type StoredReceipt, type WeekLineStored, type WeekMode } from '@tcl/engine';
+import { bountyText, makeRecoveryKey, receiptFixes, settleDue, weekPlayers, type BountyTarget, type GroupWeekInput, type Lane, type RumbleItem, type PlayerWeekData, type Square, type StoredReceipt, type WeekLineStored, type WeekMode } from '@tcl/engine';
 import { collection, deleteField, doc, getDoc, getDocs, query, serverTimestamp, where, writeBatch, type Firestore } from 'firebase/firestore';
 import { connect } from './firebase.ts';
 import { trouble, type Me } from './identity.ts';
@@ -161,6 +161,25 @@ export const settleWeekNow = (me: Me, season: string, period: string, reason: st
         if (demolition?.exists()) demolitions.push(plain(demolition.data()) as Demolition);
       }),
     );
+
+    // A Rumble week's items and Boots, each readable once its day has started or locked.
+    if (group.mode === 'rumble') {
+      const items: Record<string, RumbleItem> = {};
+      const boots: { player: string; target: string; date: string; lane: Lane }[] = [];
+      await Promise.all(
+        days.flatMap((day) =>
+          playing.map(async (player) => {
+            const [item, kicked] = await Promise.all([
+              getDoc(doc(seasonRef, 'rumble', `${day.date}_${player}`)).catch(() => null),
+              getDoc(doc(seasonRef, 'sealed', `boot_${day.date}_${player}`)).catch(() => null),
+            ]);
+            if (item?.exists()) items[item.id] = item.get('item') as RumbleItem;
+            if (kicked?.exists()) boots.push({ player, target: String(kicked.get('target')), date: day.date, lane: kicked.get('lane') as Lane });
+          }),
+        ),
+      );
+      group.rumble = { items, boots };
+    }
 
     // Each player's points in the earlier final weeks, oldest first, for the Bust.
     const earlier: Record<string, number[]> = {};

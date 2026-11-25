@@ -43,6 +43,7 @@ export function fastCalendar(season: SeasonPlan, clock: FastClock): CalendarDay[
     return {
       ...real,
       start,
+      noon: start + 0.5 * day,
       sixPm: start + 0.75 * day,
       end: start + day,
       lock: start + 1.5 * day,

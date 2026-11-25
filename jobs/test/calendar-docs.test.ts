@@ -21,7 +21,7 @@ describe('Calendar documents', () => {
       expect(doc.data.date).toBe(day.date);
       expect(doc.data.period).toBe(day.period);
       expect(doc.data.dayIndex).toBe(day.dayIndex);
-      for (const field of ['start', 'sixPm', 'end', 'lock', 'nextEnd', 'periodStart', 'sundayStart', 'restOpens'] as const) {
+      for (const field of ['start', 'noon', 'sixPm', 'end', 'lock', 'nextEnd', 'periodStart', 'sundayStart', 'restOpens'] as const) {
         expect(doc.data[field]).toBeInstanceOf(Date);
         expect((doc.data[field] as Date).getTime()).toBe(day[field]);
       }

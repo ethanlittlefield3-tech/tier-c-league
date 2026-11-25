@@ -10,7 +10,7 @@
  *   2. No-show: the base is -5, and every goal counts as missed.
  *   3. Otherwise the base is goals hit + screen time points - beers.
  *   4. Aerial doubles the base.
- *   5. Each Demolition that lands costs 2.
+ *   5. Each Demolition that lands costs 2, and Rumble's point items apply.
  *   6. Docks and corrections come last and are never doubled.
  *      They also survive Rule One (commish ruling, 2026-11-25).
  */
@@ -113,6 +113,27 @@ export interface DayInput {
   voided?: readonly Square[];
   /** Docks (negative) and commish corrections. Applied last, never doubled. */
   adjustments?: readonly number[];
+  /** Rumble's items on this day, worked out for both players by `rumbleDay`. */
+  rumble?: RumbleEffects;
+}
+
+/**
+ * What Rumble's items do to one player's day (SCOPE.md, "Rumble"), in the
+ * order of operations: goals (Boot, Swap) and screen time and beers (Freeze,
+ * Magnet) in step 3, then points (Tornado, Punch, Spike) in step 5.
+ */
+export interface RumbleEffects {
+  /** A goal a Boot picked: it scores 0 that day. */
+  booted?: Lane | null;
+  /** A missed goal a Swap turned into a hit, and a hit it turned into a miss. */
+  swapIn?: Lane | null;
+  swapOut?: Lane | null;
+  /** Freeze: screen time points count this many times. */
+  screenTimes?: number;
+  /** Magnet: beer points moved onto this day (negative) or off it (positive). */
+  beerShift?: number;
+  /** Points items gave or took. */
+  points?: readonly { item: string; points: number }[];
 }
 
 /**
@@ -123,7 +144,8 @@ export interface DayInput {
  * - `open`: nothing logged yet on a day that has not locked (live scoring only).
  */
 export type DayKind = 'played' | 'noShow' | 'restNoLog' | 'ruleOne' | 'open';
-export type GoalState = 'hit' | 'boosted' | 'missed' | 'voided' | 'rest';
+/** `booted`, `swappedIn` and `swappedOut` are Rumble's: a booted goal scores 0, and Swap moves one hit across. */
+export type GoalState = 'hit' | 'boosted' | 'missed' | 'voided' | 'rest' | 'booted' | 'swappedIn' | 'swappedOut';
 export type ScreenState = 'logged' | 'notLogged' | 'voided' | 'pending';
 /** The feed shows `fizzled` and `ruleOne` as "Blocked", with the reason. */
 export type DemolitionOutcome = 'landed' | 'missed' | 'blocked' | 'fizzled' | 'ruleOne';
@@ -149,6 +171,10 @@ export interface DayScore {
   aerialPoints: number;
   demolitions: { lane: Lane; outcome: DemolitionOutcome }[];
   demolitionPoints: number;
+  /** Rumble: points items gave or took, step 5; and beer points a Magnet moved, part of the base. */
+  rumble: { item: string; points: number }[];
+  rumblePoints: number;
+  beerShift: number;
   adjustmentPoints: number;
   perfect: boolean;
   /** Something was logged, so the day counts toward a check-in streak. */
@@ -180,18 +206,21 @@ export function scoreDay(input: DayInput, options: ScoreOptions = {}): DayScore 
   const beers = log?.beers ?? 0;
   const adjustmentPoints = sum(input.adjustments);
 
+  const rumble = input.rumble ?? {};
   const goals = {} as Record<Lane, GoalState>;
   let goalPoints = 0;
   for (const lane of LANES) {
     const tapped = log?.goals[lane] === true;
     let state: GoalState;
     if (restDay) state = 'rest';
-    else if (tapped && !voided.has(lane)) state = 'hit';
+    else if (rumble.booted === lane) state = 'booted';
+    else if (tapped && !voided.has(lane)) state = rumble.swapOut === lane ? 'swappedOut' : 'hit';
     else if (boost === lane) state = 'boosted';
+    else if (rumble.swapIn === lane) state = 'swappedIn';
     else if (tapped) state = 'voided';
     else state = 'missed';
     goals[lane] = state;
-    if (state === 'hit' || state === 'boosted') goalPoints += RULES.goalPoints;
+    if (state === 'hit' || state === 'boosted' || state === 'swappedIn') goalPoints += RULES.goalPoints;
   }
 
   const minutes = log?.screenMinutes ?? null;
@@ -205,6 +234,8 @@ export function scoreDay(input: DayInput, options: ScoreOptions = {}): DayScore 
   } else {
     screen = { state: 'notLogged', minutes: null, points: RULES.screenNotLogged };
   }
+  // Rumble's Freeze: screen time points count double, good or bad.
+  if (rumble.screenTimes) screen = { ...screen, points: screen.points * rumble.screenTimes };
 
   const beerPoints = 0 + beers * RULES.beerPoints;
   const targets = input.demolitions ?? [];
@@ -225,28 +256,33 @@ export function scoreDay(input: DayInput, options: ScoreOptions = {}): DayScore 
       aerialPoints: 0,
       demolitions: targets.map((lane) => ({ lane, outcome: 'ruleOne' as const })),
       demolitionPoints: 0,
+      rumble: [],
+      rumblePoints: 0,
+      beerShift: 0,
       adjustmentPoints,
       perfect: false,
       checkedIn,
     };
   }
 
-  // Steps 2 and 3. The base.
+  // Steps 2 and 3. The base. A no-show or a blank rest day is flat: goal and
+  // screen items can't change it, but Magnet's beers still land on it.
+  const beerShift = rumble.beerShift ?? 0;
   let kind: DayKind;
   let base: number;
   if (checkedIn) {
     kind = 'played';
-    base = goalPoints + screen.points + beerPoints;
+    base = goalPoints + screen.points + beerPoints + beerShift;
   } else if (open) {
     kind = 'open';
-    base = 0;
+    base = beerShift;
   } else if (restDay) {
     // Logging nothing on a rest day counts as screen time not logged.
     kind = 'restNoLog';
-    base = RULES.screenNotLogged;
+    base = RULES.screenNotLogged + beerShift;
   } else {
     kind = 'noShow';
-    base = RULES.noShow;
+    base = RULES.noShow + beerShift;
   }
 
   // Step 4. Aerial doubles the base, negatives too.
@@ -264,14 +300,17 @@ export function scoreDay(input: DayInput, options: ScoreOptions = {}): DayScore 
   });
   const landed = demolitions.filter((d) => d.outcome === 'landed').length;
   const demolitionPoints = 0 + landed * RULES.demolition;
+  // Rumble's Tornado, Punch and Spike, never doubled.
+  const items = [...(rumble.points ?? [])];
+  const rumblePoints = items.reduce((total, item) => total + item.points, 0);
 
-  const goalsAllIn = LANES.every((lane) => goals[lane] === 'hit' || goals[lane] === 'boosted');
+  const goalsAllIn = LANES.every((lane) => goals[lane] === 'hit' || goals[lane] === 'boosted' || goals[lane] === 'swappedIn');
   const perfect =
     kind === 'played' && goalsAllIn && screen.state === 'logged' && screen.points >= 0 && beers === 0;
 
   // Step 6. Docks and corrections last, never doubled.
   return {
-    total: base + aerialPoints + demolitionPoints + adjustmentPoints,
+    total: base + aerialPoints + demolitionPoints + rumblePoints + adjustmentPoints,
     kind,
     restDay,
     goals,
@@ -284,6 +323,9 @@ export function scoreDay(input: DayInput, options: ScoreOptions = {}): DayScore 
     aerialPoints,
     demolitions,
     demolitionPoints,
+    rumble: items,
+    rumblePoints,
+    beerShift,
     adjustmentPoints,
     perfect,
     checkedIn,

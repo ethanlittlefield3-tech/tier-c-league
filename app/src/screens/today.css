@@ -235,6 +235,22 @@
   color: var(--gold);
 }
 
+/* Rumble's marks: a booted or swapped goal says which item did it. */
+.goal-mark-item {
+  width: auto;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font: 700 12px/1 var(--body);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.goal-mark-item:not(.goal-mark-hit) {
+  border: 1px solid rgba(255, 112, 112, 0.6);
+  color: #ff9b9b;
+}
+
 .square-goal[disabled] {
   cursor: default;
 }

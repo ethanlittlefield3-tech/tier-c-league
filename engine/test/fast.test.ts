@@ -33,6 +33,7 @@ describe('The fast test league', () => {
     expect(tuesday.start).toBe(START + DAY);
     // 6 pm is three quarters through the day; the day ends at its midnight and locks at noon the next day.
     expect(tuesday.sixPm).toBe(tuesday.start + 0.75 * DAY);
+    expect(tuesday.noon).toBe(tuesday.start + 0.5 * DAY);
     expect(tuesday.end).toBe(tuesday.start + DAY);
     expect(tuesday.lock).toBe(tuesday.start + 1.5 * DAY);
     expect(tuesday.nextEnd).toBe(tuesday.start + 2 * DAY);

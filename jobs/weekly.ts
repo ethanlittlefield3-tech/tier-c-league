@@ -23,6 +23,9 @@ import { reactionCount } from './lib/activity.ts';
 import { matchupOf, withWeek, type RankEntry } from './lib/ranks.ts';
 import { weekReads } from './lib/week-reads.ts';
 import { drawDuos } from './lib/duos.ts';
+import { rumbleDraws } from './lib/rumble-draws.ts';
+import { RUMBLE_ITEMS, type RumbleItem } from '../engine/src/rumble.ts';
+import type { Lane } from '../engine/src/scoring.ts';
 import { weekPlayers } from '../engine/src/group.ts';
 import type { WeekMode } from '../engine/src/schedule.ts';
 
@@ -85,7 +88,17 @@ for (const league of leagues) {
       console.log(`League ${league.id}, ${period}: ${drawn.duos.length} 2v2 matchup${drawn.duos.length === 1 ? '' : 's'} drawn.`);
     }
 
-    // This period's Demolitions: one query, and nothing more while none can be revealed or settled.
+    // Rumble: a week ahead, every player in a 1v1 gets a sealed item for each day.
+    const draws = rumbleDraws({ mode, drawnAt: week.get('rumbleDrawnAt'), period, pairs, days, now, pick: () => RUMBLE_ITEMS[randomInt(RUMBLE_ITEMS.length)]! });
+    if (draws) {
+      const batch = db.batch();
+      for (const draw of draws) batch.set(seasonRef.collection('rumble').doc(draw.id), { ...draw.data, revealAt: Timestamp.fromMillis(draw.data.revealAt) });
+      batch.set(week.ref, { rumbleDrawnAt: FieldValue.serverTimestamp() }, { merge: true });
+      await batch.commit();
+      console.log(`League ${league.id}, ${period}: ${draws.length} Rumble items drawn and sealed.`);
+    }
+
+    // This period's Demolitions and Boots: one query, and nothing more while none can be revealed or settled.
     const sealed = await seasonRef.collection('sealed').where('period', '==', period).get();
     const demolitions = sealed.docs.filter((item) => item.get('kind') === 'demolition').map((item) => plain(item.data()) as unknown as Parameters<typeof settleDue>[0]['demolitions'][number]);
     const reads = weekReads({ days, players: weekPlayers({ ...group, pairs }), demolitions, now });
@@ -115,6 +128,14 @@ for (const league of leagues) {
       console.log(`League ${league.id}, ${period}: ${reveals.length} Demolition${reveals.length === 1 ? '' : 's'} revealed.`);
     }
 
+    // A Rumble week plays its items and Boots.
+    if (mode === 'rumble' && reads.settle) {
+      const items = await seasonRef.collection('rumble').where('period', '==', period).get();
+      group.rumble = {
+        items: Object.fromEntries(items.docs.map((item) => [item.id, item.get('item') as RumbleItem])),
+        boots: sealed.docs.filter((item) => item.get('kind') === 'boot').map((item) => ({ player: String(item.get('player')), target: String(item.get('target')), date: String(item.get('date')), lane: item.get('lane') as Lane })),
+      };
+    }
     const settled = settleDue({
       ...group,
       week: Number(week.get('week')),
@@ -334,6 +355,15 @@ for (const league of leagues) {
         const lock = lockOf(String(hit.get('date')));
         if (lock !== undefined && now >= lock) mineOf(String(hit.get('target'))).demolitionsOn.push({ date: String(hit.get('date')), lane: hit.get('lane') });
       }
+      // Rumble's items and Boots, only when the season has had a Rumble week.
+      const seasonRumble = async () => {
+        if (!finals.some((week) => week.get('mode') === 'rumble')) return undefined;
+        const [items, boots] = await Promise.all([seasonRef.collection('rumble').get(), seasonRef.collection('sealed').where('kind', '==', 'boot').get()]);
+        return {
+          items: Object.fromEntries(items.docs.map((item) => [item.id, item.get('item') as RumbleItem])),
+          boots: boots.docs.map((boot) => ({ player: String(boot.get('player')), target: String(boot.get('target')), date: String(boot.get('date')), lane: boot.get('lane') as Lane })),
+        };
+      };
       const history = seasonBadgeData({
         season: seasonId,
         par: Number(season.get('par')),
@@ -341,6 +371,7 @@ for (const league of leagues) {
         calendar: calendar as never,
         weeks: finals.map((week) => ({ period: week.id, results: week.get('results'), awards: week.get('awards'), reveals: week.get('reveals') ?? [], group: week.get('group') ?? null })),
         players,
+        rumble: await seasonRumble(),
       });
       // The season is over once every regular week is final: then the most beers is a shame badge.
       const regular = Number(season.get('regularWeeks'));

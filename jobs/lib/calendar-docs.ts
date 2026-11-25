@@ -8,7 +8,7 @@
 import { addDays, weekdayIndex, type DateStr } from '../../engine/src/calendar.ts';
 import { regularCalendar, type CalendarDay, type SeasonPlan } from '../../engine/src/season.ts';
 
-const TIMES = ['start', 'sixPm', 'end', 'lock', 'nextEnd', 'periodStart', 'sundayStart', 'restOpens'] as const;
+const TIMES = ['start', 'noon', 'sixPm', 'end', 'lock', 'nextEnd', 'periodStart', 'sundayStart', 'restOpens'] as const;
 
 export interface CalendarDoc {
   id: DateStr;

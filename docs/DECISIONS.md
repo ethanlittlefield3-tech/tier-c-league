@@ -393,6 +393,18 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 226. **The commish sets each Bounty Week's target and each 2v2 week's pairing in Commish tools, until the week starts at 12:00 am on its Monday.** Each change goes in the audit log, with the target in words. Left alone, the Bounty is call 216's default and the duos are drawn at random.
 227. **At 7 pm the Sunday before a group-play week, everyone gets a Matchup alert about it:** the mode in a line, and their part in it (their squad, how the duos are drawn, the Bounty's target, no power-ups in the Alley).
 
+**Phase 3: Rumble** (new on 2026-11-25, not yet reviewed by the commish). Every reading below is in "Still open" too.
+
+228. **Items are drawn with equal odds, independently for each player and day,** by the weekly job a week before the Rumble week starts, and sealed: each one opens to the whole league when its day starts, by the calendar, and never earlier, not even to its own player. A player facing The House gets no item, since The House plays none.
+229. **Items go in the order of operations:** goals first (Boot, then Swap), then screen time and beers (Freeze, Magnet), then points (Tornado, Punch, Spike), after which docks come last as always. So a Punch compares the days after Boot, Swap, Freeze and Magnet, and before any docks.
+230. **Swap takes your first missed goal and their first hit goal, in Mind, Body, Wildcard order.** Boot picks a goal; a booted goal scores 0 and counts as missed, so it can't be part of a perfect day, and Swap can't bring it back.
+231. **Freeze doubles screen time points as logged, "not logged" (−3) included. Magnet moves the points of your beers onto their day;** your beers still count for the fewer-beers tiebreaks, on your side.
+232. **Spike takes 1 from them, and gives you nothing** (Tornado says "add them to yours"; Spike doesn't). **Punch needs your day to beat theirs on points;** a tie does nothing.
+233. **"The affected player" of Boot, Spike and Swap is either player whose goals they touch,** so each does nothing when either of you is resting. Tornado, Punch, Freeze and Magnet work on rest days.
+234. **Rule One by either player cancels both items that day,** the way it cancels an Aerial and a Demolition.
+235. **A no-show or a blank rest day stays a flat −5 or −3:** goal and screen items can't change it, but Tornado, Punch, Spike and Magnet still take points from it, and a Swap still takes a hit from the other player.
+236. **A Boot left unpicked at noon does nothing.** Once picked it is final, hidden from the target until the day locks, and only then counts in either phone's score, like a Demolition.
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.
@@ -408,6 +420,8 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 
 5. **A draw in Team Week or 2v2. Built provisionally:** no bonus, since SCOPE.md gives +3 only to the winning side (call 212). The other reading is a draw bonus, like the 1v1's +2.
 6. **Bounty and Alley edge cases. Built provisionally:** a screen-time target is broken by logging exactly the limit or by not logging screen time that day (call 214); a missed count target spins its lowest contributors (call 217); and an Alley tie goes to fewer beers, then shares the place and its full bonus (call 218).
+
+7. **Rumble's item rules. Built provisionally (calls 228 to 236):** equal odds; the order goals, then screen time and beers, then points; Swap's lane order; Freeze doubling "not logged" too; Magnet moving points but not the beer count; Spike not giving the point to you; rest days protecting both players from Boot, Spike and Swap; Rule One cancelling both items; flat no-show days; and no Boot when none is picked by noon. Each is one place in `engine/src/rumble.ts`.
 
 The receipts question that was here is now ruling R6.
 

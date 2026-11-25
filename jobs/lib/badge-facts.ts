@@ -6,7 +6,8 @@
  */
 import { earnedBadges, groupFeats, type BadgeDay, type BadgeFacts, type BadgeWeek } from '../../engine/src/badges.ts';
 import type { LeagueClock } from '../../engine/src/clock.ts';
-import { playerWeek, type CalendarTimes, type KitPlay } from '../../engine/src/days.ts';
+import { playerWeek, rumbleWeek, type CalendarTimes, type KitPlay } from '../../engine/src/days.ts';
+import type { RumbleItem } from '../../engine/src/rumble.ts';
 import { againstPlayer } from '../../engine/src/schedule.ts';
 import type { DayLog, Lane, Square } from '../../engine/src/scoring.ts';
 import { streakMark } from '../../engine/src/streaks.ts';
@@ -29,6 +30,8 @@ export interface SeasonForBadges {
     group?: { mode: string; target?: { kind: string }; contributions?: Record<string, number> } | null;
     reveals?: { player: string; outcome: string }[];
   }[];
+  /** Rumble's draws for the season: each item by `{date}_{player}`, and the Boots played. */
+  rumble?: { items: Record<string, RumbleItem>; boots: { player: string; target: string; date: string; lane: Lane }[] };
   /** Each player's season: logs (with when each day was first logged), power-ups, fixes, and Demolitions aimed at them. */
   players: Record<
     string,
@@ -50,10 +53,25 @@ export function seasonBadgeData(input: SeasonForBadges): Record<string, { days: 
     const after = Math.max(...days.map((day) => day.lock)) + 1;
     // Everyone's days in this week, as the engine scored them once it was over.
     const cells: Record<string, ReturnType<typeof playerWeek>['cells']> = {};
-    for (const player of Object.keys(week.results)) {
+    const weekInput = (player: string) => {
       const data = input.players[player] ?? { logs: {}, kit: [], adjustments: [], demolitionsOn: [] };
-      cells[player] = playerWeek({ par: input.par, days, logs: data.logs, kit: data.kit, demolitionsOn: data.demolitionsOn, adjustments: data.adjustments, now: after }).cells;
+      return { par: input.par, days, logs: data.logs, kit: data.kit, demolitionsOn: data.demolitionsOn, adjustments: data.adjustments, now: after };
+    };
+    // A Rumble week's 1v1s are scored together, with the items played.
+    const rumble = input.rumble;
+    for (const [player, result] of Object.entries(week.results)) {
+      if (cells[player] || result.mode !== 'rumble' || !rumble || !againstPlayer(result.opponent)) continue;
+      const them = result.opponent;
+      const dates = days.map((day) => day.date);
+      const bootsOf = (by: string, on: string) => Object.fromEntries(rumble.boots.filter((boot) => boot.player === by && boot.target === on).map((boot) => [boot.date, boot.lane]));
+      const both = rumbleWeek(weekInput(player), weekInput(them), {
+        items: Object.fromEntries(dates.map((date) => [date, { a: rumble.items[`${date}_${player}`] ?? null, b: rumble.items[`${date}_${them}`] ?? null }])),
+        boots: { a: bootsOf(player, them), b: bootsOf(them, player) },
+      });
+      cells[player] = both.a.cells;
+      cells[them] = both.b.cells;
     }
+    for (const player of Object.keys(week.results)) cells[player] ??= playerWeek(weekInput(player)).cells;
     // Group-play badges earned this week.
     const feats = groupFeats({ results: week.results, group: week.group ?? null });
     // The standings leaders going into this week: the most Season Points so far.

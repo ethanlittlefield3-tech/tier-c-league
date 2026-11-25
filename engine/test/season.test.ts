@@ -26,11 +26,13 @@ describe('The calendar the security rules read', () => {
     expect(days.map((day) => day.week).filter((week, i, all) => all.indexOf(week) === i)).toEqual([1, 2, 3, 4, 5, 6]);
   });
 
-  it('An entry holds the day start, the 6 pm receipt cutoff, the day end and the noon lock, in real time', () => {
+  it('An entry holds the day start, its noon, the 6 pm receipt cutoff, the day end and the noon lock, in real time', () => {
     const day = regularCalendarDay(PLAN, '2027-01-06'); // Wednesday of Week 1
     expect(day).toMatchObject({ date: '2027-01-06', period: 'w01', week: 1, dayIndex: 2, phase: 'regular', kind: 'play', mode: 'regular' });
     expect(day.start).toBe(utc('2027-01-06T05:00:00Z'));
     expect(day.sixPm).toBe(utc('2027-01-06T23:00:00Z'));
+    // Noon the same day: a Rumble Boot's deadline.
+    expect(day.noon).toBe(utc('2027-01-06T17:00:00Z'));
     expect(day.end).toBe(utc('2027-01-07T05:00:00Z'));
     expect(day.lock).toBe(utc('2027-01-07T17:00:00Z'));
     expect(day.nextEnd).toBe(utc('2027-01-08T05:00:00Z'));
@@ -51,6 +53,7 @@ describe('The calendar the security rules read', () => {
     expect(springForward.end - springForward.start).toBe(23 * HOUR);
     expect(springForward.lock).toBe(utc('2027-03-15T16:00:00Z')); // noon, now on daylight time
     expect(springForward.sixPm).toBe(utc('2027-03-14T22:00:00Z'));
+    expect(springForward.noon).toBe(utc('2027-03-14T16:00:00Z'));
   });
 
   it('A date outside the regular season has no regular-season entry', () => {

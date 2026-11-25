@@ -1166,7 +1166,40 @@ service cloud.firestore {
                   : (resource.data.kind != 'coin'
                       && (resource.data.player == claim(L).player || request.time >= resource.data.revealAt)));
           allow list: if isMember(L) && resource.data.player == claim(L).player;
-          allow create: if validDemolition(sealedId, request.resource.data);
+          allow create: if validDemolition(sealedId, request.resource.data)
+            || validBoot(sealedId, request.resource.data);
+        }
+
+        // A Rumble Boot: whoever holds Boot today picks one of their opponent's
+        // goals by noon. Sealed like a Demolition until the day locks, and final.
+        function validBoot(id, play) {
+          let day = cal(play.date);
+          let week = get(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/weeks/$(play.period)).data;
+          return play.keys().hasOnly(['kind', 'player', 'period', 'target', 'date', 'lane', 'revealAt', 'at'])
+            && play.keys().hasAll(['kind', 'player', 'period', 'target', 'date', 'lane', 'revealAt', 'at'])
+            && play.kind == 'boot'
+            && validPeriod(play.period)
+            && play.date is string
+            && id == 'boot_' + play.date + '_' + play.player
+            && isPlayer(L, play.player)
+            && play.lane in ['mind', 'body', 'wildcard']
+            && play.target is string && play.target != 'HOUSE'
+            && play.target in week.targets[play.player]
+            && day.period == play.period
+            && get(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/rumble/$(play.date + '_' + play.player)).data.item == 'boot'
+            && request.time >= day.start && request.time < day.noon
+            && play.revealAt == day.lock
+            && play.at == request.time
+            && !isRestDay(play.period, play.target, play.date, day);
+        }
+
+        // ---- Rumble items -------------------------------------------------
+        // Drawn in advance and sealed by the weekly job. Each is readable by
+        // everyone in the league from the moment its day starts, by the
+        // calendar, and never before: not even by its own player. Only the
+        // jobs write them, and no phone can list them.
+        match /rumble/{drawId} {
+          allow get: if isMember(L) && request.time >= resource.data.revealAt;
         }
 
         function validDemolition(id, play) {

@@ -1,4 +1,4 @@
-import { LANES, REMATCH_LAST_DAY, isPairedMode, nemesisOf, recordText, rematchFor, weekPeriod, type Lane, type Rival } from '@tcl/engine';
+import { LANES, REMATCH_LAST_DAY, RUMBLE_NAMES, isPairedMode, nemesisOf, recordText, rematchFor, weekPeriod, type Lane, type Rival } from '@tcl/engine';
 import { CarArt } from '../art/car/CarArt.tsx';
 import type { CarParts } from '../art/car/draw.ts';
 import { useState } from 'preact/hooks';
@@ -273,6 +273,9 @@ export function Match(props: { me: Me }) {
         </div>
         <div class="match-notes">
           {theirToday?.rest && <span class="match-note match-note-rest">Rest day</span>}
+          {match.mode === 'rumble' && match.rumbleItems[`${todayDate}_${them.id}`] && (
+            <span class="match-note">Item: {RUMBLE_NAMES[match.rumbleItems[`${todayDate}_${them.id}`]!]}</span>
+          )}
           {on('aerial') && <span class="match-note">Aerial: counts double</span>}
           {on('ruleOne') && <span class="match-note">Rule One: scores 0</span>}
         </div>

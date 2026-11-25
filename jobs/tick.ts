@@ -197,7 +197,7 @@ for (const league of leagues) {
     // The timed alerts' days: each player's logs, and this week's power-ups.
     const logDates = [...new Set(checks.filter((check) => check.kind === 'log' || check.kind === 'lastCall').map((check) => check.day.date))];
     const logs = logDates.length ? docs(await db.getAll(...logDates.flatMap((date) => members.map((player) => seasonRef.collection('days').doc(`${player}_${date}`))))) : [];
-    const periods = [...new Set(checks.filter((check) => check.kind !== 'log' && check.kind !== 'mode').map((check) => check.day.period))];
+    const periods = [...new Set(checks.filter((check) => check.kind !== 'log' && check.kind !== 'mode' && check.kind !== 'rumble').map((check) => check.day.period))];
     const kit = periods.length
       ? [
           ...(await Promise.all(periods.map((period) => seasonRef.collection('kit').where('period', '==', period).get()))).flatMap((snapshot) => snapshot.docs.map((play) => plain(play.data()))),
@@ -205,6 +205,9 @@ for (const league of leagues) {
         ]
       : [];
     const issued = (season.get('ruleOneIssue') ?? []) as unknown[];
+    // At 8 am in a Rumble week, everyone's item for the day.
+    const rumbleDates = checks.filter((check) => check.kind === 'rumble').map((check) => check.day.date);
+    const rumbleItems = rumbleDates.length ? docs(await db.getAll(...rumbleDates.flatMap((date) => members.map((player) => seasonRef.collection('rumble').doc(`${date}_${player}`))))) : [];
     // At 7 pm on Sunday, next week, for its group-play mode.
     const modeCheck = checks.find((check) => check.kind === 'mode');
     const nextWeek = modeCheck ? await seasonRef.collection('weeks').doc(weekPeriod((modeCheck.day as AlertDay & { week: number }).week + 1)).get() : null;
@@ -229,6 +232,7 @@ for (const league of leagues) {
       draftAt,
       news: news.docs.map((item) => ({ id: item.id, ...plain(item.data()) })) as unknown as AlertInput['news'],
       nextWeek: nextWeek?.exists ? ({ id: nextWeek.id, ...plain(nextWeek.data()!) } as unknown as AlertInput['nextWeek']) : null,
+      rumbleItems: Object.fromEntries(rumbleItems.map((item) => [item.id, String((item as { item?: unknown }).item)])),
     };
     alerts = alertsDue(input);
 

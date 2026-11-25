@@ -52,6 +52,8 @@ export interface CalendarDay {
   kit: KitName[];
   /** 12:00 am: the day starts, and logging and Full Boost open. */
   start: Instant;
+  /** 12:00 pm the same day: a Rumble Boot's goal must be picked by now. */
+  noon: Instant;
   /** 6:00 pm: receipts asked for from now on are due a day later. */
   sixPm: Instant;
   /** The next 12:00 am: receipts asked for before 6 pm are due. */
@@ -86,6 +88,7 @@ export function regularCalendarDay(season: SeasonPlan, date: DateStr): CalendarD
     mode,
     kit: kitForMode(mode),
     start: dayStart(date, zone),
+    noon: wallTimeToInstant(date, 12, 0, zone),
     sixPm: wallTimeToInstant(date, LATE_REQUEST_HOUR, 0, zone),
     end: dayEnd(date, zone),
     lock: dayLock(date, zone),

@@ -38,3 +38,4 @@ export * from './trophies.ts';
 export * from './modes.ts';
 export * from './captains.ts';
 export * from './group.ts';
+export * from './rumble.ts';

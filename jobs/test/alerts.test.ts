@@ -87,6 +87,17 @@ describe('Alerts: daily', () => {
     expect(alertsDue(run(at('2027-01-17', 18, 4), { nextWeek: { id: 'w03', week: 3, mode: 'alley' } })).filter((alert) => alert.key.startsWith('mode-'))).toEqual([]);
   });
 
+  it("At 8 am in a Rumble week, each player hears their item for the day", () => {
+    const rumbleDays = calendar.map((day) => ({ ...day, mode: 'rumble' }));
+    const input = run(at('2027-01-13', 8, 4), { calendar: rumbleDays, rumbleItems: { '2027-01-13_alex': 'boot', '2027-01-13_maya': 'magnet' } });
+    expect(alertsDue(input).map((alert) => [alert.player, alert.title, alert.body])).toEqual([
+      ['alex', 'Your Rumble item: Boot', "Pick one of their goals by 12:00 pm: it scores 0 today, and they don't see which until the day locks."],
+      ['maya', 'Your Rumble item: Magnet', 'Your beers count against them instead of you.'],
+    ]);
+    // Not in a week that isn't Rumble.
+    expect(alertsDue(run(at('2027-01-13', 8, 4), { rumbleItems: { '2027-01-13_alex': 'boot' } }))).toEqual([]);
+  });
+
   it('On Saturday at 8 pm, anyone with Aerial unused hears it is the last chance', () => {
     const input = run(at('2027-01-16', 20, 2), { kit: [{ player: 'alex', item: 'aerial', period: 'w02', date: '2027-01-14' }] });
     expect(keys(input)).toEqual(['maya:aerial-w02']);

@@ -4,7 +4,8 @@
  * Match uses it; Today gathers the same things for itself.
  */
 import type { CarParts } from '../art/car/draw.ts';
-import { isPairedMode, receiptFixes, type Lane, type Square, type StoredReceipt } from '@tcl/engine';
+import { isPairedMode, receiptFixes, rumbleWeek, type Lane, type Square, type StoredReceipt, type WeekInput } from '@tcl/engine';
+import { rumbleDraws, useRumble } from './useRumble.ts';
 import type { BoardWeekDoc } from './useWeekBoard.ts';
 import { useDoc, usePeek, useWhere } from '../data/hooks.ts';
 import type { Me } from '../data/identity.ts';
@@ -53,7 +54,9 @@ export function useMatchup(me: Me, now: number) {
   const myReceipts = useWhere<StoredReceipt>(seasonPath ? `${seasonPath}/receipts` : null, 'target', me.player);
   const theirReceipts = useWhere<StoredReceipt>(seasonPath ? `${seasonPath}/receipts` : null, 'target', opponentId);
   const myRequests = useWhere<StoredReceipt & { slot: string; target: string }>(seasonPath ? `${seasonPath}/receipts` : null, 'by', me.player);
-  const mySealed = useWhere<{ period: string; target: string; date: string; lane: Lane }>(seasonPath ? `${seasonPath}/sealed` : null, 'player', me.player);
+  const mySealed = useWhere<{ period: string; target: string; date: string; lane: Lane; kind?: string }>(seasonPath ? `${seasonPath}/sealed` : null, 'player', me.player);
+  // Rumble: each day's items, and the Boots revealed so far.
+  const rumble = useRumble({ seasonPath, active: mode === 'rumble', days: week.docs.map((found) => found.data), me: me.player, opponent: opponentId, now });
   const lockedSoFar = week.docs.filter((found) => now >= found.data.lock).length;
   const onMe = usePeek<{ target: string; date: string; lane: Lane }>(
     seasonPath && period && opponentId ? `${seasonPath}/sealed/${period}_${opponentId}_demolition` : null,
@@ -63,11 +66,11 @@ export function useMatchup(me: Me, now: number) {
   const loading = league.loading || season.loading || (seasonPath !== null && todayCal.loading) || week.loading || weekDoc.loading;
   const days = week.docs.map((found) => found.data);
   const logsOf = (docs: { data: Logged }[]) => Object.fromEntries(docs.map((found) => [found.data.date, found.data]));
-  const mine = mySealed.docs.map((found) => found.data).find((play) => play.period === period && play.target === opponentId) ?? null;
+  const mine = mySealed.docs.map((found) => found.data).find((play) => play.kind !== 'boot' && play.period === period && play.target === opponentId) ?? null;
 
-  const myWeek =
+  const myInput: WeekInput | null =
     season.data && days.length > 0
-      ? playerWeek({
+      ? {
           par: season.data.par,
           days,
           logs: logsOf(myDays.docs),
@@ -77,11 +80,11 @@ export function useMatchup(me: Me, now: number) {
           now,
           timeZone: season.data.timeZone,
           today: dates?.today,
-        })
+        }
       : null;
-  const theirWeek =
+  const theirInput: WeekInput | null =
     season.data && days.length > 0 && opponentId
-      ? playerWeek({
+      ? {
           par: season.data.par,
           days,
           logs: logsOf(theirDays.docs),
@@ -91,8 +94,13 @@ export function useMatchup(me: Me, now: number) {
           now,
           timeZone: season.data.timeZone,
           today: dates?.today,
-        })
+        }
       : null;
+  // In Rumble both weeks are scored together, with the items played.
+  const myBoots = mySealed.docs.map((found) => found.data).filter((play) => play.kind === 'boot').map((play) => ({ date: play.date, lane: play.lane }));
+  const rumbled = mode === 'rumble' && myInput && theirInput && opponentId ? rumbleWeek(myInput, theirInput, rumbleDraws(rumble, me.player, opponentId, myBoots, days.map((each) => each.date))) : null;
+  const myWeek = rumbled?.a ?? (myInput ? playerWeek(myInput) : null);
+  const theirWeek = rumbled?.b ?? (theirInput ? playerWeek(theirInput) : null);
 
   return {
     loading,
@@ -103,6 +111,8 @@ export function useMatchup(me: Me, now: number) {
     today: todayCal.data,
     /** This week's mode, and its week document. */
     mode,
+    /** Rumble: each day's items, by `{date}_{player}`. */
+    rumbleItems: rumble.items,
     weekDoc: weekDoc.data,
     /** This week's calendar days. */
     days,

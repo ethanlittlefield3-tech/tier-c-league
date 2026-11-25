@@ -94,6 +94,7 @@ function calendarDay(week: number, dayIndex: number, overrides: Record<string, u
     kind: 'play',
     kit: ['aerial', 'demolition', 'fullBoost'],
     start: stamp(start),
+    noon: stamp(start + 12 * HOUR),
     end: stamp(start + 24 * HOUR),
     lock: stamp(start + 36 * HOUR),
     sixPm: stamp(start + 18 * HOUR),

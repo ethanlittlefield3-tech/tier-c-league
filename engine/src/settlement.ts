@@ -6,7 +6,8 @@
  * it runs late, the commish's phone can post the same results.
  */
 import { type Awards, weeklyAwards } from './awards.ts';
-import { type CalendarTimes, type DayCell, type KitPlay, playerWeek } from './days.ts';
+import { type CalendarTimes, type DayCell, type KitPlay, type WeekInput, playerWeek, rumbleWeek } from './days.ts';
+import type { RumbleItem } from './rumble.ts';
 import {
   alleyBonus,
   alleyRace,
@@ -22,7 +23,7 @@ import {
   type DuoMatch,
   type GroupSummary,
 } from './group.ts';
-import { GROUP, againstPlayer, type WeekMode } from './schedule.ts';
+import { GROUP, HOUSE, againstPlayer, type WeekMode } from './schedule.ts';
 import { RULES, type DayLog, type Lane, type Square } from './scoring.ts';
 import { type Game, type RankedRow, rankStandings } from './standings.ts';
 import { type MatchResult, type Side, settleWeek } from './week.ts';
@@ -62,6 +63,8 @@ export interface GroupWeekInput {
   bounty?: BountyTarget | null;
   /** Everyone in a week with no 1v1 pairs. */
   roster?: string[] | null;
+  /** Rumble's draws: each item by `{date}_{player}`, and the Boots played. */
+  rumble?: { items: Readonly<Record<string, RumbleItem>>; boots: readonly { player: string; target: string; date: string; lane: Lane }[] } | null;
 }
 
 /** The week settled as of `now`, or `null` while its Sunday hasn't locked. */
@@ -88,9 +91,9 @@ export function settleDue(input: GroupWeekInput & {
   const totals: Record<string, Side> = {};
   const weeks: Record<string, DayCell[]> = {};
   const lines: WeekLineStored[] = [];
-  for (const player of players) {
+  const weekInput = (player: string): WeekInput => {
     const data = input.players[player] ?? { logs: {}, kit: [], adjustments: [] };
-    const week = playerWeek({
+    return {
       par: input.par,
       days: input.days,
       logs: data.logs,
@@ -98,7 +101,28 @@ export function settleDue(input: GroupWeekInput & {
       demolitionsOn: input.demolitions.filter((hit) => hit.target === player).map((hit) => ({ date: hit.date, lane: hit.lane })),
       adjustments: data.adjustments,
       now: input.now,
-    });
+    };
+  };
+  // Rumble: each 1v1's two weeks are scored together, with their items. The player facing The House plays none.
+  const rumbled: Record<string, ReturnType<typeof playerWeek>> = {};
+  if (mode === 'rumble' && input.rumble) {
+    const { items, boots } = input.rumble;
+    for (const { a, b } of input.pairs) {
+      if (a === HOUSE || b === HOUSE) continue;
+      const dates = input.days.map((day) => day.date);
+      const both = rumbleWeek(weekInput(a), weekInput(b), {
+        items: Object.fromEntries(dates.map((date) => [date, { a: items[`${date}_${a}`] ?? null, b: items[`${date}_${b}`] ?? null }])),
+        boots: {
+          a: Object.fromEntries(boots.filter((boot) => boot.player === a && boot.target === b).map((boot) => [boot.date, boot.lane])),
+          b: Object.fromEntries(boots.filter((boot) => boot.player === b && boot.target === a).map((boot) => [boot.date, boot.lane])),
+        },
+      });
+      rumbled[a] = both.a;
+      rumbled[b] = both.b;
+    }
+  }
+  for (const player of players) {
+    const week = rumbled[player] ?? playerWeek(weekInput(player));
     totals[player] = { points: week.totals.points, beers: week.totals.beers };
     weeks[player] = week.cells;
     lines.push({ player, points: week.totals.points, beers: week.totals.beers, perfectDays: week.totals.perfectDays });

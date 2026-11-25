@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { LANES, daysLeft, isPairedMode, paceSoFar, receiptFixes, receiptStatus, recentDailyAverage, weekPeriod, winMeter, type BountyTarget, type Lane, type Square, type StoredReceipt, type WeekMode } from '@tcl/engine';
+import { LANES, daysLeft, isPairedMode, rumbleWeek, type WeekInput, paceSoFar, receiptFixes, receiptStatus, recentDailyAverage, weekPeriod, winMeter, type BountyTarget, type Lane, type Square, type StoredReceipt, type WeekMode } from '@tcl/engine';
 import { useAll, useDoc, useNow, usePeek, useWhere } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
@@ -28,6 +28,8 @@ import { GoalMark } from './GoalMark.tsx';
 import { ScreenSheet } from './ScreenSheet.tsx';
 import { WeekStrip } from './WeekStrip.tsx';
 import { ModeBanner } from './ModeBanner.tsx';
+import { RumblePanel } from './RumblePanel.tsx';
+import { rumbleDraws, useRumble } from './useRumble.ts';
 import { lateSyncRisk, useOnline } from '../ui/online.ts';
 import { timeLeft } from '../ui/when.ts';
 import './draft.css';
@@ -183,7 +185,7 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
   const ruleOne1 = useDoc<Play>(seasonPath ? `${seasonPath}/kit/ruleOne_${me}_1` : null);
   const ruleOne2 = useDoc<Play>(seasonPath ? `${seasonPath}/kit/ruleOne_${me}_2` : null);
   const ruleOne3 = useDoc<Play>(seasonPath ? `${seasonPath}/kit/ruleOne_${me}_3` : null);
-  const sealed = useWhere<Play & { period: string; target: string }>(seasonPath ? `${seasonPath}/sealed` : null, 'player', me);
+  const sealed = useWhere<Play & { period: string; target: string; kind?: string }>(seasonPath ? `${seasonPath}/sealed` : null, 'player', me);
   const weekDoc = useDoc<WeekDoc>(seasonPath && period ? `${seasonPath}/weeks/${period}` : null);
   const mode = weekDoc.data?.mode ?? 'regular';
   const paired = isPairedMode(mode as WeekMode);
@@ -224,6 +226,9 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
     seasonPath && period && opponentId ? `${seasonPath}/sealed/${period}_${opponentId}_demolition` : null,
     lockedSoFar,
   );
+
+  // Rumble: today's items and the Boots revealed so far.
+  const rumble = useRumble({ seasonPath, active: mode === 'rumble', days: week.docs.map((found) => found.data), me, opponent: opponentId, now });
 
   // Once the server has every save, the screen is the truth again.
   useEffect(() => {
@@ -342,8 +347,8 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
   const lateRisk = lateSyncRisk({ online, pending: day.pending, lock: cal?.lock ?? null, now });
   const logsOf = (docs: { data: DayEntry & { date: string } }[]) => Object.fromEntries(docs.map((found) => [found.data.date, found.data]));
   const weekDays = week.docs.map((found) => found.data);
-  const myDemolition = sealed.docs.map((found) => found.data).find((play) => play.period === period && play.target === opponentId) ?? null;
-  const myWeek = playerWeek({
+  const myDemolition = sealed.docs.map((found) => found.data).find((play) => play.kind !== 'boot' && play.period === period && play.target === opponentId) ?? null;
+  const myInput: WeekInput = {
     par: season.data.par,
     days: weekDays,
     logs: logsOf(myDays.docs),
@@ -358,9 +363,9 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
     now,
     timeZone: season.data.timeZone,
     today: dates?.today,
-  });
-  const theirWeek = opponentId
-    ? playerWeek({
+  };
+  const theirInput: WeekInput | null = opponentId
+    ? {
         par: season.data.par,
         days: weekDays,
         logs: logsOf(theirDays.docs),
@@ -370,8 +375,15 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
         now,
         timeZone: season.data.timeZone,
         today: dates?.today,
-      })
+      }
     : null;
+  // In Rumble both weeks are scored together, with the items played.
+  const myBoots = sealed.docs.map((found) => found.data).filter((play) => play.kind === 'boot' && play.lane).map((play) => ({ date: play.date, lane: play.lane! }));
+  const rumbled = mode === 'rumble' && opponentId && theirInput ? rumbleWeek(myInput, theirInput, rumbleDraws(rumble, me, opponentId, myBoots, weekDays.map((each) => each.date))) : null;
+  const myWeek = rumbled?.a ?? playerWeek(myInput);
+  const theirWeek = rumbled?.b ?? (theirInput ? playerWeek(theirInput) : null);
+  // The day on screen, with today's items played, once the server has it.
+  const shown = (rumbled && myWeek.cells.find((cell) => cell.date === date)?.score) || score;
   const screenPointsShown = entry.screenMinutes === null ? null : score.screen.points;
 
   return (
@@ -476,14 +488,14 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
 
       <section class="today-total" aria-label="Day total">
         <p class="today-total-line">
-          <span class="today-points" data-sign={score.total > 0 ? 'up' : score.total < 0 ? 'down' : 'zero'}>
+          <span class="today-points" data-sign={shown.total > 0 ? 'up' : shown.total < 0 ? 'down' : 'zero'}>
             <span class="sr-only">Day total: </span>
-            {formatPoints(score.total)}
+            {formatPoints(shown.total)}
           </span>
           <span class="today-when">{showing === 'today' ? 'today' : 'yesterday'}</span>
           <span class="today-note">{totalNote}</span>
         </p>
-        {breakdown(score) && <p class="today-breakdown">{breakdown(score)}</p>}
+        {breakdown(shown) && <p class="today-breakdown">{breakdown(shown)}</p>}
         {ruleOneHere ? <p class="today-kit">Rule One: this day scores 0</p> : aerialHere ? <p class="today-kit">Aerial: this day counts double</p> : null}
         {fixes.map((change) =>
           change.receipt ? (
@@ -509,6 +521,28 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
       <p class={error ? 'today-status today-status-error' : 'today-status'} role="status">
         {status}
       </p>
+
+      {mode === 'rumble' && todayCal.data && dates && (
+        <RumblePanel
+          where={{ league: props.me.league, season: seasonId, player: me }}
+          now={now}
+          today={todayCal.data as CalendarDoc & { noon?: number }}
+          vsHouse={targets.includes('HOUSE')}
+          mine={rumble.items[`${dates.today}_${me}`] ?? null}
+          theirs={opponentId ? (rumble.items[`${dates.today}_${opponentId}`] ?? null) : null}
+          opponent={
+            opponentId
+              ? {
+                  id: opponentId,
+                  name: opponentProfile.data?.displayName ?? 'Your opponent',
+                  goals: Object.fromEntries(LANES.map((lane) => [lane, opponentRoster.data?.goals?.[lane]?.text ?? ''])) as Partial<Record<Lane, string>>,
+                  resting: isRestDay({ date: dates.today, calendar: todayCal.data, restDate: opponentRest.data?.date ?? null }),
+                }
+              : null
+          }
+          myBoot={myBoots.find((boot) => boot.date === dates.today)?.lane ?? null}
+        />
+      )}
 
       {mode !== 'regular' && weekDoc.data && (
         <ModeBanner
@@ -553,7 +587,7 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
           nextRest={nextRest.data?.date ?? null}
           ruleOnes={ruleOnes}
           ruleOneIssue={season.data.ruleOneIssue ?? []}
-          demolition={sealed.docs.map((found) => found.data).find((play) => play.period === period) ?? null}
+          demolition={sealed.docs.map((found) => found.data).find((play) => play.kind !== 'boot' && play.period === period) ?? null}
           opponents={
             opponentId
               ? [

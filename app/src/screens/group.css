@@ -246,3 +246,34 @@
   font: italic 900 16px/1.2 var(--display);
   color: var(--gold);
 }
+
+/* Rumble on Today: each side's item, then what it does. */
+.rumble-item {
+  margin: 12px 0 0;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(196, 216, 255, 0.06);
+  border: 1px solid rgba(196, 216, 255, 0.12);
+}
+
+.rumble-item strong {
+  display: block;
+  font: italic 900 18px/1.2 var(--display);
+  color: var(--ink);
+}
+
+.rumble-item span {
+  display: block;
+  margin-top: 4px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+.rumble-boot {
+  margin-top: 12px;
+}
+
+.rumble-boot .btn {
+  margin-top: 12px;
+}

@@ -70,6 +70,23 @@ export const takeBackRuleOne = (where: Where, number: number) =>
  * Sets this week's Demolition. Sealed: only you can read it until the day
  * locks, the commish included. It can't be changed or taken back.
  */
+/** A Rumble Boot: one of today's opponent's goals, picked by noon, sealed until the day locks, and final. */
+export const setBoot = (where: Where, input: { period: string; target: string; date: string; lane: Lane; lock: number }) =>
+  attempt(async () => {
+    const { db } = await connect();
+    const sealed = doc(db, 'leagues', where.league, 'seasons', where.season, 'sealed', `boot_${input.date}_${where.player}`);
+    await setDoc(sealed, {
+      kind: 'boot',
+      player: where.player,
+      period: input.period,
+      target: input.target,
+      date: input.date,
+      lane: input.lane,
+      revealAt: Timestamp.fromMillis(input.lock),
+      at: serverTimestamp(),
+    });
+  });
+
 export const setDemolition = (where: Where, input: { period: string; target: string; date: string; lane: Lane; lock: number }) =>
   attempt(async () => {
     const { db } = await connect();

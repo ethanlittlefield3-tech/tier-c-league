@@ -1,6 +1,6 @@
 # Tier C League: progress log
 
-Last updated 2026-11-25, after group play's badges and settings.
+Last updated 2026-11-25, after Rumble: group play is built.
 
 ## Plan change (commish ruling, 2026-11-25)
 
@@ -230,6 +230,8 @@ Last updated 2026-11-25, after group play's badges and settings.
 - **Alerts, part 1: on the phone** (2026-11-25). Profile has an Alerts panel: turn them on with a tap, switch each of the 7 kinds on or off, and set quiet hours. A new player is offered alerts right under their recovery key. A service worker shows the alerts, opens the app at the right screen when one is tapped, and keeps the app's files on the phone so it opens with no signal. The push token is fetched again on every open.
   - New rules for devices: a phone signs up only as the player its claim holds. 4 new rule tests and 1 rewritten. Weakening the rule 14 ways was caught 13 times; the other is still refused by the checks on each field. 3 engine tests and 5 flow tests.
   - Sending them is next: the tick job, every 10 minutes. Alerts also wait on the Cloud Messaging web push key from the commish.
+- **Group play, part 5: Rumble** (2026-11-25, Phase 3). A week before a Rumble week, the weekly job draws and seals one item a day for each player; each opens to the league when its day starts. Today shows your item and your opponent's, and when yours is Boot you pick one of their goals by noon, sealed until the day locks. Every item is played in the order of operations, live on Today and Match and when the week settles, and an alert at 8 am names your item. All six modes are now built (DECISIONS.md, calls 228 to 236, and "Still open" item 7).
+  - 6 rule tests. Weakening the rules 10 ways was caught every time. 16 engine tests, 7 job and app tests, and 4 flow tests.
 - **Group play, part 4: badges, the commish's settings and the Sunday alert** (2026-11-25, Phase 3). The six group-play badges are earned from settled weeks. In Commish tools the commish sets each Bounty Week's target, with the most the league can reach shown, and switches a 2v2 week to frenemies, until the week starts. At 7 pm the Sunday before a group-play week everyone hears the mode and their part in it (DECISIONS.md, calls 225 to 227).
   - 4 rule tests. Weakening the rule 12 ways was caught 11 times; the other, letting any member save, is still refused because the save also needs an audit entry only the commish can write. 6 engine tests, 3 job tests and 1 flow test.
 - **Group play, part 3: the screens** (2026-11-25, Phase 3). Match shows a group-play week as its mode's live board: both squads' averages in Team Week, your duo first in 2v2, the Bounty's target and a live bar, the Alley's lane with everyone single file, and the two Drop Shot floors under the 1v1. Today names the mode and what it means for you, and Demolition can aim at anyone on the other side. League, the feed and the highlight reel word each settled mode its own way, and the schedule names each group-play week's mode (DECISIONS.md, calls 222 to 224).
@@ -303,7 +305,7 @@ Last updated 2026-11-25, after group play's badges and settings.
 2. **Before real players join:** limit the app's web key to the app's own address in the Google Cloud console, and look at App Check, which stops other programs from using the database's free daily allowance.
    - **Step 5 items still to come, each with the feature that needs it:** the Cloud Messaging web push key (notifications), and the private backups repo with its token (the backup job is built and waits on them).
 3. **Rules still to write, each with its screen and its tests:** marking a player as left, once the mid-season question is answered. Phase 2 and 3 collections are in DATA-MODEL.md and refused until then.
-4. **Phase 2 is built. Phase 3, in SCOPE.md's three drops:** the draft room is built; next, group play, all six modes (a group-play week has its mode now, but plays by its rules only once they ship); then the playoffs, the Whiff Bowl, holiday events and the video decision.
+4. **Phase 2 is built. Phase 3, in SCOPE.md's three drops:** the draft room and group play, all six modes, are built; next, the playoffs, the Whiff Bowl, holiday events and the video decision.
 
 ## Questions for the commish, asked when each feature is built
 

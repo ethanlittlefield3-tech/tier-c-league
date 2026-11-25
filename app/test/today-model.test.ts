@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { rumbleDay } from '@tcl/engine';
 import { breakdown, formatPoints, formatScreen, formatScreenShort, isRestDay, leagueDates, liveDayScore, seasonDates, pointsChip, scaleRowOf, screenScale, stepScreen, windowOf } from '../src/today/model.ts';
 
 const NY = 'America/New_York';
@@ -167,6 +168,15 @@ describe('The day total', () => {
     const entry = { goals: { mind: true, body: false, wildcard: false }, screenMinutes: 30, beers: 0 };
     expect(breakdown(liveDayScore({ par: 3, entry, restDay: false, locked: false, aerial: true }))).toBe('Goals +1 · screen +3 · beers 0 · Aerial ×2');
     expect(breakdown(liveDayScore({ par: 3, entry, restDay: false, locked: false, ruleOne: true }))).toBe('Rule One: the day scores 0');
+  });
+
+  it("In Rumble, it names each item's points, and a Magnet's beers", () => {
+    const day = (goals: string, beers = 0) => ({ par: 3, log: { goals: { mind: goals.includes('M'), body: goals.includes('B'), wildcard: goals.includes('W') }, screenMinutes: 30, beers } });
+    const tornado = rumbleDay(day('MBW'), day('MB'), { a: 'tornado', b: null });
+    expect(breakdown(tornado.a)).toBe('Goals +3 · screen +3 · beers 0 · Tornado +2');
+    expect(breakdown(tornado.b)).toBe('Goals +2 · screen +3 · beers 0 · Tornado −2');
+    const magnet = rumbleDay(day('MBW', 2), day('MBW'), { a: 'magnet', b: null });
+    expect(breakdown(magnet.b)).toBe('Goals +3 · screen +3 · beers 0 · Magnet −2');
   });
 
   it('Leaves out screen time while it is not logged, and says nothing when nothing is logged', () => {

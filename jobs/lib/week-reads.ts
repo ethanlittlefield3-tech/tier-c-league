@@ -38,5 +38,5 @@ export function calendarStamp(settings: { kickoff: unknown; regularWeeks: unknow
     .map(([week, mode]) => `${week}:${mode}`)
     .join(',');
   // Bump the last part when the calendar's documents change shape.
-  return `${String(settings.kickoff)}|${String(settings.regularWeeks)}|${String(settings.timeZone)}|v1${modes ? `|${modes}` : ''}`;
+  return `${String(settings.kickoff)}|${String(settings.regularWeeks)}|${String(settings.timeZone)}|v2${modes ? `|${modes}` : ''}`;
 }

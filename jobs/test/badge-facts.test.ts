@@ -52,6 +52,15 @@ describe("A season's badge history", () => {
     expect(seasonBadgeData(alley).maya!.weeks[0]).toMatchObject({ feats: [] });
   });
 
+  it("A Rumble week's days are scored with its items: a Boot spoils a perfect day", () => {
+    const rumbleWeek = season({
+      weeks: [{ period: 'w01', results: { alex: { ...result('maya', 30, 10, 'win'), mode: 'rumble' }, maya: { ...result('alex', 10, 30, 'loss'), mode: 'rumble' } } }],
+      rumble: { items: { '2027-01-04_maya': 'boot' }, boots: [{ player: 'maya', target: 'alex', date: '2027-01-04', lane: 'body' }] },
+    });
+    expect(seasonBadgeData(rumbleWeek).alex!.days[0]).toMatchObject({ perfect: false, hit: { mind: true, body: false, wildcard: true } });
+    expect(seasonBadgeData(rumbleWeek).alex!.days[1]).toMatchObject({ perfect: true });
+  });
+
   it('Beating the player who led the standings going into the week counts as beating the leader', () => {
     const two = season({
       calendar: [...calendar, ...calendar.map((day) => ({ ...day, period: 'w02', date: day.date.replace('-0', '-1'), start: day.start + 7 * 24 * H, lock: day.lock + 7 * 24 * H }))],

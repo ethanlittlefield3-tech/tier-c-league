@@ -16,6 +16,7 @@ import { RANK_NAMES, rankMove, type Rank } from '../../engine/src/ranks.ts';
 import { HOUSE } from '../../engine/src/schedule.ts';
 import { MODE_BLURBS, MODE_NAMES, type GroupMode } from '../../engine/src/modes.ts';
 import { bountyText, defaultBounty, type BountyTarget } from '../../engine/src/group.ts';
+import { RUMBLE_NAMES, RUMBLE_TEXT, type RumbleItem } from '../../engine/src/rumble.ts';
 
 export type Screen = 'today' | 'match' | 'feed' | 'league' | 'wheel' | 'draft';
 
@@ -39,6 +40,8 @@ export interface AlertDay {
   start: number;
   end: number;
   lock: number;
+  /** The week's mode: Rumble days get an 8 am item alert. */
+  mode?: string;
 }
 
 type Goals = { mind: boolean; body: boolean; wildcard: boolean };
@@ -86,6 +89,8 @@ export interface AlertInput {
   spins: { id: string; player: string; at: number; proofAt: number | null }[];
   /** When the live draft starts, if it is set. */
   draftAt: number | null;
+  /** Rumble's items for a day whose 8 am alert is due, by `{date}_{player}`. */
+  rumbleItems?: Record<string, string>;
   /** Next week, read only for the 7 pm Sunday alert about a group-play mode. */
   nextWeek?: {
     id: string;
@@ -157,7 +162,7 @@ function restDayOf(input: AlertInput, player: string, day: AlertDay): string {
   return moved?.date ?? addDays(day.date, 6 - day.dayIndex);
 }
 
-export type TimedKind = 'log' | 'lastCall' | 'rest' | 'aerial' | 'close' | 'mode';
+export type TimedKind = 'log' | 'lastCall' | 'rest' | 'aerial' | 'close' | 'mode' | 'rumble';
 
 /**
  * The timed alerts' moments that came round since the last run: what the job
@@ -175,6 +180,8 @@ export function timedChecks(input: { since: number; now: number; clock: LeagueCl
     if ((day.dayIndex === 5 || day.dayIndex === 6) && due(input.clock.timeOf(day.date, 18))) checks.push({ kind: 'close', day });
     // 7 pm the Sunday before a group-play week: what next week's mode is.
     if (day.dayIndex === 6 && due(input.clock.timeOf(day.date, 19))) checks.push({ kind: 'mode', day });
+    // 8 am in a Rumble week: each player's item for the day.
+    if (day.mode === 'rumble' && due(input.clock.timeOf(day.date, 8))) checks.push({ kind: 'rumble', day });
   }
   return checks;
 }
@@ -203,6 +210,16 @@ export function alertsDue(input: AlertInput): Alert[] {
       if (nextMode === 'alley') detail = 'No power-ups; Rule One still works.';
       if (nextMode === 'rumble') detail = 'Your item arrives at midnight each day.';
       add({ player, category: 'matchup', key: `mode-${next.id}`, title: `Next week: ${MODE_NAMES[nextMode]}`, body: `${MODE_BLURBS[nextMode]} ${detail}`.trim(), screen: 'today', expires: sunday.lock });
+    }
+  }
+
+  // ---- Power-ups: your Rumble item, at 8 am ---------------------------------
+  for (const { kind, day } of timedChecks(input)) {
+    if (kind !== 'rumble') continue;
+    for (const player of members) {
+      const item = input.rumbleItems?.[`${day.date}_${player}`] as RumbleItem | undefined;
+      if (!item || !(item in RUMBLE_NAMES)) continue;
+      add({ player, category: 'powerups', key: `rumble-${day.date}`, title: `Your Rumble item: ${RUMBLE_NAMES[item]}`, body: RUMBLE_TEXT[item], screen: 'today', expires: day.end });
     }
   }
 

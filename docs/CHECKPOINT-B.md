@@ -2,7 +2,7 @@
 
 Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 311 of 311 passing.
+- **Tests:** 317 of 317 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -332,6 +332,22 @@ At its step of the live draft, each player ranks the six modes, once each, in th
 - The vote is open only while the live draft is at its step
 - Everyone in the league can see the rankings; nobody outside it can
 
+## Rumble
+
+The job draws and seals every item; each one opens to the league when its day starts. A Boot is played by its holder, by noon, at today's opponent, and stays sealed until the day locks.
+
+**Rumble items**
+
+- Each day's items are sealed until the day starts; then everyone in the league can see them
+- Not even its own player sees an item early, and no phone can list, write or change them
+
+**A Rumble Boot**
+
+- Whoever holds Boot today picks one of their opponent's goals before noon; only they can see it until the day locks
+- Only with Boot today, only your own, only at today's opponent, and it reveals at the lock
+- Not after noon, and not on a goal of an opponent who is resting today
+- It is final once set
+
 ## Standings
 
 Everyone in the league can read them. Only the weekly job writes them.
@@ -345,7 +361,7 @@ Everyone in the league can read them. Only the weekly job writes them.
 
 ## Weeks and dares
 
-If the weekly job runs late, the commish can post a finished week's results as provisional. The commish can also unlock a final week or take a dare off the Wheel. Every such change goes in the audit log.
+If the weekly job runs late, the commish can post a finished week's results as provisional. The commish can also unlock a final week, set a group-play week's settings before it starts, or take a dare off the Wheel. Every such change goes in the audit log.
 
 **Unlocking a final week**
 

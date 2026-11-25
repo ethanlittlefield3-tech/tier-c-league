@@ -6,7 +6,7 @@
  * The phone's clock only decides what to show. Whether a save is accepted is
  * decided by the server, against the calendar (firebase/firestore.rules).
  */
-import { addDays, fastDate, localDate, scoreDay, type DateStr, type DayLog, type DayScore, type FastClock, type Lane, type Square } from '@tcl/engine';
+import { RUMBLE_NAMES, addDays, fastDate, localDate, scoreDay, type DateStr, type DayLog, type DayScore, type FastClock, type Lane, type RumbleItem, type Square } from '@tcl/engine';
 
 /** What a player has logged for a day: three yes-or-no goals, screen minutes (or none yet) and beers. */
 export interface DayEntry {
@@ -161,6 +161,9 @@ export function breakdown(score: DayScore): string {
   if (score.screen.state === 'logged') parts.push(`screen ${formatPoints(score.screen.points)}`);
   if (score.screen.state === 'notLogged' || score.screen.state === 'voided') parts.push(`screen not logged ${formatPoints(score.screen.points)}`);
   parts.push(`beers ${formatPoints(score.beerPoints)}`);
+  if (score.beerShift) parts.push(`Magnet ${formatPoints(score.beerShift)}`);
   if (score.aerial === 'doubled') parts.push('Aerial ×2');
+  // Rumble's Tornado, Punch and Spike.
+  for (const item of score.rumble) parts.push(`${RUMBLE_NAMES[item.item as RumbleItem] ?? item.item} ${formatPoints(item.points)}`);
   return parts.join(' · ');
 }
