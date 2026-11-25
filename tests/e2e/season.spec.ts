@@ -94,14 +94,15 @@ test.describe('Season setup', () => {
     expect(await auditActions(request, league)).toHaveLength(3);
   });
 
-  test('The calendar job writes every day of the season, and running it again changes nothing', async ({ page, request }) => {
+  test('The calendar job writes every day of the season, playoffs included, and running it again changes nothing', async ({ page, request }) => {
     const league = await commishTools(page, request);
     await button(page, 'Start the season').click();
     await expect.poll(async () => (await readDoc(request, `leagues/${league.id}`))?.season).toBe('s1');
 
-    expect(await runCalendarJob(league)).toContain('42 days written, 0 removed, Rule One times set.');
+    // Six regular weeks, and a one-week playoff: three semifinal days, the reset day, three final days and sudden death.
+    expect(await runCalendarJob(league)).toContain('50 days written, 0 removed, Rule One times set.');
     const days = await listIds(request, `leagues/${league.id}/seasons/s1/calendar`);
-    expect(days).toHaveLength(42);
+    expect(days).toHaveLength(50);
     const kickoff = String((await season(request, league))?.kickoff);
     expect(days.sort()[0]).toBe(kickoff);
     expect(((await season(request, league))?.ruleOneIssue as unknown[]).length).toBe(2);
@@ -127,7 +128,7 @@ test.describe('Season setup', () => {
 
     expect(await runCalendarJob(league)).toContain('removed');
     const days = (await listIds(request, `leagues/${league.id}/seasons/s1/calendar`)).sort();
-    expect(days).toHaveLength(42);
+    expect(days).toHaveLength(50);
     expect(days[0]).toBe(addDays(kickoff, 7));
   });
 });

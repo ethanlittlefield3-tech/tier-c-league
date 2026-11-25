@@ -67,6 +67,19 @@ describe("A player's week, day by day", () => {
     expect(week.cells[6]?.rest).toBe(false);
   });
 
+  it("The #1 seed's extra Full Boost in the semifinal is its own play, and counts on its day", () => {
+    const week = playerWeek({
+      ...base,
+      logs: { '2027-01-11': log(true, false, false, 30, 0) },
+      kit: [
+        { item: 'fullBoost', period: 'w02', date: '2027-01-11', lane: 'body' },
+        { item: 'fullBoost2', period: 'w02', date: '2027-01-11', lane: 'wildcard' },
+      ],
+    });
+    // Monday: Mind hit, Body and Wildcard boosted, and +3.
+    expect(week.cells[0]?.score?.total).toBe(6);
+  });
+
   it('A Demolition counts only once its day has locked', () => {
     const logs = { '2027-01-11': log(true, false, true, 30, 0), '2027-01-12': log(true, false, true, 30, 0) };
     const week = playerWeek({ ...base, logs, demolitionsOn: [{ date: '2027-01-11', lane: 'body' }, { date: '2027-01-12', lane: 'body' }] });

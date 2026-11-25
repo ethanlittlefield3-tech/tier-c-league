@@ -41,6 +41,9 @@ for (const league of leagues) {
     fast: fastClockOf({ demo: league.get('demo') }, { fast: plain(season.get('fast') ?? {}) }) !== null,
     // Each group-play week's mode, once the schedule job has given them out.
     modes: weekModes(season.get('modes') as Record<number, string> | undefined),
+    // The playoffs' days come from their length and size.
+    playoffs: ['none', 'oneWeek', 'twoWeeks'].includes(season.get('playoffs')) ? (season.get('playoffs') as 'none' | 'oneWeek' | 'twoWeeks') : undefined,
+    playoffSize: season.get('playoffSize') === 2 ? (2 as const) : (4 as const),
   };
   // A finished, fast or unworkable season is left alone without reading its calendar.
   const early = seasonSync({ settings, existing: [], ruleOneIssue: null });

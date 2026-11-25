@@ -31,12 +31,13 @@ export function weekReads(input: {
 }
 
 /** The settings a season's calendar was written from, so an unchanged season isn't read again every hour. */
-export function calendarStamp(settings: { kickoff: unknown; regularWeeks: unknown; timeZone: unknown; modes?: Readonly<Record<number, string>> | null }): string {
+export function calendarStamp(settings: { kickoff: unknown; regularWeeks: unknown; timeZone: unknown; modes?: Readonly<Record<number, string>> | null; playoffs?: unknown; playoffSize?: unknown }): string {
   // The group-play modes join the stamp once the draft gives them out.
   const modes = Object.entries(settings.modes ?? {})
     .sort(([a], [b]) => Number(a) - Number(b))
     .map(([week, mode]) => `${week}:${mode}`)
     .join(',');
   // Bump the last part when the calendar's documents change shape.
-  return `${String(settings.kickoff)}|${String(settings.regularWeeks)}|${String(settings.timeZone)}|v2${modes ? `|${modes}` : ''}`;
+  const playoffs = settings.playoffs ? `|${String(settings.playoffs)}-${String(settings.playoffSize)}` : '';
+  return `${String(settings.kickoff)}|${String(settings.regularWeeks)}|${String(settings.timeZone)}|v3${modes ? `|${modes}` : ''}${playoffs}`;
 }

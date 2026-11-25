@@ -38,5 +38,7 @@ describe('What the weekly job reads each hour', () => {
     // And when the draft gives the group-play weeks their modes.
     expect(calendarStamp({ kickoff: '2027-01-04', regularWeeks: 6, timeZone: 'America/New_York', modes: {} })).toBe(stamp);
     expect(calendarStamp({ kickoff: '2027-01-04', regularWeeks: 6, timeZone: 'America/New_York', modes: { 3: 'alley' } })).not.toBe(stamp);
+    // And when the playoffs change shape.
+    expect(calendarStamp({ kickoff: '2027-01-04', regularWeeks: 6, timeZone: 'America/New_York', playoffs: 'twoWeeks', playoffSize: 4 })).not.toBe(calendarStamp({ kickoff: '2027-01-04', regularWeeks: 6, timeZone: 'America/New_York', playoffs: 'oneWeek', playoffSize: 4 }));
   });
 });

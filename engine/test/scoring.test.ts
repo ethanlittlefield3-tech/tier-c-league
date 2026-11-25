@@ -201,6 +201,12 @@ describe('4. Weekly kit: Full Boost', () => {
     expect(result.total).toBe(3);
   });
 
+  it("In the playoffs the #1 seed's extra Full Boost counts too, even on the same day as the first", () => {
+    const result = score(log('M--', '3:00'), { fullBoost: ['body', 'wildcard'] });
+    expect([result.goals.body, result.goals.wildcard]).toEqual(['boosted', 'boosted']);
+    expect(result.total).toBe(3);
+  });
+
   it('Using it counts as showing up, so the day is not a no-show', () => {
     const result = score(null, { fullBoost: 'mind' });
     expect(result.kind).toBe('played');

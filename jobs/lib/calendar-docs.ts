@@ -6,6 +6,7 @@
  * day, with its times turned into real timestamps.
  */
 import { addDays, weekdayIndex, type DateStr } from '../../engine/src/calendar.ts';
+import { playoffCalendar, type PlayoffSettings } from '../../engine/src/playoffs.ts';
 import { regularCalendar, type CalendarDay, type SeasonPlan } from '../../engine/src/season.ts';
 
 const TIMES = ['start', 'noon', 'sixPm', 'end', 'lock', 'nextEnd', 'periodStart', 'sundayStart', 'restOpens'] as const;
@@ -15,9 +16,10 @@ export interface CalendarDoc {
   data: Record<string, unknown>;
 }
 
-/** Every day of the regular season, as documents for `calendar/{date}`. */
-export function calendarDocs(season: SeasonPlan): CalendarDoc[] {
-  return calendarDocsFrom(regularCalendar(season));
+/** Every day of the regular season, and the playoffs if it has them, as documents for `calendar/{date}`. */
+export function calendarDocs(season: SeasonPlan & Partial<PlayoffSettings>): CalendarDoc[] {
+  const playoffs = season.playoffs && season.playoffSize ? playoffCalendar({ ...season, playoffs: season.playoffs, playoffSize: season.playoffSize }) : [];
+  return calendarDocsFrom([...regularCalendar(season), ...playoffs]);
 }
 
 /** Calendar days as documents, with their times as real timestamps. */

@@ -55,6 +55,13 @@ describe('Keeping a season\'s calendar in step with its settings', () => {
     expect(week(5)).toContainEqual(['teamWeek', ['aerial', 'demolition', 'fullBoost']]);
   });
 
+  it('A season with playoffs gets its playoff days too: the rounds, the reset day and sudden death', () => {
+    const sync = seasonSync({ settings: { ...SETTINGS, playoffs: 'oneWeek', playoffSize: 4 }, existing: [], ruleOneIssue: null });
+    expect(sync.write).toHaveLength(42 + 8);
+    expect(sync.write.at(-1)).toMatchObject({ id: '2027-02-22', data: { period: 'p3', phase: 'playoff', kind: 'play' } });
+    expect(seasonSync({ settings: { ...SETTINGS, playoffs: 'none', playoffSize: 4 }, existing: [], ruleOneIssue: null }).write).toHaveLength(42);
+  });
+
   it('A finished season, or one with broken settings, is left alone', () => {
     expect(seasonSync({ settings: { ...SETTINGS, status: 'done' }, existing: [], ruleOneIssue: null }).skip).toBe('finished');
     expect(seasonSync({ settings: { ...SETTINGS, kickoff: '2027-01-05' }, existing: [], ruleOneIssue: null }).skip).toBe('bad settings');

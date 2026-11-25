@@ -99,8 +99,11 @@ export interface DayInput {
   log: DayLog | null;
   /** This is the player's rest day: goals take the day off. */
   restDay?: boolean;
-  /** The lane this week's Full Boost was used on, if it was used on this day. */
-  fullBoost?: Lane | null;
+  /**
+   * The lane this week's Full Boost was used on, if it was used on this day.
+   * In a playoff semifinal the #1 seed has a second, so it can be a list.
+   */
+  fullBoost?: Lane | readonly Lane[] | null;
   aerial?: boolean;
   ruleOne?: boolean;
   /** Lanes that opponents aimed a Demolition at on this day. */
@@ -201,8 +204,9 @@ export function scoreDay(input: DayInput, options: ScoreOptions = {}): DayScore 
   const log = input.log ?? null;
   const voided = new Set<Square>(input.voided ?? []);
   // Full Boost has nothing to fix on a rest day.
-  const boost = restDay ? null : (input.fullBoost ?? null);
-  const checkedIn = hasAnythingLogged(log) || (input.fullBoost ?? null) !== null;
+  const played = input.fullBoost === null || input.fullBoost === undefined ? [] : typeof input.fullBoost === 'string' ? [input.fullBoost] : [...input.fullBoost];
+  const boosts = new Set<Lane>(restDay ? [] : played);
+  const checkedIn = hasAnythingLogged(log) || played.length > 0;
   const beers = log?.beers ?? 0;
   const adjustmentPoints = sum(input.adjustments);
 
@@ -215,7 +219,7 @@ export function scoreDay(input: DayInput, options: ScoreOptions = {}): DayScore 
     if (restDay) state = 'rest';
     else if (rumble.booted === lane) state = 'booted';
     else if (tapped && !voided.has(lane)) state = rumble.swapOut === lane ? 'swappedOut' : 'hit';
-    else if (boost === lane) state = 'boosted';
+    else if (boosts.has(lane)) state = 'boosted';
     else if (rumble.swapIn === lane) state = 'swappedIn';
     else if (tapped) state = 'voided';
     else state = 'missed';

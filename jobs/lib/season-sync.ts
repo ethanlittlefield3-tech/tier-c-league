@@ -10,6 +10,7 @@
 import { isValidTimeZone, weekStart, weekdayIndex, isDate } from '../../engine/src/calendar.ts';
 import { ruleOneIssueWeeks } from '../../engine/src/kit.ts';
 import { WEEK_MODES, type WeekMode } from '../../engine/src/schedule.ts';
+import type { PlayoffSettings } from '../../engine/src/playoffs.ts';
 import { calendarDocs, type CalendarDoc } from './calendar-docs.ts';
 
 export interface SeasonSettingsForSync {
@@ -21,6 +22,9 @@ export interface SeasonSettingsForSync {
   fast?: boolean;
   /** Each group-play week's mode, once the draft has given them out. */
   modes?: Readonly<Record<number, string>>;
+  /** The playoffs' length and size, for their days. */
+  playoffs?: PlayoffSettings['playoffs'];
+  playoffSize?: PlayoffSettings['playoffSize'];
 }
 
 export interface Sync {
@@ -61,7 +65,7 @@ export function seasonSync(input: {
     isValidTimeZone(settings.timeZone);
   if (!valid) return { ...none, skip: 'bad settings' };
 
-  const wanted = calendarDocs({ kickoff: settings.kickoff, regularWeeks: settings.regularWeeks, timeZone: settings.timeZone, modes: weekModes(settings.modes) });
+  const wanted = calendarDocs({ kickoff: settings.kickoff, regularWeeks: settings.regularWeeks, timeZone: settings.timeZone, modes: weekModes(settings.modes), playoffs: settings.playoffs, playoffSize: settings.playoffSize });
   const there = new Map(input.existing.map((doc) => [doc.id, doc.data]));
   const write = wanted.filter((doc) => {
     const stored = there.get(doc.id);

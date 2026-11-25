@@ -133,7 +133,7 @@ test.describe('The draft', () => {
     expect((await readDoc(request, `${season.path}/weeks/w05`))?.roster).toEqual(expect.arrayContaining([riley.player, league.commish]));
     expect((await readDoc(request, season.path))?.modes).toEqual({ 3: 'dropShot', 5: 'alley' });
     // The calendar job then gives those weeks' days their power-ups: none at all in the Alley.
-    expect(await runCalendar(league)).toContain('42 days written');
+    expect(await runCalendar(league)).toContain('50 days written');
     expect(await readDoc(request, `${season.path}/calendar/${addDays(season.kickoff, 28)}`)).toMatchObject({ mode: 'alley', kit: [] });
     expect(await readDoc(request, `${season.path}/calendar/${addDays(season.kickoff, 14)}`)).toMatchObject({ mode: 'dropShot', kit: ['aerial', 'demolition', 'fullBoost'] });
     expect(await readDoc(request, `${season.path}/calendar/${addDays(season.kickoff, 7)}`)).toMatchObject({ mode: 'regular', kit: ['aerial', 'demolition', 'fullBoost'] });

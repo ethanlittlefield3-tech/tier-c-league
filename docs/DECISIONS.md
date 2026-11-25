@@ -406,6 +406,13 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 236. **A Boot left unpicked at noon does nothing.** Once picked it is final, hidden from the target until the day locks, and only then counts in either phone's score, like a Demolition.
 237. **Predictions and the live "passed you" and "close finish" alerts are for 1v1 weeks:** regular weeks, Rumble and Drop Shot. Team Week, 2v2, Bounty and Alley weeks have no matchups to pick, and Picks says so. In a Rumble week the live alerts count the items played, as the phones do.
 
+**Phase 3: the playoffs** (new on 2026-11-25, not yet reviewed by the commish). Scoring readings here are also in "Still open".
+
+238. **Each playoff round is its own period, so its kit is fresh:** `p1` the semifinals, `p2` the final, `p3` sudden death. The reset day belongs to the final's period, so the final's Aerial and Demolition can be set on it, before the final starts. Sudden death has no kit: a Full Boost would undo "the first to miss any goal".
+239. **Top 2 is always one week:** the final Monday to Saturday and sudden death on Sunday. The 1-week or 2-week setting only changes a top-4 playoff.
+240. **The #1 seed's extra Full Boost in the semifinal is a second Full Boost of their own.** Both can be used, even on the same day on two different goals.
+241. **With fewer players than playoff seeds, a missing seed is a bye** into the next round.
+
 **Calendar**
 
 25. **Daylight saving:** a wall-clock time that happens twice means the first one, and a time the clocks skip lands the same distance past the jump. In Eastern time neither midnight nor noon is ever affected.

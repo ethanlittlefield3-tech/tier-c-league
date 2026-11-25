@@ -78,7 +78,8 @@ function weekDays(input: WeekInput): { cell: Omit<DayCell, 'score'>; input: DayI
         log: input.logs[day.date] ?? null,
         restDay: rest,
         aerial: on('aerial') !== undefined,
-        fullBoost: on('fullBoost')?.lane ?? null,
+        // Full Boost, and the #1 seed's extra one in a playoff semifinal.
+        fullBoost: input.kit.filter((play) => (play.item === 'fullBoost' || play.item === 'fullBoost2') && play.date === day.date && play.period === day.period && play.lane).map((play) => play.lane!),
         ruleOne: on('ruleOne') !== undefined,
         demolitions: state === 'locked' ? input.demolitionsOn.filter((hit) => hit.date === day.date).map((hit) => hit.lane) : [],
         voided: fixes.flatMap((change) => (change.void ? [change.void] : [])),
