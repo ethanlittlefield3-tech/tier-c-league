@@ -1,12 +1,13 @@
-import type { ComponentChildren } from 'preact';
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useState } from 'preact/hooks';
 import { formatLeagueCode } from '@tcl/engine';
 import { Lockup } from '../art/Lockup.tsx';
 import { PlayerBadge } from '../art/PlayerBadge.tsx';
 import scene from '../art/title-scene.svg';
-import type { Failed, Me, Trouble } from '../data/identity.ts';
+import type { Me, Trouble } from '../data/identity.ts';
+import { whyOf } from '../data/why.ts';
 import { readCode, readKey, type EntryProblem } from '../join/entry.ts';
 import { NAME_MAX, initialOf, nameProblem, tidyName } from '../join/name.ts';
+import { Back, Field, Heading } from '../ui/parts.tsx';
 import './join.css';
 
 /** The database calls this screen makes. The app loads them in the background and hands them in. */
@@ -40,80 +41,6 @@ const KEY_PROBLEM: Record<EntryProblem, string> = {
   shape: 'A recovery key looks like TCL-7Q4M-X2K9.',
   lookalike: 'Recovery keys never use 0, O, 1 or I. Check for a look-alike.',
 };
-
-const whyOf = (error: unknown): Trouble => (error as Failed).why ?? 'offline';
-
-/** A step's heading takes the focus when the step appears, so a screen reader says where you are. */
-function Heading(props: { children: ComponentChildren }) {
-  const heading = useRef<HTMLHeadingElement>(null);
-  useEffect(() => heading.current?.focus({ preventScroll: true }), []);
-  return (
-    <h1 ref={heading} tabIndex={-1}>
-      {props.children}
-    </h1>
-  );
-}
-
-function Back(props: { onBack: () => void }) {
-  return (
-    <button class="join-back" type="button" onClick={props.onBack}>
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M10 3 5 8l5 5" />
-      </svg>
-      Back
-    </button>
-  );
-}
-
-/** One text field with its label, a line of help, and room for what went wrong. */
-function Field(props: {
-  id: string;
-  label: string;
-  value: string;
-  onInput: (value: string) => void;
-  help?: string;
-  error?: string | null;
-  code?: boolean;
-  placeholder?: string;
-  maxLength?: number;
-  autoFocus?: boolean;
-}) {
-  const input = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    if (props.autoFocus) input.current?.focus({ preventScroll: true });
-  }, []);
-  return (
-    <div class="field">
-      <label for={props.id}>{props.label}</label>
-      <input
-        ref={input}
-        id={props.id}
-        class={props.code ? 'field-code' : undefined}
-        type="text"
-        value={props.value}
-        onInput={(event) => props.onInput(event.currentTarget.value)}
-        placeholder={props.placeholder}
-        maxLength={props.maxLength}
-        autocomplete="off"
-        autocorrect="off"
-        autocapitalize={props.code ? 'characters' : 'words'}
-        spellcheck={false}
-        enterkeyhint="go"
-        aria-invalid={props.error ? 'true' : undefined}
-        aria-describedby={`${props.id}-notes`}
-      />
-      <div id={`${props.id}-notes`}>
-        {props.error ? (
-          <p class="field-error" role="alert">
-            {props.error}
-          </p>
-        ) : (
-          props.help && <p class="field-help">{props.help}</p>
-        )}
-      </div>
-    </div>
-  );
-}
 
 /** The way in: join with a league code, or get back in with a recovery key. */
 export function Join(props: {

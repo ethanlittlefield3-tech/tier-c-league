@@ -1,23 +1,11 @@
 import { expect, test, type APIRequestContext, type Browser, type Page } from '@playwright/test';
 import { formatLeagueCode, makeLeagueCode } from '../../engine/src/ids.ts';
-import { enter, tapToEnter } from './helpers.ts';
+import { enter, expectInApp, joinAs, tapToEnter } from './helpers.ts';
 import { createLeague, readDoc, type TestLeague } from './league.ts';
 
 const KEY_SHAPE = /^TCL-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/;
 const heading = (page: Page, name: string) => page.getByRole('heading', { name });
 const button = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
-
-/** Go through the join steps as a new player. Returns the recovery key the app shows. */
-async function joinAs(page: Page, league: TestLeague, name: string): Promise<string> {
-  await enter(page);
-  await button(page, 'Join a league').click();
-  await page.getByLabel('League code').fill(formatLeagueCode(league.code));
-  await button(page, 'Next').click();
-  await page.getByLabel('Display name').fill(name);
-  await button(page, 'Join the league').click();
-  await expect(heading(page, 'Save your recovery key')).toBeVisible();
-  return (await page.locator('.join-key').textContent()) ?? '';
-}
 
 /** A second phone: its own storage and its own sign-in. */
 async function anotherPhone(browser: Browser): Promise<Page> {
@@ -54,8 +42,7 @@ test.describe('Joining a league', () => {
     expect(Object.keys((await readDoc(request, `leagues/${league.id}`))?.members as object).sort()).toEqual([player, league.commish].sort());
 
     await button(page, "I've saved it").click();
-    await expect(heading(page, "You're in, Riley.")).toBeVisible();
-    await expect(page.getByText('Sunday Squad')).toBeVisible();
+    await expectInApp(page, 'Riley', 'Sunday Squad');
   });
 
   test("The badge shows the first letter of the name as it is typed", async ({ page, request }) => {
@@ -144,12 +131,11 @@ test.describe('Joining a league', () => {
   test('The next time the app is opened, it goes straight in: no code, no key', async ({ page, request }) => {
     await joinAs(page, await createLeague(request, { name: 'Sunday Squad' }), 'Riley');
     await button(page, "I've saved it").click();
-    await expect(heading(page, "You're in, Riley.")).toBeVisible();
+    await expectInApp(page, 'Riley', 'Sunday Squad');
 
     await page.reload();
     await tapToEnter(page);
-    await expect(heading(page, "You're in, Riley.")).toBeVisible();
-    await expect(page.getByText('Sunday Squad')).toBeVisible();
+    await expectInApp(page, 'Riley', 'Sunday Squad');
   });
 
   test('Back goes one step back, and keeps what was typed', async ({ page, request }) => {
@@ -192,7 +178,7 @@ test.describe('Getting back in with a recovery key', () => {
     expect((await readDoc(request, `leagues/${league.id}/keys/${player}`))?.key).toBe(newKey);
 
     await button(newPhone, "I've saved it").click();
-    await expect(heading(newPhone, "You're in, Riley.")).toBeVisible();
+    await expectInApp(newPhone, 'Riley', 'Sunday Squad');
     await newPhone.context().close();
   });
 

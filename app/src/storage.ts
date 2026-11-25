@@ -20,3 +20,11 @@ export function remember(key: string, value: string): void {
     // Nothing to do: see above.
   }
 }
+
+export function forget(key: string): void {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    // Nothing to do: see above.
+  }
+}

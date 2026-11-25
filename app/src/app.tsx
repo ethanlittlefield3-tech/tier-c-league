@@ -3,7 +3,8 @@ import { installState, shouldSuggestInstall, type Guide } from './install/state.
 import { surroundings } from './install/surroundings.ts';
 import { deviceDay } from './intro/mode.ts';
 import { Install } from './screens/Install.tsx';
-import { Session, loadData } from './screens/Session.tsx';
+import { loadData } from './data/load.ts';
+import { Session } from './screens/Session.tsx';
 import { Title } from './screens/Title.tsx';
 import { recall, remember } from './storage.ts';
 

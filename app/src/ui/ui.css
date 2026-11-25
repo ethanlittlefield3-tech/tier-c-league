@@ -104,6 +104,33 @@
   outline-offset: 3px;
 }
 
+/* Back, at the top left of a screen. */
+.back {
+  align-self: flex-start;
+  min-height: 44px;
+  margin: 0 0 14px -8px;
+  padding: 0 10px 0 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  background: none;
+  font-size: 15px;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.back svg {
+  width: 16px;
+  height: 16px;
+}
+
+.back:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
 /* ---- Text fields ---------------------------------------------------------- */
 
 .field {
@@ -162,6 +189,7 @@
   font-size: 13px;
   line-height: 1.4;
   color: var(--ink-soft);
+  text-wrap: pretty;
 }
 
 .field-error {

@@ -1,0 +1,123 @@
+/* Your Profile: who you are, your recovery key, and this phone. */
+
+.profile-who {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.profile-badge {
+  width: 104px;
+  height: 104px;
+  margin-bottom: 8px;
+}
+
+.profile-who h1 {
+  overflow-wrap: anywhere;
+}
+
+.profile-league {
+  margin: 4px 0 0;
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+/* A card for one part of the Profile. */
+.panel {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 18px;
+  padding: 18px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  border: 1px solid rgba(196, 216, 255, 0.14);
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(17, 30, 73, 0.92), rgba(10, 19, 48, 0.92));
+  text-align: left;
+}
+
+.panel h2 {
+  margin: 0;
+  font: italic 900 20px/1.1 var(--display);
+}
+
+.panel .field {
+  margin-top: 12px;
+}
+
+.panel-text {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+.panel-text strong {
+  color: var(--ink);
+}
+
+.panel-ok {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: #8fe3a8;
+}
+
+.panel .field-error {
+  margin: 10px 0 0;
+}
+
+.panel .btn {
+  width: 100%;
+  min-width: 0;
+  margin-top: 14px;
+}
+
+.panel .btn-quiet {
+  align-self: center;
+  margin-top: 8px;
+}
+
+/* The key, in the same gold as the join screen's. */
+.profile-key {
+  margin: 14px 0 0;
+  padding: 16px 10px;
+  border: 2px solid var(--gold);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 207, 63, 0.14), rgba(255, 207, 63, 0.05));
+  box-shadow: 0 0 22px rgba(255, 207, 63, 0.2);
+  font: italic 900 26px/1 var(--display);
+  letter-spacing: 0.08em;
+  text-align: center;
+  color: var(--gold);
+  user-select: all;
+  -webkit-user-select: all;
+}
+
+/* Lost points are red: so is the one button that takes you out. */
+.btn-danger {
+  background: linear-gradient(180deg, #ff7781, #c42f3c);
+  box-shadow:
+    0 0 22px rgba(255, 90, 102, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.profile-credit {
+  margin: 28px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.profile-credit svg {
+  width: 18px;
+  height: 18px;
+}

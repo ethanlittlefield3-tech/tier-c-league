@@ -48,6 +48,14 @@ export async function readDoc(request: APIRequestContext, path: string): Promise
   return Object.fromEntries(Object.entries(body.fields ?? {}).map(([key, value]) => [key, decode(value)]));
 }
 
+/** The ids of the documents in a collection, past the security rules. */
+export async function listIds(request: APIRequestContext, path: string): Promise<string[]> {
+  const response = await request.get(`${ROOT}/${path}?pageSize=300`, { headers: OWNER });
+  if (!response.ok()) throw new Error(`Could not list ${path}: ${response.status()} ${await response.text()}`);
+  const body = (await response.json()) as { documents?: { name: string }[] };
+  return (body.documents ?? []).map((doc) => doc.name.split('/').pop() ?? '');
+}
+
 export interface TestLeague {
   id: string;
   /** The league code, without its dash. */

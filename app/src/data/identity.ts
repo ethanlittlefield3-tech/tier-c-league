@@ -6,8 +6,8 @@
  * whole, so a player can never be left half joined.
  */
 import { makeRecoveryKey } from '@tcl/engine';
-import { collection, doc, getDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
-import { recall, remember } from '../storage.ts';
+import { collection, deleteDoc, doc, getDoc, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore';
+import { forget, recall, remember } from '../storage.ts';
 import { NoBackend, connect } from './firebase.ts';
 
 /** Who this phone is, once it is in a league. */
@@ -184,4 +184,40 @@ export async function whoAmI(): Promise<Me | { signedOut: true; code: string } |
     if (error instanceof Failed && error.why === 'refused') return { signedOut: true, code: note.code };
     throw error;
   }
+}
+
+/** Saves a new display name. Resolves to who this phone is now. */
+export async function rename(me: Me, displayName: string): Promise<Me> {
+  return patiently(
+    (async () => {
+      const { db } = await connect();
+      await updateDoc(doc(db, 'leagues', me.league, 'players', me.player), { displayName });
+      return { ...me, displayName };
+    })(),
+  );
+}
+
+/** This player's current recovery key. Only they and the commish can read it. */
+export async function myKey(me: Me): Promise<string> {
+  return patiently(
+    (async () => {
+      const { db } = await connect();
+      const found = await getDoc(doc(db, 'leagues', me.league, 'keys', me.player));
+      return String(found.data()?.key ?? '');
+    })(),
+  );
+}
+
+/**
+ * Signs this phone out of the league. The profile stays as it is, and the
+ * recovery key gets back in, on this phone or any other.
+ */
+export async function signOut(me: Me): Promise<void> {
+  await patiently(
+    (async () => {
+      const { db, device } = await connect();
+      await deleteDoc(doc(db, 'leagues', me.league, 'claims', device));
+    })(),
+  );
+  forget(ME_KEY);
 }

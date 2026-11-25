@@ -1,4 +1,6 @@
 import { expect, type Page } from '@playwright/test';
+import { formatLeagueCode } from '../../engine/src/ids.ts';
+import type { TestLeague } from './league.ts';
 
 /**
  * Make the page believe it was opened from its Home Screen icon. This is the
@@ -41,4 +43,23 @@ export async function enter(page: Page): Promise<void> {
   await page.clock.install();
   await page.goto('/');
   await tapToEnter(page);
+}
+
+/** Go through the join steps as a new player. Returns the recovery key the app shows. */
+export async function joinAs(page: Page, league: TestLeague, name: string): Promise<string> {
+  const button = (label: string) => page.getByRole('button', { name: label, exact: true });
+  await enter(page);
+  await button('Join a league').click();
+  await page.getByLabel('League code').fill(formatLeagueCode(league.code));
+  await button('Next').click();
+  await page.getByLabel('Display name').fill(name);
+  await button('Join the league').click();
+  await expect(page.getByRole('heading', { name: 'Save your recovery key' })).toBeVisible();
+  return (await page.locator('.join-key').textContent()) ?? '';
+}
+
+/** In the app itself: the frame shows the league's name and this player's badge. */
+export async function expectInApp(page: Page, name: string, leagueName: string): Promise<void> {
+  await expect(page.getByRole('button', { name: `Your profile, ${name}`, exact: true })).toBeVisible();
+  await expect(page.locator('.frame-league')).toHaveText(leagueName);
 }

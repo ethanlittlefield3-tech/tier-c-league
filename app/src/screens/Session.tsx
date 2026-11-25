@@ -1,17 +1,9 @@
 import { useEffect, useState } from 'preact/hooks';
 import { backend } from '../data/backend.ts';
+import { loadData } from '../data/load.ts';
 import type { Me } from '../data/identity.ts';
-import { Home } from './Home.tsx';
+import { Frame } from './Frame.tsx';
 import { Join, type JoinApi } from './Join.tsx';
-
-type Data = typeof import('../data/identity.ts');
-
-/** The database code is loaded in the background, once, the first time it is asked for. */
-let loading: Promise<Data> | null = null;
-export function loadData(): Promise<Data> {
-  loading ??= import('../data/identity.ts');
-  return loading;
-}
 
 type State =
   | { at: 'checking' }
@@ -83,5 +75,5 @@ export function Session() {
     );
   }
 
-  return <Home me={state.me} />;
+  return <Frame me={state.me} onRenamed={(me) => setState({ at: 'home', me })} onSignedOut={() => void check()} />;
 }

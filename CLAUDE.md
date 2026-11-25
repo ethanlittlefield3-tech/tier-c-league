@@ -46,6 +46,7 @@ npm run icons         # redraw the app icon and launch pictures (scripts/art/ico
 - `jobs/` run as `node jobs/name.ts`. `jobs/admin.ts` connects them: with the `FIREBASE_SERVICE_ACCOUNT` secret on GitHub, or to the emulator when `FIRESTORE_EMULATOR_HOST` is set. The logic lives in `jobs/lib/`, pure and tested. In a workflow, hand the secret to the one step that needs it, never to the whole job.
 - The Firebase web settings in `app/src/data/backend.ts` are public by design. The service account key is the secret.
 - Animations move whole layers and change only `transform` and `opacity`. The resting state of every CSS rule is the finished screen.
+- Shared styles (`fonts.css`, `theme.css`, `ui/ui.css`) load first in `app/src/main.tsx`, so each screen's own CSS builds on them. Shared pieces (Heading, Back, Field) are in `app/src/ui/parts.tsx`.
 - Flow tests freeze the clock (`page.clock`), so they never wait in real time. A flow test that needs the app itself calls `fromHomeScreen(page)` first, because a phone's browser only gets the install guide. To get past the title, use `enter(page)` or `tapToEnter(page)` from `tests/e2e/helpers.ts`: they wait until the title is ready for a tap, which a slow machine needs.
 - No `.env` files: the repo ignores them all as a guard against secrets. Build switches go in `app/vite.config.ts`.
 - `app/public/icons/` and `app/public/launch/` are drawn by `npm run icons`. Never edit them by hand. A new iPhone screen size is one row in `app/launch-screens.ts`.

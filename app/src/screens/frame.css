@@ -1,0 +1,223 @@
+/* The app's frame: a header with the tab's name and your badge, the tab's
+   page, and five tabs along the bottom. The tabs stay put while a page
+   scrolls, so they sit above the safe area at the bottom of the screen. */
+
+.frame {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--navy-900);
+}
+
+.frame-top {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 12px
+    max(20px, env(safe-area-inset-left, 0px));
+  background: linear-gradient(180deg, var(--navy-950), rgba(5, 10, 26, 0.97));
+  border-bottom: 1px solid rgba(196, 216, 255, 0.1);
+}
+
+.frame-titles {
+  min-width: 0;
+}
+
+.frame-league {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.frame-title {
+  margin: 3px 0 0;
+  font: italic 900 30px/1 var(--display);
+  letter-spacing: 0.01em;
+}
+
+/* Your badge, top right: the way into your Profile. */
+.frame-me {
+  flex: none;
+  width: 50px;
+  height: 50px;
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  background: none;
+  cursor: pointer;
+}
+
+.frame-me svg {
+  display: block;
+  width: 50px;
+  height: 50px;
+}
+
+.frame-me:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.frame-body {
+  flex: 1;
+  padding: 20px max(20px, env(safe-area-inset-right, 0px)) calc(104px + env(safe-area-inset-bottom, 0px))
+    max(20px, env(safe-area-inset-left, 0px));
+}
+
+/* ---- The five tabs -------------------------------------------------------- */
+
+.frame-tabs {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  padding: 6px max(6px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px))
+    max(6px, env(safe-area-inset-left, 0px));
+  background: linear-gradient(180deg, rgba(14, 25, 62, 0.98), rgba(5, 10, 26, 0.99));
+  border-top: 1px solid rgba(196, 216, 255, 0.12);
+  box-shadow: 0 -14px 30px rgba(0, 0, 0, 0.35);
+}
+
+.frame-tab {
+  position: relative;
+  min-height: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.frame-tab .tab-icon {
+  width: 26px;
+  height: 26px;
+}
+
+.frame-tab[aria-current='page'] {
+  color: var(--ink);
+}
+
+.frame-tab[aria-current='page'] .tab-icon {
+  color: #7cc4ff;
+  filter: drop-shadow(0 0 6px rgba(31, 139, 255, 0.75));
+}
+
+/* A strip of team blue above the tab you are on. */
+.frame-tab[aria-current='page']::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 28%;
+  right: 28%;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--blue);
+  box-shadow: 0 0 10px var(--blue);
+}
+
+.frame-tab:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: -3px;
+}
+
+/* ---- A tab that is not built yet ------------------------------------------ */
+
+.soon {
+  max-width: 440px;
+  margin: 6px auto 0;
+  padding: 28px 22px 26px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  border: 1px solid rgba(196, 216, 255, 0.14);
+  border-radius: 22px;
+  background:
+    radial-gradient(120% 70% at 50% 0%, rgba(31, 139, 255, 0.2), transparent 62%),
+    linear-gradient(180deg, rgba(17, 30, 73, 0.92), rgba(10, 19, 48, 0.92));
+}
+
+/* The tab's icon on a hexagon, like a badge. */
+.soon-icon {
+  width: 92px;
+  height: 104px;
+  margin-bottom: 6px;
+  display: grid;
+  place-items: center;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  background: linear-gradient(160deg, #2a56b8, #0d1a44 70%);
+  color: #cfe6ff;
+}
+
+.soon-icon .tab-icon {
+  width: 46px;
+  height: 46px;
+}
+
+.soon-chip {
+  margin: 0;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(196, 216, 255, 0.12);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.soon-chip-next {
+  background: rgba(255, 207, 63, 0.16);
+  color: var(--gold);
+}
+
+.soon h2 {
+  margin: 4px 0 0;
+  font: italic 900 26px/1.1 var(--display);
+}
+
+.soon-text {
+  margin: 0;
+  max-width: 30ch;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .frame-body {
+    animation: frame-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+}
+
+/* The resting state is the finished page: this only eases it in. */
+@keyframes frame-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+}

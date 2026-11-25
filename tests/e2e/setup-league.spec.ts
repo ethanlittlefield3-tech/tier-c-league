@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { expect, test } from '@playwright/test';
-import { enter } from './helpers.ts';
+import { enter, expectInApp } from './helpers.ts';
 import { readDoc } from './league.ts';
 
 const run = promisify(execFile);
@@ -35,8 +35,7 @@ test.describe('Setting up a league', () => {
     await page.getByRole('button', { name: 'Find my profile' }).click();
     await expect(page.getByRole('heading', { name: 'Welcome back, Commish' })).toBeVisible();
     await page.getByRole('button', { name: "I've saved it" }).click();
-    await expect(page.getByRole('heading', { name: "You're in, Commish." })).toBeVisible();
-    await expect(page.getByText('Thursday Night League')).toBeVisible();
+    await expectInApp(page, 'Commish', 'Thursday Night League');
 
     // The job's log is public, so it must not give away the code or the key.
     expect(log).not.toContain(code);

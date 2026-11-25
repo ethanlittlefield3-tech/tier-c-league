@@ -1,6 +1,6 @@
 # Tier C League: progress log
 
-Last updated 2026-11-25, with the league's database live and the first league made.
+Last updated 2026-11-25, after the app's frame and the first Profile screen.
 
 ## Plan change (commish ruling, 2026-11-25)
 
@@ -72,6 +72,11 @@ Last updated 2026-11-25, with the league's database live and the first league ma
   - A visitor who is not signed in can't look up a code.
   - These checks signed in 3 nameless test users. They can see nothing and do no harm.
 - **The first league exists** (2026-11-25), named "Tier C League", made with the Create a league button. It has one player, the commish.
+- **The app's frame and a first Profile** (2026-11-25). These came before Today because the join screens already promise that the key "stays in your Profile" and that a name can be changed later.
+  - The frame: the tab's name and the league's name at the top, your badge top right, and five tabs along the bottom (Today, Match, Feed, League, Garage). A tab that is not built yet says what it will hold.
+  - Profile: change your display name, show or hide your recovery key and copy it, and sign this phone out (it asks first). It also carries the "A Nunchucks Production" credit.
+  - No new security rules were needed: renaming, reading your own key and signing out were already allowed and tested.
+  - 16 new flow tests, 60 in all. They caught one real problem on the way: the name card and its text box both answered to "Display name" for a screen reader.
 
 ## Waiting on the commish
 
@@ -82,7 +87,7 @@ Last updated 2026-11-25, with the league's database live and the first league ma
 
 ## Next
 
-1. **Step 3, continued.** The screens: Today, Match, Feed, League, Profile, Wheel, Commish and the mini draft. Today is next.
+1. **Step 3, continued.** The screens: Today, Match, Feed, League, the rest of Profile, Wheel, Commish and the mini draft. Today is next. It needs a season and its calendar to log against, so the commish's season setup and the job that writes the calendar come with it.
    - **Still to add to joining:** the notifications step (with push alerts), a commish's "approve joins" switch, and a way to make a league. Leagues are made by a setup script, which is built with the jobs in Step 4.
    - **Offline start** comes with the offline step: a service worker that keeps the app's files on the phone, so it opens with no signal. Chrome on Android only offers its one-tap Install button once that exists. Until then Android installs from the browser menu, which the guide explains.
 2. **Before real players join:** limit the app's web key to the app's own address in the Google Cloud console, and look at App Check, which stops other programs from using the database's free daily allowance.
