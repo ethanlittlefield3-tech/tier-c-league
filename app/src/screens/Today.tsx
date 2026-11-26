@@ -28,6 +28,7 @@ import { GoalMark } from './GoalMark.tsx';
 import { ScreenSheet } from './ScreenSheet.tsx';
 import { WeekStrip } from './WeekStrip.tsx';
 import { EventBanner, ModeBanner, PlayoffBanner } from './ModeBanner.tsx';
+import { Offseason } from './Offseason.tsx';
 import { RumblePanel } from './RumblePanel.tsx';
 import { rumbleDraws, useRumble } from './useRumble.ts';
 import { lateSyncRisk, useOnline } from '../ui/online.ts';
@@ -41,6 +42,8 @@ interface LeagueDoc {
 
 interface SeasonDoc {
   name?: string;
+  status?: string;
+  champion?: string | null;
   par: number;
   timeZone: string;
   kickoff: string;
@@ -278,6 +281,15 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
 
   if (!seasonId || !season.data || !dates) {
     return <Notice title="No season yet">Your commish sets up the season. Logging opens on kickoff day.</Notice>;
+  }
+
+  // The season is over: the offseason, with Stay or Leave.
+  if (!todayCal.data && !yesterdayOpen && season.data.status === 'finished') {
+    return (
+      <div class="today">
+        <Offseason me={props.me} seasonId={seasonId} season={season.data} />
+      </div>
+    );
   }
 
   if (!todayCal.data && !yesterdayOpen) {

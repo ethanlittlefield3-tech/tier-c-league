@@ -310,3 +310,32 @@
 .panel .choice + .btn {
   margin-top: 16px;
 }
+
+/* The offseason: the answers so far, and the deadline. */
+.offseason-answers {
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+
+.offseason-answers li {
+  padding: 6px 0;
+}
+
+.offseason-save {
+  margin-top: 16px;
+}
+
+/* A former player, with a way back. */
+.person-former {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.person-former small {
+  display: block;
+  color: var(--ink-soft);
+}

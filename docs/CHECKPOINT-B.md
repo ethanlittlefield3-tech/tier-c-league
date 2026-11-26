@@ -1,8 +1,8 @@
 # Checkpoint B: what the security rules block
 
-Generated 2026-11-25 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
+Generated 2026-11-26 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 329 of 329 passing.
+- **Tests:** 335 of 335 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -203,6 +203,7 @@ Every commish change has to arrive with an audit entry, or it is refused.
 
 **Season settings**
 
+- A new season starts only once the current one is over
 - The commish can set up a season, and it lands in the audit log
 - The commish can start a new season and make it the league's current one in one save, with an audit entry for each
 - Starting a season needs both audit entries: the league cannot be pointed at it quietly
@@ -351,6 +352,18 @@ Everyone in the league reads the bracket; only the weekly job writes it. Nobody 
 
 - Before the playoffs, the commish picks the Season Dare that the Whiff Bowl's loser does, with an audit entry
 - Nobody else picks it, it needs words and an audit entry, and it is fixed once the playoffs are seeded
+
+## The offseason
+
+Once the season is over, the commish sets the Stay-or-Leave deadline with an audit entry; each player answers for themselves until it passes, and the commish can only stay. A new season starts only once the current one is over.
+
+**The offseason: Stay or Leave**
+
+- Once the season is over, the commish sets the deadline, with an audit entry, up to 30 days out
+- Once the deadline has passed, it stays passed
+- Each player answers Stay or Leave for themselves, and can change it, until the deadline
+- The commish runs the league, so can only stay
+- The commish can bring a former player back onto the roster, with an audit entry
 
 ## Holiday events
 

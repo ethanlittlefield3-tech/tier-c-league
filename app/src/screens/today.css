@@ -80,6 +80,17 @@
   font: italic 900 24px/1.1 var(--display);
 }
 
+/* The offseason: the champion, then Stay or Leave. */
+.offseason p + p,
+.offseason .choice,
+.offseason .fine-print {
+  margin-top: 12px;
+}
+
+.offseason .choice-option {
+  flex: 1;
+}
+
 /* ---- The four squares ----------------------------------------------------- */
 
 .squares {

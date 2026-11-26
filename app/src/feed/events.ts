@@ -11,7 +11,7 @@ import { storyText } from './stories.ts';
 export interface FeedEvent {
   id: string;
   at: number;
-  kind: 'checkIn' | 'power' | 'dock' | 'reveal' | 'results' | 'receipt' | 'wheel' | 'badge' | 'rank' | 'rematch' | 'picks';
+  kind: 'checkIn' | 'power' | 'dock' | 'reveal' | 'results' | 'receipt' | 'wheel' | 'badge' | 'rank' | 'rematch' | 'picks' | 'champion' | 'left';
   text: string;
   /** A second line: a dock's reason, or a week's scores and awards. */
   detail?: string;
@@ -63,7 +63,7 @@ export interface FeedInput {
   /** Rematch challenges, and how their side races ended. */
   rematches?: { id: string; data: { from: string; to: string; period: string; at?: number | null; winner?: string | null; points?: Record<string, number>; settledAt?: number | null } }[];
   /** The jobs' news: badges earned and rank changes. */
-  news?: { id: string; data: { kind: string; player: string; at?: number | null; data?: { badge?: string; rank?: Rank; from?: Rank | null; top?: string[]; right?: number; made?: number; week?: number } } }[];
+  news?: { id: string; data: { kind: string; player: string; at?: number | null; data?: { badge?: string; rank?: Rank; from?: Rank | null; top?: string[]; right?: number; made?: number; week?: number; season?: string; finalist?: string | null; whiffLoser?: string | null } } }[];
   /** The Wheel of Shame's latest draws, their spins and the votes on their proof. */
   wheel?: {
     eligible: number;
@@ -257,6 +257,13 @@ export function feedEvents(input: FeedInput): FeedEvent[] {
           : `Top pickers in Week ${data.data.week}: ${list(data.data.top, name)}, ${data.data.right} right each`;
       events.push({ id: `news-${id}`, at: data.at, kind: 'picks', text });
     }
+    // The season's champion, and who left the league in the offseason.
+    const seasonWords = `Season ${String(data.data?.season ?? '').replace(/^s/, '')}`;
+    if (data.kind === 'champion') {
+      const detail = [data.data?.finalist ? `Finalist: ${name(data.data.finalist)}.` : '', data.data?.whiffLoser ? `Last in the Whiff Bowl: ${name(data.data.whiffLoser)}.` : ''].filter(Boolean).join(' ');
+      events.push({ id: `news-${id}`, at: data.at, kind: 'champion', text: `${who} won ${seasonWords}`, ...(detail ? { detail } : {}) });
+    }
+    if (data.kind === 'left') events.push({ id: `news-${id}`, at: data.at, kind: 'left', text: `${who} left the league after ${seasonWords}` });
     if (data.kind === 'rank' && data.data?.rank) {
       const move = rankMove(data.data.from ?? null, data.data.rank);
       const text = data.data.from ? `${who} ${move === 'down' ? 'dropped to' : 'ranked up to'} ${RANK_NAMES[data.data.rank]}` : `${who} ${who === 'You' ? 'are' : 'is'} ranked ${RANK_NAMES[data.data.rank]}`;

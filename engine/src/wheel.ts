@@ -67,3 +67,41 @@ export function dareStatus(input: {
   if (input.now >= input.dueAt) return 'dodged';
   return input.spunAt === null ? 'unspun' : 'spun';
 }
+
+/**
+ * The draws of a season whose dares are not done yet: waiting for a spin,
+ * proof or the vote, or voted down with no new spin yet. A draw that a newer
+ * one replaced (`w06_a_1` by `w06_a_2`) doesn't count. The next season starts
+ * only once this is empty, so the last dares can still be proven.
+ */
+export function openDares(input: {
+  draws: readonly { id: string; dueAt: Instant }[];
+  spins: Readonly<Record<string, { at: Instant | null; proofAt: Instant | null }>>;
+  votes: readonly { draw: string; choice: string }[];
+  /** Players who can vote on proof: everyone but the spinner. */
+  eligible: number;
+  now: Instant;
+}): string[] {
+  const ids = new Set(input.draws.map((draw) => draw.id));
+  const replaced = (id: string) => {
+    const at = id.lastIndexOf('_');
+    return ids.has(`${id.slice(0, at)}_${Number(id.slice(at + 1)) + 1}`);
+  };
+  return input.draws
+    .filter((draw) => !replaced(draw.id))
+    .filter((draw) => {
+      const spin = input.spins[draw.id];
+      const votes = input.votes.filter((vote) => vote.draw === draw.id);
+      const status = dareStatus({
+        spunAt: spin?.at ?? null,
+        proofAt: spin?.proofAt ?? null,
+        dueAt: draw.dueAt,
+        now: input.now,
+        eligible: input.eligible,
+        counts: votes.filter((vote) => vote.choice === 'counts').length,
+        doesntCount: votes.filter((vote) => vote.choice === 'doesntCount').length,
+      });
+      return status !== 'counted' && status !== 'dodged';
+    })
+    .map((draw) => draw.id);
+}

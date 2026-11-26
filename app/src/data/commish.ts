@@ -4,7 +4,7 @@
  * (firebase/firestore.rules, "audited").
  */
 import { bountyText, makeRecoveryKey, receiptFixes, settleDue, weekPlayers, type BountyTarget, type GroupWeekInput, type HolidayEvent, type Lane, type RumbleItem, type PlayerWeekData, type Square, type StoredReceipt, type WeekLineStored, type WeekMode } from '@tcl/engine';
-import { collection, deleteField, doc, getDoc, getDocs, query, serverTimestamp, where, writeBatch, type Firestore } from 'firebase/firestore';
+import { Timestamp, collection, deleteField, doc, getDoc, getDocs, query, serverTimestamp, where, writeBatch, type Firestore } from 'firebase/firestore';
 import { connect } from './firebase.ts';
 import { trouble, type Me } from './identity.ts';
 import { plain } from './live.ts';
@@ -286,4 +286,38 @@ export const setHolidayEvent = (me: Me, season: string, date: string, event: Hol
     save.update(doc(league, 'seasons', season, 'calendar', date), { event, audit });
     save.set(doc(league, 'audit', audit), auditEntry(me, 'event.set', `calendar/${date}`, words));
     await save.commit();
+  });
+
+/** Sets or moves the offseason's Stay-or-Leave deadline (SCOPE.md, "Seasons"). It goes in the audit log. */
+export const setOffseasonDeadline = (me: Me, season: string, deadline: number, words: string) =>
+  attempt(async (db) => {
+    const league = doc(db, 'leagues', me.league);
+    const audit = doc(collection(league, 'audit')).id;
+    const save = writeBatch(db);
+    save.set(doc(league, 'seasons', season, 'config', 'offseason'), { deadline: Timestamp.fromMillis(deadline), at: serverTimestamp(), audit });
+    save.set(doc(league, 'audit', audit), auditEntry(me, 'offseason.deadline', 'config/offseason', `Stay or leave by ${words}`));
+    await save.commit();
+  });
+
+/**
+ * Brings a former player back onto the roster, with a new key for their
+ * phone, which the commish hands over (SCOPE.md, "Seasons": "you can return
+ * in a later season"). Both changes go in the audit log. Resolves to the key.
+ */
+export const bringBack = (me: Me, player: string, name: string) =>
+  attempt(async (db) => {
+    const league = doc(db, 'leagues', me.league);
+    const old = String((await getDoc(doc(league, 'keys', player))).data()?.key ?? '');
+    const key = freshKey();
+    const leagueAudit = doc(collection(league, 'audit')).id;
+    const keyAudit = doc(collection(league, 'audit')).id;
+    const save = writeBatch(db);
+    save.update(league, { [`members.${player}`]: true, [`former.${player}`]: deleteField(), audit: leagueAudit });
+    save.set(doc(league, 'audit', leagueAudit), auditEntry(me, 'league.settings', 'league', `Brought ${name} back into the league`));
+    save.update(doc(league, 'keys', player), { key, prev: old, rotatedAt: serverTimestamp(), audit: keyAudit });
+    if (old) save.delete(doc(league, 'lookup', old));
+    save.set(doc(league, 'lookup', key), { player });
+    save.set(doc(league, 'audit', keyAudit), auditEntry(me, 'key.reissue', `keys/${player}`, `A new key for ${name}, back in the league`));
+    await save.commit();
+    return key;
   });

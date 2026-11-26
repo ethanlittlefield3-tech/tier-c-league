@@ -153,7 +153,8 @@ service cloud.firestore {
       function commishEdits() {
         let after = request.resource.data;
         return isCommish(L)
-          && after.diff(resource.data).affectedKeys().hasOnly(['name', 'joining', 'commish', 'coCommish', 'members', 'season', 'audit'])
+          && after.diff(resource.data).affectedKeys().hasOnly(['name', 'joining', 'commish', 'coCommish', 'members', 'former', 'season', 'audit'])
+          && (!('former' in after) || after.former is map)
           && audited(L, after.audit, 'league.settings', 'league')
           && after.name is string && after.name.size() >= 1 && after.name.size() <= 40
           && after.joining in ['open', 'approval', 'closed']
@@ -502,10 +503,13 @@ service cloud.firestore {
       match /seasons/{S} {
         allow read: if isMember(L);
 
+        // A new season starts only once the current one is over (the offseason).
         allow create: if isCommish(L)
           && request.resource.data.keys().hasOnly(settingFields())
           && validSettings(request.resource.data)
           && request.resource.data.status == 'setup'
+          && (get(/databases/$(database)/documents/leagues/$(L)).data.get('season', null) == null
+            || get(/databases/$(database)/documents/leagues/$(L)/seasons/$(get(/databases/$(database)/documents/leagues/$(L)).data.season)).data.status == 'finished')
           && audited(L, request.resource.data.audit, 'season.settings', 'seasons/' + S);
 
         // Settings can change until the season leaves setup. After that the
@@ -752,6 +756,22 @@ service cloud.firestore {
           allow read: if isMember(L);
         }
 
+        // Stay or Leave, in the offseason: each player answers for themselves,
+        // and can change it, until the deadline. The commish runs the league,
+        // so stays.
+        match /stays/{P} {
+          allow read: if isMember(L);
+          allow create, update: if isPlayer(L, P)
+            && get(/databases/$(database)/documents/leagues/$(L)).data.members[P] == true
+            && get(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)).data.status == 'finished'
+            && request.time < get(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)/config/offseason).data.deadline
+            && request.resource.data.keys().hasOnly(['player', 'choice', 'at'])
+            && request.resource.data.player == P
+            && request.resource.data.choice in ['stay', 'leave']
+            && request.resource.data.at == request.time
+            && (request.resource.data.choice == 'stay' || get(/databases/$(database)/documents/leagues/$(L)).data.commish != P);
+        }
+
         match /calendar/{date} {
           allow read: if isMember(L);
           // A holiday event (SCOPE.md, "Holiday events"): the commish puts one
@@ -950,6 +970,19 @@ service cloud.firestore {
         // off it, by their place in the list. Every change is in the audit log.
         match /config/{doc} {
           allow read: if isMember(L);
+          // The offseason (SCOPE.md, "Seasons"): once the season is over, the
+          // commish sets the Stay-or-Leave deadline, and can move it while it
+          // is still ahead, up to 30 days out.
+          allow create, update: if isCommish(L)
+            && doc == 'offseason'
+            && request.resource.data.keys().hasOnly(['deadline', 'at', 'audit'])
+            && get(/databases/$(database)/documents/leagues/$(L)/seasons/$(S)).data.status == 'finished'
+            && request.resource.data.deadline is timestamp
+            && request.resource.data.deadline > request.time
+            && request.resource.data.deadline < request.time + duration.value(30, 'd')
+            && request.resource.data.at == request.time
+            && (resource == null || request.time < resource.data.deadline)
+            && audited(L, request.resource.data.audit, 'offseason.deadline', 'config/offseason');
           allow create, update: if isCommish(L)
             && doc == 'wheel'
             && request.resource.data.keys().hasOnly(['removedStarters', 'audit'])

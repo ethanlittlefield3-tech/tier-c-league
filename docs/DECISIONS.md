@@ -433,6 +433,13 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 257. **Rule One on an event day still makes the day 0,** as on any day.
 258. **The video decision: dare videos stay in the group chat,** because the commish's ruling keeps the app on the free plan, with no Cloud Storage. A dare that says "video" tells its player to post the video in the group chat and upload a still from it as the proof. The vote stays in the app.
 259. **A dodged Season Dare says so without Season Points,** on the Wheel and in the feed (call 252).
+260. **A season is over when its champion is crowned,** or with no playoffs, when its last regular week goes final. The weekly job marks it finished, and Today shows the offseason in place of the day.
+261. **The commish sets the Stay-or-Leave deadline:** 11:59 pm on a day 1 to 29 days out, with an audit entry. It can move until it passes. Everyone is alerted when it is set, and anyone who hasn't answered is reminded a day before.
+262. **No answer counts as Stay.** **The commish can't pick Leave:** they hand the role to someone first.
+263. **At the deadline, the players who chose Leave come off the roster,** and their phones are signed out. Their car, badges, trophies, rivalry records and history all stay, and the feed says they left. A co-commish who leaves stops being co-commish.
+264. **A former player comes back through the commish:** "Bring back" in Commish tools puts them on the roster with a new key, which the commish hands over. Without it, the league couldn't tell a returning player's phone from a stranger's.
+265. **The next season can be set up once the deadline has passed, the leavers are off, and every dare of the finished season is done,** so the Whiff Bowl's loser can still prove the Season Dare. The rules refuse a new season while the current one isn't finished. Before this, the new-season form showed during an active season, so a commish could have switched seasons by mistake.
+266. **The champion is news in the feed,** with the finalist and the Whiff Bowl's loser.
 
 **Calendar**
 

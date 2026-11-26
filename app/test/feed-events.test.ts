@@ -196,6 +196,22 @@ describe('The live feed', () => {
     expect(events.map((event) => event.text)).toEqual(['Maya asked Sam for receipts: Mind goal, Tue']);
   });
 
+  it('The champion is news, with the finalist and the Whiff Bowl, and so is a player leaving in the offseason', () => {
+    const events = feedEvents({
+      ...none,
+      name,
+      now: 100,
+      news: [
+        { id: 'champion_s1', data: { kind: 'champion', player: 'maya', at: 50, data: { season: 's1', finalist: 'sam', whiffLoser: 'jordan' } } },
+        { id: 'left_s1_sam', data: { kind: 'left', player: 'sam', at: 60, data: { season: 's1' } } },
+      ],
+    });
+    expect(events.map((event) => [event.kind, event.text, event.detail ?? null])).toEqual([
+      ['left', 'Sam left the league after Season 1', null],
+      ['champion', 'Maya won Season 1', 'Finalist: Sam. Last in the Whiff Bowl: Jordan.'],
+    ]);
+  });
+
   it("A dodged Season Dare, after the playoffs, costs no Season Points, so the feed doesn't say it does", () => {
     const H = 3_600_000;
     const events = feedEvents({

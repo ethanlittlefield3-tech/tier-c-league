@@ -570,7 +570,8 @@ async function playoffStep(
     const over = regular.length >= regularWeeks && regular.every((week) => week.get('status') === 'final');
     const leader = over ? (ranked[0] ?? null) : null;
     if (leader && season.get('champion') !== leader) {
-      await seasonRef.update({ champion: leader, badgesDue: true });
+      // The season is over: the offseason starts (SCOPE.md, "Seasons").
+      await seasonRef.update({ champion: leader, badgesDue: true, status: 'finished', finishedAt: FieldValue.serverTimestamp() });
       await league.ref.update({ banner: { player: leader, season: seasonId } });
       console.log(`League ${league.id}, season ${seasonId}: champion crowned, with no playoffs.`);
     }
@@ -640,7 +641,8 @@ async function playoffStep(
   batch.set(bracketRef, bracket);
   if (step !== 'seed') batch.update(seasonRef, { badgesDue: true });
   if (bracket.champion) {
-    batch.update(seasonRef, { champion: bracket.champion, finalists: [bracket.champion, ...(bracket.finalist ? [bracket.finalist] : [])] });
+    // The season is over: the offseason starts (SCOPE.md, "Seasons").
+    batch.update(seasonRef, { champion: bracket.champion, finalists: [bracket.champion, ...(bracket.finalist ? [bracket.finalist] : [])], status: 'finished', finishedAt: FieldValue.serverTimestamp() });
     batch.update(league.ref, { banner: { player: bracket.champion, season: seasonId } });
     batch.set(league.ref.collection('feed').doc(`champion_${seasonId}`), { at: FieldValue.serverTimestamp(), kind: 'champion', player: bracket.champion, data: { season: seasonId, finalist: bracket.finalist, whiffLoser: bracket.whiff?.loser ?? null } });
   }

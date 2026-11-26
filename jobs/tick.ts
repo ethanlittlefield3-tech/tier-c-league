@@ -12,7 +12,7 @@
  * printed instead; on GitHub the log is public, so it prints counts only.
  * LEAGUE_ID limits it to one league.
  */
-import { Timestamp, getFirestore, type DocumentData, type DocumentSnapshot } from 'firebase-admin/firestore';
+import { FieldValue, Timestamp, getFirestore, type DocumentData, type DocumentSnapshot } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
 import { addDays } from '../engine/src/calendar.ts';
 import { receiptFixes, type StoredReceipt } from '../engine/src/receipts.ts';
@@ -25,6 +25,7 @@ import { activityAlerts, type ActivePost } from './lib/activity.ts';
 import { deliver, type Device, type Push } from './lib/deliver.ts';
 import { fastClockOf } from './lib/fast.ts';
 import { closeAlerts, leadsOf, liveTotals, passedAlerts, type Lead } from './lib/live.ts';
+import { offseasonAlerts, offseasonLeavers } from './lib/offseason.ts';
 import type { RumbleItem } from '../engine/src/rumble.ts';
 import type { Lane } from '../engine/src/scoring.ts';
 
@@ -137,7 +138,8 @@ for (const league of leagues) {
   if (!league.exists || typeof seasonId !== 'string') continue;
   const seasonRef = league.ref.collection('seasons').doc(seasonId);
   const season = await seasonRef.get();
-  if (!season.exists || !['setup', 'draft', 'active'].includes(String(season.get('status')))) continue;
+  // A finished season is in its offseason, and its last dares may still be open.
+  if (!season.exists || !['setup', 'draft', 'active', 'finished'].includes(String(season.get('status')))) continue;
 
   const stateRef = db.collection('jobs').doc(`tick_${league.id}`);
   const state = (await stateRef.get()).data() ?? {};
@@ -186,7 +188,8 @@ for (const league of leagues) {
   // This week's matchups, for "your opponent passed you" and "close finish".
   const thisWeek = weeks.find((week) => week.id === today?.period) as (AlertInput['weeks'][number] & { pairs?: { a: string; b: string }[] }) | undefined;
   const pairs = (thisWeek?.pairs ?? []).filter((pair) => pair.a !== 'HOUSE' && pair.b !== 'HOUSE');
-  const leadsBefore = (state.leads as { period?: string; map?: Record<string, Lead> } | undefined)?.period === today?.period ? ((state.leads as { map?: Record<string, Lead> }).map ?? {}) : {};
+  // With no day today (the offseason), nothing carries over.
+  const leadsBefore = today && (state.leads as { period?: string; map?: Record<string, Lead> } | undefined)?.period === today.period ? ((state.leads as { map?: Record<string, Lead> }).map ?? {}) : {};
   const moved = new Set([
     ...changed.docs.map((day) => String(day.get('player'))),
     ...newReveals.map((reveal) => reveal.target),
@@ -194,10 +197,51 @@ for (const league of leagues) {
   ]);
   const passedPairs = pairs.filter((pair) => moved.has(pair.a) || moved.has(pair.b));
   const closeNow = checks.some((check) => check.kind === 'close' && check.day.period === today?.period);
+
+  // The offseason (SCOPE.md, "Seasons"): everyone is asked to stay or leave by
+  // the commish's deadline, and at the deadline the leavers come off the
+  // roster. Their profile and history stay; their phones are signed out, and
+  // the commish can bring them back with a new key.
+  const offseasonDoc = season.get('status') === 'finished' ? await seasonRef.collection('config').doc('offseason').get() : null;
+  let offseason: Alert[] = [];
+  // Once its deadline has passed and the leavers are off, there is nothing more to read.
+  if (offseasonDoc?.exists && offseasonDoc.get('closedAt') == null) {
+    const answers = Object.fromEntries((await seasonRef.collection('stays').get()).docs.map((found) => [found.id, String(found.get('choice'))]));
+    const input = {
+      season: seasonId,
+      seasonName: String(season.get('name') ?? 'The season'),
+      deadline: Number(ms(offseasonDoc.get('deadline'))),
+      openedAt: Number(ms(offseasonDoc.get('at'))),
+      clock,
+      members: Object.keys((league.get('members') ?? {}) as Record<string, boolean>),
+      commish: String(league.get('commish')),
+      answers,
+    };
+    offseason = offseasonAlerts({ ...input, since, now });
+    const leavers = offseasonLeavers({ ...input, now, done: false });
+    if (leavers) {
+      const batch = db.batch();
+      const changes: Record<string, unknown> = {};
+      for (const player of leavers) {
+        changes[`members.${player}`] = FieldValue.delete();
+        changes[`former.${player}`] = seasonId;
+        const keyRef = league.ref.collection('keys').doc(player);
+        const old = String((await keyRef.get()).get('key') ?? '');
+        batch.set(keyRef, { key: '', prev: old, rotatedAt: FieldValue.serverTimestamp() }, { merge: true });
+        if (old) batch.delete(league.ref.collection('lookup').doc(old));
+        batch.set(league.ref.collection('feed').doc(`left_${seasonId}_${player}`), { at: FieldValue.serverTimestamp(), kind: 'left', player, data: { season: seasonId } });
+      }
+      if (leavers.includes(String(league.get('coCommish')))) changes.coCommish = null;
+      if (leavers.length > 0) batch.update(league.ref, changes);
+      batch.update(offseasonDoc.ref, { closedAt: FieldValue.serverTimestamp(), left: leavers });
+      await batch.commit();
+      console.log(`League ${league.id}, season ${seasonId}: the offseason deadline passed, ${leavers.length} left.`);
+    }
+  }
   const anything =
-    checks.length > 0 || !wall.empty || !asked.empty || !dueSoon.empty || !docks.empty || !spun.empty || !proven.empty || newReveals.length > 0 || finalNow || draftNow || passedPairs.length > 0 || (active !== null && !active.empty) || !news.empty || !poked.empty || !challenged.empty || Object.keys(held).length > 0;
+    offseason.length > 0 || checks.length > 0 || !wall.empty || !asked.empty || !dueSoon.empty || !docks.empty || !spun.empty || !proven.empty || newReveals.length > 0 || finalNow || draftNow || passedPairs.length > 0 || (active !== null && !active.empty) || !news.empty || !poked.empty || !challenged.empty || Object.keys(held).length > 0;
   let leadsAfter: Record<string, Lead> = leadsBefore;
-  let closeSent = (state.closeSent as { period?: string; players?: string[] } | undefined)?.period === today?.period ? ((state.closeSent as { players?: string[] }).players ?? []) : [];
+  let closeSent = today && (state.closeSent as { period?: string; players?: string[] } | undefined)?.period === today.period ? ((state.closeSent as { players?: string[] }).players ?? []) : [];
   let seen = (state.seen ?? {}) as Record<string, number>;
 
   let alerts: Alert[] = [];
@@ -249,7 +293,7 @@ for (const league of leagues) {
       nextWeek: nextWeek?.exists ? ({ id: nextWeek.id, ...plain(nextWeek.data()!) } as unknown as AlertInput['nextWeek']) : null,
       rumbleItems: Object.fromEntries(rumbleItems.map((item) => [item.id, String((item as { item?: unknown }).item)])),
     };
-    alerts = alertsDue(input);
+    alerts = [...alertsDue(input), ...offseason];
 
     // Live scores: the matchups a change touched, or every one at 6 pm on the weekend.
     const livePairs = closeNow ? pairs : passedPairs;

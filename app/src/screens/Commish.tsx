@@ -8,6 +8,8 @@ import { whyOf } from '../data/why.ts';
 import { Back, Field, Heading } from '../ui/parts.tsx';
 import { CommishGroupPlay } from './CommishGroupPlay.tsx';
 import { CommishHolidays } from './CommishHolidays.tsx';
+import { CommishOffseason } from './CommishOffseason.tsx';
+import { useOffseason } from './useOffseason.ts';
 import { CommishSeasonDare } from './CommishSeasonDare.tsx';
 import { CommishPlayers } from './CommishPlayers.tsx';
 import { CommishModeration } from './CommishModeration.tsx';
@@ -22,6 +24,7 @@ interface LeagueDoc {
   commish?: string;
   coCommish?: string | null;
   members?: Record<string, boolean>;
+  former?: Record<string, string>;
   joining?: string;
 }
 
@@ -294,8 +297,11 @@ export function Commish(props: { me: Me; onBack: () => void }) {
   // When the league moves to a new season, start the form again from it.
   useEffect(() => setVersion((value) => value + 1), [seasonId]);
 
-  const loading = league.loading || season.loading;
-  const finished = season.data !== null && !['setup', 'draft'].includes(season.data.status);
+  // Once the season is over, the offseason runs, and the next season can be
+  // set up when it is done. Until then the season's settings are only shown.
+  const finished = season.data?.status === 'finished';
+  const off = useOffseason(`leagues/${props.me.league}`, seasonId ? `leagues/${props.me.league}/seasons/${seasonId}` : null, finished);
+  const loading = league.loading || season.loading || (finished && off.loading);
 
   return (
     <main class="screen commish">
@@ -317,7 +323,7 @@ export function Commish(props: { me: Me; onBack: () => void }) {
             <div class="waiting-ring" />
           </div>
         ) : (
-          <SeasonSetup
+          (!finished || off.ready) && <SeasonSetup
             key={`${seasonId ?? 'new'}-${finished ? 'next' : 'this'}-${version}`}
             me={props.me}
             seasonId={finished ? null : seasonId}
@@ -334,6 +340,7 @@ export function Commish(props: { me: Me; onBack: () => void }) {
 
         {league.data && seasonId && season.data && <DraftControls me={props.me} seasonId={seasonId} status={season.data.status} members={Object.keys(league.data.members ?? {})} joiningOpen={league.data.joining !== 'closed'} groupWeeks={season.data.groupWeeks ?? []} />}
 
+        {finished && seasonId && season.data && <CommishOffseason me={props.me} seasonId={seasonId} seasonName={season.data.name} timeZone={season.data.timeZone} off={off} />}
         {league.data && seasonId && season.data?.status === 'active' && <CommishGroupPlay me={props.me} seasonId={seasonId} />}
         {league.data && seasonId && season.data?.status === 'active' && season.data.playoffs !== 'none' && <CommishSeasonDare me={props.me} seasonId={seasonId} />}
         {league.data && seasonId && season.data?.status === 'active' && season.data.holidayEvents && <CommishHolidays me={props.me} seasonId={seasonId} />}

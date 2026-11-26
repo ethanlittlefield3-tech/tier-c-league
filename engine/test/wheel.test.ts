@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DODGE_PENALTY, PROOF_VOTE_HOURS, WHEEL_MAX, dareDue, dareStatus, wheelPool } from '../src/wheel.ts';
+import { DODGE_PENALTY, PROOF_VOTE_HOURS, WHEEL_MAX, dareDue, dareStatus, openDares, wheelPool } from '../src/wheel.ts';
 
 const HOUR = 3_600_000;
 const NY = 'America/New_York';
@@ -46,5 +46,27 @@ describe('The Wheel of Shame', () => {
     expect(DODGE_PENALTY).toBe(-3);
     expect(dareStatus({ dueAt: 100, spunAt: null, proofAt: null, now: 100, eligible: 4, counts: 0, doesntCount: 0 })).toBe('dodged');
     expect(dareStatus({ dueAt: 100, spunAt: 50, proofAt: null, now: 100, eligible: 4, counts: 0, doesntCount: 0 })).toBe('dodged');
+  });
+});
+
+describe("A season's dares, before the next season starts", () => {
+  const H = 3_600_000;
+  const draw = (id: string, dueAt: number) => ({ id, dueAt });
+  const base = { eligible: 3, votes: [] as { draw: string; choice: string }[] };
+
+  it('A dare still waiting for its spin, its proof or its vote is open; one counted or dodged is settled', () => {
+    const draws = [draw('w06_a_1', 100 * H), draw('w06_b_1', 100 * H), draw('w06_c_1', 10 * H), draw('p02_d_1', 100 * H)];
+    const spins = { w06_a_1: { at: 1 * H, proofAt: 2 * H }, w06_b_1: { at: 1 * H, proofAt: null }, p02_d_1: { at: 1 * H, proofAt: 40 * H } };
+    const votes = [{ draw: 'w06_a_1', choice: 'counts' }, { draw: 'w06_a_1', choice: 'counts' }];
+    // a: counted. b: spun, waiting for proof. c: never spun, past its deadline, so dodged. d: proof up, still voting.
+    expect(openDares({ ...base, draws, spins, votes, now: 50 * H })).toEqual(['w06_b_1', 'p02_d_1']);
+  });
+
+  it("A dare voted down is open until its new spin is settled; the old one doesn't count again", () => {
+    const draws = [draw('w06_a_1', 100 * H), draw('w06_a_2', 200 * H)];
+    const spins = { w06_a_1: { at: 1 * H, proofAt: 2 * H }, w06_a_2: { at: 30 * H, proofAt: 31 * H } };
+    const votes = ['w06_a_1', 'w06_a_1', 'w06_a_2', 'w06_a_2'].map((id, at) => ({ draw: id, choice: at < 2 ? 'doesntCount' : 'counts' }));
+    expect(openDares({ ...base, draws: draws.slice(0, 1), spins, votes, now: 50 * H })).toEqual(['w06_a_1']);
+    expect(openDares({ ...base, draws, spins, votes, now: 50 * H })).toEqual([]);
   });
 });

@@ -8,6 +8,7 @@ export * from './garage.ts';
 export * from './identity.ts';
 export * from './kit.ts';
 export * from './live.ts';
+export * from './offseason.ts';
 export * from './pokes.ts';
 export * from './predictions.ts';
 export * from './rematches.ts';

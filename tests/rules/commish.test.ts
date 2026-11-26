@@ -80,7 +80,19 @@ function startSeason(db: Db, overrides: Record<string, unknown> = {}) {
   return batch.commit();
 }
 
+/** Season 1 is over, so a new season can start: the offseason. */
+const seasonOver = () => asJob((db) => db.doc(season).update({ status: 'finished' }));
+
 describe('Season settings', () => {
+  beforeEach(seasonOver);
+
+  it('A new season starts only once the current one is over', async () => {
+    await asJob((db) => db.doc(season).update({ status: 'active' }));
+    await assertFails(startSeason(dev1()));
+    await seasonOver();
+    await assertSucceeds(startSeason(dev1()));
+  });
+
   it('The commish can set up a season, and it lands in the audit log', async () => {
     await assertSucceeds(createSeason(dev1()));
     const entry = await dev2().doc(`${league}/audit/a1`).get();
@@ -229,6 +241,8 @@ describe('Docks, voids and corrections', () => {
 });
 
 describe('The audit log', () => {
+  beforeEach(seasonOver);
+
   it('Everyone in the league can read it', async () => {
     await withAudit(dev1(), NEXT, 'set', settings(), 'a1', 'season.settings', 'seasons/s2');
     await assertSucceeds(dev2().collection(`${league}/audit`).get());

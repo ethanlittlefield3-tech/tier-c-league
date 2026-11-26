@@ -68,6 +68,8 @@ test.describe('The playoffs', () => {
     expect(await runWeekly(league)).toContain('champion crowned.');
     expect(await readDoc(request, `${path}/playoffs/bracket`)).toMatchObject({ champion: 'maya', finalist: 'jo' });
     expect((await readDoc(request, `leagues/${league.id}`))?.banner).toEqual({ player: 'maya', season: 's1' });
+    // The season is over: the offseason starts.
+    expect((await readDoc(request, path))?.status).toBe('finished');
     expect((await readDoc(request, `leagues/${league.id}/trophies/s1`))?.trophies).toMatchObject({ champion: { winners: ['maya'] }, finalist: { winners: ['jo'] }, whiffBowl: { winners: [league.commish] } });
     // Playoff points never become Season Points.
     const rows = (await readDoc(request, `${path}/standings/current`))?.rows as { player: string; seasonPoints: number }[];

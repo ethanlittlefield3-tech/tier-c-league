@@ -32,7 +32,7 @@ interface JoinRequest {
  * one (which also signs out a lost phone), name a co-commish, hand over the
  * role, and remove a player. Each goes in the league log.
  */
-export function CommishPlayers(props: { me: Me; league: { commish?: string; coCommish?: string | null; members?: Record<string, boolean>; joining?: string } }) {
+export function CommishPlayers(props: { me: Me; league: { commish?: string; coCommish?: string | null; members?: Record<string, boolean>; former?: Record<string, string>; joining?: string } }) {
   const players = useAll<{ displayName?: string }>(`leagues/${props.me.league}/players`);
   const requests = useAll<JoinRequest>(`leagues/${props.me.league}/joinRequests`);
   const [open, setOpen] = useState<string | null>(null);
@@ -46,6 +46,8 @@ export function CommishPlayers(props: { me: Me; league: { commish?: string; coCo
   const nameOf = (player: string) => players.docs.find((found) => found.id === player)?.data.displayName ?? 'Player';
   const waiting = requests.docs.filter((found) => found.data.approved !== true && found.data.declined !== true).sort((a, b) => (a.data.at ?? 0) - (b.data.at ?? 0));
   const full = members.length >= 12;
+  // Players who left in an offseason: their profile stays, and they can come back.
+  const former = Object.entries(props.league.former ?? {}).filter(([player]) => !members.includes(player));
 
   const run = (work: (api: Awaited<ReturnType<typeof loadData>>) => Promise<unknown>, done: string) => {
     if (busy) return;
@@ -216,6 +218,35 @@ export function CommishPlayers(props: { me: Me; league: { commish?: string; coCo
             );
           })}
         </ul>
+        {former.length > 0 && (
+          <>
+            <p class="setup-label">Former players</p>
+            <ul class="people" aria-label="Former players">
+              {former.map(([id, season]) => (
+                <li key={id} class="person-former">
+                  <span>
+                    {nameOf(id)} <small>left after Season {season.replace(/^s/, '')}</small>
+                  </span>
+                  <button
+                    type="button"
+                    class="btn btn-second"
+                    disabled={busy || full}
+                    onClick={() =>
+                      run(async (api) => {
+                        const key = await api.bringBack(props.me, id, nameOf(id));
+                        setKeys((before) => ({ ...before, [id]: key }));
+                        setOpen(id);
+                      }, `${nameOf(id)} is back in the league, with a new key, shown above. Send it to them.`)
+                    }
+                  >
+                    Bring back
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {full && <p class="fine-print">The league is full at 12 players.</p>}
+          </>
+        )}
         {note && note.text && (
           <p class={note.error ? 'field-error' : 'panel-ok'} role="status">
             {note.text}
