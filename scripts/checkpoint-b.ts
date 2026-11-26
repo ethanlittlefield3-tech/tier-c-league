@@ -51,7 +51,7 @@ const AREAS: [file: string, heading: string, blurb: string][] = [
   ['pokes', 'Pokes', "One a day, to this week's opponent, dated today and in your own name. Never changed."],
   ['rematches', 'Rematch challenges', 'After a final week, the loser challenges the winner to a side race the next week, by its Wednesday, once. Only the weekly job settles it.'],
   ['rivals', 'Rivalry records', "Everyone in the league reads each player's all-time record. Only the weekly job writes it."],
-  ['garage', 'The Garage', 'You change only your own car, and only to parts from the catalog, each in its own slot. A part a badge unlocks goes on once that badge is earned.'],
+  ['garage', 'The Garage', 'You change only your own car, and only to parts from the catalog, each in its own slot. A part a badge unlocks goes on once that badge is earned; the rank decal once you have a rank, and a season decal for a season you finished. Nobody gives themselves a rank or a season.'],
 ];
 
 const lines: string[] = [];

@@ -59,7 +59,7 @@ test.describe('Joining a league', () => {
     await button(page, 'Join the league').click();
     await expect(heading(page, 'Save your recovery key')).toBeVisible();
     const player = await playerOf(request, league, (await page.locator('.join-key').textContent()) ?? '');
-    expect((await readDoc(request, `leagues/${league.id}/players/${player}`))?.car).toEqual({ body: 'bruiser', paint: 'racingRed', decal: 'none', wheels: 'stock', boost: 'team', explosion: 'stock', topper: 'none' });
+    expect((await readDoc(request, `leagues/${league.id}/players/${player}`))?.car).toEqual({ body: 'bruiser', paint: 'racingRed', paint2: 'none', finish: 'gloss', decal: 'none', wheels: 'stock', boost: 'team', trail: 'stream', explosion: 'stock', topper: 'none', backdrop: 'garage' });
   });
 
   test('A code that is too short, or has a look-alike character, is caught before anything is sent', async ({ page }) => {

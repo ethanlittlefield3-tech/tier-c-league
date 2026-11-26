@@ -6,7 +6,8 @@
  */
 
 export type BadgeGroup = 'streaks' | 'lanes' | 'screen' | 'beers' | 'matchups' | 'powerups' | 'group' | 'social' | 'career';
-export type PartSlot = 'body' | 'paint' | 'decal' | 'wheels' | 'boost' | 'explosion' | 'topper';
+/** `paint2` is the accent color, `finish` the paint's finish, `trail` the boost trail's style, `backdrop` what your car stands in front of. */
+export type PartSlot = 'body' | 'paint' | 'paint2' | 'finish' | 'decal' | 'wheels' | 'boost' | 'trail' | 'explosion' | 'topper' | 'backdrop';
 
 export interface Part {
   slot: PartSlot;
@@ -84,7 +85,7 @@ export const BADGES: readonly Badge[] = [
   { id: 'foundingMember', name: 'Founding Member', group: 'career', how: 'Played Season 1', unlocks: [part('decal', 'og', 'OG decal')] },
   { id: 'veteran', name: 'Veteran', group: 'career', how: 'Played 3 seasons', unlocks: [part('body', 'retro', 'Retro body')] },
   { id: 'finalist', name: 'Finalist', group: 'career', how: 'Reached a final', unlocks: [part('paint', 'silver', 'Silver finish')] },
-  { id: 'champion', name: 'Champion', group: 'career', how: 'Won a season', unlocks: [part('topper', 'trophy', 'Trophy topper'), part('explosion', 'golden', 'Golden goal explosion')] },
+  { id: 'champion', name: 'Champion', group: 'career', how: 'Won a season', unlocks: [part('topper', 'trophy', 'Trophy topper'), part('explosion', 'golden', 'Golden goal explosion'), part('finish', 'gold', 'Gold finish'), part('backdrop', 'podium', "Champion's podium")] },
   { id: 'mvpMagnet', name: 'MVP Magnet', group: 'career', how: '3 MVPs in a season', unlocks: [part('decal', 'mvp', 'MVP decal')] },
   { id: 'bustCollector', name: 'Bust Collector', group: 'career', how: '3 Busts in a season', unlocks: [part('decal', 'dumpsterFire', 'Dumpster-fire decal')], shame: true },
   { id: 'wheelSurvivor', name: 'Wheel Survivor', group: 'career', how: 'Completed 3 dares', unlocks: [part('paint', 'clown', 'Clown paint')] },
@@ -104,38 +105,75 @@ export const BADGE_GROUPS: Record<BadgeGroup, string> = {
   career: 'Season and career',
 };
 
-/** The starter kit (SCOPE.md, "Car parts"): every player has these from the start. */
+const STARTER_PAINTS = [
+  ['midnightBlack', 'Midnight Black'],
+  ['arcticWhite', 'Arctic White'],
+  ['gunmetal', 'Gunmetal'],
+  ['racingRed', 'Racing Red'],
+  ['blazeOrange', 'Blaze Orange'],
+  ['sunburstYellow', 'Sunburst Yellow'],
+  ['lime', 'Lime'],
+  ['forestGreen', 'Forest Green'],
+  ['teal', 'Teal'],
+  ['skyBlue', 'Sky Blue'],
+  ['cobalt', 'Cobalt'],
+  ['royalPurple', 'Royal Purple'],
+  ['hotPink', 'Hot Pink'],
+  ['burgundy', 'Burgundy'],
+  ['sand', 'Sand'],
+] as const;
+
+/**
+ * The starter kit (SCOPE.md, "Car parts"): every player has these from the
+ * start. The accent, finish, trail style and backdrop slots were added at the
+ * commish's request (ruling R21).
+ */
 export const STARTER_PARTS: readonly Part[] = [
   part('body', 'brick', 'Brick'),
   part('body', 'dart', 'Dart'),
   part('body', 'bruiser', 'Bruiser'),
-  ...(
-    [
-      ['midnightBlack', 'Midnight Black'],
-      ['arcticWhite', 'Arctic White'],
-      ['gunmetal', 'Gunmetal'],
-      ['racingRed', 'Racing Red'],
-      ['blazeOrange', 'Blaze Orange'],
-      ['sunburstYellow', 'Sunburst Yellow'],
-      ['lime', 'Lime'],
-      ['forestGreen', 'Forest Green'],
-      ['teal', 'Teal'],
-      ['skyBlue', 'Sky Blue'],
-      ['cobalt', 'Cobalt'],
-      ['royalPurple', 'Royal Purple'],
-      ['hotPink', 'Hot Pink'],
-      ['burgundy', 'Burgundy'],
-      ['sand', 'Sand'],
-    ] as const
-  ).map(([id, name]) => part('paint', id, name)),
+  ...STARTER_PAINTS.map(([id, name]) => part('paint', id, name)),
+  part('paint2', 'none', 'No accent'),
+  ...STARTER_PAINTS.map(([id, name]) => part('paint2', id, name)),
+  part('finish', 'gloss', 'Gloss'),
+  part('finish', 'matte', 'Matte'),
+  part('finish', 'metallic', 'Metallic'),
+  part('finish', 'pearl', 'Pearl'),
   part('decal', 'none', 'None'),
   part('wheels', 'stock', 'Stock'),
   part('boost', 'team', 'Your team color'),
+  part('trail', 'stream', 'Stream'),
+  part('trail', 'sparks', 'Sparks'),
+  part('trail', 'rings', 'Smoke rings'),
+  part('trail', 'flames', 'Flames'),
   part('explosion', 'stock', 'Stock burst'),
   part('topper', 'none', 'None'),
+  part('backdrop', 'garage', 'Garage'),
+  part('backdrop', 'stadium', 'Stadium at night'),
+  part('backdrop', 'tunnel', 'Neon tunnel'),
 ];
+
+/** Your current rank's emblem, for any player with a rank (ruling R21). */
+export const RANK_DECAL: Part = part('decal', 'rank', 'Rank emblem');
+
+/**
+ * A decal for each season a player finished (ruling R21), from their
+ * profile's `seasons`: each season's id and the year it ended. The id carries
+ * both, so the car can draw them: `season-s1-2027`.
+ */
+export function seasonDecals(seasons: Readonly<Record<string, number>> | null | undefined): Part[] {
+  return Object.entries(seasons ?? {})
+    .filter(([season, year]) => /^s[0-9]+$/.test(season) && Number.isInteger(year))
+    .sort(([a], [b]) => Number(a.slice(1)) - Number(b.slice(1)))
+    .map(([season, year]) => part('decal', `season-${season}-${year}`, `Season ${season.slice(1)} (${year})`));
+}
 
 /** Every part a player can put on their car: the starter kit, and what their badges unlock. */
 export function unlockedParts(badges: readonly string[]): Part[] {
   return [...STARTER_PARTS, ...BADGES.filter((badge) => badges.includes(badge.id)).flatMap((badge) => badge.unlocks)];
+}
+
+/** "a", "a and b", "a, b and c": a badge's unlocks, in words. */
+export function andList(items: readonly string[]): string {
+  return items.length <= 1 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`;
 }

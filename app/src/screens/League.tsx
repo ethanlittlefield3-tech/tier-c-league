@@ -135,7 +135,7 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
                     ) : (
                       <span class="standings-rank-badge standings-unranked" aria-hidden="true" />
                     )}
-                    <CarArt parts={lookOf(row.player)?.car} stickers={lookOf(row.player)?.stickers} bare class="standings-car" />
+                    <CarArt parts={lookOf(row.player)?.car} stickers={lookOf(row.player)?.stickers} rank={lookOf(row.player)?.rank} bare class="standings-car" />
                     <button
                       type="button"
                       class="standings-name"

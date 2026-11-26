@@ -15,10 +15,12 @@ export function CarArt(props: {
   bare?: boolean;
   class?: string;
   title?: string;
+  /** The owner's rank, for the rank decal's emblem. */
+  rank?: string | null;
 }) {
   const key = JSON.stringify(props.parts ?? {});
   const on = activeStickers(props.stickers, Date.now());
-  const markup = useMemo(() => drawCar(props.parts ?? {}, { team: props.team, bare: props.bare, title: props.title, stickers: on }), [key, on.join(), props.team, props.bare, props.title]);
+  const markup = useMemo(() => drawCar(props.parts ?? {}, { team: props.team, bare: props.bare, title: props.title, stickers: on, rank: props.rank ?? undefined }), [key, on.join(), props.team, props.bare, props.title, props.rank]);
   const car = { ...STARTER_CAR, ...(props.parts ?? {}) };
   return <span class={props.class} data-car={`${car.body} ${car.paint}`} data-stickers={on.length ? on.join(' ') : undefined} dangerouslySetInnerHTML={{ __html: markup }} />;
 }

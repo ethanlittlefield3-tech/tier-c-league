@@ -214,17 +214,34 @@ service cloud.firestore {
       // part from the catalog, either from the starter kit ('') or unlocked by
       // the badge named here, which the player must have. Generated from the
       // engine's catalog (engine/src/achievements.ts); the rule tests check it.
-      function validCar(car, badges) {
+      // The accent, finish, trail style and backdrop (ruling R21) can be
+      // missing from a car saved before they existed: then they are the starters.
+      function validCar(car, profile) {
+        let badges = profile.get('badges', {});
         return car is map
-          && car.keys().hasOnly(['body', 'paint', 'decal', 'wheels', 'boost', 'explosion', 'topper'])
+          && car.keys().hasOnly(['body', 'paint', 'paint2', 'finish', 'decal', 'wheels', 'boost', 'trail', 'explosion', 'topper', 'backdrop'])
           && car.keys().hasAll(['body', 'paint', 'decal', 'wheels', 'boost', 'explosion', 'topper'])
           && owns(car.body, {'brick': '', 'dart': '', 'bruiser': '', 'spiked': 'demolisher', 'noodle': 'alleyCat', 'retro': 'veteran'}, badges)
           && owns(car.paint, {'midnightBlack': '', 'arcticWhite': '', 'gunmetal': '', 'racingRed': '', 'blazeOrange': '', 'sunburstYellow': '', 'lime': '', 'forestGreen': '', 'teal': '', 'skyBlue': '', 'cobalt': '', 'royalPurple': '', 'hotPink': '', 'burgundy': '', 'sand': '', 'chrome': 'perfectWeek', 'sunrise': 'earlyBird', 'tricolor': 'tripleThreat', 'ice': 'dryWeek', 'silver': 'finalist', 'clown': 'wheelSurvivor', 'galaxy': 'grandChamp'}, badges)
-          && owns(car.decal, {'none': '', 'flame': 'hatTrick', 'pinstripe': 'cleanSheet', 'bookworm': 'scholar', 'joker': 'wildOne', 'checkered': 'designatedDriver', 'redStripe': 'firstBlood', 'cameraFlash': 'photoFinish', 'slingshot': 'giantKiller', 'crown': 'rivalryKing', 'fourLeaf': 'clutch', 'squad': 'teamPlayer', 'wantedPoster': 'bountyHunter', 'payback': 'payback', 'og': 'foundingMember', 'mvp': 'mvpMagnet', 'dumpsterFire': 'bustCollector'}, badges)
+          && owns(car.get('paint2', 'none'), {'none': '', 'midnightBlack': '', 'arcticWhite': '', 'gunmetal': '', 'racingRed': '', 'blazeOrange': '', 'sunburstYellow': '', 'lime': '', 'forestGreen': '', 'teal': '', 'skyBlue': '', 'cobalt': '', 'royalPurple': '', 'hotPink': '', 'burgundy': '', 'sand': ''}, badges)
+          && owns(car.get('finish', 'gloss'), {'gloss': '', 'matte': '', 'metallic': '', 'pearl': '', 'gold': 'champion'}, badges)
+          && (ownsDecal(car.decal, profile) || owns(car.decal, {'none': '', 'flame': 'hatTrick', 'pinstripe': 'cleanSheet', 'bookworm': 'scholar', 'joker': 'wildOne', 'checkered': 'designatedDriver', 'redStripe': 'firstBlood', 'cameraFlash': 'photoFinish', 'slingshot': 'giantKiller', 'crown': 'rivalryKing', 'fourLeaf': 'clutch', 'squad': 'teamPlayer', 'wantedPoster': 'bountyHunter', 'payback': 'payback', 'og': 'foundingMember', 'mvp': 'mvpMagnet', 'dumpsterFire': 'bustCollector'}, badges))
           && owns(car.wheels, {'stock': '', 'muscle': 'gymRat', 'turf': 'touchGrass', 'frost': 'dryMonth', 'lightning': 'comeback', 'forceField': 'untouchable'}, badges)
           && owns(car.boost, {'team': '', 'gold': 'ironStreak', 'ghost': 'ghost', 'phoenix': 'recoveringAddict', 'hotStreak': 'winStreak', 'jet': 'airMail', 'twinTurbo': 'dynamicDuo', 'spotlight': 'showOff'}, badges)
+          && owns(car.get('trail', 'stream'), {'stream': '', 'sparks': '', 'rings': '', 'flames': ''}, badges)
+          && owns(car.get('backdrop', 'garage'), {'garage': '', 'stadium': '', 'tunnel': '', 'podium': 'champion'}, badges)
           && owns(car.explosion, {'stock': '', 'inferno': 'century', 'zen': 'monkMode', 'foam': 'brewmaster', 'shockwave': 'blowout', 'thunder': 'rumbleRoyale', 'shatter': 'floorBreaker', 'confetti': 'fanFavorite', 'golden': 'champion'}, badges)
           && owns(car.topper, {'none': '', 'partyHat': 'happyHour', 'broom': 'sweep', 'megaphone': 'trashTalker', 'crystalBall': 'prophet', 'trophy': 'champion', 'whistle': 'commish'}, badges);
+      }
+
+      // The rank decal, for anyone with a rank, and a season decal for each
+      // season finished, which the weekly job keeps on the profile with the
+      // year it ended: 'season-s1-2027'.
+      function ownsDecal(decal, profile) {
+        return decal is string
+          && ((decal == 'rank' && profile.get('rank', null) != null)
+            || (decal.matches('^season-s[0-9]+-[0-9]{4}$')
+              && profile.get('seasons', {}).get(decal.split('-')[1], null) == int(decal.split('-')[2])));
       }
 
       function owns(part, catalog, badges) {
@@ -235,7 +252,7 @@ service cloud.firestore {
         return profile.displayName is string
           && profile.displayName.size() >= 1
           && profile.displayName.size() <= 24
-          && (!('car' in profile) || validCar(profile.car, profile.get('badges', {})))
+          && (!('car' in profile) || validCar(profile.car, profile))
           && (!('taunts' in profile) || validTaunts(profile.taunts));
       }
 

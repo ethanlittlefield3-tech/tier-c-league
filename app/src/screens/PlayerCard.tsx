@@ -1,9 +1,11 @@
 import { createPortal } from 'preact/compat';
 import { useEffect, useRef } from 'preact/hooks';
 import { RANK_NAMES, recordText, type Rank, type Rival } from '@tcl/engine';
+import { backdropOf } from '../art/car/backdrops.ts';
 import { CarArt } from '../art/car/CarArt.tsx';
 import type { CarParts } from '../art/car/draw.ts';
 import { RankBadge } from '../art/RankBadge.tsx';
+import '../art/car/backdrops.css';
 import './sheet.css';
 
 export interface PlayerStats {
@@ -25,8 +27,8 @@ export interface PlayerStats {
 
 /**
  * A player's card (the commish's request, 2026-11-26): tap a name in League
- * for their rank emblem, name and car, this season's numbers, and your
- * all-time record against them, with their day a tap away.
+ * for their car in the showroom, their rank emblem and name, this season's
+ * numbers, and your all-time record against them, with their day a tap away.
  */
 export function PlayerCard(props: { stats: PlayerStats; onDay?: () => void; onClose: () => void }) {
   const { stats } = props;
@@ -49,6 +51,10 @@ export function PlayerCard(props: { stats: PlayerStats; onDay?: () => void; onCl
     <div class="sheet-layer">
       <div class="sheet-backdrop" onClick={props.onClose} />
       <section class="sheet player-card" role="dialog" aria-modal="true" aria-labelledby="player-card-title">
+        {/* The showroom: their car, big, on the backdrop they picked. */}
+        <div class="player-card-showroom backdrop" data-backdrop={backdropOf(stats.car?.backdrop)} role="img" aria-label={`${stats.name}'s car`}>
+          <CarArt parts={stats.car} stickers={stats.stickers} rank={stats.rank} class="player-card-showroom-car" />
+        </div>
         <div class="player-card-head">
           {stats.rank ? <RankBadge rank={stats.rank} class="player-card-badge" /> : <span class="player-card-badge player-card-unranked" aria-hidden="true" />}
           <div>
@@ -57,7 +63,6 @@ export function PlayerCard(props: { stats: PlayerStats; onDay?: () => void; onCl
             </h2>
             <p class="player-card-rank">{stats.rank ? RANK_NAMES[stats.rank] : 'Unranked'}</p>
           </div>
-          <CarArt parts={stats.car} stickers={stats.stickers} bare class="player-card-car" />
         </div>
         <dl class="player-card-stats">
           {tile('Place', stats.place === null ? null : `#${stats.place}`)}

@@ -1,5 +1,6 @@
 import { useRef, useState } from 'preact/hooks';
-import { BADGES, STARTER_PARTS, type Badge, type Part, type PartSlot } from '@tcl/engine';
+import { BADGES, RANK_DECAL, STARTER_PARTS, seasonDecals, type Badge, type Part, type PartSlot } from '@tcl/engine';
+import { backdropOf } from '../art/car/backdrops.ts';
 import { CarArt } from '../art/car/CarArt.tsx';
 import { BurstIcon, GoalExplosion } from '../art/car/GoalExplosion.tsx';
 import { STARTER_CAR, type CarParts } from '../art/car/draw.ts';
@@ -8,6 +9,7 @@ import { useDoc } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
 import { whyOf } from '../data/why.ts';
+import '../art/car/backdrops.css';
 import './garage.css';
 
 const TROUBLE: Record<Trouble, string> = {
@@ -19,18 +21,67 @@ const TROUBLE: Record<Trouble, string> = {
 const SLOTS: { slot: PartSlot; name: string }[] = [
   { slot: 'body', name: 'Body' },
   { slot: 'paint', name: 'Paint' },
+  { slot: 'paint2', name: 'Accent' },
+  { slot: 'finish', name: 'Finish' },
   { slot: 'decal', name: 'Decal' },
   { slot: 'wheels', name: 'Wheels' },
   { slot: 'boost', name: 'Boost' },
+  { slot: 'trail', name: 'Trail' },
   { slot: 'explosion', name: 'Explosion' },
   { slot: 'topper', name: 'Topper' },
+  { slot: 'backdrop', name: 'Backdrop' },
 ];
 
-/** Every part in a slot: the starter kit, then what badges unlock, with the badge for each. */
-function partsFor(slot: PartSlot): { part: Part; badge: Badge | null }[] {
+/** A small picture for each slot, on its button. */
+const SLOT_ICONS: Record<PartSlot, string> = {
+  body: 'M3 15l2-5 4-2h6l3 3 3 1v3H3z M7 17a2 2 0 1 0 0 .1 M17 17a2 2 0 1 0 0 .1',
+  paint: 'M5 19c3 0 4-2 4-4l7-7 3 3-7 7c-2 0-4 1-4 4z M14 6l3-3 4 4-3 3',
+  paint2: 'M3 12h18 M3 16h18 M5 8h14',
+  finish: 'M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z',
+  decal: 'M4 4h16v16H4z M8 14l3-4 3 3 2-2 2 3',
+  wheels: 'M12 3a9 9 0 1 0 .1 0 M12 8a4 4 0 1 0 .1 0 M12 3v5 M12 16v5 M3 12h5 M16 12h5',
+  boost: 'M21 12H9 M9 7l-6 5 6 5 M14 8l-3 4 3 4',
+  trail: 'M20 12c-3-4-7-4-10 0s-7 4-8 0 M6 7a1 1 0 1 0 .1 0 M10 17a1 1 0 1 0 .1 0',
+  explosion: 'M12 2v5 M12 17v5 M2 12h5 M17 12h5 M5 5l3 3 M16 16l3 3 M19 5l-3 3 M5 19l3-3',
+  topper: 'M6 20h12 M9 20V10h6v10 M8 10l4-6 4 6',
+  backdrop: 'M3 5h18v14H3z M3 15l5-5 4 4 3-3 6 6',
+};
+
+function SlotIcon(props: { slot: PartSlot }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d={SLOT_ICONS[props.slot]} />
+    </svg>
+  );
+}
+
+interface Option {
+  part: Part;
+  /** Why it isn't yours yet, or `null` when it is. */
+  locked: string | null;
+  /** The badge that unlocks it, for its label. */
+  badge: Badge | null;
+}
+
+/**
+ * Every part in a slot: the starter kit, then what badges unlock, then (for
+ * decals) your rank's emblem and a decal for each season you finished.
+ */
+function partsFor(slot: PartSlot, profile: { badges: Record<string, unknown>; rank: string | null; seasons: Record<string, number> }): Option[] {
+  const options: Option[] = [
+    ...STARTER_PARTS.filter((part) => part.slot === slot).map((part) => ({ part, locked: null, badge: null })),
+    ...BADGES.flatMap((badge) =>
+      badge.unlocks.filter((part) => part.slot === slot).map((part) => ({ part, badge, locked: profile.badges[badge.id] === undefined ? `Earn ${badge.name} to keep it: ${badge.how}.` : null })),
+    ),
+  ];
+  if (slot !== 'decal') return options;
+  const seasons = seasonDecals(profile.seasons);
   return [
-    ...STARTER_PARTS.filter((part) => part.slot === slot).map((part) => ({ part, badge: null })),
-    ...BADGES.flatMap((badge) => badge.unlocks.filter((part) => part.slot === slot).map((part) => ({ part, badge }))),
+    ...options,
+    { part: RANK_DECAL, badge: null, locked: profile.rank ? null : 'Your rank emblem is yours once your first week is final.' },
+    ...(seasons.length > 0
+      ? seasons.map((part) => ({ part, badge: null, locked: null }))
+      : [{ part: { slot: 'decal' as const, id: `season-s1-${new Date().getFullYear()}`, name: 'Season decal' }, badge: null, locked: 'Finish a season to get its decal, with its number and year.' }]),
   ];
 }
 
@@ -59,10 +110,13 @@ function angleOf(element: Element | null): number {
  * unlocks a part; a locked part shows the badge that unlocks it.
  */
 export function Garage(props: { me: Me }) {
-  const profile = useDoc<{ car?: Partial<CarParts>; badges?: Record<string, unknown>; stickers?: Partial<Record<string, { until?: unknown }>> }>(`leagues/${props.me.league}/players/${props.me.player}`);
+  const profile = useDoc<{ car?: Partial<CarParts>; badges?: Record<string, unknown>; stickers?: Partial<Record<string, { until?: unknown }>>; rank?: string; seasons?: Record<string, number> }>(`leagues/${props.me.league}/players/${props.me.player}`);
   const saved: CarParts = { ...STARTER_CAR, ...(profile.data?.car ?? {}) };
   const [draft, setDraft] = useState<CarParts | null>(null);
-  const car = draft ?? saved;
+  const mine = draft ?? saved;
+  // A locked part, tried on: it shows on the car, but is never saved.
+  const [trying, setTrying] = useState<{ part: Part; why: string } | null>(null);
+  const car = trying ? { ...mine, [trying.part.slot]: trying.part.id } : mine;
   const [slot, setSlot] = useState<PartSlot>('body');
   const [note, setNote] = useState<{ error: boolean; text: string } | null>(null);
   const [boom, setBoom] = useState(0);
@@ -111,12 +165,15 @@ export function Garage(props: { me: Me }) {
   };
   const side = angle === null ? undefined : (settle(angle) / 180) % 2 === 0 ? 'right' : 'left';
 
-  const pick = (part: Part, badge: Badge | null) => {
-    if (badge && earned[badge.id] === undefined) {
-      setNote({ error: false, text: `${part.name}: earn ${badge.name}. ${badge.how}.` });
+  const pick = (part: Part, locked: string | null) => {
+    if (locked) {
+      setTrying({ part, why: locked });
+      setNote(null);
+      if (part.slot === 'explosion') setBoom((count) => count + 1);
       return;
     }
-    const next = { ...car, [part.slot]: part.id };
+    setTrying(null);
+    const next = { ...mine, [part.slot]: part.id };
     setDraft(next);
     setNote(null);
     if (part.slot === 'explosion') setBoom((count) => count + 1);
@@ -129,11 +186,12 @@ export function Garage(props: { me: Me }) {
       });
   };
 
-  const options = partsFor(slot);
+  const options = partsFor(slot, { badges: earned, rank: profile.data?.rank ?? null, seasons: profile.data?.seasons ?? {} });
   const count = Object.keys(earned).length;
+  const slotName = SLOTS.find((each) => each.slot === slot)?.name;
   return (
     <div class="garage">
-      <section class="garage-stage" aria-label="Your car">
+      <section class="garage-stage backdrop" data-backdrop={backdropOf(car.backdrop)} aria-label="Your car">
         <button
           type="button"
           class="garage-turntable"
@@ -157,7 +215,7 @@ export function Garage(props: { me: Me }) {
             data-mirrored={angle !== null && face(angle) < 0}
             style={angle === null ? undefined : { transform: `scaleX(${face(angle).toFixed(3)})` }}
           >
-            <CarArt parts={car} stickers={profile.data?.stickers} class="garage-car" />
+            <CarArt parts={car} stickers={profile.data?.stickers} rank={profile.data?.rank} class="garage-car" />
           </span>
         </button>
         {boom > 0 && <GoalExplosion key={boom} kind={car.explosion} class="garage-boom" />}
@@ -166,10 +224,22 @@ export function Garage(props: { me: Me }) {
         {count} of {BADGES.length} badges earned. Each one unlocks a part.
       </p>
 
-      <div class="choice garage-slots" role="group" aria-label="Part">
+      {trying && (
+        <div class="garage-trying">
+          <p role="status">
+            <strong>Trying on {trying.part.name}.</strong> {trying.why}
+          </p>
+          <button type="button" class="btn-quiet" onClick={() => setTrying(null)}>
+            Back to my car
+          </button>
+        </div>
+      )}
+
+      <div class="garage-slots" role="group" aria-label="Part">
         {SLOTS.map(({ slot: each, name }) => (
-          <button key={each} type="button" class="choice-option" aria-pressed={slot === each} onClick={() => setSlot(each)}>
-            {name}
+          <button key={each} type="button" class="garage-slot" aria-pressed={slot === each} onClick={() => setSlot(each)}>
+            <SlotIcon slot={each} />
+            <span>{name}</span>
           </button>
         ))}
       </div>
@@ -185,25 +255,36 @@ export function Garage(props: { me: Me }) {
         </button>
       )}
 
-      <ul class="garage-parts" aria-label={SLOTS.find((each) => each.slot === slot)?.name}>
-        {options.map(({ part, badge }) => {
-          const locked = badge !== null && earned[badge.id] === undefined;
-          const on = car[part.slot] === part.id;
+      <ul class="garage-parts" aria-label={slotName}>
+        {options.map(({ part, badge, locked }) => {
+          const on = mine[part.slot as keyof CarParts] === part.id && !locked;
+          const tried = trying?.part.id === part.id && trying.part.slot === part.slot;
+          const art =
+            part.slot === 'paint' ? (
+              <Swatch paint={part.id} />
+            ) : part.slot === 'explosion' ? (
+              <BurstIcon kind={part.id} />
+            ) : part.slot === 'backdrop' ? (
+              <span class="garage-part-backdrop backdrop" data-backdrop={backdropOf(part.id)}>
+                <CarArt parts={mine} bare />
+              </span>
+            ) : (
+              <CarArt parts={{ ...mine, [part.slot]: part.id }} rank={profile.data?.rank} bare={part.slot !== 'boost' && part.slot !== 'trail'} />
+            );
           return (
             <li key={part.id}>
               <button
                 type="button"
                 class="garage-part"
-                data-locked={locked}
+                data-locked={Boolean(locked)}
+                data-trying={tried}
                 aria-pressed={on}
-                aria-label={locked ? `${part.name}, locked: earn ${badge!.name}` : part.name}
-                onClick={() => pick(part, badge)}
+                aria-label={locked ? `${part.name}, locked${badge ? `: earn ${badge.name}` : ''}` : part.name}
+                onClick={() => pick(part, locked)}
               >
-                <span class="garage-part-art">
-                  {part.slot === 'paint' ? <Swatch paint={part.id} /> : part.slot === 'explosion' ? <BurstIcon kind={part.id} /> : <CarArt parts={{ ...car, [part.slot]: part.id }} bare={part.slot !== 'boost'} />}
-                </span>
+                <span class="garage-part-art">{art}</span>
                 <span class="garage-part-name">{part.name}</span>
-                {locked && <span class="garage-lock">{badge!.name}</span>}
+                {locked && <span class="garage-lock">{badge ? badge.name : 'Locked'}</span>}
               </button>
             </li>
           );

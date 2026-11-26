@@ -8,7 +8,7 @@
  * league gets its own 9 pm and noon. An alert that is no use any more, like
  * "log your day" once the day has locked, carries the time it expires.
  */
-import { BADGES } from '../../engine/src/achievements.ts';
+import { BADGES, andList } from '../../engine/src/achievements.ts';
 import type { Category } from '../../engine/src/alerts.ts';
 import { WEEKDAYS, addDays, weekdayIndex } from '../../engine/src/calendar.ts';
 import type { LeagueClock } from '../../engine/src/clock.ts';
@@ -345,7 +345,7 @@ export function alertsDue(input: AlertInput): Alert[] {
     if (item.kind === 'badge') {
       const badge = BADGES.find((found) => found.id === item.data?.badge);
       if (!badge) continue;
-      const parts = badge.unlocks.map((part) => `the ${part.name}`).join(' and ');
+      const parts = andList(badge.unlocks.map((part) => `the ${part.name}`));
       add({ player: item.player, category: 'progress', key: `badge-${badge.id}`, title: `Badge unlocked: ${badge.name}`, body: `${parts.charAt(0).toUpperCase()}${parts.slice(1)} ${badge.unlocks.length > 1 ? 'are' : 'is'} yours to put on your car.`, screen: 'feed', expires: item.at + 7 * 24 * HOUR });
     }
     // The champion, for everyone: the season is over.

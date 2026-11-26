@@ -4,7 +4,7 @@
  * from the league's own data, so it moves the moment anything happens.
  * Badges earned and rank changes come from the jobs' news in `feed/`.
  */
-import { BADGES, DODGE_PENALTY, PROOF_VOTE_HOURS, RANK_NAMES, dareStatus, rankMove, storylines, type DemolitionOutcome, type Lane, type Rank, type Square } from '@tcl/engine';
+import { BADGES, DODGE_PENALTY, andList, PROOF_VOTE_HOURS, RANK_NAMES, dareStatus, rankMove, storylines, type DemolitionOutcome, type Lane, type Rank, type Square } from '@tcl/engine';
 import { groupLines, type GroupDoc } from '../group/words.ts';
 import { storyText } from './stories.ts';
 
@@ -247,7 +247,7 @@ export function feedEvents(input: FeedInput): FeedEvent[] {
     if (data.kind === 'badge') {
       const badge = BADGES.find((found) => found.id === data.data?.badge);
       if (!badge) continue;
-      events.push({ id: `news-${id}`, at: data.at, kind: 'badge', text: `${who} earned ${badge.name}${badge.shame ? ' (shame)' : ''}`, detail: `${badge.how}. Unlocks: ${badge.unlocks.map((part) => part.name).join(' and ')}.` });
+      events.push({ id: `news-${id}`, at: data.at, kind: 'badge', text: `${who} earned ${badge.name}${badge.shame ? ' (shame)' : ''}`, detail: `${badge.how}. Unlocks: ${andList(badge.unlocks.map((part) => part.name))}.` });
     }
     if (data.kind === 'picks' && data.data?.top?.length) {
       const top = data.data.top.map(name);

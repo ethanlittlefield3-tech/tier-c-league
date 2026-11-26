@@ -1,4 +1,4 @@
-import { BADGES, BADGE_GROUPS, type Badge, type BadgeGroup } from '@tcl/engine';
+import { BADGES, BADGE_GROUPS, andList, type Badge, type BadgeGroup } from '@tcl/engine';
 import './badges.css';
 
 const LATER: Record<NonNullable<Badge['later']>, string> = {
@@ -19,7 +19,7 @@ function BadgeRow(props: { badge: Badge; earned: boolean }) {
           {badge.shame && <span class="badge-shame">Shame</span>}
         </span>
         <span class="badge-how">{badge.later && !props.earned ? `${badge.how}. ${LATER[badge.later]}.` : `${badge.how}.`}</span>
-        <span class="badge-unlocks">Unlocks {badge.unlocks.map((part) => part.name).join(' and ')}</span>
+        <span class="badge-unlocks">Unlocks {andList(badge.unlocks.map((part) => part.name))}</span>
       </span>
     </li>
   );

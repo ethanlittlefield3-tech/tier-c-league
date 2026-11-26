@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BADGES, STARTER_PARTS } from '@tcl/engine';
+import { BACKDROPS } from '../src/art/car/backdrops.ts';
 import { DRAWN, STARTER_CAR, drawCar } from '../src/art/car/draw.ts';
 
 /** Markup with its one-off gradient names evened out, so two drawings compare. */
@@ -19,6 +20,27 @@ describe('Drawing cars', () => {
       if (part.id === STARTER_CAR[part.slot as keyof typeof STARTER_CAR]) continue;
       expect(same(drawCar({ ...STARTER_CAR, [part.slot]: part.id })), part.id).not.toBe(plain);
     }
+  });
+
+  it('Every accent, finish and boost trail style in the catalog changes how the car looks', () => {
+    const plain = same(drawCar(STARTER_CAR));
+    for (const part of catalog.filter((each) => ['paint2', 'finish', 'trail'].includes(each.slot))) {
+      if (part.id === STARTER_CAR[part.slot as keyof typeof STARTER_CAR]) continue;
+      expect(same(drawCar({ ...STARTER_CAR, [part.slot]: part.id })), `${part.slot} ${part.id}`).not.toBe(plain);
+    }
+  });
+
+  it('A season decal shows its season and year, and the rank decal shows the emblem of the rank it is given', () => {
+    const season = drawCar({ ...STARTER_CAR, decal: 'season-s1-2027' });
+    expect(season).toContain('>S1<');
+    expect(season).toContain('>2027<');
+    const gold = same(drawCar({ ...STARTER_CAR, decal: 'rank' }, { rank: 'gold' }));
+    expect(gold).not.toBe(same(drawCar({ ...STARTER_CAR, decal: 'rank' }, { rank: 'silver' })));
+    expect(gold).not.toBe(same(drawCar(STARTER_CAR)));
+  });
+
+  it('Every backdrop in the catalog has its scene', () => {
+    for (const part of catalog.filter((each) => each.slot === 'backdrop')) expect(BACKDROPS).toContain(part.id);
   });
 
   it('A part outside the catalog draws as the starter part, and a title is written safely', () => {

@@ -26,6 +26,7 @@ import { drawDuos } from './lib/duos.ts';
 import { playoffDue, roundDoc, roundResults } from './lib/playoff-docs.ts';
 import { seedBracket, settleFinal, settleSemis, settleSuddenDeath, type Bracket, type PlayoffPeriod, type PlayoffSettings, type RoundTotals } from '../engine/src/playoffs.ts';
 import { playerWeek } from '../engine/src/days.ts';
+import { localDate } from '../engine/src/calendar.ts';
 import { LANES } from '../engine/src/scoring.ts';
 import { rumbleDraws } from './lib/rumble-draws.ts';
 import { RUMBLE_ITEMS, type RumbleItem } from '../engine/src/rumble.ts';
@@ -551,6 +552,26 @@ async function roundTotals(seasonRef: FirebaseFirestore.DocumentReference, par: 
 }
 
 /** The playoff step: seed, settle the round that is due, and crown the champion. Returns the playoff trophies so far. */
+/**
+ * Ruling R21: everyone who finished the season (in the standings, and not
+ * marked as left) gets its decal, kept on their profile with the year it
+ * ended in league time: `seasons.s1 = 2027`.
+ */
+async function seasonDecals(league: FirebaseFirestore.DocumentSnapshot, seasonId: string, players: readonly string[], timeZone: string): Promise<void> {
+  const year = Number(localDate(Date.now(), timeZone).slice(0, 4));
+  for (const player of players) {
+    await league.ref
+      .collection('players')
+      .doc(player)
+      .update({ [`seasons.${seasonId}`]: year })
+      .catch((error: { code?: number }) => {
+        // A player with no profile has nothing to keep it on.
+        if (error.code !== 5) throw error;
+      });
+  }
+  console.log(`League ${league.id}, season ${seasonId}: season decals for ${players.length} players.`);
+}
+
 async function playoffStep(
   league: FirebaseFirestore.DocumentSnapshot,
   seasonRef: FirebaseFirestore.DocumentReference,
@@ -577,6 +598,7 @@ async function playoffStep(
       // The season is over: the offseason starts (SCOPE.md, "Seasons").
       await seasonRef.update({ champion: leader, badgesDue: true, status: 'finished', finishedAt: FieldValue.serverTimestamp() });
       await league.ref.update({ banner: { player: leader, season: seasonId } });
+      await seasonDecals(league, seasonId, ranked, String(season.get('timeZone')));
       console.log(`League ${league.id}, season ${seasonId}: champion crowned, with no playoffs.`);
     }
     return crowned(leader, null, null);
@@ -654,6 +676,7 @@ async function playoffStep(
   if (bracket.champion) {
     // The playoff trophies join the season's trophy case.
     await league.ref.collection('trophies').doc(seasonId).set({ season: seasonId, trophies: crowned(bracket.champion, bracket.finalist, bracket.whiff?.loser ?? null) }, { merge: true });
+    await seasonDecals(league, seasonId, ranked, String(season.get('timeZone')));
     console.log(`League ${league.id}, season ${seasonId}: champion crowned.`);
   }
   return crowned(bracket.champion, bracket.finalist, bracket.whiff?.loser ?? null);

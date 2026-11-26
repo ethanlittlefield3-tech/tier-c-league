@@ -2,7 +2,7 @@
 
 Generated 2026-11-26 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 335 of 335 passing.
+- **Tests:** 339 of 339 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -610,7 +610,7 @@ Everyone in the league reads each player's all-time record. Only the weekly job 
 
 ## The Garage
 
-You change only your own car, and only to parts from the catalog, each in its own slot. A part a badge unlocks goes on once that badge is earned.
+You change only your own car, and only to parts from the catalog, each in its own slot. A part a badge unlocks goes on once that badge is earned; the rank decal once you have a rank, and a season decal for a season you finished. Nobody gives themselves a rank or a season.
 
 **The Garage**
 
@@ -618,4 +618,8 @@ You change only your own car, and only to parts from the catalog, each in its ow
 - A part a badge unlocks goes on only once that badge is earned, for every part in the catalog
 - A part from another slot, a made-up part or a missing slot is refused
 - A new player joins in a starter car they picked, but not in a part a badge unlocks
+- The accent, finish, trail style and backdrop are optional, for a car saved before they existed
+- The rank decal goes on once a player has a rank
+- A season decal goes on only for a season the player finished, with the year it ended
+- A player can't give themselves a rank or a season
 - Nobody changes someone else's car

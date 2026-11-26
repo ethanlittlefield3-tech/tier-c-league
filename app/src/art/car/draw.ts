@@ -12,14 +12,22 @@
 export interface CarParts {
   body: string;
   paint: string;
+  /** The accent: a second paint on the lower body, or `none`. */
+  paint2: string;
+  /** The paint's finish: gloss, matte, metallic, pearl, or the champion's gold. */
+  finish: string;
   decal: string;
   wheels: string;
   boost: string;
+  /** The boost trail's style: stream, sparks, rings or flames. */
+  trail: string;
   explosion: string;
   topper: string;
+  /** What the car stands in front of in the Garage and the showroom. Not drawn on the car. */
+  backdrop: string;
 }
 
-export const STARTER_CAR: CarParts = { body: 'dart', paint: 'cobalt', decal: 'none', wheels: 'stock', boost: 'team', explosion: 'stock', topper: 'none' };
+export const STARTER_CAR: CarParts = { body: 'dart', paint: 'cobalt', paint2: 'none', finish: 'gloss', decal: 'none', wheels: 'stock', boost: 'team', trail: 'stream', explosion: 'stock', topper: 'none', backdrop: 'garage' };
 
 const INK = '#050914';
 
@@ -350,6 +358,94 @@ function sticker(kind: string, at: number, { x1, x2, y1 }: Body['band']): string
   return `<g ${tilt}><circle cx="${cx}" cy="${cy}" r="9" fill="#ffd21f" stroke="${INK}" stroke-width="1.4"/><path d="M${n(cx - 4)} ${n(cy + 6)}Q${n(cx - 5)} ${n(cy - 3)} ${n(cx + 4)} ${n(cy - 6)}Q${n(cx + 2)} ${n(cy + 1)} ${n(cx - 4)} ${n(cy + 6)}Z" fill="#ffffff" stroke="${INK}" stroke-width="0.9" stroke-linejoin="round"/><path d="M${n(cx - 5)} ${n(cy + 7)}L${n(cx + 2)} ${n(cy - 3)}" stroke="${INK}" stroke-width="0.8"/></g>`;
 }
 
+/** The rank emblems' metals, as RankBadge draws them, for the rank decal. */
+const RANK_METAL: Record<string, [string, string, string]> = {
+  bronze: ['#f2b27d', '#c47a3a', '#7a4316'],
+  silver: ['#ffffff', '#c9d3e3', '#7f8ba1'],
+  gold: ['#fff3b8', '#ffcf3f', '#b07d00'],
+  platinum: ['#e8fffb', '#7ee0d4', '#2f9488'],
+  diamond: ['#e3f3ff', '#5fb4ff', '#1f63b8'],
+  champion: ['#f1e6ff', '#b58cff', '#6a3fc2'],
+  grandChamp: ['#ffe1e4', '#ff6b7a', '#c0263a'],
+};
+
+/** The rank decal: your rank's emblem on the door. With no rank given, a plain steel one. */
+function rankDecal(rank: string | undefined, { x1, x2, y1, y2 }: Body['band']): string {
+  const [light, mid, dark] = RANK_METAL[rank ?? ''] ?? ['#d6dbe6', '#8a93a6', '#4f5767'];
+  const cx = n(x1 + (x2 - x1) * 0.46);
+  const cy = n((y1 + y2) / 2);
+  const r = 9;
+  const hex = Array.from({ length: 6 }, (_, i) => {
+    const a = ((i * 60 - 90) * Math.PI) / 180;
+    return `${n(cx + Math.cos(a) * r)} ${n(cy + Math.sin(a) * r)}`;
+  }).join('L');
+  return `<path d="M${hex}Z" fill="${mid}" stroke="${dark}" stroke-width="1.6" stroke-linejoin="round"/><path d="M${n(cx - 4.5)} ${n(cy - 2)}L${cx} ${n(cy + 1.5)}L${n(cx + 4.5)} ${n(cy - 2)}M${n(cx - 4.5)} ${n(cy + 2)}L${cx} ${n(cy + 5.5)}L${n(cx + 4.5)} ${n(cy + 2)}" fill="none" stroke="${light}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>`;
+}
+
+/** A season decal (`season-s1-2027`): a banner with the season and the year it ended. */
+function seasonDecal(kind: string, { x1, x2, y1, y2 }: Body['band']): string {
+  const [, season = '', year = ''] = kind.split('-');
+  const cx = n(x1 + (x2 - x1) * 0.46);
+  const cy = n((y1 + y2) / 2);
+  const text = (value: string, y: number, size: number, fill: string) =>
+    `<text x="${cx}" y="${n(y)}" text-anchor="middle" font-family="system-ui, sans-serif" font-style="italic" font-weight="900" font-size="${size}" fill="${fill}">${attribute(value)}</text>`;
+  return `<path d="M${n(cx - 15)} ${n(cy - 9)}H${n(cx + 15)}L${n(cx + 12)} ${cy}L${n(cx + 15)} ${n(cy + 9)}H${n(cx - 15)}L${n(cx - 12)} ${cy}Z" fill="#0b1433" stroke="#ffcf3f" stroke-width="1.2" stroke-linejoin="round"/>${text(season.toUpperCase(), cy + 0.5, 8, '#ffcf3f')}${text(year, cy + 7, 5, '#ffffff')}`;
+}
+
+/** The accent: the lower body in a second paint, under a thin pinstripe. */
+function accent(id: string, paint2: string, body: Body, bottom: number, width: number): string {
+  const p = PAINTS[paint2];
+  if (!p) return '';
+  const top = n(body.band.y1 + (body.band.y2 - body.band.y1) * 0.55);
+  return `<linearGradient id="${id}-accent" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.light}"/><stop offset="0.45" stop-color="${p.mid}"/><stop offset="1" stop-color="${p.dark}"/></linearGradient><rect x="-10" y="${top}" width="${width + 20}" height="${n(bottom - top + 10)}" fill="url(#${id}-accent)"/><rect x="-10" y="${n(top - 1)}" width="${width + 20}" height="1.4" fill="#ffffff" opacity="0.8"/>`;
+}
+
+/** The finish, laid over the paint: matte dulls it, metallic and gold fleck it, pearl gives it a sheen. */
+function finishLayer(id: string, finish: string, body: Body, bottom: number, width: number): string {
+  const flecks = (color: string, opacity: number) =>
+    Array.from({ length: 28 }, (_, i) => {
+      const x = n(body.band.x1 + ((body.band.x2 - body.band.x1) * ((i * 11) % 28)) / 28 + 2);
+      const y = n(8 + ((i * 17) % Math.max(1, bottom - 10)));
+      return `<circle cx="${x}" cy="${y}" r="${i % 5 === 0 ? 0.9 : 0.5}" fill="${color}" opacity="${opacity}"/>`;
+    }).join('');
+  switch (finish) {
+    case 'matte':
+      return `<rect x="-10" y="-40" width="${width + 20}" height="${bottom + 50}" fill="#1a2030" opacity="0.18"/>`;
+    case 'metallic':
+      return flecks('#ffffff', 0.55);
+    case 'pearl':
+      return `<linearGradient id="${id}-pearl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd6f2"/><stop offset="0.5" stop-color="#d6fbff"/><stop offset="1" stop-color="#fff7d6"/></linearGradient><rect x="-10" y="-40" width="${width + 20}" height="${bottom + 50}" fill="url(#${id}-pearl)" opacity="0.3"/>`;
+    case 'gold':
+      return `<linearGradient id="${id}-gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3b8"/><stop offset="0.5" stop-color="#ffcf3f"/><stop offset="1" stop-color="#b07d00"/></linearGradient><rect x="-10" y="-40" width="${width + 20}" height="${bottom + 50}" fill="url(#${id}-gold)" opacity="0.55"/>${flecks('#fff3b8', 0.8)}`;
+    default:
+      return '';
+  }
+}
+
+/** The color a boost trail mostly is, for its style's extra pieces. */
+function trailColor(kind: string, team: 'blue' | 'orange'): string {
+  const colors: Record<string, string> = { gold: '#ffcf3f', ghost: '#ffffff', phoenix: '#ff8a1e', hotStreak: '#ff5a2a', jet: '#bfe6ff', spotlight: '#fffbe0' };
+  return colors[kind] ?? TEAM[team][1];
+}
+
+/** The trail's style, drawn over the boost: sparks, smoke rings or flame tongues. A stream adds nothing. */
+function trailStyle(style: string, color: string, [x, y]: [number, number]): string {
+  switch (style) {
+    case 'sparks':
+      return Array.from({ length: 9 }, (_, i) => {
+        const sx = x - 14 - i * 8;
+        const sy = y + ((i * 7) % 5) * 4 - 8;
+        return `<path d="M${sx - 2.4} ${sy}H${sx + 2.4}M${sx} ${sy - 2.4}V${sy + 2.4}" stroke="${color}" stroke-width="1.4" stroke-linecap="round" opacity="${n(1 - i * 0.08)}"/>`;
+      }).join('');
+    case 'rings':
+      return [0, 1, 2].map((i) => `<ellipse cx="${x - 22 - i * 22}" cy="${y}" rx="${4 + i * 2}" ry="${8 + i * 3}" fill="none" stroke="${color}" stroke-width="${2.2 - i * 0.5}" opacity="${n(0.9 - i * 0.25)}"/>`).join('');
+    case 'flames':
+      return [-6, 0, 6].map((dy, i) => `<path d="M${x} ${y + dy - 2}L${x - 30 - i * 6} ${y + dy - 6}L${x - 22 - i * 6} ${y + dy}L${x - 44 - i * 8} ${y + dy + 1}L${x - 20} ${y + dy + 4}L${x} ${y + dy + 2}Z" fill="${color}" opacity="${n(0.75 - i * 0.15)}"/>`).join('');
+    default:
+      return '';
+  }
+}
+
 let counter = 0;
 
 /** Text for an attribute: a player's name can hold any character. */
@@ -360,7 +456,7 @@ const attribute = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&
  * always team blue, your opponent's orange. `bare` leaves out the boost and
  * the shadow, for small icons.
  */
-export function drawCar(parts: Partial<CarParts>, options: { team?: 'blue' | 'orange'; bare?: boolean; title?: string; stickers?: readonly string[] } = {}): string {
+export function drawCar(parts: Partial<CarParts>, options: { team?: 'blue' | 'orange'; bare?: boolean; title?: string; stickers?: readonly string[]; rank?: string } = {}): string {
   counter += 1;
   const id = `car${counter}`;
   const car = { ...STARTER_CAR, ...parts };
@@ -371,7 +467,7 @@ export function drawCar(parts: Partial<CarParts>, options: { team?: 'blue' | 'or
   const bottom = Math.max(...body.wheels.map(([, y, r]) => y + r));
   const left = options.bare ? -6 : -96;
   const viewBox = `${left} -32 ${n(width - left + 12)} ${n(bottom + 32 + 8)}`;
-  const decalArt = decal(car.decal, body.band);
+  const decalArt = car.decal === 'rank' ? rankDecal(options.rank, body.band) : /^season-s[0-9]+-[0-9]{4}$/.test(car.decal) ? seasonDecal(car.decal, body.band) : decal(car.decal, body.band);
   return [
     `<svg viewBox="${viewBox}" xmlns="http://www.w3.org/2000/svg"${options.title ? ` role="img" aria-label="${attribute(options.title)}"` : ' aria-hidden="true"'}>`,
     '<defs>',
@@ -382,16 +478,19 @@ export function drawCar(parts: Partial<CarParts>, options: { team?: 'blue' | 'or
     '</defs>',
     options.bare ? '' : `<ellipse cx="${n(width / 2)}" cy="${n(bottom + 2)}" rx="${n(width * 0.46)}" ry="6" fill="#000000" opacity="0.4"/>`,
     options.bare ? '' : boost(car.boost, body.exhaust, team, id),
+    options.bare ? '' : trailStyle(car.trail, trailColor(car.boost, team), body.exhaust),
     body.under ?? '',
     `<path d="${body.shape}" fill="url(#${id}-paint)"/>`,
     `<g clip-path="url(#${id}-clip)">`,
     finishOverlay(paint, body),
+    car.paint2 !== 'none' ? accent(id, car.paint2, body, bottom, width) : '',
+    finishLayer(id, car.finish, body, bottom, width),
     `<rect x="-10" y="${bottom - 22}" width="${width + 20}" height="30" fill="#000000" opacity="0.22"/>`,
     decalArt,
     ...(options.stickers ?? []).map((kind, at) => sticker(kind, at, body.band)),
     '</g>',
     ...body.glass.map((glass) => `<path d="${glass}" fill="url(#${id}-glass)" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/>`),
-    `<path d="${body.shine}" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" opacity="0.75"/>`,
+    `<path d="${body.shine}" fill="none" stroke="#ffffff" stroke-width="${car.finish === 'metallic' ? 2.2 : 1.6}" stroke-linecap="round" opacity="${car.finish === 'matte' ? 0.2 : 0.75}"/>`,
     `<path d="${body.shape}" fill="none" stroke="${INK}" stroke-width="2.6" stroke-linejoin="round"/>`,
     body.extra ?? '',
     `<circle cx="${body.light[0]}" cy="${body.light[1]}" r="3" fill="#fff6c9" stroke="${INK}" stroke-width="1"/>`,

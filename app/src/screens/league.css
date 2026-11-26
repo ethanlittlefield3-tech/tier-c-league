@@ -374,12 +374,25 @@
   color: var(--gold);
 }
 
-.player-card-car {
-  flex: 0 0 72px;
-  width: 72px;
+/* The showroom: the top of the card, their car big on their backdrop. */
+.player-card-showroom {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 150px;
+  margin: -20px -18px 14px;
+  padding: 0 12px 14px;
+  border-radius: 24px 24px 0 0;
+  overflow: hidden;
 }
 
-.player-card-car svg {
+.player-card-showroom-car {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+}
+
+.player-card-showroom-car svg {
   display: block;
   width: 100%;
   height: auto;

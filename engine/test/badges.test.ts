@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BADGES, STARTER_PARTS, unlockedParts } from '../src/achievements.ts';
+import { BADGES, RANK_DECAL, STARTER_PARTS, seasonDecals, unlockedParts } from '../src/achievements.ts';
 import { earnedBadges, groupFeats, type BadgeDay, type BadgeFacts, type BadgeWeek } from '../src/badges.ts';
 
 /** A logged goal day: every goal hit, 30 minutes of screen time, no beers. */
@@ -41,9 +41,25 @@ describe('The badge catalog', () => {
     expect(STARTER_PARTS.filter((part) => part.slot === 'paint')).toHaveLength(15);
   });
 
-  it('A badge adds its parts to the ones a player can use; Champion unlocks two', () => {
+  it('A badge adds its parts to the ones a player can use; Champion unlocks four, the gold finish and the podium backdrop among them', () => {
     const parts = unlockedParts(['champion', 'hatTrick']).map((part) => part.name);
-    expect(parts).toEqual(expect.arrayContaining(['Trophy topper', 'Golden goal explosion', 'Flame decal', 'Brick']));
+    expect(parts).toEqual(expect.arrayContaining(['Trophy topper', 'Golden goal explosion', 'Gold finish', "Champion's podium", 'Flame decal', 'Brick']));
+  });
+
+  it('The starter kit also has an accent in any of the 15 paints (or none), 4 finishes, 4 boost trail styles and 3 backdrops', () => {
+    const slot = (name: string) => STARTER_PARTS.filter((part) => part.slot === name).map((part) => part.id);
+    expect(slot('paint2')).toEqual(['none', ...slot('paint')]);
+    expect(slot('finish')).toEqual(['gloss', 'matte', 'metallic', 'pearl']);
+    expect(slot('trail')).toEqual(['stream', 'sparks', 'rings', 'flames']);
+    expect(slot('backdrop')).toEqual(['garage', 'stadium', 'tunnel']);
+  });
+
+  it('Every season a player finishes gives them a decal with its number and year; any ranked player can wear their rank emblem', () => {
+    expect(seasonDecals({ s1: 2027, s2: 2028 })).toEqual([
+      { slot: 'decal', id: 'season-s1-2027', name: 'Season 1 (2027)' },
+      { slot: 'decal', id: 'season-s2-2028', name: 'Season 2 (2028)' },
+    ]);
+    expect(RANK_DECAL).toEqual({ slot: 'decal', id: 'rank', name: 'Rank emblem' });
   });
 });
 

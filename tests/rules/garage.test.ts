@@ -51,6 +51,32 @@ describe('The Garage', () => {
     await assertSucceeds(joinIn({ ...starter, body: 'bruiser', paint: 'racingRed' }));
   });
 
+  it('The accent, finish, trail style and backdrop are optional, for a car saved before they existed', async () => {
+    await assertSucceeds(setCar(starter));
+    await assertSucceeds(setCar({ ...starter, paint2: 'racingRed', finish: 'pearl', trail: 'rings', backdrop: 'tunnel' }));
+    await assertFails(setCar({ ...starter, paint2: 'galaxy' }));
+    await assertFails(setCar({ ...starter, backdrop: 'moon' }));
+  });
+
+  it('The rank decal goes on once a player has a rank', async () => {
+    await assertFails(setCar({ ...starter, decal: 'rank' }));
+    await asJob((db) => db.doc(profile).update({ rank: 'gold' }));
+    await assertSucceeds(setCar({ ...starter, decal: 'rank' }));
+  });
+
+  it("A season decal goes on only for a season the player finished, with the year it ended", async () => {
+    await assertFails(setCar({ ...starter, decal: 'season-s1-2027' }));
+    await asJob((db) => db.doc(profile).update({ seasons: { s1: 2027 } }));
+    await assertSucceeds(setCar({ ...starter, decal: 'season-s1-2027' }));
+    await assertFails(setCar({ ...starter, decal: 'season-s1-2028' }));
+    await assertFails(setCar({ ...starter, decal: 'season-s2-2027' }));
+  });
+
+  it("A player can't give themselves a rank or a season", async () => {
+    await assertFails(dev2().doc(profile).update({ rank: 'grandChamp' }));
+    await assertFails(dev2().doc(profile).update({ seasons: { s1: 2027 } }));
+  });
+
   it("Nobody changes someone else's car", async () => {
     await assertFails(dev3().doc(profile).update({ car: starter }));
   });

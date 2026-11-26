@@ -26,7 +26,7 @@ test.describe('The Garage', () => {
     await expect(page.locator('.profile-car')).toHaveAttribute('data-car', 'dart racingRed');
   });
 
-  test('A locked part shows the badge that unlocks it, and goes on once that badge is earned', async ({ page, request }) => {
+  test('A locked part can be tried on: it shows on your car with how to earn it, is never saved, and goes on for good once that badge is earned', async ({ page, request }) => {
     const league = await createLeague(request);
     const profile = `leagues/${league.id}/players/${league.commish}`;
     await enterAsCommish(page, league);
@@ -34,14 +34,50 @@ test.describe('The Garage', () => {
     await page.getByRole('group', { name: 'Part' }).getByRole('button', { name: 'Paint', exact: true }).click();
     const chrome = page.getByRole('button', { name: 'Chrome finish, locked: earn Perfect Week', exact: true });
     await chrome.click();
-    await expect(page.getByRole('status')).toHaveText('Chrome finish: earn Perfect Week. A perfect day on all 6 goal days of a week.');
+    await expect(page.getByRole('status')).toHaveText('Trying on Chrome finish. Earn Perfect Week to keep it: A perfect day on all 6 goal days of a week.');
+    await expect(page.locator('.garage-car')).toHaveAttribute('data-car', 'dart chrome');
     expect((await readDoc(request, profile))?.car).toBeUndefined();
+    await page.getByRole('button', { name: 'Back to my car', exact: true }).click();
+    await expect(page.locator('.garage-car')).toHaveAttribute('data-car', 'dart cobalt');
 
     await patchDoc(request, profile, { badges: { perfectWeek: { at: new Date(), season: 's1' } } });
     const unlocked = page.getByRole('button', { name: 'Chrome finish', exact: true });
     await unlocked.click();
     await expect(page.getByRole('status')).toHaveText('Chrome finish is on your car.');
     await expect.poll(async () => ((await readDoc(request, profile))?.car as { paint?: string } | undefined)?.paint).toBe('chrome');
+  });
+
+  test('An accent, a finish, a trail style and a backdrop go on like any part, and are saved with your car', async ({ page, request }) => {
+    const league = await createLeague(request);
+    const profile = `leagues/${league.id}/players/${league.commish}`;
+    await enterAsCommish(page, league);
+    await openGarage(page);
+    const slots = page.getByRole('group', { name: 'Part' });
+    for (const [slot, part] of [['Accent', 'Racing Red'], ['Finish', 'Pearl'], ['Trail', 'Smoke rings'], ['Backdrop', 'Neon tunnel']] as const) {
+      await slots.getByRole('button', { name: slot, exact: true }).click();
+      await page.getByRole('list', { name: slot }).getByRole('button', { name: part, exact: true }).click();
+      await expect(page.getByRole('status')).toHaveText(`${part} is on your car.`);
+    }
+    await expect.poll(async () => (await readDoc(request, profile))?.car).toMatchObject({ paint2: 'racingRed', finish: 'pearl', trail: 'rings', backdrop: 'tunnel' });
+    await expect(page.getByRole('region', { name: 'Your car' })).toHaveAttribute('data-backdrop', 'tunnel');
+  });
+
+  test('The rank decal and a season decal come with a rank and a finished season; until then they can be tried on', async ({ page, request }) => {
+    const league = await createLeague(request);
+    const profile = `leagues/${league.id}/players/${league.commish}`;
+    await enterAsCommish(page, league);
+    await openGarage(page);
+    await page.getByRole('group', { name: 'Part' }).getByRole('button', { name: 'Decal', exact: true }).click();
+    const decals = page.getByRole('list', { name: 'Decal' });
+    await decals.getByRole('button', { name: 'Rank emblem, locked', exact: true }).click();
+    await expect(page.getByRole('status')).toContainText('Your rank emblem is yours once your first week is final.');
+    await expect(decals.getByRole('button', { name: 'Season decal, locked', exact: true })).toBeVisible();
+
+    await patchDoc(request, profile, { rank: 'gold', seasons: { s1: 2027 } });
+    await decals.getByRole('button', { name: 'Season 1 (2027)', exact: true }).click();
+    await expect(page.getByRole('status')).toHaveText('Season 1 (2027) is on your car.');
+    await decals.getByRole('button', { name: 'Rank emblem', exact: true }).click();
+    await expect.poll(async () => ((await readDoc(request, profile))?.car as { decal?: string } | undefined)?.decal).toBe('rank');
   });
 
   test('You drag your car to spin it on the turntable, and it rests on the side you leave it nearest; a tap turns it round', async ({ page, request }) => {

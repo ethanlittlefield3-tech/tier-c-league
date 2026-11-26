@@ -83,6 +83,10 @@ test.describe('Settling a week, and the League tab', () => {
     await page.locator('.standings tbody').getByRole('button', { name: /^Maya, / }).click();
     const card = page.getByRole('dialog', { name: 'Maya' });
     await expect(card.locator('.player-card-rank')).not.toHaveText('Unranked');
+    // The showroom: Maya's car on the backdrop she picked.
+    await patchDoc(request, `leagues/${league.id}/players/maya`, { car: { body: 'bruiser', paint: 'racingRed', decal: 'none', wheels: 'stock', boost: 'team', explosion: 'stock', topper: 'none', backdrop: 'stadium' } });
+    await expect(card.getByRole('img', { name: "Maya's car" })).toHaveAttribute('data-backdrop', 'stadium');
+    await expect(card.locator('.player-card-showroom-car')).toHaveAttribute('data-car', 'bruiser racingRed');
     await expect(card).toContainText('W–D–L');
     await expect(card.locator('.player-card-rival')).toHaveText('You against Maya, all time: 1–0–0');
     await card.getByRole('button', { name: "See Maya's day" }).click();

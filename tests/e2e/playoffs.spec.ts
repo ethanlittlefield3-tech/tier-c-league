@@ -80,6 +80,8 @@ test.describe('The playoffs', () => {
     expect((await readDoc(request, `leagues/${league.id}`))?.banner).toEqual({ player: 'maya', season: 's1' });
     // The season is over: the offseason starts.
     expect((await readDoc(request, path))?.status).toBe('finished');
+    // Everyone who finished it gets its decal, with the year it ended.
+    expect((await readDoc(request, `leagues/${league.id}/players/lee`))?.seasons).toEqual({ s1: new Date().getFullYear() });
     // The alerts: the commish's Whiff Bowl result, and the champion, for everyone.
     expect(await alertTitles(request, league)).toEqual(expect.arrayContaining(['Playoffs: you lost', 'Maya won Season 1']));
     expect((await readDoc(request, `leagues/${league.id}/trophies/s1`))?.trophies).toMatchObject({ champion: { winners: ['maya'] }, finalist: { winners: ['jo'] }, whiffBowl: { winners: [league.commish] } });
