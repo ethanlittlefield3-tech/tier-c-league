@@ -306,7 +306,7 @@ Last updated 2026-11-25, after Rumble: group play is built.
 The phone layout check, Checkpoint C (every screen, in the demo league) and Checkpoint D (the fast test week) all passed on 2026-11-26. The commish answered every open question (rulings R14 to R16). Left, each walked through one step at a time in the chat:
 
 1. **Push alerts:** the web push key is in the app, and the commish's phone has alerts on (2026-11-26). Left: run **Send a test alert** on GitHub and see it arrive.
-2. **Backups:** a private repo and a token, then two GitHub Secrets.
+2. **Backups:** done on 2026-11-26. The private repo, the token (renew it before it expires) and both secrets are set, and a test backup saved.
 3. **Locking down the web key:** limit it to the app's address in the Google Cloud console, and turn on App Check.
 
 ## Next
