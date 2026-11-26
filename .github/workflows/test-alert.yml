@@ -1,0 +1,45 @@
+name: Send a test alert
+
+# By hand from the Actions tab ("Run workflow"): sends one test alert to the
+# commish's phones that turned alerts on, to check alerts reach a phone.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-alert:
+    name: Send a test alert
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check that the league's key is in GitHub Secrets
+        id: key
+        env:
+          KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -n "$KEY" ]; then
+            echo "present=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "The FIREBASE_SERVICE_ACCOUNT secret is not set yet. Skipping."
+          fi
+
+      - uses: actions/checkout@v6
+        if: steps.key.outputs.present == 'yes'
+
+      - uses: actions/setup-node@v6
+        if: steps.key.outputs.present == 'yes'
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+        if: steps.key.outputs.present == 'yes'
+
+      # The key is handed to this step only.
+      - name: Send it
+        if: steps.key.outputs.present == 'yes'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node jobs/test-alert.ts

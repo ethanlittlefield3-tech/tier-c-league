@@ -6,6 +6,7 @@ import { createLeague, patchDoc, quietPlayer, readDoc, startSeason, thisWeek, wr
 
 const run = promisify(execFile);
 const tickJob = fileURLToPath(new URL('../../jobs/tick.ts', import.meta.url));
+const testAlertJob = fileURLToPath(new URL('../../jobs/test-alert.ts', import.meta.url));
 
 /** Runs the alerts job for one league, and returns the pushes it would have sent. */
 async function tick(league: TestLeague): Promise<{ device: string; title: string; body: string; screen: string }[]> {
@@ -54,6 +55,16 @@ test.describe('Sending alerts', () => {
     expect(pushes).toContainEqual(expect.objectContaining({ title: 'Your Wheel spun itself', body: 'Post a childhood photo. Prove it by 11:59 pm tonight.' }));
     // Spun once: the next run leaves it alone.
     expect((await tick(league)).filter((push) => push.title === 'Your Wheel spun itself')).toEqual([]);
+  });
+
+  test('"Send a test alert" reaches the commish\'s phone, and only a phone still signed in', async ({ request }) => {
+    const league = await createLeague(request);
+    const device = await phoneWithAlerts(request, league);
+    const send = async () => (await run(process.execPath, [testAlertJob], { env: { ...process.env, FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080', GCLOUD_PROJECT: 'demo-tier-c', LEAGUE_ID: league.id } })).stdout;
+    expect(await send()).toContain(`push ${JSON.stringify({ device, title: 'Test alert', body: 'Alerts reach this phone.', screen: 'today', tag: 'test' })}`);
+    // A new key signs the phone out: it gets nothing.
+    await patchDoc(request, `leagues/${league.id}/keys/${league.commish}`, { key: 'TCL-ZZZZ-ZZZZ' });
+    expect(await send()).toContain('Done: 0 test alerts sent to 0 phones');
   });
 
   test('A poke reaches the phone of the player it is aimed at: "you awake?"', async ({ request }) => {
