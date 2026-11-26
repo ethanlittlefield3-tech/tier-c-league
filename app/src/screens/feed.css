@@ -405,3 +405,37 @@
 .feed-event[data-kind='picks'] {
   border-left-color: #b58cff;
 }
+
+/* One place to post: a switch between talking to your opponent and a brag. */
+.feed-switch {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 14px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(196, 216, 255, 0.08);
+}
+
+.feed-switch button {
+  flex: 1;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-soft);
+  font: 800 14px/1 var(--body);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feed-switch button[aria-pressed='true'] {
+  background: var(--blue, #1f8bff);
+  color: #fff;
+}
+
+.feed-switch button:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}

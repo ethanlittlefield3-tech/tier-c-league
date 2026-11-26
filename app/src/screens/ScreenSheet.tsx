@@ -1,15 +1,17 @@
+import { createPortal } from 'preact/compat';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { screenPoints } from '@tcl/engine';
-import { SCREEN_MAX, formatScreen, formatScreenShort, pointsChip, scaleRowOf, screenScale } from '../today/model.ts';
+import { SCREEN_MAX, formatScreen, formatScreenShort, pointsChip } from '../today/model.ts';
 import './sheet.css';
 
 /** The slider covers 0 to 10 hours. The buttons go on to 24. */
 const SLIDER_MAX = 600;
 
 /**
- * The screen-time sheet: it opens over Today when the screen-time card is
- * tapped. The number changes here first, and is saved only with "Save screen
- * time". The commish's mockup set the look.
+ * The screen-time card: it opens over Today's squares when the screen-time
+ * square is tapped. The number changes here first, and is saved only with
+ * "Save screen time". The slider and the points beside the number say all
+ * there is to say about the points.
  */
 export function ScreenSheet(props: {
   /** "Wed Nov 25". */
@@ -23,7 +25,6 @@ export function ScreenSheet(props: {
   const [draft, setDraft] = useState(props.minutes ?? 0);
   const title = useRef<HTMLHeadingElement>(null);
   const points = screenPoints(draft, props.par);
-  const row = scaleRowOf(draft);
   const where = /Android/.test(navigator.userAgent) ? 'Digital Wellbeing' : 'iPhone Screen Time';
 
   useEffect(() => {
@@ -37,7 +38,10 @@ export function ScreenSheet(props: {
 
   const step = (delta: number) => setDraft((before) => Math.min(SCREEN_MAX, Math.max(0, before + delta)));
 
-  return (
+  // Rendered straight onto the page's body, outside the scrolling screen, so
+  // nothing on the screen can carry it down the page: it always opens over
+  // the squares, in view.
+  return createPortal(
     <div class="sheet-layer">
       <div class="sheet-backdrop" onClick={props.onClose} />
       <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
@@ -83,15 +87,6 @@ export function ScreenSheet(props: {
           </button>
         </div>
 
-        <ul class="sheet-scale" aria-label={`Points at par ${props.par}`}>
-          {screenScale(props.par).map((line, index) => (
-            <li aria-current={index === row ? 'true' : undefined}>
-              <span>{line.label}</span>
-              <span>{line.points}</span>
-            </li>
-          ))}
-        </ul>
-
         {props.editable ? (
           <>
             <button type="button" class="sheet-save" onClick={() => props.onSave(draft)}>
@@ -110,6 +105,7 @@ export function ScreenSheet(props: {
           Close
         </button>
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }

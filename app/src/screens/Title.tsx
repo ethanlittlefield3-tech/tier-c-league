@@ -11,20 +11,17 @@ import impact from '../art/title/impact.svg?raw';
 import lightsAll from '../art/title/lights-all.svg?raw';
 import lightsLeft from '../art/title/lights-left.svg?raw';
 import lightsRight from '../art/title/lights-right.svg?raw';
-import { INTRO_TIMING, deviceDay, introMode, type IntroMode } from '../intro/mode.ts';
+import { INTRO_TIMING, introMode, type IntroMode } from '../intro/mode.ts';
 import { playEnterSound } from '../intro/sound.ts';
-import { recall, remember } from '../storage.ts';
 import './title.css';
-
-const PLAYED_KEY = 'tcl.intro.fullDay';
 
 /** Where the intro is: the Nunchucks card, the boost scene, or the title itself. */
 type Phase = 'card' | 'boost' | 'title';
 
 function chooseMode(): IntroMode {
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  // If the phone refuses to keep notes, the full intro simply plays each time.
-  return introMode({ lastFullDay: recall(PLAYED_KEY), today: deviceDay(new Date()), reducedMotion });
+  // The full intro plays every time the app opens (ruling R19).
+  return introMode({ reducedMotion });
 }
 
 function Chevron() {
@@ -57,7 +54,6 @@ export function Title(props: { onEnter?: () => void }) {
   useEffect(() => {
     if (phase === 'title') {
       titleSince.current = performance.now();
-      if (mode === 'full') remember(PLAYED_KEY, deviceDay(new Date()));
       enterButton.current?.focus({ preventScroll: true });
       return undefined;
     }

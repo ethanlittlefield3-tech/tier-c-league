@@ -34,7 +34,7 @@ test.describe('The app frame', () => {
     await expect(page.getByRole('heading', { name: 'Feed', level: 1 })).toBeVisible();
     await expect(tab(page, 'Feed')).toHaveAttribute('aria-current', 'page');
     await expect(tab(page, 'Today')).not.toHaveAttribute('aria-current', 'page');
-    await expect(page.getByRole('heading', { name: 'Talk trash' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Talk trash' })).toBeVisible();
   });
 
   test('Every tab is built: none says it is coming soon', async ({ page, request }) => {

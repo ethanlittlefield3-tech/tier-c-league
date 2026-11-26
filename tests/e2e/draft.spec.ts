@@ -311,9 +311,14 @@ test.describe('The draft', () => {
     // Everyone sees the schedule in League.
     await button(riley.phone, 'Back').click();
     await tab(riley.phone, 'League').click();
-    await expect(riley.phone.locator('.result-week').first()).toContainText('Week 1');
-    await expect(riley.phone.locator('.result-week').first().locator('li')).toHaveText(['You vs Sam', 'Alex vs The House']);
-    await expect(riley.phone.locator('.result-week')).toHaveCount(6);
+    const schedule = riley.phone.getByRole('region', { name: 'Schedule' });
+    await expect(schedule.locator('.result-head')).toContainText('Week 1');
+    await expect(schedule.locator('.schedule-status')).toContainText('1 of 6');
+    await expect(schedule.locator('.result-week li')).toHaveText(['You vs Sam', 'Alex vs The House']);
+    // The arrows page through the weeks to come.
+    await schedule.getByRole('button', { name: 'Later week' }).click();
+    await expect(schedule.locator('.result-head')).toContainText('Week 2');
+    await expect(schedule.getByRole('button', { name: 'Earlier week' })).toBeEnabled();
     await riley.phone.context().close();
   });
 

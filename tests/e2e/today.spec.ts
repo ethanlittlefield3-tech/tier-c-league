@@ -239,20 +239,25 @@ test.describe('Today', () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
   });
 
-  test('Tapping screen time opens the big sheet: the time, its points, and the scale at par', async ({ page, request }) => {
+  test('Tapping screen time opens a card over the squares, all on screen: the time, its points and the slider, with no points table', async ({ page, request }) => {
     await onToday(page, request);
+    // Scrolled down a little first: the card still opens on the screen, not further down the page.
+    await page.locator('#app').evaluate((app) => app.scrollTo(0, 200));
     await screenCard(page).click();
     await expect(sheet(page)).toBeVisible();
+    const box = (await sheet(page).boundingBox())!;
+    const view = page.viewportSize()!;
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    expect(box.y + box.height).toBeLessThanOrEqual(view.height);
     await expect(sheet(page).locator('.sheet-value')).toContainText('0m');
     await expect(sheet(page).locator('.sheet-value')).toContainText('+3 pts');
-    await expect(sheet(page).locator('li[aria-current="true"]')).toContainText('Under 1 h');
+    await expect(sheet(page).getByRole('slider', { name: 'Screen time' })).toBeVisible();
+    await expect(sheet(page).locator('li')).toHaveCount(0);
     await sheet(page).getByRole('button', { name: '1 hour more' }).click();
     await sheet(page).getByRole('button', { name: '1 hour more' }).click();
     await sheet(page).getByRole('button', { name: '15 minutes more' }).click();
     await expect(sheet(page).locator('.sheet-value')).toContainText('2 h 15m');
     await expect(sheet(page).locator('.sheet-value')).toContainText('+1 pt');
-    await expect(sheet(page).locator('li[aria-current="true"]')).toContainText('2\u20133 h');
-    await expect(sheet(page).locator('li[aria-current="true"]')).toContainText('+1');
   });
 
   test('Close leaves screen time as it was', async ({ page, request }) => {

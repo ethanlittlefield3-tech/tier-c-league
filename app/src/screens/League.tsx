@@ -1,9 +1,12 @@
+import { useState } from 'preact/hooks';
 import { CarArt } from '../art/car/CarArt.tsx';
 import type { CarParts } from '../art/car/draw.ts';
-import { MODE_BLURBS, MODE_NAMES, nemesisOf, recordText, type GroupMode, type Rival } from '@tcl/engine';
-import { groupLines, type GroupDoc } from '../group/words.ts';
+import { RankBadge } from '../art/RankBadge.tsx';
+import { RANK_NAMES, nemesisOf, recordText, type Rank, type Rival } from '@tcl/engine';
 import { useAll, useDoc, useNow } from '../data/hooks.ts';
 import { Picks } from './Picks.tsx';
+import { PlayerCard } from './PlayerCard.tsx';
+import { Schedule, type WeekDoc } from './Schedule.tsx';
 import { Playoffs } from './Playoffs.tsx';
 import { TrophyCase } from './Trophies.tsx';
 import type { Me } from '../data/identity.ts';
@@ -20,29 +23,6 @@ interface Row {
   tieBreak: 'headToHead' | 'beers' | 'perfectDays' | 'coinFlip' | null;
 }
 
-interface Result {
-  player: string;
-  opponent: string;
-  points: number;
-  opponentPoints: number;
-  /** `none` in a Bounty or Alley week, which counts toward nobody's record. */
-  outcome: 'win' | 'draw' | 'loss' | 'none';
-  seasonPoints: number;
-}
-
-interface WeekDoc {
-  week: number;
-  /** The group-play mode, or `regular`. */
-  mode?: string;
-  pairs?: { a: string; b: string }[];
-  teams?: { blue: string[]; orange: string[] };
-  status?: 'provisional' | 'final';
-  results?: Record<string, Result>;
-  awards?: { mvp: string[]; bust: string[]; wheel: string[] };
-  /** A group-play week's summary, once settled. */
-  group?: GroupDoc | null;
-}
-
 const TIEBREAK: Record<string, string> = {
   headToHead: 'ahead on head-to-head',
   beers: 'ahead on fewer beers',
@@ -50,11 +30,6 @@ const TIEBREAK: Record<string, string> = {
   coinFlip: 'ahead on the sealed coin flip',
 };
 
-const points = (value: number) => (Number.isInteger(value) ? String(value) : value.toFixed(1));
-
-/** A group-play week's mode name, or nothing for a regular 1v1 week. */
-const modeName = (mode: string | undefined) => (mode && mode in MODE_NAMES ? MODE_NAMES[mode as GroupMode] : null);
-const modeBlurb = (mode: string | undefined) => (mode && mode in MODE_BLURBS ? MODE_BLURBS[mode as GroupMode] : null);
 
 function Notice(props: { title: string; children: string }) {
   return (
@@ -66,9 +41,10 @@ function Notice(props: { title: string; children: string }) {
 }
 
 /**
- * League (SCOPE.md, "Screens"): the standings, this week's matchups, results
- * and the schedule. The standings come from the weekly job, once each week
- * settles at noon on the Monday after.
+ * League (SCOPE.md, "Screens"): the standings, with each player's rank
+ * emblem and a card a tap away, then the schedule, one week at a time. The
+ * standings come from the weekly job, once each week settles at noon on the
+ * Monday after.
  */
 export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
   const now = useNow();
@@ -80,7 +56,8 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
   const bracket = useDoc<{ champion?: string | null }>(seasonPath ? `${seasonPath}/playoffs/bracket` : null);
   const standings = useDoc<{ rows?: Row[] }>(seasonPath ? `${seasonPath}/standings/current` : null);
   const weeks = useAll<WeekDoc>(seasonPath ? `${seasonPath}/weeks` : null);
-  const players = useAll<{ displayName?: string; car?: Partial<CarParts>; rivals?: Record<string, Rival>; stickers?: Partial<Record<string, { until?: unknown }>> }>(`${leaguePath}/players`);
+  const players = useAll<{ displayName?: string; car?: Partial<CarParts>; rivals?: Record<string, Rival>; stickers?: Partial<Record<string, { until?: unknown }>>; rank?: Rank; badges?: Record<string, unknown> }>(`${leaguePath}/players`);
+  const [card, setCard] = useState<string | null>(null);
   const dates = season.data ? seasonDates(now, season.data) : null;
   const today = useDoc<{ period: string; date: string; week: number; dayIndex: number }>(seasonPath && dates ? `${seasonPath}/calendar/${dates.today}` : null);
 
@@ -96,9 +73,6 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
 
   const name = (player: string) => (player === 'HOUSE' ? 'The House' : player === props.me.player ? 'You' : (players.docs.find((found) => found.id === player)?.data.displayName ?? 'Player'));
   const sorted = [...weeks.docs].sort((a, b) => a.data.week - b.data.week);
-  const settled = sorted.filter((week) => week.data.results).reverse();
-  const thisWeek = sorted.find((week) => week.id === today.data?.period) ?? null;
-  const upcoming = sorted.filter((week) => !week.data.results && week.id !== thisWeek?.id);
   const record = (player: string) => {
     const tally = { win: 0, draw: 0, loss: 0 };
     for (const week of sorted) {
@@ -126,7 +100,7 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
               {players.docs
                 .filter((found) => found.id !== props.me.player)
                 .map((found) => (
-                  <button key={found.id} type="button" class="feed-chip" aria-label={`${found.data.displayName ?? 'Player'}'s day`} onClick={() => props.onPlayer?.(found.id)}>
+                  <button key={found.id} type="button" class="feed-chip" onClick={() => setCard(found.id)}>
                     {found.data.displayName ?? 'Player'}
                   </button>
                 ))}
@@ -156,14 +130,20 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
                 <tr data-me={row.player === props.me.player}>
                   <td class="standings-rank">{row.rank}</td>
                   <td class="standings-who">
-                    <CarArt parts={lookOf(row.player)?.car} stickers={lookOf(row.player)?.stickers} bare class="standings-car" />
-                    {row.player === props.me.player ? (
-                      name(row.player)
+                    {lookOf(row.player)?.rank ? (
+                      <RankBadge rank={lookOf(row.player)!.rank!} class="standings-rank-badge" />
                     ) : (
-                      <button type="button" class="standings-name" aria-label={`${name(row.player)}'s day`} onClick={() => props.onPlayer?.(row.player)}>
-                        {name(row.player)}
-                      </button>
+                      <span class="standings-rank-badge standings-unranked" aria-hidden="true" />
                     )}
+                    <CarArt parts={lookOf(row.player)?.car} stickers={lookOf(row.player)?.stickers} bare class="standings-car" />
+                    <button
+                      type="button"
+                      class="standings-name"
+                      aria-label={`${name(row.player)}, ${lookOf(row.player)?.rank ? RANK_NAMES[lookOf(row.player)!.rank!] : 'unranked'}`}
+                      onClick={() => setCard(row.player)}
+                    >
+                      {name(row.player)}
+                    </button>
                     {row.player === nemesis && skull}
                     {row.tieBreak && <span class="standings-tie">{TIEBREAK[row.tieBreak]}</span>}
                   </td>
@@ -178,97 +158,10 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
         <p class="panel-text">Season Points are every point you score, plus 5 for a 1v1 win and 2 for a draw, and group play's bonuses.</p>
       </section>
 
+      <Schedule weeks={weeks.docs} currentPeriod={today.data?.period ?? null} me={props.me.player} name={name} />
+
       {seasonPath && <Playoffs league={props.me.league} seasonPath={seasonPath} me={props.me.player} name={name} banner={league.data?.banner ?? null} />}
 
-      {thisWeek?.data.pairs && (
-        <section class="panel league-panel" aria-labelledby="this-week-title">
-          <h2 id="this-week-title">
-            Week {thisWeek.data.week}
-            {modeName(thisWeek.data.mode) && <> · {modeName(thisWeek.data.mode)}</>}
-          </h2>
-          {modeBlurb(thisWeek.data.mode) && <p class="panel-text">{modeBlurb(thisWeek.data.mode)} Match shows how it stands.</p>}
-          <ul class="pairs">
-            {thisWeek.data.pairs.map((pair) => (
-              <li data-me={pair.a === props.me.player || pair.b === props.me.player}>
-                {name(pair.a)} <span>vs</span> {name(pair.b)}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {settled.length > 0 && (
-        <section class="panel league-panel" aria-labelledby="results-title">
-          <h2 id="results-title">Results</h2>
-          {settled.map((week) => {
-            const results = week.data.results ?? {};
-            const seen = new Set<string>();
-            return (
-              <div class="result-week">
-                <p class="result-head">
-                  Week {week.data.week}
-                  {modeName(week.data.mode) && <> · {modeName(week.data.mode)}</>} <span>{week.data.status === 'final' ? 'Final' : 'Provisional'}</span>
-                </p>
-                <ul class="pairs">
-                  {groupLines(week.data.group, name)?.map((line) => <li data-me={line.players.includes(props.me.player)}>{line.text}</li>)}
-                  {Object.values(week.data.group ? {} : results)
-                    .filter((result) => result.outcome !== 'none')
-                    .filter((result) => {
-                      if (seen.has(result.player)) return false;
-                      seen.add(result.player);
-                      seen.add(result.opponent);
-                      return true;
-                    })
-                    .map((result) => (
-                      <li data-me={result.player === props.me.player || result.opponent === props.me.player}>
-                        {name(result.player)} <strong>{points(result.points)}</strong> <span>{result.outcome === 'draw' ? 'drew' : result.outcome === 'win' ? 'beat' : 'lost to'}</span> {name(result.opponent)}{' '}
-                        <strong>{points(result.opponentPoints)}</strong>
-                      </li>
-                    ))}
-                </ul>
-                {week.data.awards && (
-                  <p class="result-awards">
-                    {week.data.awards.mvp.length > 0 && <>MVP: {week.data.awards.mvp.map(name).join(', ')}. </>}
-                    {week.data.awards.bust.length > 0 && <>Bust: {week.data.awards.bust.map(name).join(', ')}. </>}
-                    {week.data.awards.wheel.length > 0 && <>Spins the Wheel: {week.data.awards.wheel.map(name).join(', ')}.</>}
-                  </p>
-                )}
-              </div>
-            );
-          })}
-        </section>
-      )}
-
-      {upcoming.length > 0 && (
-        <section class="panel league-panel" aria-labelledby="schedule-title">
-          <h2 id="schedule-title">Schedule</h2>
-          {upcoming.map((week) => (
-            <div class="result-week">
-              <p class="result-head">
-                Week {week.data.week}
-                {modeName(week.data.mode) && <> · {modeName(week.data.mode)}</>}
-              </p>
-              {modeBlurb(week.data.mode) && <p class="result-mode">{modeBlurb(week.data.mode)}</p>}
-              <ul class="pairs">
-                {(week.data.pairs ?? []).map((pair) => (
-                  <li data-me={pair.a === props.me.player || pair.b === props.me.player}>
-                    {name(pair.a)} <span>vs</span> {name(pair.b)}
-                  </li>
-                ))}
-                {week.data.mode === 'teamWeek' &&
-                  week.data.teams &&
-                  (['blue', 'orange'] as const).map((team) => (
-                    <li data-me={week.data.teams![team].includes(props.me.player)} data-team={team}>
-                      {team === 'blue' ? 'Blue' : 'Orange'}: {week.data.teams![team].map(name).join(', ')}
-                    </li>
-                  ))}
-              </ul>
-            </div>
-          ))}
-        </section>
-      )}
-
-      {!thisWeek?.data.pairs && settled.length === 0 && upcoming.length === 0 && <p class="fine-print">The schedule appears after the draft.</p>}
       {today.data && (
         <Picks
           me={props.me}
@@ -304,6 +197,34 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
         )}
         <p class="panel-text">Wins, draws and losses, every season. The skull marks your nemesis: whoever has beaten you most.</p>
       </section>
+
+      {card && (
+        <PlayerCard
+          stats={(() => {
+            const row = rows.find((each) => each.player === card) ?? null;
+            const look = lookOf(card);
+            return {
+              name: card === props.me.player ? 'You' : name(card),
+              rank: look?.rank ?? null,
+              car: look?.car,
+              stickers: look?.stickers,
+              place: row?.rank ?? null,
+              seasonPoints: row?.seasonPoints ?? null,
+              record: record(card),
+              perfectDays: row?.perfectDays ?? null,
+              beers: row?.beers ?? null,
+              badges: Object.keys(look?.badges ?? {}).length,
+              rival: card === props.me.player ? null : (myRivals[card] ?? null),
+            };
+          })()}
+          onDay={card === props.me.player ? undefined : () => {
+            const player = card;
+            setCard(null);
+            props.onPlayer?.(player);
+          }}
+          onClose={() => setCard(null)}
+        />
+      )}
     </div>
   );
 }

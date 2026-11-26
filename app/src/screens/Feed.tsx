@@ -136,8 +136,7 @@ export function Feed(props: { me: Me; onWheel?: () => void }) {
           </button>
         </section>
       )}
-      <Talk me={props.me} opponent={opponent} saved={saved} />
-      <Brag me={props.me} />
+      <Compose me={props.me} opponent={opponent} saved={saved} />
       <section class="feed-wall" aria-label="The feed">
         {timeline.length === 0 && !posts.loading && <p class="fine-print">Nothing on the wall yet. Start something.</p>}
         {timeline.map((item) =>
@@ -201,6 +200,24 @@ function EventRow(props: { event: FeedEvent; now: number; name: Names; carOf: Ca
   );
 }
 
+/** One place to post: a switch between talking to this week's opponent and a brag for everyone. */
+function Compose(props: { me: Me; opponent: { id: string | null; name: string; vsHouse: boolean }; saved: string[] }) {
+  const [mode, setMode] = useState<'talk' | 'brag'>('talk');
+  return (
+    <section class="panel feed-compose" aria-label="Post to the feed">
+      <div class="feed-switch" role="group" aria-label="Talk or brag">
+        <button type="button" aria-pressed={mode === 'talk'} onClick={() => setMode('talk')}>
+          {props.opponent.id ? `Talk to ${props.opponent.name}` : 'Talk trash'}
+        </button>
+        <button type="button" aria-pressed={mode === 'brag'} onClick={() => setMode('brag')}>
+          Brag
+        </button>
+      </div>
+      {mode === 'talk' ? <Talk me={props.me} opponent={props.opponent} saved={props.saved} /> : <Brag me={props.me} />}
+    </section>
+  );
+}
+
 /** Taunts for this week's opponent: quick chat, your saved taunts, or a new one. */
 function Talk(props: { me: Me; opponent: { id: string | null; name: string; vsHouse: boolean }; saved: string[] }) {
   const [text, setText] = useState('');
@@ -211,10 +228,9 @@ function Talk(props: { me: Me; opponent: { id: string | null; name: string; vsHo
 
   if (!to) {
     return (
-      <section class="panel feed-talk" aria-labelledby="talk-title">
-        <h2 id="talk-title">Talk trash</h2>
+      <div class="feed-talk">
         <p class="panel-text">{props.opponent.vsHouse ? 'You face The House this week. Taunts wait for a real opponent.' : 'Taunts open once you have an opponent, after the draft.'}</p>
-      </section>
+      </div>
     );
   }
 
@@ -253,8 +269,7 @@ function Talk(props: { me: Me; opponent: { id: string | null; name: string; vsHo
   };
 
   return (
-    <section class="panel feed-talk" aria-labelledby="talk-title">
-      <h2 id="talk-title">Talk to {props.opponent.name}</h2>
+    <div class="feed-talk">
       <div class="feed-chips" role="group" aria-label="Quick chat">
         {QUICK_CHAT.map((line) => (
           <button key={line} type="button" class="feed-chip" disabled={busy} onClick={() => send('quick', line)}>
@@ -302,7 +317,7 @@ function Talk(props: { me: Me; opponent: { id: string | null; name: string; vsHo
           {note.text}
         </p>
       )}
-    </section>
+    </div>
   );
 }
 
@@ -331,8 +346,7 @@ function Brag(props: { me: Me }) {
   };
 
   return (
-    <form class="panel feed-brag" onSubmit={post} noValidate aria-labelledby="brag-title">
-      <h2 id="brag-title">Brag</h2>
+    <form class="feed-brag" onSubmit={post} noValidate aria-label="Brag">
       <Field
         id="feed-brag"
         label="Your brag"

@@ -177,7 +177,8 @@ test.describe('Receipts', () => {
     });
 
     await tab(page, 'League').click();
-    await page.getByRole('group', { name: 'Everyone in the league' }).getByRole('button', { name: "Sam's day" }).click();
+    await page.getByRole('group', { name: 'Everyone in the league' }).getByRole('button', { name: 'Sam' }).click();
+    await page.getByRole('dialog', { name: 'Sam' }).getByRole('button', { name: "See Sam's day" }).click();
     await expect(page.getByRole('heading', { name: "Sam's day" })).toBeVisible();
     const receipts = page.getByRole('region', { name: 'Receipts?' });
     await receipts.getByRole('button', { name: 'Ask for receipts: Body · A run' }).click();

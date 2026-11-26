@@ -230,6 +230,11 @@ Last updated 2026-11-25, after Rumble: group play is built.
 - **Alerts, part 1: on the phone** (2026-11-25). Profile has an Alerts panel: turn them on with a tap, switch each of the 7 kinds on or off, and set quiet hours. A new player is offered alerts right under their recovery key. A service worker shows the alerts, opens the app at the right screen when one is tapped, and keeps the app's files on the phone so it opens with no signal. The push token is fetched again on every open.
   - New rules for devices: a phone signs up only as the player its claim holds. 4 new rule tests and 1 rewritten. Weakening the rule 14 ways was caught 13 times; the other is still refused by the checks on each field. 3 engine tests and 5 flow tests.
   - Sending them is next: the tick job, every 10 minutes. Alerts also wait on the Cloud Messaging web push key from the commish.
+- **The commish's layout changes** (2026-11-26, rulings R19 and R20).
+  - The full intro plays on every open.
+  - The screen-time card opens over the squares, smaller and without the points table. It now opens on the screen itself, so it can't be stuck down the page.
+  - Feed has one place to post, with a Talk / Brag switch.
+  - League shows everyone's rank emblem in the standings, and a tap on a name opens a card with their rank, place, Season Points, record, perfect days, beers, badges and your record against them. The Schedule panel below the standings opens on this week, and its arrows go back through each week's results and awards and on to the weeks to come.
 - **Mark as left, and the Sunday spin** (2026-11-26, rulings R14 and R15). In Commish tools, "Mark as left" signs a player's phones out and lists them under Former players. Their matchups stay and score as if they did nothing, and they're kept out of MVP, the Bust, the Wheel and the playoffs. A Wheel spin nobody tapped now spins itself as its deadline's Sunday starts, and the spinner hears the dare (DECISIONS.md, calls 269 and 270).
 - **The fast test season ends properly** (2026-11-26). It was set to have playoffs that its fast calendar couldn't hold, so the bracket would have been seeded and stuck. It now has none: the Season Points leader is crowned when Week 3 goes final, and the offseason follows (DECISIONS.md, call 268).
 - **Every alert in SCOPE.md's table is sent** (2026-11-26). A check of the table against the jobs found one gap: the playoffs sent no round results or Demolition reveals, because the alerts job only read regular weeks. It now reads the rounds too, and everyone hears who won the season, the finalist, and who does the Season Dare (DECISIONS.md, call 267).
@@ -305,7 +310,7 @@ Last updated 2026-11-25, after Rumble: group play is built.
 
 The phone layout check, Checkpoint C (every screen, in the demo league) and Checkpoint D (the fast test week) all passed on 2026-11-26. The commish answered every open question (rulings R14 to R16). Left, each walked through one step at a time in the chat:
 
-1. **Push alerts:** the web push key is in the app, and the commish's phone has alerts on (2026-11-26). Left: run **Send a test alert** on GitHub and see it arrive.
+1. **Push alerts:** done on 2026-11-26. The web push key is in the app, and a test alert reached the commish's phone.
 2. **Backups:** done on 2026-11-26. The private repo, the token (renew it before it expires) and both secrets are set, and a test backup saved.
 3. **Locking down the web key:** done on 2026-11-26. The key only works from the app's own address, and the app still loads. App Check is left off (DECISIONS.md, call 271).
 

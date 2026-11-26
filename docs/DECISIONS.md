@@ -23,6 +23,9 @@ Every rule that had to be interpreted, and who decided it. SCOPE.md is still the
 | R15 | 2026-11-26 | **A Wheel spin still waiting when its deadline's Sunday starts spins itself,** at midnight. Proof is still due by 11:59 pm that Sunday. | "Still open" item 4: not spinning used to be a dodge in itself. |
 | R16 | 2026-11-26 | **The other provisional readings stand as built:** predictions (calls 199 to 201), the majority veto, a goal vetoed at close settled by the commish, the Wheel's 16 slices, no draw bonus in Team Week or 2v2, the Bounty and Alley edge cases, Rumble's items, the Whiff Bowl's shape, and no answer in the offseason counting as Stay. | "Still open" items 0 to 3 and 5 to 8, and call 262. |
 | R17 | 2026-11-26 | **A player marked as left is kept out of MVP, the Bust, the Wheel and the playoffs** (call 269). | Following R14: their no-show weeks would otherwise make them the Bust and the Wheel's spinner every week. |
+| R18 | 2026-11-26 | **A player who joins mid-season is in the league but has no matchups until the next season.** | The joining half of the mid-season question. |
+| R19 | 2026-11-26 | **The full intro plays every time the app opens,** not only the first open of the day. A tap still skips it, and Reduce Motion still makes it a fade. | The commish wanted it each time. SCOPE.md had the full version once a day and a 1-second title slam after. |
+| R20 | 2026-11-26 | **Layout changes:** the screen-time card opens in the middle of the screen, over the squares, without the points table; Feed has one place to post, with a switch between talking to your opponent and a brag; League shows each player's rank emblem, a player card on a tap, and one Schedule panel, a week at a time, in place of this week, results and the schedule. | The commish's review of the screens. |
 
 ## Calls I made to close gaps (veto any)
 
@@ -456,9 +459,7 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 
 ## Still open
 
-1. **Joining mid-season.** The season setting "join mid-season" is saved but does nothing yet: a player who joins during a season is in the league but has no matchups until the next season. The commish answered the leaving half of this question (R14).
-
-Every other reading that was here is now a ruling: R6, R11 to R16.
+Nothing. Every reading that was here is now a ruling: R6, R11 to R18.
 
 ## Things the commish should know (rules as written, working as written)
 

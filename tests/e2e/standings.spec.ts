@@ -72,10 +72,22 @@ test.describe('Settling a week, and the League tab', () => {
     await expect(page.locator('.standings tbody .standings-car')).toHaveCount(3);
     await expect(first.locator('.standings-car')).toHaveAttribute('data-car', 'dart cobalt');
     await expect(first).toContainText('1–0–0');
-    await expect(page.locator('.result-head').first()).toContainText('Week 1');
-    await expect(page.locator('.result-head').first()).toContainText('Final');
-    await expect(page.locator('.result-awards').first()).toContainText('MVP: You.');
-    await expect(page.locator('.result-awards').first()).toContainText('Spins the Wheel: Maya.');
+    // The schedule opens on the latest results: Week 1, with its MVP and who spins.
+    const schedule = page.getByRole('region', { name: 'Schedule' });
+    await expect(schedule.locator('.result-head')).toContainText('Week 1');
+    await expect(schedule.locator('.schedule-status')).toContainText('Final');
+    await expect(schedule.locator('.result-awards')).toContainText('MVP: You.');
+    await expect(schedule.locator('.result-awards')).toContainText('Spins the Wheel: Maya.');
+    // Everyone's rank emblem is in the standings, and a name opens their card.
+    await expect(page.locator('.standings tbody svg.standings-rank-badge')).toHaveCount(2);
+    await page.locator('.standings tbody').getByRole('button', { name: /^Maya, / }).click();
+    const card = page.getByRole('dialog', { name: 'Maya' });
+    await expect(card.locator('.player-card-rank')).not.toHaveText('Unranked');
+    await expect(card).toContainText('W–D–L');
+    await expect(card.locator('.player-card-rival')).toHaveText('You against Maya, all time: 1–0–0');
+    await card.getByRole('button', { name: "See Maya's day" }).click();
+    await expect(page.getByRole('heading', { name: "Maya's day" })).toBeVisible();
+    await page.getByRole('button', { name: 'Back' }).click();
     const rivalries = page.getByRole('region', { name: 'Your rivalries' });
     await expect(rivalries.getByRole('listitem')).toHaveCount(1);
     await expect(rivalries.getByRole('listitem').first()).toContainText('Maya');

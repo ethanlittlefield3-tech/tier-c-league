@@ -52,7 +52,7 @@ test.describe('Feed and the wall', () => {
 
   test("A quick-chat line lands on both phones, with the opponent's name filled in", async ({ page, request, browser }) => {
     const { league, riley } = await rivals(page, request, browser);
-    await expect(riley.phone.getByRole('heading', { name: 'Talk to Alex' })).toBeVisible();
+    await expect(riley.phone.getByRole('button', { name: 'Talk to Alex' })).toHaveAttribute('aria-pressed', 'true');
     await riley.phone.getByRole('group', { name: 'Quick chat' }).getByRole('button', { name: 'Touch grass, Alex.' }).click();
     await expect(riley.phone.getByText('Sent to Alex.')).toBeVisible();
 
@@ -91,6 +91,10 @@ test.describe('Feed and the wall', () => {
 
   test("Brags show their author's car, and take comments and fire, skull and beer reactions from everyone, live", async ({ page, request, browser }) => {
     const { riley } = await rivals(page, request, browser);
+    // One place to post: the switch swaps talking to Alex for a brag.
+    await expect(riley.phone.getByLabel('Your brag')).toHaveCount(0);
+    await button(riley.phone, 'Brag').click();
+    await expect(riley.phone.getByRole('group', { name: 'Quick chat' })).toHaveCount(0);
     await riley.phone.getByLabel('Your brag').fill('Passed my cert exam');
     await button(riley.phone, 'Post it').click();
     await expect(riley.phone.getByText('Posted.')).toBeVisible();
@@ -121,6 +125,7 @@ test.describe('Feed and the wall', () => {
 
   test("The author can take a post down, and the commish can take down anyone's, which goes in the league log", async ({ page, request, browser }) => {
     const { league, riley } = await rivals(page, request, browser);
+    await button(riley.phone, 'Brag').click();
     await riley.phone.getByLabel('Your brag').fill('Ran 10k');
     await button(riley.phone, 'Post it').click();
     const onRiley = riley.phone.getByRole('article', { name: 'Brag from You' });
@@ -142,6 +147,7 @@ test.describe('Feed and the wall', () => {
     expect(await readDoc(request, `leagues/${league.id}/audit/${String(logged?.audit)}`)).toMatchObject({ action: 'wall.delete', target: `wall/${logged?.id}`, by: league.commish });
 
     // Nobody else gets a take-down button on Alex's post.
+    await button(page, 'Brag').click();
     await page.getByLabel('Your brag').fill('Commish brag');
     await button(page, 'Post it').click();
     await expect(riley.phone.getByRole('article', { name: 'Brag from Alex' }).getByRole('button', { name: 'Take down' })).toHaveCount(0);
@@ -191,7 +197,7 @@ test.describe('Feed and the wall', () => {
     const league = await createLeague(request);
     await enterAsCommish(page, league);
     await tab(page, 'Feed').click();
-    await expect(page.getByRole('heading', { name: 'Talk trash' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Talk trash' })).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByText('Taunts open once you have an opponent, after the draft.')).toBeVisible();
     await expect(page.getByText('Nothing on the wall yet. Start something.')).toBeVisible();
   });

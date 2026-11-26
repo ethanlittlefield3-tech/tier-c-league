@@ -1,10 +1,9 @@
 /**
- * Which intro to play (SCOPE.md, "Intro animation").
- * - The full version plays on the first open each day.
- * - After that, a 1-second title slam.
+ * Which intro to play (SCOPE.md, "Intro animation"; ruling R19).
+ * - The full version plays every time the app opens.
  * - With Reduce Motion on, it becomes a simple fade.
  */
-export type IntroMode = 'full' | 'short' | 'fade';
+export type IntroMode = 'full' | 'fade';
 
 /** How long each part runs, in milliseconds. */
 export const INTRO_TIMING = {
@@ -12,15 +11,12 @@ export const INTRO_TIMING = {
   card: 2000,
   /** The boost scene: lights, the car, the ball into the camera. */
   boost: 2500,
-  /** The short version: just the title slam. */
-  short: 1000,
   /** How long the title ignores taps, so the tap that skips the intro does not also enter. */
   tapGuard: 350,
 } as const;
 
-export function introMode(input: { lastFullDay: string | null; today: string; reducedMotion: boolean }): IntroMode {
-  if (input.reducedMotion) return 'fade';
-  return input.lastFullDay === input.today ? 'short' : 'full';
+export function introMode(input: { reducedMotion: boolean }): IntroMode {
+  return input.reducedMotion ? 'fade' : 'full';
 }
 
 /**

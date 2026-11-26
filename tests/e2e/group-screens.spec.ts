@@ -175,11 +175,16 @@ test.describe('Group play on the phone', () => {
     await writeDoc(request, `${season.path}/weeks/w03`, { week: 3, mode: 'teamWeek', pairs: [], teams: { blue: [me, 'maya'], orange: ['sam', 'jo'] }, targets: {} });
     await button(page, "I've saved it").click();
     await tab(page, 'League').click();
-    const results = page.getByRole('region', { name: 'Results' });
-    await expect(results.locator('.result-head').first()).toContainText('Week 1 · Alley');
-    await expect(results.getByRole('listitem').first()).toHaveText('1st in the Alley: You, 33 race points, +5');
+    // The schedule opens on this week; back one is last week's results, and on two is a week to come.
     const schedule = page.getByRole('region', { name: 'Schedule' });
-    await expect(schedule).toContainText('Week 3 · Team Week');
+    await expect(schedule.locator('.result-head')).toContainText('Week 2 · Alley');
+    await expect(schedule.locator('.schedule-status')).toContainText('This week');
+    await schedule.getByRole('button', { name: 'Earlier week' }).click();
+    await expect(schedule.locator('.result-head')).toContainText('Week 1 · Alley');
+    await expect(schedule.getByRole('listitem').first()).toHaveText('1st in the Alley: You, 33 race points, +5');
+    await schedule.getByRole('button', { name: 'Later week' }).click();
+    await schedule.getByRole('button', { name: 'Later week' }).click();
+    await expect(schedule.locator('.result-head')).toContainText('Week 3 · Team Week');
     await expect(schedule).toContainText('Blue: You, Maya');
   });
 });

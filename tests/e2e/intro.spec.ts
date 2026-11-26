@@ -9,18 +9,10 @@ const enterButton = (page: Page) => page.getByRole('button', { name: 'Tap to ent
  * Open the app from the Home Screen with time frozen, so the intro only moves
  * when the test says so.
  */
-async function open(page: Page, options: { playedToday?: boolean; playedOn?: string } = {}) {
+async function open(page: Page) {
   await fromHomeScreen(page);
   await page.clock.install({ time: NOON });
   await page.clock.pauseAt(NOON);
-  if (options.playedToday || options.playedOn) {
-    await page.addInitScript((day) => {
-      const now = new Date();
-      const pad = (value: number) => String(value).padStart(2, '0');
-      const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-      localStorage.setItem('tcl.intro.fullDay', day ?? today);
-    }, options.playedOn ?? null);
-  }
   await page.goto('/');
   await settle(page);
 }
@@ -95,27 +87,14 @@ test.describe('Intro', () => {
     await expect(title(page)).toHaveCount(0);
   });
 
-  test('Later the same day it is the 1-second title slam, with no Nunchucks card', async ({ page }) => {
-    await open(page, { playedToday: true });
-    await expect(title(page)).toHaveAttribute('data-mode', 'short');
-    await expect(title(page)).toHaveAttribute('data-phase', 'title');
-    await expect(page.locator('.card')).toHaveCount(0);
-    await expect(enterButton(page)).toBeVisible();
-  });
-
-  test('The next day the full intro is back', async ({ page }) => {
-    await open(page, { playedOn: '2000-01-01' });
-    await expect(title(page)).toHaveAttribute('data-mode', 'full');
-    await expect(title(page)).toHaveAttribute('data-phase', 'card');
-  });
-
-  test('Once the full intro has played, the phone remembers it for the day, skipped or not', async ({ page }) => {
+  test('Every open plays the full intro again, even later the same day', async ({ page }) => {
     await open(page);
-    expect(await page.evaluate(() => localStorage.getItem('tcl.intro.fullDay'))).toBeNull();
     await title(page).tap({ position: { x: 195, y: 300 } });
     await expect(title(page)).toHaveAttribute('data-phase', 'title');
+    await page.reload();
     await settle(page);
-    expect(await page.evaluate(() => localStorage.getItem('tcl.intro.fullDay'))).toBe('2027-01-04');
+    await expect(title(page)).toHaveAttribute('data-mode', 'full');
+    await expect(title(page)).toHaveAttribute('data-phase', 'card');
   });
 
   test('With Reduce Motion on it is a simple fade: no card, no boost scene', async ({ page }) => {
@@ -128,8 +107,12 @@ test.describe('Intro', () => {
   });
 
   test('Sound never starts before Tap to enter, and starts with it', async ({ page }) => {
-    await open(page, { playedToday: true });
+    await open(page);
     const soundOn = () => page.evaluate(() => document.documentElement.dataset.sound ?? 'off');
+    expect(await soundOn()).toBe('off');
+    // Skipping the intro is not entering: still no sound.
+    await page.keyboard.press('Escape');
+    await expect(title(page)).toHaveAttribute('data-phase', 'title');
     expect(await soundOn()).toBe('off');
     await page.clock.runFor(1000);
     expect(await soundOn()).toBe('off');
@@ -146,7 +129,9 @@ test.describe('Intro', () => {
   });
 
   test('On the title, the logo, the button and the credit all fit on an iPhone screen', async ({ page }) => {
-    await open(page, { playedToday: true });
+    await open(page);
+    await page.keyboard.press('Escape');
+    await expect(title(page)).toHaveAttribute('data-phase', 'title');
     await animationsDone(page);
     for (const piece of [page.locator('.title-lockup'), enterButton(page), page.locator('.title-credit')]) {
       const box = await piece.boundingBox();
