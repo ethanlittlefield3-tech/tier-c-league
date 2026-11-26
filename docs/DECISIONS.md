@@ -441,6 +441,7 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 265. **The next season can be set up once the deadline has passed, the leavers are off, and every dare of the finished season is done,** so the Whiff Bowl's loser can still prove the Season Dare. The rules refuse a new season while the current one isn't finished. Before this, the new-season form showed during an active season, so a commish could have switched seasons by mistake.
 266. **The champion is news in the feed,** with the finalist and the Whiff Bowl's loser.
 267. **The playoffs send the same alerts as the regular season:** each round's result, as "Playoffs: you won", Demolition reveals, and "passed you" and "close finish" in the 1v1 rounds. When the champion is crowned, everyone hears who won, the finalist, and who does the Season Dare.
+268. **The fast test season (Checkpoint D) has no playoffs.** Its fast calendar has only the regular weeks, and a playoff round settles hours after its last day locks, so its playoffs would have been seeded and never played. With none, the Season Points leader is champion when Week 3 goes final, and the offseason follows, so the whole season, offseason included, can be watched in a few hours.
 
 **Calendar**
 

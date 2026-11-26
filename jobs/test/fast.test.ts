@@ -34,6 +34,10 @@ describe('Making the fast test league', () => {
     expect(settings.ruleOneIssue).toEqual([new Date(NOW + 5 * MIN)]);
   });
 
+  it('It has no playoffs: its fast calendar has only the regular weeks, so the Season Points leader is champion and the offseason follows', () => {
+    expect(at(season).playoffs).toBe('none');
+  });
+
   it('The draft is done and the schedule is set: the commish faces the first made-up player in Week 1', () => {
     const week1 = at(`${season}/weeks/w01`);
     expect(week1.pairs).toContainEqual({ a: league.commish, b: 'bot1' });

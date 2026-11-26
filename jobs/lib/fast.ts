@@ -70,7 +70,10 @@ export function fastDocs(input: FastInput): SeedDoc[] {
       name: 'Fast Test Season',
       status: 'active',
       regularWeeks: WEEKS,
-      playoffs: 'oneWeek',
+      // The fast calendar has only the regular weeks, and a playoff round
+      // settles hours after its last day locks, so the fast season has no
+      // playoffs: the Season Points leader is champion, then the offseason.
+      playoffs: 'none',
       playoffSize: 4,
       par: 3,
       groupWeeks: [],
