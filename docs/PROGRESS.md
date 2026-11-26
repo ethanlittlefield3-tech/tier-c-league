@@ -307,14 +307,14 @@ The phone layout check, Checkpoint C (every screen, in the demo league) and Chec
 
 1. **Push alerts:** the web push key is in the app, and the commish's phone has alerts on (2026-11-26). Left: run **Send a test alert** on GitHub and see it arrive.
 2. **Backups:** done on 2026-11-26. The private repo, the token (renew it before it expires) and both secrets are set, and a test backup saved.
-3. **Locking down the web key:** limit it to the app's address in the Google Cloud console, and turn on App Check.
+3. **Locking down the web key:** done on 2026-11-26. The key only works from the app's own address, and the app still loads. App Check is left off (DECISIONS.md, call 271).
 
 ## Next
 
 1. **Step 3, continued.** Every Phase 1 screen now exists, and the demo league lets the commish try them all. Still to come in Commish tools: mark a player as left (waits on the mid-season question below). Then the commish's phone check of every screen (Checkpoint C).
    - **Push alerts** wait on one thing from the commish: a Cloud Messaging web push key, made in the Firebase console. The app will ask for it one step at a time when that feature is next.
    - **Push alerts:** built, and waiting only on the Cloud Messaging web push key.
-2. **Before real players join:** limit the app's web key to the app's own address in the Google Cloud console, and look at App Check, which stops other programs from using the database's free daily allowance.
+2. **Before real players join:** done. The web key is limited to the app's address; App Check is left off (call 271).
    - **Step 5 items still to come, each with the feature that needs it:** the Cloud Messaging web push key (notifications), and the private backups repo with its token (the backup job is built and waits on them).
 3. **Rules still to write, each with its screen and its tests:** marking a player as left, once the mid-season question is answered. Phase 2 and 3 collections are in DATA-MODEL.md and refused until then.
 4. **Phases 2 and 3 are built:** every feature in SCOPE.md, with the provisional readings in DECISIONS.md's "Still open" waiting on the commish. What's left is the commish's: the items above, the mid-season join and leave question, and the phone check.
