@@ -1,3 +1,4 @@
+import { Fragment } from 'preact';
 import { useState } from 'preact/hooks';
 import { CarArt } from '../art/car/CarArt.tsx';
 import type { CarParts } from '../art/car/draw.ts';
@@ -128,10 +129,12 @@ export function Feed(props: { me: Me; onWheel?: () => void }) {
   return (
     <div class="feed">
       {wheel && wheelLive && (
-        <section class="wheel-banner" aria-labelledby="wheel-banner-title">
-          <h2 id="wheel-banner-title">The Wheel of Shame</h2>
-          <p>{waiting.length > 0 ? `Week ${wheel.week}: ${waiting.join(' and ')} ${waiting.length === 1 && waiting[0] !== 'You' ? 'spins' : 'spin'} live.` : `Week ${wheel.week}: see the dares.`}</p>
-          <button type="button" class="btn btn-second" onClick={props.onWheel}>
+        <section class="wheel-banner wheel-banner-slim" aria-labelledby="wheel-banner-title">
+          <div>
+            <h2 id="wheel-banner-title">The Wheel of Shame</h2>
+            <p>{waiting.length > 0 ? `Week ${wheel.week}: ${waiting.join(' and ')} ${waiting.length === 1 && waiting[0] !== 'You' ? 'spins' : 'spin'} live.` : `Week ${wheel.week}: see the dares.`}</p>
+          </div>
+          <button type="button" class="feed-small-btn" onClick={props.onWheel}>
             Open the Wheel
           </button>
         </section>
@@ -139,13 +142,21 @@ export function Feed(props: { me: Me; onWheel?: () => void }) {
       <Compose me={props.me} opponent={opponent} saved={saved} />
       <section class="feed-wall" aria-label="The feed">
         {timeline.length === 0 && !posts.loading && <p class="fine-print">Nothing on the wall yet. Start something.</p>}
-        {timeline.map((item) =>
-          'post' in item ? (
-            <PostCard key={item.post.id} me={props.me} id={item.post.id} post={item.post.data} now={now} name={name} realName={realName} carOf={carOf} isCommish={isCommish} />
-          ) : (
-            <EventRow key={item.event.id} event={item.event} now={now} name={name} carOf={carOf} onReel={setReelWeek} />
-          ),
-        )}
+        {timeline.map((item, at) => {
+          // A heading each time the day changes: Today, Yesterday, then the day.
+          const day = dayLabel(item.at, now);
+          const heading = at === 0 || dayLabel(timeline[at - 1]!.at, now) !== day ? <h3 class="feed-day">{day}</h3> : null;
+          return (
+            <Fragment key={'post' in item ? item.post.id : item.event.id}>
+              {heading}
+              {'post' in item ? (
+                <PostCard me={props.me} id={item.post.id} post={item.post.data} now={now} name={name} realName={realName} carOf={carOf} isCommish={isCommish} />
+              ) : (
+                <EventRow event={item.event} now={now} name={name} carOf={carOf} onReel={setReelWeek} />
+              )}
+            </Fragment>
+          );
+        })}
       </section>
       {reel && <Reel title={`Week ${reel.week} highlights`} text={reel.text} file={`tier-c-week-${reel.week}.png`} draw={() => drawReel(reel)} onClose={() => setReelWeek(null)} />}
     </div>
@@ -198,6 +209,19 @@ function EventRow(props: { event: FeedEvent; now: number; name: Names; carOf: Ca
       )}
     </div>
   );
+}
+
+/** "Today", "Yesterday", the weekday for this week, else the date, on the phone's own calendar. */
+function dayLabel(at: number, now: number): string {
+  const day = (time: number) => {
+    const date = new Date(time);
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  };
+  const back = Math.round((day(now) - day(at)) / 86_400_000);
+  if (back <= 0) return 'Today';
+  if (back === 1) return 'Yesterday';
+  if (back < 7) return new Date(at).toLocaleDateString('en-US', { weekday: 'long' });
+  return new Date(at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
 /** One place to post: a switch between talking to this week's opponent and a brag for everyone. */
@@ -292,25 +316,26 @@ function Talk(props: { me: Me; opponent: { id: string | null; name: string; vsHo
         </div>
       )}
       <form class="feed-own" onSubmit={sendOwn} noValidate>
-        <Field
-          id="feed-taunt"
-          label="Your own taunt"
-          value={text}
-          onInput={(value) => {
-            setNote(null);
-            setText(value);
-          }}
-          maxLength={TAUNT_MAX + 20}
-          help="{name} becomes whoever you face."
-        />
-        <div class="feed-own-row">
-          <button type="button" class="feed-keep" aria-pressed={keep} onClick={() => setKeep(!keep)}>
-            {keep ? 'Saving it for later' : 'Save it for later'}
-          </button>
-          <button class="btn feed-send" type="submit" disabled={busy}>
+        <div class="feed-own-line">
+          <Field
+            id="feed-taunt"
+            label="Your own taunt"
+            hideLabel
+            placeholder="Your own taunt"
+            value={text}
+            onInput={(value) => {
+              setNote(null);
+              setText(value);
+            }}
+            maxLength={TAUNT_MAX + 20}
+          />
+          <button class="feed-small-btn feed-send" type="submit" disabled={busy}>
             Send
           </button>
         </div>
+        <button type="button" class="feed-keep" aria-pressed={keep} onClick={() => setKeep(!keep)}>
+          {keep ? 'Saving it for later' : 'Save it for later'}
+        </button>
       </form>
       {note && (
         <p class={note.error ? 'field-error' : 'panel-ok'} role={note.error ? 'alert' : 'status'}>
@@ -347,26 +372,28 @@ function Brag(props: { me: Me }) {
 
   return (
     <form class="feed-brag" onSubmit={post} noValidate aria-label="Brag">
-      <Field
-        id="feed-brag"
-        label="Your brag"
-        hideLabel
-        value={text}
-        onInput={(value) => {
-          setNote(null);
-          setText(value);
-        }}
-        maxLength={POST_MAX + 20}
-        placeholder="A bench PR, a passed exam…"
-      />
+      <div class="feed-own-line">
+        <Field
+          id="feed-brag"
+          label="Your brag"
+          hideLabel
+          value={text}
+          onInput={(value) => {
+            setNote(null);
+            setText(value);
+          }}
+          maxLength={POST_MAX + 20}
+          placeholder="A bench PR, a passed exam…"
+        />
+        <button class="feed-small-btn feed-send" type="submit" disabled={busy}>
+          Post it
+        </button>
+      </div>
       {note && (
         <p class={note.error ? 'field-error' : 'panel-ok'} role={note.error ? 'alert' : 'status'}>
           {note.text}
         </p>
       )}
-      <button class="btn btn-second" type="submit" disabled={busy}>
-        Post it
-      </button>
     </form>
   );
 }

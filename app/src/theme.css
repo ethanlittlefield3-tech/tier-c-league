@@ -28,6 +28,19 @@ body {
   height: 100%;
   overflow: hidden;
   overscroll-behavior: none;
+  /* A double tap never zooms the page: quick taps on goals and buttons are
+     taps. Scrolling and pinching still work. */
+  touch-action: manipulation;
+}
+
+#app,
+button,
+a,
+input,
+label,
+select,
+textarea {
+  touch-action: manipulation;
 }
 
 #app {

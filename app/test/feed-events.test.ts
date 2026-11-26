@@ -254,6 +254,25 @@ describe('The live feed', () => {
     ]);
   });
 
+  it("A player's badges from the same moment share one line, so a big week doesn't flood the feed", () => {
+    const M = 60_000;
+    const events = feedEvents({
+      ...none,
+      name,
+      news: [
+        { id: 'b1', data: { kind: 'badge', player: 'maya', at: 100 * M, data: { badge: 'foundingMember' } } },
+        { id: 'b2', data: { kind: 'badge', player: 'maya', at: 100 * M + 1, data: { badge: 'firstBlood' } } },
+        { id: 'b3', data: { kind: 'badge', player: 'maya', at: 101 * M, data: { badge: 'cleanSheet' } } },
+        // Two hours later is news of its own.
+        { id: 'b4', data: { kind: 'badge', player: 'maya', at: 220 * M, data: { badge: 'hatTrick' } } },
+      ],
+    });
+    expect(events.map((event) => [event.text, event.detail ?? null])).toEqual([
+      ['Maya earned Hat Trick', '3 perfect days in a row, rest days skipped. Unlocks: Flame decal.'],
+      ['Maya earned 3 badges', 'Founding Member, First Blood and Clean Sheet. Each unlocks a part in the Garage.'],
+    ]);
+  });
+
   it("The jobs' news: a badge earned, with what it unlocks, and rank changes up, down and first", () => {
     const events = feedEvents({
       ...none,

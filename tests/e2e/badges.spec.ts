@@ -39,7 +39,9 @@ test.describe('Badges', () => {
 
     await enterAsCommish(page, league);
     await tab(page, 'Feed').click();
-    await expect(page.locator('.feed-event[data-kind="badge"]', { hasText: 'You earned First Blood' })).toBeVisible();
+    // Badges earned together share one line in the feed.
+    const news = page.locator('.feed-event[data-kind="badge"]', { hasText: 'First Blood' });
+    await expect(news).toContainText(badges.length > 1 ? `You earned ${badges.length} badges` : 'You earned First Blood');
     await button(page, 'Your profile, Alex').click();
     const panel = page.getByRole('region', { name: 'Badges' });
     await panel.scrollIntoViewIfNeeded();

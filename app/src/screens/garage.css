@@ -106,25 +106,16 @@
   color: var(--ink-soft);
 }
 
-/* The slots: a row of icons that swipes sideways. */
+/* The slots: a grid of icons, so nothing scrolls sideways. */
 .garage-slots {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
-  margin: 0 -16px;
-  padding: 2px 16px 6px;
-  overflow-x: auto;
-  scroll-snap-type: x proximity;
-  scrollbar-width: none;
-}
-
-.garage-slots::-webkit-scrollbar,
-.garage-parts::-webkit-scrollbar {
-  display: none;
 }
 
 .garage-slot {
-  flex: 0 0 66px;
-  min-height: 60px;
+  min-width: 0;
+  min-height: 58px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -136,7 +127,6 @@
   background: rgba(17, 30, 73, 0.6);
   color: var(--ink-soft);
   font: 700 11px/1.1 var(--body);
-  scroll-snap-align: start;
   cursor: pointer;
 }
 
@@ -188,22 +178,14 @@
   margin: 10px 0 0;
 }
 
-/* The parts: a carousel of thumbnails that swipes sideways. */
+/* The parts: a grid of thumbnails that scrolls up and down with the page. */
 .garage-parts {
-  margin: 10px -16px 0;
-  padding: 2px 16px 8px;
+  margin: 12px 0 0;
+  padding: 0;
   list-style: none;
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scroll-padding: 0 16px;
-  scrollbar-width: none;
-}
-
-.garage-parts li {
-  flex: 0 0 112px;
-  scroll-snap-align: start;
 }
 
 .garage-part {

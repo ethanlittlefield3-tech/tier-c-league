@@ -48,11 +48,11 @@ function Poke(props: { me: Me; seasonId: string; date: string; to: string; name:
   };
   return (
     <div class="match-poke">
-      <button type="button" class="btn btn-second" disabled={busy || poked || sent.loading} onClick={send}>
+      <button type="button" class="match-poke-btn" disabled={busy || poked || sent.loading} onClick={send} title={`Once a day, ${props.name} gets a "you awake?" alert.`}>
         {poked ? 'Poked today' : busy ? 'Poking' : `Poke ${props.name}`}
       </button>
-      <p class={error ? 'field-error' : 'fine-print'} role={error ? 'alert' : 'status'}>
-        {error ?? (poked ? `Sent. ${props.name} gets a "you awake?" alert, if their alerts are on.` : `Once a day, ${props.name} gets a "you awake?" alert.`)}
+      <p class={error ? 'field-error' : 'match-poke-note'} role={error ? 'alert' : 'status'}>
+        {error ?? (poked ? `Sent. ${props.name} gets a "you awake?" alert, if their alerts are on.` : '')}
       </p>
     </div>
   );
@@ -259,6 +259,18 @@ export function Match(props: { me: Me }) {
         </p>
       </section>
 
+      <section class="week match-week" aria-labelledby="match-week-title">
+        <h2 id="match-week-title">This week</h2>
+        <div class="match-letters" aria-hidden="true">
+          <span />
+          {match.myWeek.cells.map((cell) => (
+            <span data-today={cell.today}>{LETTERS[cell.dayIndex]}</span>
+          ))}
+        </div>
+        <WeekRow who="You" team="blue" cells={match.myWeek.cells} />
+        <WeekRow who={them.name} team="orange" cells={match.theirWeek.cells} />
+      </section>
+
       {rematch}
 
       {match.mode === 'dropShot' && <DropShotFloors mine={match.myWeek.cells} theirs={match.theirWeek.cells} name={them.name} />}
@@ -296,10 +308,12 @@ export function Match(props: { me: Me }) {
             );
           })}
         </div>
-        <p class="match-beers">
-          Beers today: <strong>{log?.beers ?? 0}</strong>
-        </p>
-        {todayDate && <Poke me={props.me} seasonId={match.seasonId} date={todayDate} to={them.id} name={them.name} />}
+        <div class="match-day-foot">
+          <p class="match-beers">
+            Beers today: <strong>{log?.beers ?? 0}</strong>
+          </p>
+          {todayDate && <Poke me={props.me} seasonId={match.seasonId} date={todayDate} to={them.id} name={them.name} />}
+        </div>
       </section>
 
       <ReceiptAsk
@@ -315,17 +329,6 @@ export function Match(props: { me: Me }) {
         myRequests={match.myRequests}
       />
 
-      <section class="week match-week" aria-labelledby="match-week-title">
-        <h2 id="match-week-title">This week</h2>
-        <div class="match-letters" aria-hidden="true">
-          <span />
-          {match.myWeek.cells.map((cell) => (
-            <span data-today={cell.today}>{LETTERS[cell.dayIndex]}</span>
-          ))}
-        </div>
-        <WeekRow who="You" team="blue" cells={match.myWeek.cells} />
-        <WeekRow who={them.name} team="orange" cells={match.theirWeek.cells} />
-      </section>
 
       {match.myDemolition && (
         <p class="match-secret">

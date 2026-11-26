@@ -241,14 +241,33 @@ export function feedEvents(input: FeedInput): FeedEvent[] {
     }
   }
 
+  // A player's badges from the same moment (within 10 minutes of the first)
+  // share one line, so a big week doesn't flood the feed.
+  const badgeNews = (input.news ?? [])
+    .filter(({ data }) => data.kind === 'badge' && typeof data.at === 'number' && BADGES.some((found) => found.id === data.data?.badge))
+    .sort((a, b) => (a.data.player < b.data.player ? -1 : a.data.player > b.data.player ? 1 : (a.data.at as number) - (b.data.at as number)));
+  const clusters: (typeof badgeNews)[] = [];
+  for (const item of badgeNews) {
+    const last = clusters.at(-1);
+    if (last && last[0]!.data.player === item.data.player && (item.data.at as number) - (last[0]!.data.at as number) <= 10 * 60_000) last.push(item);
+    else clusters.push([item]);
+  }
+  for (const cluster of clusters) {
+    const first = cluster[0]!;
+    const who = name(first.data.player);
+    const badges = cluster.map((item) => BADGES.find((found) => found.id === item.data.data?.badge)!);
+    const at = Math.max(...cluster.map((item) => item.data.at as number));
+    if (badges.length === 1) {
+      const badge = badges[0]!;
+      events.push({ id: `news-${first.id}`, at, kind: 'badge', text: `${who} earned ${badge.name}${badge.shame ? ' (shame)' : ''}`, detail: `${badge.how}. Unlocks: ${andList(badge.unlocks.map((part) => part.name))}.` });
+    } else {
+      events.push({ id: `news-${first.id}`, at, kind: 'badge', text: `${who} earned ${badges.length} badges`, detail: `${andList(badges.map((badge) => `${badge.name}${badge.shame ? ' (shame)' : ''}`))}. Each unlocks a part in the Garage.` });
+    }
+  }
+
   for (const { id, data } of input.news ?? []) {
     if (typeof data.at !== 'number') continue;
     const who = name(data.player);
-    if (data.kind === 'badge') {
-      const badge = BADGES.find((found) => found.id === data.data?.badge);
-      if (!badge) continue;
-      events.push({ id: `news-${id}`, at: data.at, kind: 'badge', text: `${who} earned ${badge.name}${badge.shame ? ' (shame)' : ''}`, detail: `${badge.how}. Unlocks: ${andList(badge.unlocks.map((part) => part.name))}.` });
-    }
     if (data.kind === 'picks' && data.data?.top?.length) {
       const top = data.data.top.map(name);
       const text =

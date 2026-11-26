@@ -439,3 +439,108 @@
   outline: 2px solid var(--gold);
   outline-offset: 2px;
 }
+
+/* ---- Quicker to read: a slim Wheel banner, a slim post box, days ---------- */
+.wheel-banner-slim {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+}
+
+.wheel-banner-slim > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.wheel-banner-slim h2 {
+  font-size: 16px;
+}
+
+.wheel-banner-slim p {
+  margin-top: 2px;
+  font-size: 13px;
+}
+
+.feed-small-btn {
+  flex: none;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--blue);
+  color: #ffffff;
+  font: 800 13px/1 var(--body);
+  cursor: pointer;
+}
+
+.feed-small-btn[disabled] {
+  opacity: 0.6;
+}
+
+.feed-small-btn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.feed-compose {
+  padding: 12px;
+}
+
+.feed-compose .feed-switch {
+  margin-bottom: 10px;
+}
+
+.feed-own {
+  margin-top: 10px;
+}
+
+.feed-own-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.feed-own-line .field {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+
+.feed-compose .feed-keep {
+  min-height: 32px;
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.feed-wall {
+  gap: 6px;
+}
+
+.feed-day {
+  margin: 10px 0 2px;
+  font: 800 12px/1.2 var(--body);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.feed-event {
+  padding: 6px 12px;
+}
+
+.feed-event-text {
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.feed-event-detail {
+  margin-top: 2px;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.feed-own-line .field input {
+  height: 44px;
+  font-size: 16px;
+}

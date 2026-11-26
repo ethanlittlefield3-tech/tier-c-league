@@ -19,6 +19,8 @@ test.describe('Holding the screen steady on an iPhone', () => {
     await page.getByRole('button', { name: "I've saved it", exact: true }).click();
     await expectInApp(page, 'Riley', league.name);
     await expect(page.locator('.today-points')).toBeVisible();
+    // A double tap never zooms the page.
+    expect(await page.evaluate(() => getComputedStyle(document.body).touchAction)).toBe('manipulation');
     // The lower half of Today, the tray, loads a moment later. Measure once it is there.
     await expect(page.locator('.power')).toBeVisible();
 

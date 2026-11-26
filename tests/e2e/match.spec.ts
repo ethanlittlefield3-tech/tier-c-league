@@ -49,6 +49,17 @@ test.describe('Match', () => {
     await expect.poll(async () => (await readDoc(request, `${season.path}/rematches/w01_${me}`))?.to).toBe('maya');
   });
 
+  test('This week sits right under the score, and a small Poke sits beside the beers', async ({ page, request }) => {
+    await onMatch(page, request);
+    await expect(page.locator('.match > section').nth(1)).toHaveClass(/match-week/);
+    const poke = await button(page, 'Poke Maya').boundingBox();
+    expect(poke!.height).toBeLessThanOrEqual(44);
+    expect(poke!.width).toBeLessThan(200);
+    // Their four tiles are short, so the whole day fits in a glance.
+    const tile = await page.locator('.match-squares .square').first().boundingBox();
+    expect(tile!.height).toBeLessThanOrEqual(100);
+  });
+
   test('You can poke your opponent once a day, and the league keeps it', async ({ page, request }) => {
     const { season, me } = await onMatch(page, request);
     await button(page, 'Poke Maya').click();
