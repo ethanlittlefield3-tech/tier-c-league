@@ -22,6 +22,7 @@ Every rule that had to be interpreted, and who decided it. SCOPE.md is still the
 | R14 | 2026-11-26 | **A player who leaves mid-season is marked as left, and plays on as if they did nothing:** their matchups stay on the schedule and every day scores as a no-show, so their opponents win. | The mid-season question. The commish: if it ever becomes an issue, something more structured can come later. |
 | R15 | 2026-11-26 | **A Wheel spin still waiting when its deadline's Sunday starts spins itself,** at midnight. Proof is still due by 11:59 pm that Sunday. | "Still open" item 4: not spinning used to be a dodge in itself. |
 | R16 | 2026-11-26 | **The other provisional readings stand as built:** predictions (calls 199 to 201), the majority veto, a goal vetoed at close settled by the commish, the Wheel's 16 slices, no draw bonus in Team Week or 2v2, the Bounty and Alley edge cases, Rumble's items, the Whiff Bowl's shape, and no answer in the offseason counting as Stay. | "Still open" items 0 to 3 and 5 to 8, and call 262. |
+| R17 | 2026-11-26 | **A player marked as left is kept out of MVP, the Bust, the Wheel and the playoffs** (call 269). | Following R14: their no-show weeks would otherwise make them the Bust and the Wheel's spinner every week. |
 
 ## Calls I made to close gaps (veto any)
 

@@ -34,8 +34,9 @@ const LIVE: FirebaseOptions | null = {
   appId: '1:662838025969:web:dca510de9a24975d025350',
 };
 
-// The league's Cloud Messaging web push key, once the commish has made one.
-const PUSH_KEY: string | null = null;
+// The league's Cloud Messaging web push key: the public half, made by the
+// commish on 2026-11-26. The private half stays inside Firebase.
+const PUSH_KEY: string | null = 'BG4Wxu_5IDdiOfjNozVWAgEh8QWvhZcbh_6LbdknhdzNfpYesw5dY_Cj1CDnZ0MwSLMqKRs0PRCVGw-IiYxeIzM';
 
 const EMULATED: Backend = {
   options: { projectId: 'demo-tier-c', apiKey: 'demo-key', appId: 'demo-app' },

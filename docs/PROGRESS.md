@@ -305,7 +305,7 @@ Last updated 2026-11-25, after Rumble: group play is built.
 
 The phone layout check, Checkpoint C (every screen, in the demo league) and Checkpoint D (the fast test week) all passed on 2026-11-26. The commish answered every open question (rulings R14 to R16). Left, each walked through one step at a time in the chat:
 
-1. **The push alert key:** a Cloud Messaging web push key, made in the Firebase console. Alerts are built and wait only on it.
+1. **Push alerts:** the web push key is in the app (2026-11-26). Left: turn alerts on from a phone and see one arrive.
 2. **Backups:** a private repo and a token, then two GitHub Secrets.
 3. **Locking down the web key:** limit it to the app's address in the Google Cloud console, and turn on App Check.
 
