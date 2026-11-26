@@ -2,7 +2,7 @@
 
 Generated 2026-11-26 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 339 of 339 passing.
+- **Tests:** 340 of 340 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -619,6 +619,7 @@ You change only your own car, and only to parts from the catalog, each in its ow
 - A part from another slot, a made-up part or a missing slot is refused
 - A new player joins in a starter car they picked, but not in a part a badge unlocks
 - The accent, finish, trail style and backdrop are optional, for a car saved before they existed
+- The accent goes on any of its 5 places, alone or together, and nowhere else
 - The rank decal goes on once a player has a rank
 - A season decal goes on only for a season the player finished, with the year it ended
 - A player can't give themselves a rank or a season

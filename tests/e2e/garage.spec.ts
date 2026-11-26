@@ -59,6 +59,13 @@ test.describe('The Garage', () => {
       await expect(page.getByRole('status')).toHaveText(`${part} is on your car.`);
     }
     await expect.poll(async () => (await readDoc(request, profile))?.car).toMatchObject({ paint2: 'racingRed', finish: 'pearl', trail: 'rings', backdrop: 'tunnel' });
+    // The accent goes where you put it: on and off, place by place.
+    await slots.getByRole('button', { name: 'Accent', exact: true }).click();
+    const zones = page.getByRole('group', { name: 'Where the accent goes' });
+    await zones.getByRole('button', { name: 'Roof', exact: true }).click();
+    await zones.getByRole('button', { name: 'Lower body', exact: true }).click();
+    await expect(zones.getByRole('button', { name: 'Roof', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect.poll(async () => ((await readDoc(request, profile))?.car as { accents?: string[] } | undefined)?.accents).toEqual(['roof']);
     await expect(page.getByRole('region', { name: 'Your car' })).toHaveAttribute('data-backdrop', 'tunnel');
   });
 

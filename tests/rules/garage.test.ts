@@ -58,6 +58,13 @@ describe('The Garage', () => {
     await assertFails(setCar({ ...starter, backdrop: 'moon' }));
   });
 
+  it('The accent goes on any of its 5 places, alone or together, and nowhere else', async () => {
+    await assertSucceeds(setCar({ ...starter, paint2: 'lime', accents: ['roof', 'stripes', 'tail'] }));
+    await assertSucceeds(setCar({ ...starter, paint2: 'lime', accents: [] }));
+    await assertFails(setCar({ ...starter, paint2: 'lime', accents: ['wheels'] }));
+    await assertFails(setCar({ ...starter, paint2: 'lime', accents: 'roof' }));
+  });
+
   it('The rank decal goes on once a player has a rank', async () => {
     await assertFails(setCar({ ...starter, decal: 'rank' }));
     await asJob((db) => db.doc(profile).update({ rank: 'gold' }));

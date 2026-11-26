@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BADGES, RANK_DECAL, STARTER_PARTS, seasonDecals, unlockedParts } from '../src/achievements.ts';
+import { ACCENT_ZONES, BADGES, RANK_DECAL, STARTER_PARTS, seasonDecals, unlockedParts } from '../src/achievements.ts';
 import { earnedBadges, groupFeats, type BadgeDay, type BadgeFacts, type BadgeWeek } from '../src/badges.ts';
 
 /** A logged goal day: every goal hit, 30 minutes of screen time, no beers. */
@@ -52,6 +52,10 @@ describe('The badge catalog', () => {
     expect(slot('finish')).toEqual(['gloss', 'matte', 'metallic', 'pearl']);
     expect(slot('trail')).toEqual(['stream', 'sparks', 'rings', 'flames']);
     expect(slot('backdrop')).toEqual(['garage', 'stadium', 'tunnel']);
+  });
+
+  it('An accent can go on any of 5 places, alone or together', () => {
+    expect(ACCENT_ZONES.map((zone) => zone.id)).toEqual(['lower', 'roof', 'stripes', 'nose', 'tail']);
   });
 
   it('Every season a player finishes gives them a decal with its number and year; any ranked player can wear their rank emblem', () => {

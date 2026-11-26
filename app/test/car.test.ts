@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BADGES, STARTER_PARTS } from '@tcl/engine';
+import { ACCENT_ZONES, BADGES, STARTER_PARTS } from '@tcl/engine';
 import { BACKDROPS } from '../src/art/car/backdrops.ts';
 import { DRAWN, STARTER_CAR, drawCar } from '../src/art/car/draw.ts';
 
@@ -37,6 +37,22 @@ describe('Drawing cars', () => {
     const gold = same(drawCar({ ...STARTER_CAR, decal: 'rank' }, { rank: 'gold' }));
     expect(gold).not.toBe(same(drawCar({ ...STARTER_CAR, decal: 'rank' }, { rank: 'silver' })));
     expect(gold).not.toBe(same(drawCar(STARTER_CAR)));
+  });
+
+  it('The accent goes where the player puts it: each zone changes the car, and zones layer', () => {
+    const red = (accents: string[]) => same(drawCar({ ...STARTER_CAR, paint2: 'racingRed', accents }));
+    const zones = ACCENT_ZONES.map((zone) => zone.id);
+    const drawn = zones.map((zone) => red([zone]));
+    expect(new Set(drawn).size).toBe(zones.length);
+    expect(red(['lower', 'roof'])).not.toBe(red(['lower']));
+    // With no accent color, no zone is drawn.
+    expect(same(drawCar({ ...STARTER_CAR, paint2: 'none', accents: ['roof'] }))).toBe(same(drawCar(STARTER_CAR)));
+  });
+
+  it('Every car is drawn with its details: panel lines, a tail light, wheel arches and tire treads', () => {
+    const markup = drawCar(STARTER_CAR);
+    expect(markup).toContain('class="car-detail"');
+    expect(markup).toContain('class="car-tread"');
   });
 
   it('Every backdrop in the catalog has its scene', () => {

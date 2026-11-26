@@ -219,7 +219,10 @@ service cloud.firestore {
       function validCar(car, profile) {
         let badges = profile.get('badges', {});
         return car is map
-          && car.keys().hasOnly(['body', 'paint', 'paint2', 'finish', 'decal', 'wheels', 'boost', 'trail', 'explosion', 'topper', 'backdrop'])
+          && car.keys().hasOnly(['body', 'paint', 'paint2', 'accents', 'finish', 'decal', 'wheels', 'boost', 'trail', 'explosion', 'topper', 'backdrop'])
+          && car.get('accents', ['lower']) is list
+          && car.get('accents', ['lower']).size() <= 5
+          && car.get('accents', ['lower']).hasOnly(['lower', 'roof', 'stripes', 'nose', 'tail'])
           && car.keys().hasAll(['body', 'paint', 'decal', 'wheels', 'boost', 'explosion', 'topper'])
           && owns(car.body, {'brick': '', 'dart': '', 'bruiser': '', 'spiked': 'demolisher', 'noodle': 'alleyCat', 'retro': 'veteran'}, badges)
           && owns(car.paint, {'midnightBlack': '', 'arcticWhite': '', 'gunmetal': '', 'racingRed': '', 'blazeOrange': '', 'sunburstYellow': '', 'lime': '', 'forestGreen': '', 'teal': '', 'skyBlue': '', 'cobalt': '', 'royalPurple': '', 'hotPink': '', 'burgundy': '', 'sand': '', 'chrome': 'perfectWeek', 'sunrise': 'earlyBird', 'tricolor': 'tripleThreat', 'ice': 'dryWeek', 'silver': 'finalist', 'clown': 'wheelSurvivor', 'galaxy': 'grandChamp'}, badges)

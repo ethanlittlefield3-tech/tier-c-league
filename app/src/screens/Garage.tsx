@@ -1,5 +1,5 @@
 import { useRef, useState } from 'preact/hooks';
-import { BADGES, RANK_DECAL, STARTER_PARTS, seasonDecals, type Badge, type Part, type PartSlot } from '@tcl/engine';
+import { ACCENT_ZONES, BADGES, RANK_DECAL, STARTER_PARTS, seasonDecals, type Badge, type Part, type PartSlot } from '@tcl/engine';
 import { backdropOf } from '../art/car/backdrops.ts';
 import { CarArt } from '../art/car/CarArt.tsx';
 import { BurstIcon, GoalExplosion } from '../art/car/GoalExplosion.tsx';
@@ -186,6 +186,22 @@ export function Garage(props: { me: Me }) {
       });
   };
 
+  // Where the accent goes (ruling R22): each place is on or off, saved at once.
+  const toggleZone = (zone: string) => {
+    const zones = mine.accents.includes(zone) ? mine.accents.filter((each) => each !== zone) : [...mine.accents, zone];
+    const next = { ...mine, accents: zones };
+    setDraft(next);
+    setTrying(null);
+    setNote(null);
+    void loadData()
+      .then((api) => api.saveCar(props.me, next))
+      .then(() => setNote({ error: false, text: zones.length ? `Accent on: ${zones.map((each) => ACCENT_ZONES.find((found) => found.id === each)?.name.toLowerCase()).join(', ')}.` : 'No accent anywhere.' }))
+      .catch((failure: unknown) => {
+        setDraft(null);
+        setNote({ error: true, text: TROUBLE[whyOf(failure)] });
+      });
+  };
+
   const options = partsFor(slot, { badges: earned, rank: profile.data?.rank ?? null, seasons: profile.data?.seasons ?? {} });
   const count = Object.keys(earned).length;
   const slotName = SLOTS.find((each) => each.slot === slot)?.name;
@@ -253,6 +269,16 @@ export function Garage(props: { me: Me }) {
         <button type="button" class="btn btn-second garage-watch" onClick={() => setBoom((count) => count + 1)}>
           Watch it
         </button>
+      )}
+
+      {slot === 'paint2' && (
+        <div class="garage-zones" role="group" aria-label="Where the accent goes">
+          {ACCENT_ZONES.map((zone) => (
+            <button key={zone.id} type="button" class="garage-zone" aria-pressed={mine.accents.includes(zone.id)} onClick={() => toggleZone(zone.id)}>
+              {zone.name}
+            </button>
+          ))}
+        </div>
       )}
 
       <ul class="garage-parts" aria-label={slotName}>

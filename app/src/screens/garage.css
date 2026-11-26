@@ -387,3 +387,33 @@
     opacity: 0;
   }
 }
+
+/* Where the accent goes: places that switch on and off, and layer. */
+.garage-zones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.garage-zone {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid rgba(196, 216, 255, 0.25);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-soft);
+  font: 700 13px/1 var(--body);
+  cursor: pointer;
+}
+
+.garage-zone[aria-pressed='true'] {
+  border-color: var(--blue);
+  background: rgba(31, 139, 255, 0.22);
+  color: var(--ink);
+}
+
+.garage-zone:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}

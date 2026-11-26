@@ -12,8 +12,10 @@
 export interface CarParts {
   body: string;
   paint: string;
-  /** The accent: a second paint on the lower body, or `none`. */
+  /** The accent: a second paint, or `none`. */
   paint2: string;
+  /** Where the accent goes (ruling R22): lower, roof, stripes, nose, tail, together or alone. */
+  accents: readonly string[];
   /** The paint's finish: gloss, matte, metallic, pearl, or the champion's gold. */
   finish: string;
   decal: string;
@@ -27,7 +29,7 @@ export interface CarParts {
   backdrop: string;
 }
 
-export const STARTER_CAR: CarParts = { body: 'dart', paint: 'cobalt', paint2: 'none', finish: 'gloss', decal: 'none', wheels: 'stock', boost: 'team', trail: 'stream', explosion: 'stock', topper: 'none', backdrop: 'garage' };
+export const STARTER_CAR: CarParts = { body: 'dart', paint: 'cobalt', paint2: 'none', accents: ['lower'], finish: 'gloss', decal: 'none', wheels: 'stock', boost: 'team', trail: 'stream', explosion: 'stock', topper: 'none', backdrop: 'garage' };
 
 const INK = '#050914';
 
@@ -221,7 +223,13 @@ function finishOverlay(paint: string, body: Body): string {
 }
 
 function wheel(kind: string, cx: number, cy: number, r: number, id: string): string {
-  const tire = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#0c1122" stroke="${INK}" stroke-width="2.5"/>`;
+  // The tire, with tread blocks round its edge and a red brake caliper behind the rim.
+  const treads = Array.from({ length: 14 }, (_, i) => {
+    const a = (i * (360 / 14) * Math.PI) / 180;
+    return `M${n(cx + Math.cos(a) * r * 0.82)} ${n(cy + Math.sin(a) * r * 0.82)}L${n(cx + Math.cos(a) * r * 0.97)} ${n(cy + Math.sin(a) * r * 0.97)}`;
+  }).join('');
+  const caliper = `<path d="M${n(cx - r * 0.7)} ${n(cy - r * 0.14)}A${n(r * 0.71)} ${n(r * 0.71)} 0 0 1 ${n(cx - r * 0.32)} ${n(cy - r * 0.63)}" fill="none" stroke="#e0242f" stroke-width="${n(r * 0.14)}" stroke-linecap="round"/>`;
+  const tire = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#0c1122" stroke="${INK}" stroke-width="2.5"/><path class="car-tread" d="${treads}" stroke="#2a3350" stroke-width="1.4"/>${caliper}`;
   const rimR = n(r * 0.65);
   const hub = (fill: string) => `<circle cx="${cx}" cy="${cy}" r="${n(r * 0.2)}" fill="${fill}" stroke="${INK}" stroke-width="1"/>`;
   const spokes = (count: number, color: string, width: number) =>
@@ -392,12 +400,51 @@ function seasonDecal(kind: string, { x1, x2, y1, y2 }: Body['band']): string {
   return `<path d="M${n(cx - 15)} ${n(cy - 9)}H${n(cx + 15)}L${n(cx + 12)} ${cy}L${n(cx + 15)} ${n(cy + 9)}H${n(cx - 15)}L${n(cx - 12)} ${cy}Z" fill="#0b1433" stroke="#ffcf3f" stroke-width="1.2" stroke-linejoin="round"/>${text(season.toUpperCase(), cy + 0.5, 8, '#ffcf3f')}${text(year, cy + 7, 5, '#ffffff')}`;
 }
 
-/** The accent: the lower body in a second paint, under a thin pinstripe. */
-function accent(id: string, paint2: string, body: Body, bottom: number, width: number): string {
+/**
+ * The accent: a second paint wherever the player put it (ruling R22). The
+ * lower body sits under a thin pinstripe; the roof is everything above the
+ * side band; the side stripes run the length of the band; the nose and tail
+ * are the front and back fifth.
+ */
+function accent(id: string, paint2: string, zones: readonly string[], body: Body, bottom: number, width: number): string {
   const p = PAINTS[paint2];
-  if (!p) return '';
-  const top = n(body.band.y1 + (body.band.y2 - body.band.y1) * 0.55);
-  return `<linearGradient id="${id}-accent" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.light}"/><stop offset="0.45" stop-color="${p.mid}"/><stop offset="1" stop-color="${p.dark}"/></linearGradient><rect x="-10" y="${top}" width="${width + 20}" height="${n(bottom - top + 10)}" fill="url(#${id}-accent)"/><rect x="-10" y="${n(top - 1)}" width="${width + 20}" height="1.4" fill="#ffffff" opacity="0.8"/>`;
+  if (!p || zones.length === 0) return '';
+  const fill = `url(#${id}-accent)`;
+  const { x1, x2, y1, y2 } = body.band;
+  const mid = n((y1 + y2) / 2);
+  const span = x2 - x1;
+  const pieces: Record<string, string> = {
+    lower: (() => {
+      const top = n(y1 + (y2 - y1) * 0.55);
+      return `<rect x="-10" y="${top}" width="${width + 20}" height="${n(bottom - top + 10)}" fill="${fill}"/><rect x="-10" y="${n(top - 1)}" width="${width + 20}" height="1.4" fill="#ffffff" opacity="0.8"/>`;
+    })(),
+    roof: `<rect x="-10" y="-40" width="${width + 20}" height="${n(y1 + 38)}" fill="${fill}"/>`,
+    stripes: `<rect x="-10" y="${n(mid - 5)}" width="${width + 20}" height="3.2" fill="${fill}"/><rect x="-10" y="${n(mid + 1)}" width="${width + 20}" height="3.2" fill="${fill}"/>`,
+    nose: `<rect x="${n(x2 - span * 0.2)}" y="-40" width="${n(width - x2 + span * 0.2 + 20)}" height="${bottom + 50}" fill="${fill}"/><rect x="${n(x2 - span * 0.2 - 0.7)}" y="-40" width="1.4" height="${bottom + 50}" fill="#ffffff" opacity="0.6"/>`,
+    tail: `<rect x="-10" y="-40" width="${n(x1 + span * 0.2 + 10)}" height="${bottom + 50}" fill="${fill}"/><rect x="${n(x1 + span * 0.2 - 0.7)}" y="-40" width="1.4" height="${bottom + 50}" fill="#ffffff" opacity="0.6"/>`,
+  };
+  const order = ['roof', 'nose', 'tail', 'lower', 'stripes'].filter((zone) => zones.includes(zone));
+  if (order.length === 0) return '';
+  return `<linearGradient id="${id}-accent" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.light}"/><stop offset="0.45" stop-color="${p.mid}"/><stop offset="1" stop-color="${p.dark}"/></linearGradient>${order.map((zone) => pieces[zone]).join('')}`;
+}
+
+/**
+ * The details every body gets: door seams and a handle, a vent behind the
+ * front wheel, a tail light, a rocker line, and arches over the wheels.
+ */
+function bodyDetail(body: Body, bottom: number): string {
+  const { x1, x2, y1, y2 } = body.band;
+  const span = x2 - x1;
+  const door = n(x1 + span * 0.46);
+  const rear = n(x1 + span * 0.24);
+  const seam = (x: number) => `<path d="M${x} ${n(y1 - 4)}L${n(x - 1.5)} ${n(bottom - 9)}" stroke="${INK}" stroke-width="1" opacity="0.45"/>`;
+  const handle = `<rect x="${n(door - 9)}" y="${n(y1 + 2)}" width="6" height="1.8" rx="0.9" fill="#ffffff" opacity="0.7"/><rect x="${n(door - 9)}" y="${n(y1 + 3.6)}" width="6" height="0.8" fill="${INK}" opacity="0.4"/>`;
+  const front = [...body.wheels].sort((a, b) => b[0] - a[0])[0]!;
+  const vent = [0, 1, 2].map((i) => `<path d="M${n(front[0] - front[2] - 6 - i * 3)} ${n(y1 + 1)}l-2 ${n(y2 - y1 - 4)}" stroke="${INK}" stroke-width="1.2" opacity="0.4"/>`).join('');
+  const tail = `<rect x="${n(x1 - 6)}" y="${n(y1 - 1)}" width="7" height="5" rx="1.5" fill="#ff3f4f" stroke="${INK}" stroke-width="0.9"/><rect x="${n(x1 - 5)}" y="${n(y1)}" width="3" height="1.4" fill="#ffd0d4" opacity="0.9"/>`;
+  const rocker = `<path d="M${n(x1 + 6)} ${n(bottom - 13)}H${n(x2 - 6)}" stroke="#ffffff" stroke-width="0.8" opacity="0.25"/>`;
+  const arches = body.wheels.map(([x, y, r]) => `<path d="M${n(x - r - 4)} ${n(y + 1)}A${r + 4} ${r + 4} 0 0 1 ${n(x + r + 4)} ${n(y + 1)}" fill="none" stroke="${INK}" stroke-width="1.6" opacity="0.55"/>`).join('');
+  return `<g class="car-detail">${seam(door)}${seam(rear)}${handle}${vent}${tail}${rocker}${arches}</g>`;
 }
 
 /** The finish, laid over the paint: matte dulls it, metallic and gold fleck it, pearl gives it a sheen. */
@@ -475,6 +522,7 @@ export function drawCar(parts: Partial<CarParts>, options: { team?: 'blue' | 'or
     `<radialGradient id="${id}-rim" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stop-color="#ffffff"/><stop offset="0.5" stop-color="#a9b4cf"/><stop offset="1" stop-color="#4d5878"/></radialGradient>`,
     `<linearGradient id="${id}-glass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f1f9ff"/><stop offset="0.45" stop-color="#9fd2ff"/><stop offset="1" stop-color="#2f7fdc"/></linearGradient>`,
     `<clipPath id="${id}-clip"><path d="${body.shape}"/></clipPath>`,
+    `<filter id="${id}-shade" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0.7" dy="0.9" stdDeviation="0.5" flood-color="#000000" flood-opacity="0.45"/></filter>`,
     '</defs>',
     options.bare ? '' : `<ellipse cx="${n(width / 2)}" cy="${n(bottom + 2)}" rx="${n(width * 0.46)}" ry="6" fill="#000000" opacity="0.4"/>`,
     options.bare ? '' : boost(car.boost, body.exhaust, team, id),
@@ -483,10 +531,11 @@ export function drawCar(parts: Partial<CarParts>, options: { team?: 'blue' | 'or
     `<path d="${body.shape}" fill="url(#${id}-paint)"/>`,
     `<g clip-path="url(#${id}-clip)">`,
     finishOverlay(paint, body),
-    car.paint2 !== 'none' ? accent(id, car.paint2, body, bottom, width) : '',
+    car.paint2 !== 'none' ? accent(id, car.paint2, Array.isArray(car.accents) ? car.accents : ['lower'], body, bottom, width) : '',
     finishLayer(id, car.finish, body, bottom, width),
+    bodyDetail(body, bottom),
     `<rect x="-10" y="${bottom - 22}" width="${width + 20}" height="30" fill="#000000" opacity="0.22"/>`,
-    decalArt,
+    `<g filter="url(#${id}-shade)">${decalArt}</g>`,
     ...(options.stickers ?? []).map((kind, at) => sticker(kind, at, body.band)),
     '</g>',
     ...body.glass.map((glass) => `<path d="${glass}" fill="url(#${id}-glass)" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/>`),
@@ -495,7 +544,7 @@ export function drawCar(parts: Partial<CarParts>, options: { team?: 'blue' | 'or
     body.extra ?? '',
     `<circle cx="${body.light[0]}" cy="${body.light[1]}" r="3" fill="#fff6c9" stroke="${INK}" stroke-width="1"/>`,
     ...body.wheels.map(([x, y, r]) => wheel(car.wheels, x, y, r, id)),
-    topper(car.topper, body.roof),
+    car.topper !== 'none' ? `<ellipse cx="${body.roof[0]}" cy="${n(body.roof[1] + 0.5)}" rx="7" ry="1.8" fill="${INK}" opacity="0.55"/><g filter="url(#${id}-shade)">${topper(car.topper, body.roof)}</g>` : '',
     '</svg>',
   ].join('');
 }

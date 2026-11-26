@@ -153,6 +153,15 @@ export const STARTER_PARTS: readonly Part[] = [
   part('backdrop', 'tunnel', 'Neon tunnel'),
 ];
 
+/** Where the accent paint goes: any of these, alone or together (ruling R22). */
+export const ACCENT_ZONES = [
+  { id: 'lower', name: 'Lower body' },
+  { id: 'roof', name: 'Roof' },
+  { id: 'stripes', name: 'Side stripes' },
+  { id: 'nose', name: 'Nose' },
+  { id: 'tail', name: 'Tail' },
+] as const;
+
 /** Your current rank's emblem, for any player with a rank (ruling R21). */
 export const RANK_DECAL: Part = part('decal', 'rank', 'Rank emblem');
 
