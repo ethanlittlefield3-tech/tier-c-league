@@ -16,6 +16,9 @@ Every rule that had to be interpreted, and who decided it. SCOPE.md is still the
 | R8 | 2026-11-25 | **The app icon is option A:** the gold C badge with a blue-to-orange boost streak, on navy. | Three options were drawn, as PHASE1.md asks. The launch pictures match it. |
 | R9 | 2026-11-25 | **The Firebase project is set up now, not at Step 5.** | PHASE1.md saved the accounts for last and planned for the commish to try screens from a computer on Wi-Fi. This build runs in a cloud workspace a phone cannot reach, so without a database the commish could only review screens as pictures. |
 | R10 | 2026-11-25 | **Today's layout follows the commish's mockup.** All four squares sit on one screen, with no scrolling. Tapping screen time opens a big sheet with the slider, step buttons and the scale. Beers and power-ups sit a scroll below. | The commish sent two pictures from the concept work after the first phone check. |
+| R11 | 2026-11-26 | **Dare videos stay in the group chat.** The app keeps photos only; a video dare's proof is a still from it, and the vote stays in the app (call 258). | SCOPE.md left the video decision to Phase 3: pay-as-you-go storage, or the group chat. |
+| R12 | 2026-11-26 | **Holiday events score as built:** Double Points Day doubles negative days too and stacks with an Aerial (four times the base); Dry Day's +2 counts on a logged rest day and an Aerial doubles it; a Holiday Pass no-show scores 0 but still takes Demolitions, and skips the check-in streak (calls 254 to 256). | "Still open" item 9: SCOPE.md named the three events but not how they meet the other rules. |
+| R13 | 2026-11-26 | **A dodged Season Dare costs no Season Points:** the standings are final once the playoffs start. It still puts the Dare Dodger sticker on the car (call 252). | "Still open" item 8: SCOPE.md's −3 for a dodge was written for the regular season. |
 
 ## Calls I made to close gaps (veto any)
 
@@ -449,11 +452,9 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 
 7. **Rumble's item rules. Built provisionally (calls 228 to 236):** equal odds; the order goals, then screen time and beers, then points; Swap's lane order; Freeze doubling "not logged" too; Magnet moving points but not the beer count; Spike not giving the point to you; rest days protecting both players from Boot, Spike and Swap; Rule One cancelling both items; flat no-show days; and no Boot when none is picked by noon. Each is one place in `engine/src/rumble.ts`.
 
-8. **The Whiff Bowl's shape and the playoff tie readings. Built provisionally (calls 242 to 245):** SCOPE.md says the Whiff Bowl is "a mini bracket on the same days, for 'not last'", but not how it pairs players or what decides its last round; it is built as round-one pairs, then a race among the losers. Seeds are fixed when the last week first posts. A dodged Season Dare costs no Season Points (call 252); the other reading would take 3 off the final standings.
+8. **The Whiff Bowl's shape and the playoff tie readings. Built provisionally (calls 242 to 245):** SCOPE.md says the Whiff Bowl is "a mini bracket on the same days, for 'not last'", but not how it pairs players or what decides its last round; it is built as round-one pairs, then a race among the losers. Seeds are fixed when the last week first posts.
 
-9. **Holiday events. Built provisionally (calls 254 to 256):** Double Points Day doubles negative days too and stacks with an Aerial (four times the base); Dry Day's +2 counts on rest days and an Aerial doubles it; and a Holiday Pass no-show still takes Demolitions and skips the check-in streak. The other readings would be doubling only good days, an Aerial and Double Points Day not stacking (or making three times), and a Holiday Pass day scoring a flat 0 whatever else happened. Each is one place in `engine/src/scoring.ts`.
-
-The receipts question that was here is now ruling R6.
+The receipts question that was here is now ruling R6. Holiday events and the Season Dare's dodge are now rulings R12 and R13.
 
 ## Things the commish should know (rules as written, working as written)
 
