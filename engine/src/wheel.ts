@@ -4,6 +4,7 @@
  * draws the result when the week goes final; the spin only reveals it.
  */
 import { addDays, dayEnd, localDate, weekdayIndex, type Instant } from './calendar.ts';
+import type { LeagueClock } from './clock.ts';
 import { voteOutcome } from './votes.ts';
 
 /** The most slices on the wheel. */
@@ -104,4 +105,13 @@ export function openDares(input: {
       return status !== 'counted' && status !== 'dodged';
     })
     .map((draw) => draw.id);
+}
+
+/**
+ * When a spin nobody tapped happens on its own (ruling R15): at midnight as
+ * its deadline's Sunday starts, on the league's clock. Proof is still due by
+ * the end of that Sunday.
+ */
+export function autoSpinAt(dueAt: Instant, clock: LeagueClock): Instant {
+  return clock.timeOf(clock.dateOf(dueAt - 1), 0);
 }

@@ -26,6 +26,7 @@ import { deliver, type Device, type Push } from './lib/deliver.ts';
 import { fastClockOf } from './lib/fast.ts';
 import { closeAlerts, leadsOf, liveTotals, passedAlerts, type Lead } from './lib/live.ts';
 import { offseasonAlerts, offseasonLeavers } from './lib/offseason.ts';
+import { autoSpins } from './lib/wheel.ts';
 import type { RumbleItem } from '../engine/src/rumble.ts';
 import type { Lane } from '../engine/src/scoring.ts';
 
@@ -177,7 +178,8 @@ for (const league of leagues) {
   const today = calendar.find((day) => day.date === clock.dateOf(now)) ?? calendar.at(-1);
   // In the playoffs, and once the season is over, the rounds too: their Demolitions, results and champion.
   const rounds = (today as { phase?: string } | undefined)?.phase === 'playoff' || season.get('status') === 'finished' ? ['p01', 'p02', 'p03'] : [];
-  const weekIds = [...(today ? [today.week, today.week - 1].filter((week) => week >= 1).map(weekPeriod) : []), ...rounds];
+  // Two weeks back too: a Wheel redraw can still be waiting on its spin then.
+  const weekIds = [...(today ? [today.week, today.week - 1, today.week - 2].filter((week) => week >= 1).map(weekPeriod) : []), ...rounds];
   const weeks = (weekIds.length ? docs(await db.getAll(...weekIds.map((id) => seasonRef.collection('weeks').doc(id)))) : []) as unknown as AlertInput['weeks'];
   const revealed = Array.isArray(state.revealed) ? (state.revealed as string[]) : [];
   const held = (state.held ?? {}) as Record<string, Alert[]>;
@@ -199,6 +201,24 @@ for (const league of leagues) {
   ]);
   const passedPairs = pairs.filter((pair) => moved.has(pair.a) || moved.has(pair.b));
   const closeNow = checks.some((check) => check.kind === 'close' && check.day.period === today?.period);
+
+  // Ruling R15: a Wheel spin nobody tapped happens on its own at midnight as
+  // its deadline's Sunday starts. Proof is still due by the end of that Sunday.
+  const draws = weeks.flatMap((week) => Object.values((week as { wheel?: Record<string, { id: string; player: string; dueAt: number }> }).wheel ?? {}));
+  const waiting = autoSpins({ draws, spun: [], clock, now });
+  let autoSpun: { id: string; player: string; dare: string }[] = [];
+  if (waiting.length > 0) {
+    const found = await db.getAll(...waiting.map((draw) => seasonRef.collection('spins').doc(draw.id)));
+    const due = waiting.filter((_, at) => !found[at]!.exists);
+    if (due.length > 0) {
+      const sealedDares = await db.getAll(...due.map((draw) => seasonRef.collection('sealed').doc(`wheel_${draw.id}`)));
+      const batch = db.batch();
+      for (const draw of due) batch.set(seasonRef.collection('spins').doc(draw.id), { player: draw.player, period: draw.id.split('_')[0], at: stamp(now), proofAt: null, auto: true });
+      await batch.commit();
+      autoSpun = due.map((draw, at) => ({ id: draw.id, player: draw.player, dare: String(sealedDares[at]?.get('dare') ?? '') }));
+      console.log(`League ${league.id}: ${due.length} Wheel spin${due.length === 1 ? '' : 's'} made on Sunday for the spinner.`);
+    }
+  }
 
   // The offseason (SCOPE.md, "Seasons"): everyone is asked to stay or leave by
   // the commish's deadline, and at the deadline the leavers come off the
@@ -241,7 +261,7 @@ for (const league of leagues) {
     }
   }
   const anything =
-    offseason.length > 0 || checks.length > 0 || !wall.empty || !asked.empty || !dueSoon.empty || !docks.empty || !spun.empty || !proven.empty || newReveals.length > 0 || finalNow || draftNow || passedPairs.length > 0 || (active !== null && !active.empty) || !news.empty || !poked.empty || !challenged.empty || Object.keys(held).length > 0;
+    offseason.length > 0 || autoSpun.length > 0 || checks.length > 0 || !wall.empty || !asked.empty || !dueSoon.empty || !docks.empty || !spun.empty || !proven.empty || newReveals.length > 0 || finalNow || draftNow || passedPairs.length > 0 || (active !== null && !active.empty) || !news.empty || !poked.empty || !challenged.empty || Object.keys(held).length > 0;
   let leadsAfter: Record<string, Lead> = leadsBefore;
   let closeSent = today && (state.closeSent as { period?: string; players?: string[] } | undefined)?.period === today.period ? ((state.closeSent as { players?: string[] }).players ?? []) : [];
   let seen = (state.seen ?? {}) as Record<string, number>;
@@ -295,7 +315,15 @@ for (const league of leagues) {
       nextWeek: nextWeek?.exists ? ({ id: nextWeek.id, ...plain(nextWeek.data()!) } as unknown as AlertInput['nextWeek']) : null,
       rumbleItems: Object.fromEntries(rumbleItems.map((item) => [item.id, String((item as { item?: unknown }).item)])),
     };
-    alerts = [...alertsDue(input), ...offseason];
+    // The Sunday spins made above: the spinner hears the dare, everyone else that it spun.
+    const spunAlerts: Alert[] = autoSpun.flatMap((spin) =>
+      members.map((player): Alert =>
+        player === spin.player
+          ? { player, category: 'league', key: `spin-${spin.id}`, title: 'Your Wheel spun itself', body: `${spin.dare ? `${spin.dare} ` : ''}Prove it by 11:59 pm tonight.`, screen: 'wheel', expires: now + 24 * HOUR }
+          : { player, category: 'league', key: `spin-${spin.id}`, title: `${players[spin.player] ?? 'A player'}'s Wheel spun itself`, body: 'See where it landed.', screen: 'wheel', expires: now + 24 * HOUR },
+      ),
+    );
+    alerts = [...alertsDue(input), ...offseason, ...spunAlerts];
 
     // Live scores: the matchups a change touched, or every one at 6 pm on the weekend.
     const livePairs = closeNow ? pairs : passedPairs;

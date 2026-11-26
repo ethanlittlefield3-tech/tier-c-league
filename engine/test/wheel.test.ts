@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { DODGE_PENALTY, PROOF_VOTE_HOURS, WHEEL_MAX, dareDue, dareStatus, openDares, wheelPool } from '../src/wheel.ts';
+import { DODGE_PENALTY, PROOF_VOTE_HOURS, WHEEL_MAX, autoSpinAt, dareDue, dareStatus, openDares, wheelPool } from '../src/wheel.ts';
+import { zoneClock } from '../src/clock.ts';
 
 const HOUR = 3_600_000;
 const NY = 'America/New_York';
@@ -68,5 +69,13 @@ describe("A season's dares, before the next season starts", () => {
     const votes = ['w06_a_1', 'w06_a_1', 'w06_a_2', 'w06_a_2'].map((id, at) => ({ draw: id, choice: at < 2 ? 'doesntCount' : 'counts' }));
     expect(openDares({ ...base, draws: draws.slice(0, 1), spins, votes, now: 50 * H })).toEqual(['w06_a_1']);
     expect(openDares({ ...base, draws, spins, votes, now: 50 * H })).toEqual([]);
+  });
+});
+
+describe('A spin nobody taps (ruling R15)', () => {
+  it("The Wheel spins itself at midnight when its deadline's Sunday starts; proof is still due by the end of that Sunday", () => {
+    const clock = zoneClock('America/New_York');
+    // Due at the end of Sunday Jan 24, 2027: it spins itself at the start of that Sunday.
+    expect(autoSpinAt(Date.UTC(2027, 0, 25, 5), clock)).toBe(Date.UTC(2027, 0, 24, 5));
   });
 });

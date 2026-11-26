@@ -19,6 +19,9 @@ Every rule that had to be interpreted, and who decided it. SCOPE.md is still the
 | R11 | 2026-11-26 | **Dare videos stay in the group chat.** The app keeps photos only; a video dare's proof is a still from it, and the vote stays in the app (call 258). | SCOPE.md left the video decision to Phase 3: pay-as-you-go storage, or the group chat. |
 | R12 | 2026-11-26 | **Holiday events score as built:** Double Points Day doubles negative days too and stacks with an Aerial (four times the base); Dry Day's +2 counts on a logged rest day and an Aerial doubles it; a Holiday Pass no-show scores 0 but still takes Demolitions, and skips the check-in streak (calls 254 to 256). | "Still open" item 9: SCOPE.md named the three events but not how they meet the other rules. |
 | R13 | 2026-11-26 | **A dodged Season Dare costs no Season Points:** the standings are final once the playoffs start. It still puts the Dare Dodger sticker on the car (call 252). | "Still open" item 8: SCOPE.md's −3 for a dodge was written for the regular season. |
+| R14 | 2026-11-26 | **A player who leaves mid-season is marked as left, and plays on as if they did nothing:** their matchups stay on the schedule and every day scores as a no-show, so their opponents win. | The mid-season question. The commish: if it ever becomes an issue, something more structured can come later. |
+| R15 | 2026-11-26 | **A Wheel spin still waiting when its deadline's Sunday starts spins itself,** at midnight. Proof is still due by 11:59 pm that Sunday. | "Still open" item 4: not spinning used to be a dodge in itself. |
+| R16 | 2026-11-26 | **The other provisional readings stand as built:** predictions (calls 199 to 201), the majority veto, a goal vetoed at close settled by the commish, the Wheel's 16 slices, no draw bonus in Team Week or 2v2, the Bounty and Alley edge cases, Rumble's items, the Whiff Bowl's shape, and no answer in the offseason counting as Stay. | "Still open" items 0 to 3 and 5 to 8, and call 262. |
 
 ## Calls I made to close gaps (veto any)
 
@@ -442,6 +445,8 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 266. **The champion is news in the feed,** with the finalist and the Whiff Bowl's loser.
 267. **The playoffs send the same alerts as the regular season:** each round's result, as "Playoffs: you won", Demolition reveals, and "passed you" and "close finish" in the 1v1 rounds. When the champion is crowned, everyone hears who won, the finalist, and who does the Season Dare.
 268. **The fast test season (Checkpoint D) has no playoffs.** Its fast calendar has only the regular weeks, and a playoff round settles hours after its last day locks, so its playoffs would have been seeded and never played. With none, the Season Points leader is champion when Week 3 goes final, and the offseason follows, so the whole season, offseason included, can be watched in a few hours.
+269. **A player marked as left (R14) is kept out of MVP, the Bust, the Wheel and the playoff bracket, the Whiff Bowl included.** Their no-show weeks would otherwise make them the Bust and the Wheel's spinner every week, letting everyone else off, and could put them last in the Whiff Bowl. Their matchups still count for their opponents, and The House's average still counts their weeks. "Remove from the league" in Commish tools is now "Mark as left", and they appear under Former players, where the commish can bring them back.
+270. **The Sunday spin (R15) is made by the alerts job,** which runs every 10 minutes, so it lands within 10 minutes of midnight. The spinner hears the dare and that proof is due by 11:59 pm; everyone else hears the Wheel spun.
 
 **Calendar**
 
@@ -449,21 +454,9 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 
 ## Still open
 
-0. **Predictions, built provisionally (calls 199 to 201):** picks are for the coming week, due the Sunday before it; a draw makes every pick on it wrong; and the best record is the most right picks, with fewer picks made breaking a tie. The other readings would be picking the current week, a draw counting as right for nobody or as half, and the best record being the highest share right.
+1. **Joining mid-season.** The season setting "join mid-season" is saved but does nothing yet: a player who joins during a season is in the league but has no matchups until the next season. The commish answered the leaving half of this question (R14).
 
-1. **What a "majority" veto means. Built provisionally, waiting on the commish.** The draft counts a goal as vetoed when more than half of the players who can vote veto it (everyone but the goal's owner). The other reading is more than half of the votes cast. Under the built reading, a goal stands when votes close unless a majority vetoed it, so nobody can sink a goal with one veto while the others stay quiet. The same rule will decide dare vetoes and dare proof. Changing it is one line in `engine/src/votes.ts`.
-2. **A goal still vetoed when the votes close.** For now the results list it for the commish to settle, for example by reopening the votes for 12 hours so the player can re-word it. Should something happen on its own instead?
-3. **The Wheel's 16 slices. Built provisionally.** SCOPE.md's pool (8 starters plus one dare per player) can reach 20, but the wheel holds 16. The wheel takes every dare from the draft that stands, then starter dares picked at random each week to fill it to 16. Changing it is one function, `wheelPool` in `engine/src/wheel.ts`.
-4. **A spinner who never taps Spin. Built provisionally.** Proof is due by 11:59 pm on the Sunday after the draw, whether or not they have spun, so not spinning is a dodge (−3 Season Points) once that Sunday ends. Changing it is one function, `dareDue`.
-
-5. **A draw in Team Week or 2v2. Built provisionally:** no bonus, since SCOPE.md gives +3 only to the winning side (call 212). The other reading is a draw bonus, like the 1v1's +2.
-6. **Bounty and Alley edge cases. Built provisionally:** a screen-time target is broken by logging exactly the limit or by not logging screen time that day (call 214); a missed count target spins its lowest contributors (call 217); and an Alley tie goes to fewer beers, then shares the place and its full bonus (call 218).
-
-7. **Rumble's item rules. Built provisionally (calls 228 to 236):** equal odds; the order goals, then screen time and beers, then points; Swap's lane order; Freeze doubling "not logged" too; Magnet moving points but not the beer count; Spike not giving the point to you; rest days protecting both players from Boot, Spike and Swap; Rule One cancelling both items; flat no-show days; and no Boot when none is picked by noon. Each is one place in `engine/src/rumble.ts`.
-
-8. **The Whiff Bowl's shape and the playoff tie readings. Built provisionally (calls 242 to 245):** SCOPE.md says the Whiff Bowl is "a mini bracket on the same days, for 'not last'", but not how it pairs players or what decides its last round; it is built as round-one pairs, then a race among the losers. Seeds are fixed when the last week first posts.
-
-The receipts question that was here is now ruling R6. Holiday events and the Season Dare's dodge are now rulings R12 and R13.
+Every other reading that was here is now a ruling: R6, R11 to R16.
 
 ## Things the commish should know (rules as written, working as written)
 

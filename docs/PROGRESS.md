@@ -230,6 +230,7 @@ Last updated 2026-11-25, after Rumble: group play is built.
 - **Alerts, part 1: on the phone** (2026-11-25). Profile has an Alerts panel: turn them on with a tap, switch each of the 7 kinds on or off, and set quiet hours. A new player is offered alerts right under their recovery key. A service worker shows the alerts, opens the app at the right screen when one is tapped, and keeps the app's files on the phone so it opens with no signal. The push token is fetched again on every open.
   - New rules for devices: a phone signs up only as the player its claim holds. 4 new rule tests and 1 rewritten. Weakening the rule 14 ways was caught 13 times; the other is still refused by the checks on each field. 3 engine tests and 5 flow tests.
   - Sending them is next: the tick job, every 10 minutes. Alerts also wait on the Cloud Messaging web push key from the commish.
+- **Mark as left, and the Sunday spin** (2026-11-26, rulings R14 and R15). In Commish tools, "Mark as left" signs a player's phones out and lists them under Former players. Their matchups stay and score as if they did nothing, and they're kept out of MVP, the Bust, the Wheel and the playoffs. A Wheel spin nobody tapped now spins itself as its deadline's Sunday starts, and the spinner hears the dare (DECISIONS.md, calls 269 and 270).
 - **The fast test season ends properly** (2026-11-26). It was set to have playoffs that its fast calendar couldn't hold, so the bracket would have been seeded and stuck. It now has none: the Season Points leader is crowned when Week 3 goes final, and the offseason follows (DECISIONS.md, call 268).
 - **Every alert in SCOPE.md's table is sent** (2026-11-26). A check of the table against the jobs found one gap: the playoffs sent no round results or Demolition reveals, because the alerts job only read regular weeks. It now reads the rounds too, and everyone hears who won the season, the finalist, and who does the Season Dare (DECISIONS.md, call 267).
 - **The offseason** (2026-11-26). When the champion is crowned, the season is over. Today shows the champion, and Stay or Leave by the commish's deadline, set in Commish tools, where the answers come in. Everyone is alerted, and anyone who hasn't answered is reminded a day before. At the deadline the leavers come off the roster, keeping their car, badges and history, and the commish can bring one back with a new key. The next season can be set up once the deadline has passed and the season's last dares are done; it can no longer be started mid-season by mistake. The feed now shows the champion and anyone who left (DECISIONS.md, calls 260 to 266).
@@ -302,10 +303,11 @@ Last updated 2026-11-25, after Rumble: group play is built.
 
 ## Waiting on the commish
 
-0. **Optional: try every screen in the demo league,** on a computer. The steps come one at a time in the chat.
-   - **Optional: set up backups:** a private repo and a token, then two secrets. The steps come one at a time in the chat when you're ready.
-   - **Checkpoint D can be run any time:** the "Fast test week" button, then watch on a computer. The README has the steps.
-1. **Phone check of the layout fix.** Open Tier C. If the area behind the clock is not solid navy, remove Tier C from the Home Screen and add it again from Safari. Have the recovery key ready first (Profile, Show my key), because a re-added app starts signed out. Then check that the title and the main page sit right, and that a touch doesn't move the whole screen.
+The phone layout check, Checkpoint C (every screen, in the demo league) and Checkpoint D (the fast test week) all passed on 2026-11-26. The commish answered every open question (rulings R14 to R16). Left, each walked through one step at a time in the chat:
+
+1. **The push alert key:** a Cloud Messaging web push key, made in the Firebase console. Alerts are built and wait only on it.
+2. **Backups:** a private repo and a token, then two GitHub Secrets.
+3. **Locking down the web key:** limit it to the app's address in the Google Cloud console, and turn on App Check.
 
 ## Next
 

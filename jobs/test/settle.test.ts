@@ -77,6 +77,17 @@ describe('Settling a week', () => {
     expect(due.awards.wheel).toEqual(['p2']);
     expect(due.lines.find((line) => line.player === 'p1')).toMatchObject({ points: 39, perfectDays: 6 });
   });
+
+  it('A player marked as left plays on as if they did nothing: every day is a no-show, their opponent wins, and they never take MVP, the Bust or the Wheel', () => {
+    const worse = { ...full, goals: { mind: true, body: false, wildcard: false } };
+    const due = settleDue({ ...base, pairs: [{ a: 'p1', b: 'gone' }, { a: 'p2', b: 'p3' }], players: { p1: everyDay(full), p2: everyDay(worse), p3: everyDay(full) }, away: ['gone'], now: SUNDAY_LOCK })!;
+    // Six no-shows (-30) and a blank rest day (-3).
+    expect(due.results.gone).toMatchObject({ points: -33, outcome: 'loss' });
+    expect(due.results.p1).toMatchObject({ outcome: 'win' });
+    // The lowest of the players still here spins: p2, not the player who left.
+    expect(due.awards.wheel).toEqual(['p2']);
+    expect(due.awards.bust).not.toContain('gone');
+  });
 });
 
 describe('The standings', () => {

@@ -32,7 +32,7 @@ interface JoinRequest {
  * one (which also signs out a lost phone), name a co-commish, hand over the
  * role, and remove a player. Each goes in the league log.
  */
-export function CommishPlayers(props: { me: Me; league: { commish?: string; coCommish?: string | null; members?: Record<string, boolean>; former?: Record<string, string>; joining?: string } }) {
+export function CommishPlayers(props: { me: Me; league: { commish?: string; coCommish?: string | null; members?: Record<string, boolean>; former?: Record<string, string>; joining?: string; season?: string | null } }) {
   const players = useAll<{ displayName?: string }>(`leagues/${props.me.league}/players`);
   const requests = useAll<JoinRequest>(`leagues/${props.me.league}/joinRequests`);
   const [open, setOpen] = useState<string | null>(null);
@@ -157,7 +157,7 @@ export function CommishPlayers(props: { me: Me; league: { commish?: string; coCo
                         <p class="panel-text">
                           {confirm.kind === 'reissue' && <><strong>Reissue {data.displayName}'s key?</strong> Every phone they are on is signed out, a lost one included. They get back in with the new key.</>}
                           {confirm.kind === 'handOver' && <><strong>Hand the commish role to {data.displayName}?</strong> You become co-commish.</>}
-                          {confirm.kind === 'remove' && <><strong>Remove {data.displayName} from the league?</strong> Their phones are signed out at once. Their history stays.</>}
+                          {confirm.kind === 'remove' && <><strong>Mark {data.displayName} as left?</strong> Their phones are signed out at once. Their matchups stay and score as if they did nothing, so their opponents win, and they're out of MVP, the Bust and the Wheel. You can bring them back from Former players.</>}
                         </p>
                         <button
                           type="button"
@@ -171,10 +171,10 @@ export function CommishPlayers(props: { me: Me; league: { commish?: string; coCo
                               }, `${data.displayName} has a new key, shown above. Send it to them.`);
                             }
                             if (confirm.kind === 'handOver') run((api) => api.editLeague(props.me, { commish: id, coCommish: props.me.player }, `Handed the commish role to ${nameOf(id)}`), `${data.displayName} is now the commish.`);
-                            if (confirm.kind === 'remove') run((api) => api.removePlayer(props.me, id, `Removed ${nameOf(id)} from the league`), `${data.displayName} is out of the league.`);
+                            if (confirm.kind === 'remove') run((api) => api.removePlayer(props.me, id, `Marked ${nameOf(id)} as left`, props.league.season ?? null), `${data.displayName} is marked as left.`);
                           }}
                         >
-                          {confirm.kind === 'reissue' ? 'Reissue the key' : confirm.kind === 'handOver' ? 'Hand it over' : 'Remove'}
+                          {confirm.kind === 'reissue' ? 'Reissue the key' : confirm.kind === 'handOver' ? 'Hand it over' : 'Mark as left'}
                         </button>
                         <button type="button" class="btn-quiet" onClick={() => setConfirm(null)}>
                           Cancel
@@ -206,7 +206,7 @@ export function CommishPlayers(props: { me: Me; league: { commish?: string; coCo
                               </button>
                             )}
                             <button type="button" class="btn-quiet person-remove" disabled={busy} onClick={() => setConfirm({ kind: 'remove', player: id })}>
-                              Remove from the league
+                              Mark as left
                             </button>
                           </>
                         )}
@@ -225,7 +225,7 @@ export function CommishPlayers(props: { me: Me; league: { commish?: string; coCo
               {former.map(([id, season]) => (
                 <li key={id} class="person-former">
                   <span>
-                    {nameOf(id)} <small>left after Season {season.replace(/^s/, '')}</small>
+                    {nameOf(id)} <small>{season ? `left in Season ${season.replace(/^s/, '')}` : 'left the league'}</small>
                   </span>
                   <button
                     type="button"

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { approvedDares, drawsDue, type Draw } from '../lib/wheel.ts';
+import { approvedDares, autoSpins, drawsDue, type Draw } from '../lib/wheel.ts';
+import { zoneClock } from '../../engine/src/clock.ts';
 
 const NY = 'America/New_York';
 const FINAL = Date.UTC(2027, 0, 19, 5); // Week 2 goes final: midnight on Tuesday Jan 19
@@ -61,5 +62,21 @@ describe("The Wheel's draws", () => {
   it("In the fast test league, proof is due by the end of the Sunday on the league's fast clock", () => {
     const due = drawsDue({ period: 'w01', spinners: ['maya'], existing: {}, redo: [], pool, now: FINAL, timeZone: NY, dueOf: (drawnAt) => drawnAt + 48 * 60_000, roll: rolls(1) });
     expect(due[0]?.draw.dueAt).toBe(FINAL + 48 * 60_000);
+  });
+});
+
+describe('The Sunday auto-spin (ruling R15)', () => {
+  const clock = zoneClock(NY);
+  const SUNDAY = Date.UTC(2027, 0, 24, 5); // midnight starting Sunday Jan 24, in New York
+  const draw = (id: string, player: string) => ({ id, player, n: 1, pool, drawnAt: FINAL, dueAt: SUNDAY + 24 * 3_600_000 });
+
+  it("A draw nobody has spun spins itself once its deadline's Sunday starts; one already spun is left alone", () => {
+    const draws = [draw('w02_maya_1', 'maya'), draw('w02_sam_1', 'sam')];
+    expect(autoSpins({ draws, spun: ['w02_sam_1'], clock, now: SUNDAY - 60_000 })).toEqual([]);
+    expect(autoSpins({ draws, spun: ['w02_sam_1'], clock, now: SUNDAY + 60_000 }).map((each) => each.id)).toEqual(['w02_maya_1']);
+  });
+
+  it('Once its deadline has passed, it is a dodge, not a spin', () => {
+    expect(autoSpins({ draws: [draw('w02_maya_1', 'maya')], spun: [], clock, now: SUNDAY + 25 * 3_600_000 })).toEqual([]);
   });
 });

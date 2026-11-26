@@ -155,6 +155,8 @@ for (const league of leagues) {
       players,
       demolitions,
       earlier,
+      // Players marked as left (ruling R14) play on as no-shows, out of the awards.
+      away: Object.keys((league.get('former') ?? {}) as Record<string, string>),
       now,
     });
     if (!settled) continue;
@@ -499,7 +501,9 @@ for (const league of leagues) {
   // last regular week posts, then each round settled at 6 pm the day after
   // its last day locks, when its receipts are closed. With no playoffs, the
   // Season Points leader is champion once the regular season is final.
-  const playoffTrophies = await playoffStep(league, seasonRef, season, seasonId, calendar, weeks, rows.map((row) => row.player));
+  // Players marked as left (ruling R14) are out of the playoffs and the Whiff Bowl.
+  const away = Object.keys((league.get('former') ?? {}) as Record<string, string>);
+  const playoffTrophies = await playoffStep(league, seasonRef, season, seasonId, calendar, weeks, rows.map((row) => row.player).filter((player) => !away.includes(player)));
 
   // The trophy case (SCOPE.md, "Season trophy case"): once every regular
   // week is final, the regular season's trophies, kept for good.

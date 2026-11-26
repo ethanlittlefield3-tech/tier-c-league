@@ -77,17 +77,19 @@ test.describe('Commish tools', () => {
     await riley.phone.context().close();
   });
 
-  test('Removing a player signs their phone out at once', async ({ page, request, browser }) => {
+  test('Marking a player as left signs their phone out at once, and lists them under Former players', async ({ page, request, browser }) => {
     const league = await createLeague(request, { name: 'Sunday Squad' });
     const riley = await rileyJoins(browser, league);
     await enterAsCommish(page, league);
     await openTools(page);
     await openRiley(page);
-    await button(page, 'Remove from the league').click();
-    await button(page, 'Remove').click();
-    await expect(page.getByRole('status')).toContainText('Riley is out of the league.');
-    const members = Object.keys(((await readDoc(request, `leagues/${league.id}`))?.members ?? {}) as object);
-    expect(members).toEqual([league.commish]);
+    await button(page, 'Mark as left').click();
+    await button(page, 'Mark as left').click();
+    await expect(page.getByRole('status')).toContainText('Riley is marked as left.');
+    const after = await readDoc(request, `leagues/${league.id}`);
+    expect(Object.keys((after?.members ?? {}) as object)).toEqual([league.commish]);
+    expect(Object.keys((after?.former ?? {}) as object)).toHaveLength(1);
+    await expect(page.getByRole('list', { name: 'Former players' })).toContainText('Riley');
 
     await riley.phone.reload();
     await tapToEnter(riley.phone);

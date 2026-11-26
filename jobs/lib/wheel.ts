@@ -4,7 +4,8 @@
  * job makes them, sealed, and a new one when a dare's proof is voted down.
  * Randomness is passed in, so this stays testable.
  */
-import { dareDue, voteOutcome } from '../../engine/src/index.ts';
+import { autoSpinAt, dareDue, voteOutcome } from '../../engine/src/index.ts';
+import type { LeagueClock } from '../../engine/src/clock.ts';
 
 /** A draw as the week keeps it, for every phone to show. The result itself is sealed. */
 export interface Draw {
@@ -69,4 +70,13 @@ export function drawsDue(input: {
     due.push({ draw, slice: Math.abs(Math.trunc(input.roll())) % input.pool.length });
   }
   return due;
+}
+
+/**
+ * The draws to spin now on their spinners' behalf (ruling R15): nobody has
+ * tapped Spin, their deadline's Sunday has started, and the deadline hasn't
+ * passed yet.
+ */
+export function autoSpins<T extends { id: string; dueAt: number }>(input: { draws: readonly T[]; spun: readonly string[]; clock: LeagueClock; now: number }): T[] {
+  return input.draws.filter((draw) => !input.spun.includes(draw.id) && autoSpinAt(draw.dueAt, input.clock) <= input.now && input.now < draw.dueAt);
 }

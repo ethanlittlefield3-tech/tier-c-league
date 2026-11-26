@@ -58,15 +58,20 @@ export const editLeague = (me: Me, changes: { joining?: 'open' | 'approval' | 'c
     await save.commit();
   });
 
-/** Takes a player off the league: off the member list, and their key blanked so no phone of theirs gets back in. */
-export const removePlayer = (me: Me, player: string, reason: string) =>
+/**
+ * Marks a player as left (ruling R14): off the member list, their key blanked
+ * so no phone of theirs gets back in, and on the list of former players, with
+ * the season they left in, so the commish can bring them back. Their
+ * matchups stay on the schedule and score as if they did nothing.
+ */
+export const removePlayer = (me: Me, player: string, reason: string, season: string | null = null) =>
   attempt(async (db) => {
     const league = doc(db, 'leagues', me.league);
     const old = String((await getDoc(doc(league, 'keys', player))).data()?.key ?? '');
     const leagueAudit = doc(collection(league, 'audit')).id;
     const keyAudit = doc(collection(league, 'audit')).id;
     const save = writeBatch(db);
-    save.update(league, { [`members.${player}`]: deleteField(), audit: leagueAudit });
+    save.update(league, { [`members.${player}`]: deleteField(), [`former.${player}`]: season ?? '', audit: leagueAudit });
     save.set(doc(league, 'audit', leagueAudit), auditEntry(me, 'league.settings', 'league', reason));
     save.update(doc(league, 'keys', player), { key: '', prev: old, rotatedAt: serverTimestamp(), audit: keyAudit });
     if (old) save.delete(doc(league, 'lookup', old));
@@ -120,11 +125,12 @@ export const settleWeekNow = (me: Me, season: string, period: string, reason: st
   attempt(async (db) => {
     const league = doc(db, 'leagues', me.league);
     const seasonRef = doc(league, 'seasons', season);
-    const [settings, weekDoc, calendar, weeks] = await Promise.all([
+    const [settings, weekDoc, calendar, weeks, leagueDoc] = await Promise.all([
       getDoc(seasonRef),
       getDoc(doc(seasonRef, 'weeks', period)),
       getDocs(query(collection(seasonRef, 'calendar'), where('period', '==', period))),
       getDocs(collection(seasonRef, 'weeks')),
+      getDoc(league),
     ]);
     const week = weekDoc.data() ?? {};
     const pairs = (week.pairs ?? []) as { a: string; b: string }[];
@@ -188,7 +194,9 @@ export const settleWeekNow = (me: Me, season: string, period: string, reason: st
     }
 
     const data = settings.data() ?? {};
-    const settled = settleDue({ ...group, week: Number(week.week), period, par: Number(data.par), timeZone: String(data.timeZone), days, pairs, players, demolitions, earlier, now });
+    // Players marked as left (ruling R14) play on as no-shows, out of the awards.
+    const away = Object.keys((leagueDoc.data()?.former ?? {}) as Record<string, string>);
+    const settled = settleDue({ ...group, week: Number(week.week), period, par: Number(data.par), timeZone: String(data.timeZone), days, pairs, players, demolitions, earlier, away, now });
     if (!settled) return false;
 
     const audit = doc(collection(league, 'audit')).id;

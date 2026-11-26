@@ -40,6 +40,22 @@ const taunt = (request: APIRequestContext, league: TestLeague, text: string) =>
 const hourNow = () => Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hourCycle: 'h23', timeZone: 'America/New_York' }).format(new Date()));
 
 test.describe('Sending alerts', () => {
+  test("A Wheel spin nobody tapped spins itself once its deadline's Sunday has started, and the spinner hears the dare", async ({ request }) => {
+    const league = await createLeague(request, { name: 'Sunday Squad' });
+    const season = await startSeason(request, league);
+    await phoneWithAlerts(request, league);
+    const { period } = thisWeek(season);
+    const id = `${period}_${league.commish}_1`;
+    // Due a minute from now, so its Sunday has started, whatever day the test runs.
+    await writeDoc(request, `${season.path}/weeks/${period}`, { week: 2, wheel: { [id]: { id, player: league.commish, n: 1, pool: ['Post a childhood photo.'], drawnAt: new Date(Date.now() - 86_400_000), dueAt: new Date(Date.now() + 60_000) } } });
+    await writeDoc(request, `${season.path}/sealed/wheel_${id}`, { kind: 'wheel', draw: id, slice: 0, dare: 'Post a childhood photo.' });
+    const pushes = await tick(league);
+    expect(await readDoc(request, `${season.path}/spins/${id}`)).toMatchObject({ player: league.commish, period, proofAt: null, auto: true });
+    expect(pushes).toContainEqual(expect.objectContaining({ title: 'Your Wheel spun itself', body: 'Post a childhood photo. Prove it by 11:59 pm tonight.' }));
+    // Spun once: the next run leaves it alone.
+    expect((await tick(league)).filter((push) => push.title === 'Your Wheel spun itself')).toEqual([]);
+  });
+
   test('A poke reaches the phone of the player it is aimed at: "you awake?"', async ({ request }) => {
     const league = await createLeague(request);
     const season = await startSeason(request, league);

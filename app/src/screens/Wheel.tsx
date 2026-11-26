@@ -214,7 +214,7 @@ function DrawCard(props: {
           )}
         </>
       )}
-      {status === 'unspun' && <p class="panel-text">Proof is due by {dueText(props.draw.dueAt, props.season)}, spun or not.</p>}
+      {status === 'unspun' && <p class="panel-text">Not spun by Sunday, it spins itself as Sunday starts. Proof is due by {dueText(props.draw.dueAt, props.season)}.</p>}
       {(status === 'voting' || status === 'counted' || status === 'redo') && (
         <div class="wheel-proof">
           {proofPhoto ? <img src={proofPhoto.photo} alt={`${mine ? 'Your' : `${who}'s`} dare proof`} /> : <p class="panel-text">Getting the photo…</p>}

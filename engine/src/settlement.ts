@@ -81,6 +81,11 @@ export function settleDue(input: GroupWeekInput & {
   demolitions: { player: string; target: string; date: string; lane: Lane }[];
   /** Each player's points in their earlier finished weeks, oldest first, for the Bust. */
   earlier: Record<string, number[]>;
+  /**
+   * Players marked as left (ruling R14): their matchups stay and score as if
+   * they did nothing, but they never take MVP, the Bust or the Wheel.
+   */
+  away?: readonly string[];
   now: number;
 }): Settled | null {
   const last = [...input.days].sort((a, b) => (a.date < b.date ? -1 : 1)).at(-1);
@@ -129,8 +134,9 @@ export function settleDue(input: GroupWeekInput & {
   }
 
   const settled = settleMode(mode, input, players, totals, weeks);
-  const awards = weeklyAwards(input.week, lines, input.earlier);
-  if (settled.wheel) awards.wheel = settled.wheel;
+  const here = (player: string) => !(input.away ?? []).includes(player);
+  const awards = weeklyAwards(input.week, lines.filter((line) => here(line.player)), input.earlier);
+  if (settled.wheel) awards.wheel = settled.wheel.filter(here);
   return { status: input.now >= last.nextEnd ? 'final' : 'provisional', results: settled.results, house: settled.house, awards, lines, group: settled.group };
 }
 
