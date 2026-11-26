@@ -218,6 +218,22 @@ describe('Alerts: things that happen', () => {
     expect(alertsDue(run(at('2027-01-13', 19, 5), { draftAt })).map((alert) => alert.title)).toEqual(['The draft is starting', 'The draft is starting']);
   });
 
+  it('A playoff round says so: a semifinal result comes as a playoff result', () => {
+    const weeks = [{ id: 'p01', week: 7, round: 'semi', status: 'final', finalAt: now - 60_000, results: { alex: { opponent: 'maya', points: 20, opponentPoints: 14, outcome: 'win' as const }, maya: { opponent: 'alex', points: 14, opponentPoints: 20, outcome: 'loss' as const } } }];
+    expect(alertsDue(run(now, { weeks })).map((alert) => [alert.player, alert.title, alert.body])).toEqual([
+      ['alex', 'Playoffs: you won', '20–14 against Maya.'],
+      ['maya', 'Playoffs: you lost', '14–20 against Alex.'],
+    ]);
+  });
+
+  it("The champion is news for everyone, with the finalist and who does the Season Dare", () => {
+    const news: AlertInput['news'] = [{ id: 'champion_s1', kind: 'champion', player: 'maya', at: now - 60_000, data: { season: 's1', finalist: 'alex', whiffLoser: 'alex' } }];
+    expect(alertsDue(run(now, { news })).map((alert) => [alert.player, alert.category, alert.title, alert.body])).toEqual([
+      ['alex', 'league', 'Maya won Season 1', 'Finalist: Alex. Alex was last in the Whiff Bowl and does the Season Dare.'],
+      ['maya', 'league', 'You won Season 1', 'Finalist: Alex. Alex was last in the Whiff Bowl and does the Season Dare.'],
+    ]);
+  });
+
   it('A badge earned, or a rank change, goes to its player under Progress', () => {
     const news: AlertInput['news'] = [
       { id: 'badge_alex_hatTrick', kind: 'badge', player: 'alex', at: now - 60_000, data: { badge: 'hatTrick' } },

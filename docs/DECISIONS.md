@@ -440,6 +440,7 @@ The commish reviewed all 25 on 2026-11-25 and vetoed none. Say the number to cha
 264. **A former player comes back through the commish:** "Bring back" in Commish tools puts them on the roster with a new key, which the commish hands over. Without it, the league couldn't tell a returning player's phone from a stranger's.
 265. **The next season can be set up once the deadline has passed, the leavers are off, and every dare of the finished season is done,** so the Whiff Bowl's loser can still prove the Season Dare. The rules refuse a new season while the current one isn't finished. Before this, the new-season form showed during an active season, so a commish could have switched seasons by mistake.
 266. **The champion is news in the feed,** with the finalist and the Whiff Bowl's loser.
+267. **The playoffs send the same alerts as the regular season:** each round's result, as "Playoffs: you won", Demolition reveals, and "passed you" and "close finish" in the 1v1 rounds. When the champion is crowned, everyone hears who won, the finalist, and who does the Season Dare.
 
 **Calendar**
 

@@ -175,7 +175,9 @@ for (const league of leagues) {
     seasonRef.collection('rematches').where('at', '>', after).get(),
   ]);
   const today = calendar.find((day) => day.date === clock.dateOf(now)) ?? calendar.at(-1);
-  const weekIds = today ? [today.week, today.week - 1].filter((week) => week >= 1).map(weekPeriod) : [];
+  // In the playoffs, and once the season is over, the rounds too: their Demolitions, results and champion.
+  const rounds = (today as { phase?: string } | undefined)?.phase === 'playoff' || season.get('status') === 'finished' ? ['p01', 'p02', 'p03'] : [];
+  const weekIds = [...(today ? [today.week, today.week - 1].filter((week) => week >= 1).map(weekPeriod) : []), ...rounds];
   const weeks = (weekIds.length ? docs(await db.getAll(...weekIds.map((id) => seasonRef.collection('weeks').doc(id)))) : []) as unknown as AlertInput['weeks'];
   const revealed = Array.isArray(state.revealed) ? (state.revealed as string[]) : [];
   const held = (state.held ?? {}) as Record<string, Alert[]>;

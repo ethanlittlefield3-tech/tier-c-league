@@ -8,6 +8,16 @@ import { addPlayer, createLeague, patchDoc, readDoc, writeDoc, writeDocs, type T
 
 const run = promisify(execFile);
 const weeklyJob = fileURLToPath(new URL('../../jobs/weekly.ts', import.meta.url));
+const tickJob = fileURLToPath(new URL('../../jobs/tick.ts', import.meta.url));
+
+/** Runs the alerts job, with the commish's phone signed up for alerts, and returns the pushes' titles. */
+async function alertTitles(request: APIRequestContext, league: TestLeague): Promise<string[]> {
+  const device = `playoffs-${league.id}`;
+  await writeDoc(request, `leagues/${league.id}/claims/${device}`, { player: league.commish, key: league.commishKey, at: new Date() });
+  await writeDoc(request, `devices/${device}`, { token: `emulator-${device}`, platform: 'ios', league: league.id, player: league.commish, settings: { daily: true, matchup: true, powerups: true, social: true, receipts: true, progress: true, league: true }, quiet: { start: 0, end: 0 }, updatedAt: new Date() });
+  const { stdout } = await run(process.execPath, [tickJob], { env: { ...process.env, FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080', GCLOUD_PROJECT: 'demo-tier-c', LEAGUE_ID: league.id } });
+  return stdout.split('\n').filter((line) => line.startsWith('push ')).map((line) => String((JSON.parse(line.slice(5)) as { title: string }).title));
+}
 
 async function runWeekly(league: TestLeague): Promise<string> {
   const { stdout } = await run(process.execPath, [weeklyJob], { env: { ...process.env, FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080', GCLOUD_PROJECT: 'demo-tier-c', LEAGUE_ID: league.id } });
@@ -70,6 +80,8 @@ test.describe('The playoffs', () => {
     expect((await readDoc(request, `leagues/${league.id}`))?.banner).toEqual({ player: 'maya', season: 's1' });
     // The season is over: the offseason starts.
     expect((await readDoc(request, path))?.status).toBe('finished');
+    // The alerts: the commish's Whiff Bowl result, and the champion, for everyone.
+    expect(await alertTitles(request, league)).toEqual(expect.arrayContaining(['Playoffs: you lost', 'Maya won Season 1']));
     expect((await readDoc(request, `leagues/${league.id}/trophies/s1`))?.trophies).toMatchObject({ champion: { winners: ['maya'] }, finalist: { winners: ['jo'] }, whiffBowl: { winners: [league.commish] } });
     // Playoff points never become Season Points.
     const rows = (await readDoc(request, `${path}/standings/current`))?.rows as { player: string; seasonPoints: number }[];

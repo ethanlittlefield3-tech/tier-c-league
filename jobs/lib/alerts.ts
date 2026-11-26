@@ -75,6 +75,8 @@ export interface AlertInput {
   weeks: {
     id: string;
     week: number;
+    /** A playoff round: semi, final or suddenDeath. */
+    round?: string;
     status?: string;
     finalAt?: number;
     results?: Record<string, WeekResult>;
@@ -102,7 +104,7 @@ export interface AlertInput {
     pairing?: string;
   } | null;
   /** The jobs' news since the last run: badges earned and rank changes. */
-  news: { id: string; kind: string; player: string; at: number; data?: { badge?: string; rank?: Rank; from?: Rank | null } }[];
+  news: { id: string; kind: string; player: string; at: number; data?: { badge?: string; rank?: Rank; from?: Rank | null; season?: string; finalist?: string | null; whiffLoser?: string | null } }[];
 }
 
 /** A player's result in a final week, with what its mode adds. */
@@ -319,7 +321,7 @@ export function alertsDue(input: AlertInput): Alert[] {
       if (!input.players[player]) continue;
       const words = resultWords(result, name, week.group?.target);
       const spins = week.awards?.wheel.includes(player) ? ' You spin the Wheel of Shame.' : '';
-      add({ player, category: 'matchup', key: `result-${week.id}`, title: `Week ${week.week}: ${words.title}`, body: `${words.body} ${recap}${spins}`.replace(/\s+/g, ' ').trim(), screen: 'league', expires: (week.finalAt ?? now) + 24 * HOUR });
+      add({ player, category: 'matchup', key: `result-${week.id}`, title: `${week.round ? 'Playoffs' : `Week ${week.week}`}: ${words.title}`, body: `${words.body} ${recap}${spins}`.replace(/\s+/g, ' ').trim(), screen: 'league', expires: (week.finalAt ?? now) + 24 * HOUR });
     }
   }
 
@@ -345,6 +347,15 @@ export function alertsDue(input: AlertInput): Alert[] {
       if (!badge) continue;
       const parts = badge.unlocks.map((part) => `the ${part.name}`).join(' and ');
       add({ player: item.player, category: 'progress', key: `badge-${badge.id}`, title: `Badge unlocked: ${badge.name}`, body: `${parts.charAt(0).toUpperCase()}${parts.slice(1)} ${badge.unlocks.length > 1 ? 'are' : 'is'} yours to put on your car.`, screen: 'feed', expires: item.at + 7 * 24 * HOUR });
+    }
+    // The champion, for everyone: the season is over.
+    if (item.kind === 'champion') {
+      const season = `Season ${String(item.data?.season ?? '').replace(/^s/, '')}`;
+      const finalist = item.data?.finalist ? `Finalist: ${name(item.data.finalist)}.` : '';
+      const dare = item.data?.whiffLoser ? `${name(item.data.whiffLoser)} was last in the Whiff Bowl and does the Season Dare.` : '';
+      for (const player of members) {
+        add({ player, category: 'league', key: `champion-${item.id}`, title: `${player === item.player ? 'You' : name(item.player)} won ${season}`, body: [finalist, dare].filter(Boolean).join(' ') || 'The season is over.', screen: 'league', expires: item.at + 48 * HOUR });
+      }
     }
     if (item.kind === 'rank' && item.data?.rank) {
       const down = rankMove(item.data.from ?? null, item.data.rank) === 'down';
