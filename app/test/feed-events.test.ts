@@ -110,12 +110,28 @@ describe('The live feed', () => {
     expect(events[0]?.headlines).toEqual(['Maya crushed Jordan by 22']);
   });
 
-  it("The week's top picker gets a shoutout; a tie shares it", () => {
+  it("A week's picks get a summary in the feed once it is final: the best record, and a tie shares it", () => {
     const news = [
       { id: 'picks_s1_w02', data: { kind: 'picks', player: 'maya', at: 9, data: { top: ['maya'], right: 4, made: 5, week: 2 } } },
       { id: 'picks_s1_w03', data: { kind: 'picks', player: 'maya', at: 10, data: { top: ['maya', 'sam'], right: 3, made: 4, week: 3 } } },
+      { id: 'picks_s1_w04', data: { kind: 'picks', player: null, at: 11, data: { top: [], right: 0, made: 0, week: 4, pickers: 2 } } },
     ];
-    expect(feedEvents({ ...none, name, news }).map((event) => event.text)).toEqual(['Top pickers in Week 3: Maya and Sam, 3 right each', 'Top picker in Week 2: Maya, 4 right of 5']);
+    expect(feedEvents({ ...none, name, news }).map((event) => event.text)).toEqual([
+      'Week 4 picks: nobody called a winner',
+      'Week 3 picks: Maya and Sam called 3 each, best in the league',
+      'Week 2 picks: Maya called 4 of 5, best in the league',
+    ]);
+  });
+
+  it("The picks summary names the week's biggest upset and how many players picked", () => {
+    const news = [
+      { id: 'picks_s1_w02', data: { kind: 'picks', player: 'maya', at: 9, data: { top: ['maya'], right: 4, made: 5, week: 2, pickers: 5, upset: { winner: 'jordan', loser: 'sam', pickedBy: 1, of: 5 } } } },
+      { id: 'picks_s1_w03', data: { kind: 'picks', player: 'maya', at: 10, data: { top: ['maya'], right: 2, made: 2, week: 3, pickers: 1, upset: { winner: 'sam', loser: 'jordan', pickedBy: 0, of: 1 } } } },
+    ];
+    expect(feedEvents({ ...none, name, news }).map((event) => event.detail)).toEqual([
+      'Upset of the week: Sam beat Jordan, and nobody saw it coming. 1 player picked.',
+      'Upset of the week: Jordan beat Sam, and only 1 of 5 saw it coming. 5 players picked.',
+    ]);
   });
 
   it('A rematch shows when it is made, and again with the winner and the score once its week is settled', () => {

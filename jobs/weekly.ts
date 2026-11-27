@@ -12,7 +12,7 @@
 import { randomInt } from 'node:crypto';
 import { FieldValue, Timestamp, getFirestore, type DocumentData } from 'firebase-admin/firestore';
 import { connect } from './admin.ts';
-import { DODGE_PENALTY, STARTER_DARES, STICKER_DAYS, addRecords, bestPickers, dareStatus, rematchResult, scorePicks, seasonTrophies, type PickRecord, type TrophyPlayer, fastDareDue, fastLeagueClock, receiptFixes, rivalRecords, wheelPool, zoneClock, type RivalWeek, type StoredReceipt } from '../engine/src/index.ts';
+import { DODGE_PENALTY, STARTER_DARES, STICKER_DAYS, addRecords, bestPickers, dareStatus, pickUpset, rematchResult, scorePicks, seasonTrophies, type PickRecord, type TrophyPlayer, fastDareDue, fastLeagueClock, receiptFixes, rivalRecords, wheelPool, zoneClock, type RivalWeek, type StoredReceipt } from '../engine/src/index.ts';
 import { fastClockOf } from './lib/fast.ts';
 import { PROOF_DAYS, staleProofs } from './lib/proofs.ts';
 import { revealDemolitions, sameReveals } from './lib/reveals.ts';
@@ -198,19 +198,28 @@ for (const league of leagues) {
           await league.ref.collection('feed').doc(`rank_${line.player}_${seasonId}_${period}`).set({ at: FieldValue.serverTimestamp(), kind: 'rank', player: line.player, data: { rank: ranked.rank, from: before ?? null } });
         }
       }
-      // Predictions for this week: each player's picks are scored, and the
-      // best record gets a shoutout in the feed.
+      // Predictions for this week: each player's picks are scored, and a
+      // summary goes in the feed: the best record, the biggest upset, and how
+      // many picked (ruling R25).
       const pickDocs = await seasonRef.collection('predictions').where('period', '==', period).get();
+      const pairs = (week.get('pairs') ?? []) as { a: string; b: string }[];
       const scored: Record<string, PickRecord> = {};
+      const lists: string[][] = [];
       for (const doc of pickDocs.docs) {
-        const record = scorePicks((doc.get('picks') ?? []) as string[], (week.get('pairs') ?? []) as { a: string; b: string }[], settled.results);
+        const picks = (doc.get('picks') ?? []) as string[];
+        const record = scorePicks(picks, pairs, settled.results);
         scored[String(doc.get('player'))] = record;
+        lists.push(picks);
         await doc.ref.update({ ...record, scoredAt: FieldValue.serverTimestamp() });
       }
-      const top = bestPickers(scored);
-      if (top.length > 0) {
-        const best = scored[top[0]!]!;
-        await league.ref.collection('feed').doc(`picks_${seasonId}_${period}`).set({ at: FieldValue.serverTimestamp(), kind: 'picks', player: top[0], data: { top, right: best.right, made: best.made, week: Number(week.get('week')) } });
+      const pickers = Object.values(scored).filter((record) => record.made > 0).length;
+      if (pickers > 0) {
+        const top = bestPickers(scored);
+        const best = top.length > 0 ? scored[top[0]!]! : { right: 0, made: 0 };
+        await league.ref
+          .collection('feed')
+          .doc(`picks_${seasonId}_${period}`)
+          .set({ at: FieldValue.serverTimestamp(), kind: 'picks', player: top[0] ?? null, data: { top, right: best.right, made: best.made, week: Number(week.get('week')), pickers, upset: pickUpset(lists, pairs, settled.results) } });
       }
 
       // Rematches raced this week: most points wins, and the loser's car

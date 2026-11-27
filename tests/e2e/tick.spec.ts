@@ -17,7 +17,11 @@ async function tick(league: TestLeague): Promise<{ device: string; title: string
     .map((line) => JSON.parse(line.slice(5)) as { device: string; title: string; body: string; screen: string });
 }
 
-/** The commish's phone, signed in as the commish, with alerts on and no quiet hours. */
+/**
+ * The commish's phone, signed in as the commish, with alerts on and no quiet
+ * hours. The daily reminders are off: "Log your day" at 9 pm and the 11 am
+ * ones would otherwise join in when a test runs at those hours.
+ */
 async function phoneWithAlerts(request: APIRequestContext, league: TestLeague): Promise<string> {
   const device = `tick-${league.id}`;
   await writeDoc(request, `leagues/${league.id}/claims/${device}`, { player: league.commish, key: league.commishKey, at: new Date() });
@@ -26,7 +30,7 @@ async function phoneWithAlerts(request: APIRequestContext, league: TestLeague): 
     platform: 'ios',
     league: league.id,
     player: league.commish,
-    settings: { daily: true, matchup: true, powerups: true, social: true, receipts: true, progress: true, league: true },
+    settings: { daily: false, matchup: true, powerups: true, social: true, receipts: true, progress: true, league: true },
     quiet: { start: 0, end: 0 },
     updatedAt: new Date(),
   });
@@ -112,11 +116,11 @@ test.describe('Sending alerts', () => {
     await quietPlayer(request, league, 'maya', 'Maya');
     const device = await phoneWithAlerts(request, league);
 
-    await patchDoc(request, `devices/${device}`, { settings: { daily: true, matchup: true, powerups: true, social: false, receipts: true, progress: true, league: true } });
+    await patchDoc(request, `devices/${device}`, { settings: { daily: false, matchup: true, powerups: true, social: false, receipts: true, progress: true, league: true } });
     await taunt(request, league, 'Hello, {name}.');
     expect(await tick(league)).toEqual([]);
 
-    await patchDoc(request, `devices/${device}`, { settings: { daily: true, matchup: true, powerups: true, social: true, receipts: true, progress: true, league: true } });
+    await patchDoc(request, `devices/${device}`, { settings: { daily: false, matchup: true, powerups: true, social: true, receipts: true, progress: true, league: true } });
     await patchDoc(request, `leagues/${league.id}/keys/${league.commish}`, { key: 'TCL-ZZZZ-ZZZZ' });
     await taunt(request, league, 'Anyone there, {name}?');
     expect(await tick(league)).toEqual([]);

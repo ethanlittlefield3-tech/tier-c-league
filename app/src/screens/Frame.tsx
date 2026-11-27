@@ -14,6 +14,7 @@ import { Feed } from './Feed.tsx';
 import { Garage } from './Garage.tsx';
 import { League } from './League.tsx';
 import { Match } from './Match.tsx';
+import { MondayPicks } from './Picks.tsx';
 import { PlayerDay } from './PlayerDay.tsx';
 import { RankUp, useRankScene, type RankEntry } from './Rank.tsx';
 import { WinScene, useWinScene } from './Win.tsx';
@@ -161,6 +162,7 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
   const [draftOpen, setDraftOpen] = useState(false);
   const [wheelOpen, setWheelOpen] = useState(false);
   const [dayOf, setDayOf] = useState<string | null>(null);
+  const [picksOpen, setPicksOpen] = useState(false);
   const [backFromProfile, setBackFromProfile] = useState(false);
   const meButton = useRef<HTMLButtonElement>(null);
   const online = useOnline();
@@ -277,9 +279,11 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
         </p>
       )}
       <main class="frame-body" key={tab}>
-        {tab === 'today' ? <Today me={props.me} onDraft={() => setDraftOpen(true)} onWheel={() => setWheelOpen(true)} /> : tab === 'match' ? <Match me={props.me} /> : tab === 'feed' ? <Feed me={props.me} onWheel={() => setWheelOpen(true)} /> : tab === 'league' ? <League me={props.me} onPlayer={setDayOf} /> : tab === 'garage' ? <Garage me={props.me} /> : <Soon tab={current} />}
+        {tab === 'today' ? <Today me={props.me} onDraft={() => setDraftOpen(true)} onWheel={() => setWheelOpen(true)} onPicks={() => setPicksOpen(true)} /> : tab === 'match' ? <Match me={props.me} /> : tab === 'feed' ? <Feed me={props.me} onWheel={() => setWheelOpen(true)} /> : tab === 'league' ? <League me={props.me} onPlayer={setDayOf} /> : tab === 'garage' ? <Garage me={props.me} /> : <Soon tab={current} />}
       </main>
       <Tabs me={props.me} tab={tab} onTab={setTab} newestBadge={newestBadge} />
+      {/* Monday's picks pop up once, over whichever tab is open (ruling R25). */}
+      <MondayPicks me={props.me} open={picksOpen} onOpen={() => setPicksOpen(true)} onClose={() => setPicksOpen(false)} />
     </div>
   );
 }

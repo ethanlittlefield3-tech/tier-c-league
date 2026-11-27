@@ -198,26 +198,6 @@
   white-space: nowrap;
 }
 
-/* Your picks: one choice a matchup. */
-.picks {
-  margin: 12px 0 0;
-  padding: 0;
-  list-style: none;
-  display: grid;
-  gap: 8px;
-}
-
-.picks .choice-option {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.picks-record {
-  margin-top: 12px;
-  font-weight: 700;
-  color: var(--gold);
-}
-
 /* The trophy case: every season's awards. */
 .trophy-season + .trophy-season {
   margin-top: 16px;
@@ -325,9 +305,174 @@
   display: grid;
   place-items: center;
   border: 1px solid rgba(196, 216, 255, 0.2);
-  border-radius: 50%;
+  border-radius: 12px;
   background: rgba(196, 216, 255, 0.06);
   color: var(--ink);
+}
+
+/* The week's state, as a tag: live this week, gold once final. */
+.schedule-pill {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 6px;
+  background: rgba(196, 216, 255, 0.12);
+  color: var(--ink);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+}
+
+.schedule-pill[data-state='live'] {
+  background: rgba(255, 138, 30, 0.2);
+  color: var(--orange);
+}
+
+.schedule-pill[data-state='final'] {
+  background: rgba(255, 207, 63, 0.16);
+  color: var(--gold);
+}
+
+/* The fixtures card: a strip with the week's dates, then one ruled row a
+   matchup, the names either side of the score or of "vs". */
+.schedule-board {
+  margin: 12px 0 0;
+  border: 1px solid rgba(196, 216, 255, 0.16);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(6, 12, 32, 0.55);
+}
+
+.schedule-strip {
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 12px;
+  border-bottom: 1px solid rgba(196, 216, 255, 0.12);
+  background: rgba(196, 216, 255, 0.07);
+  font: 800 10.5px/1.4 var(--body);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.schedule .pairs {
+  margin: 0;
+  gap: 0;
+}
+
+.schedule .pairs li {
+  min-height: 36px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  border: 0;
+  border-top: 1px solid rgba(196, 216, 255, 0.08);
+  border-radius: 0;
+  background: none;
+  font-size: 14.5px;
+  line-height: 1.35;
+}
+
+.schedule .pairs li:first-child {
+  border-top: 0;
+}
+
+.schedule .pairs li:nth-child(even) {
+  background: rgba(196, 216, 255, 0.03);
+}
+
+/* Your own matchup: a bar of team blue down its edge. */
+.schedule .pairs li[data-me='true'] {
+  background: rgba(31, 139, 255, 0.1);
+  box-shadow: inset 3px 0 0 var(--blue);
+}
+
+.schedule .pairs li.fixture {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 10px;
+}
+
+.fixture-name {
+  overflow: hidden;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.schedule .pairs .fixture-name {
+  color: var(--ink);
+}
+
+.fixture-right {
+  text-align: right;
+}
+
+/* Settled, the loser's name steps back. */
+.schedule .pairs .fixture-name[data-won='false'] {
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.schedule .pairs .fixture-vs {
+  padding: 2px 8px;
+  border: 1px solid rgba(196, 216, 255, 0.2);
+  border-radius: 6px;
+  font: italic 900 11px/1.4 var(--display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.fixture-score {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.fixture-score strong {
+  min-width: 34px;
+  padding: 3px 0;
+  border-radius: 6px;
+  background: rgba(196, 216, 255, 0.08);
+  font: italic 900 16px/1.1 var(--display);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.fixture-score strong[data-won='true'] {
+  background: rgba(255, 207, 63, 0.16);
+  color: var(--gold);
+}
+
+.schedule .pairs .fixture-dash {
+  color: var(--ink-soft);
+}
+
+/* The week's awards, as tags. */
+.schedule .result-awards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.schedule-award {
+  padding: 2px 8px;
+  border: 1px solid rgba(255, 207, 63, 0.3);
+  border-radius: 999px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.schedule-award b {
+  margin-right: 3px;
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold);
 }
 
 .schedule-arrow svg {

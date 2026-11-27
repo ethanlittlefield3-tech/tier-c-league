@@ -1,104 +1,129 @@
-import { useState } from 'preact/hooks';
-import { MODE_NAMES, addDays, addRecords, isPairedMode, pickFor, weekPeriod, type GroupMode, type WeekMode } from '@tcl/engine';
-import { useDoc, useWhere } from '../data/hooks.ts';
+import { createPortal } from 'preact/compat';
+import { useEffect, useRef, useState } from 'preact/hooks';
+import { addRecords, pickFor } from '@tcl/engine';
+import { CarArt } from '../art/car/CarArt.tsx';
+import type { CarParts } from '../art/car/draw.ts';
+import { useAll, useNow, useWhere } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
 import { whyOf } from '../data/why.ts';
+import { recall, remember } from '../storage.ts';
+import { usePicksDue, type PicksDue } from './usePicksDue.ts';
+import './sheet.css';
+import './picks.css';
 
 const TROUBLE: Record<Trouble, string> = {
   'not-open': 'The league is not open yet.',
   offline: 'No answer from the league. Check your signal and try again.',
-  refused: 'Picks for that week are closed.',
+  refused: 'Picks for this week are closed.',
 };
 
-interface Saved {
-  picks: string[];
-  right?: number;
-  made?: number;
+/**
+ * Picks pop up by themselves once a week, on Monday: the first time the app
+ * opens that day, unless every matchup is picked already. Closed, they come
+ * back from Today's picks banner until 11:59 pm.
+ */
+export function MondayPicks(props: { me: Me; open: boolean; onOpen: () => void; onClose: () => void }) {
+  const now = useNow();
+  const due = usePicksDue(props.me, now);
+  useEffect(() => {
+    if (!due || due.picked === due.pairs.length) return;
+    const key = `tcl.picks.popped.${props.me.league}.${props.me.player}.${due.seasonId}.${due.period}`;
+    if (recall(key)) return;
+    remember(key, '1');
+    props.onOpen();
+  }, [due?.period, due?.picked]);
+  return props.open && due ? <PicksSheet me={props.me} due={due} onClose={props.onClose} /> : null;
 }
 
 /**
- * Predictions (SCOPE.md, "Predictions"): pick next week's winners, by Sunday
- * 11:59 pm. Picks stay hidden until the week starts. The week's top picker
- * gets a shoutout in the feed, and the season's best record wins Prophet.
+ * Predictions (SCOPE.md, "Predictions"; ruling R25): pick the winners of the
+ * week that just started, by 11:59 pm on its Monday. Nobody else sees your
+ * picks until then. When the week is final, a summary goes in the feed, and
+ * the season's best record wins Prophet.
  */
-export function Picks(props: {
-  me: Me;
-  seasonId: string;
-  today: { date: string; week: number; dayIndex: number };
-  weeks: { id: string; data: { week: number; mode?: string; pairs?: { a: string; b: string }[] } }[];
-  name: (player: string) => string;
-  now: number;
-}) {
-  const seasonPath = `leagues/${props.me.league}/seasons/${props.seasonId}`;
-  const period = weekPeriod(props.today.week + 1);
-  const monday = addDays(props.today.date, 7 - props.today.dayIndex);
-  const next = props.weeks.find((week) => week.id === period);
-  const mondayCal = useDoc<{ start: number; period: string }>(`${seasonPath}/calendar/${monday}`);
-  const mine = useDoc<Saved>(`${seasonPath}/predictions/${period}_${props.me.player}`);
-  const record = useWhere<Saved>(`${seasonPath}/predictions`, 'player', props.me.player);
+export function PicksSheet(props: { me: Me; due: PicksDue; onClose: () => void }) {
+  const { due } = props;
+  const players = useAll<{ displayName?: string; car?: Partial<CarParts> }>(`leagues/${props.me.league}/players`);
+  const record = useWhere<{ made?: number; right?: number }>(`leagues/${props.me.league}/seasons/${due.seasonId}/predictions`, 'player', props.me.player);
   const [draft, setDraft] = useState<string[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const title = useRef<HTMLHeadingElement>(null);
+  const picks = draft ?? due.picks;
+  const picked = due.pairs.filter((pair) => pickFor(picks, pair) !== null).length;
   const season = addRecords(record.docs.filter((found) => typeof found.data.made === 'number').map((found) => ({ made: found.data.made!, right: found.data.right ?? 0 })));
+  const player = (id: string) => players.docs.find((found) => found.id === id)?.data;
+  const name = (id: string) => (id === props.me.player ? 'You' : (player(id)?.displayName ?? 'Player'));
 
-  const pairs = (next?.data.pairs ?? []).filter((pair) => pair.a !== 'HOUSE' && pair.b !== 'HOUSE');
-  const picks = draft ?? mine.data?.picks ?? [];
-  const lockAt = mondayCal.data?.period === period ? mondayCal.data.start : null;
-  const open = lockAt !== null && props.now < lockAt;
+  useEffect(() => {
+    title.current?.focus({ preventScroll: true });
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') props.onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
-  const choose = (pair: { a: string; b: string }, player: string) => {
-    if (!open || lockAt === null) return;
-    const others = picks.filter((picked) => picked !== pair.a && picked !== pair.b);
-    const chosen = pickFor(picks, pair) === player ? others : [...others, player];
-    setDraft(chosen);
+  const choose = (pair: { a: string; b: string }, chosen: string) => {
+    const others = picks.filter((each) => each !== pair.a && each !== pair.b);
+    const next = pickFor(picks, pair) === chosen ? others : [...others, chosen];
+    setDraft(next);
     setError(null);
     void loadData()
-      .then((api) => api.savePicks(props.me, props.seasonId, { period, monday, lockAt, picks: chosen }))
+      .then((api) => api.savePicks(props.me, due.seasonId, { period: due.period, monday: due.monday, lockAt: due.lockAt, picks: next }))
       .catch((failure: unknown) => {
         setDraft(null);
         setError(TROUBLE[whyOf(failure)]);
       });
   };
 
-  return (
-    <section class="panel league-panel" aria-labelledby="picks-title">
-      <h2 id="picks-title">Your picks</h2>
-      {next && !isPairedMode((next.data.mode ?? 'regular') as WeekMode) ? (
-        <p class="panel-text">
-          Week {next.data.week} is {MODE_NAMES[next.data.mode as GroupMode] ?? 'group play'}, with no 1v1s to pick. Picks are back the week after.
+  const side = (pair: { a: string; b: string }, id: string) => (
+    <button type="button" class="picks-side" aria-pressed={pickFor(picks, pair) === id} aria-label={name(id)} onClick={() => choose(pair, id)}>
+      <CarArt parts={player(id)?.car} bare class="picks-car" />
+      <span class="picks-name">{name(id)}</span>
+    </button>
+  );
+
+  return createPortal(
+    <div class="sheet-layer">
+      <div class="sheet-backdrop" onClick={props.onClose} />
+      <section class="sheet picks-sheet" role="dialog" aria-modal="true" aria-labelledby="picks-title">
+        <p class="picks-kicker">New week</p>
+        <h2 id="picks-title" ref={title} tabIndex={-1}>
+          Week {due.week} picks
+        </h2>
+        <p class="sheet-lead">Who wins each matchup? Picks close tonight at 11:59 pm, and nobody sees yours until then.</p>
+        <ul class="picks-list">
+          {due.pairs.map((pair) => (
+            <li key={`${pair.a}-${pair.b}`}>
+              <div class="picks-match" role="group" aria-label={`${name(pair.a)} against ${name(pair.b)}`}>
+                {side(pair, pair.a)}
+                <span class="picks-vs" aria-hidden="true">
+                  vs
+                </span>
+                {side(pair, pair.b)}
+              </div>
+            </li>
+          ))}
+        </ul>
+        <p class="picks-count" aria-live="polite">
+          {picked} of {due.pairs.length} picked
         </p>
-      ) : pairs.length === 0 || lockAt === null ? (
-        <p class="panel-text">Picks open for each week once its matchups are set, until the Sunday before it at 11:59 pm.</p>
-      ) : (
-        <>
-          <p class="panel-text">
-            {open ? `Pick Week ${props.today.week + 1}'s winners by Sunday at 11:59 pm. Nobody sees your picks until then.` : `Week ${props.today.week + 1} has started: picks are locked.`}
+        {error && (
+          <p class="field-error" role="alert">
+            {error}
           </p>
-          <ul class="picks">
-            {pairs.map((pair) => (
-              <li key={`${pair.a}-${pair.b}`}>
-                <div class="choice" role="group" aria-label={`${props.name(pair.a)} against ${props.name(pair.b)}`}>
-                  {[pair.a, pair.b].map((player) => (
-                    <button key={player} type="button" class="choice-option" aria-pressed={pickFor(picks, pair) === player} disabled={!open} onClick={() => choose(pair, player)}>
-                      {props.name(player)}
-                    </button>
-                  ))}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-      {error && (
-        <p class="field-error" role="alert">
-          {error}
-        </p>
-      )}
-      {season.made > 0 && (
-        <p class="panel-text picks-record">
-          This season: {season.right} right of {season.made}. The best record wins Prophet.
-        </p>
-      )}
-    </section>
+        )}
+        {season.made > 0 && (
+          <p class="fine-print picks-record">
+            This season: {season.right} right of {season.made}. The best record wins Prophet.
+          </p>
+        )}
+        <button type="button" class="btn picks-done" onClick={props.onClose}>
+          {picked === due.pairs.length ? 'Done' : 'Later'}
+        </button>
+      </section>
+    </div>,
+    document.body,
   );
 }

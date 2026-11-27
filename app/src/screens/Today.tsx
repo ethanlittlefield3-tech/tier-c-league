@@ -24,6 +24,8 @@ import type { CalDay } from '../today/kit.ts';
 import { playerWeek, type KitPlay } from '../today/week.ts';
 import { PowerUps, type Play } from './PowerUps.tsx';
 import { ReceiptsDue } from './ReceiptsDue.tsx';
+import { usePicksDue } from './usePicksDue.ts';
+import './picks.css';
 import type { Draw } from './Wheel.tsx';
 import './wheel.css';
 import { GoalMark } from './GoalMark.tsx';
@@ -140,8 +142,10 @@ function Notice(props: { title: string; children: string }) {
  * against your opponent, the power-up tray, the rest-day picker and the week
  * bars come next.
  */
-export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => void }) {
+export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => void; onPicks?: () => void }) {
   const now = useNow();
+  // This week's picks, while they are open on its Monday (ruling R25).
+  const picksDue = usePicksDue(props.me, now);
   const [picked, setPicked] = useState<'today' | 'yesterday'>('today');
   const [sheetOpen, setSheetOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -443,6 +447,19 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
           <p>Lowest score last week. The league is waiting: spin it live.</p>
           <button type="button" class="btn" onClick={props.onWheel}>
             Open the Wheel
+          </button>
+        </section>
+      )}
+      {picksDue && picksDue.picked < picksDue.pairs.length && props.onPicks && (
+        <section class="picks-banner" aria-labelledby="picks-banner-title">
+          <div>
+            <h2 id="picks-banner-title">Week {picksDue.week} picks</h2>
+            <p>
+              {picksDue.picked} of {picksDue.pairs.length} picked · closes 11:59 pm
+            </p>
+          </div>
+          <button type="button" onClick={props.onPicks}>
+            Pick
           </button>
         </section>
       )}

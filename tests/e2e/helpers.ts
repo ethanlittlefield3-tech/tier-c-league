@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { formatLeagueCode } from '../../engine/src/ids.ts';
 import type { TestLeague } from './league.ts';
 
@@ -35,8 +35,33 @@ export async function tapToEnter(page: Page): Promise<void> {
   await enterButton.click();
 }
 
+/** Monday's picks card (ruling R25), which pops up over any screen. */
+export const picksCard = (page: Page): Locator => page.getByRole('dialog', { name: /^Week \d+ picks$/ });
+
+const closingPicks = new WeakMap<Page, Locator>();
+
+/**
+ * A test about something else closes Monday's picks card whenever it pops
+ * up, so a test run on a real Monday goes the same as on any other day.
+ */
+async function closePicksCards(page: Page): Promise<void> {
+  if (closingPicks.has(page)) return;
+  const card = picksCard(page);
+  closingPicks.set(page, card);
+  await page.addLocatorHandler(card, async (found) => {
+    await found.getByRole('button', { name: /^(Later|Done)$/ }).click();
+  });
+}
+
+/** For the picks tests themselves: the picks card stays up until the test closes it. */
+export async function keepPicksCards(page: Page): Promise<void> {
+  const card = closingPicks.get(page);
+  if (card) await page.removeLocatorHandler(card);
+}
+
 /** Open the app from the Home Screen and tap past the title, to whatever comes after it. */
 export async function enter(page: Page): Promise<void> {
+  await closePicksCards(page);
   await fromHomeScreen(page);
   // With Reduce Motion on, the title is up at once: these tests are about what comes after it.
   await page.emulateMedia({ reducedMotion: 'reduce' });

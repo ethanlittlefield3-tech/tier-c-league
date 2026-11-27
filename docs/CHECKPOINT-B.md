@@ -1,8 +1,8 @@
 # Checkpoint B: what the security rules block
 
-Generated 2026-11-26 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
+Generated 2026-11-27 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 340 of 340 passing.
+- **Tests:** 341 of 341 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -559,10 +559,11 @@ Each player picks a week's winners in their own name, until it starts. Nobody el
 
 **Predictions**
 
-- Before a week starts, a player picks its winners in their own name, and can change them until it starts
-- Once the week has started, picks are closed
-- Picks are filed under their week and player, lock when the week starts, and name only players in the league, each once
-- Until the week starts, only the picker sees their picks; after, everyone in the league does
+- A player picks a week's winners in their own name, and can change them until its Monday ends at 11:59 pm
+- On a week's Monday, after the week has started, its picks are still open
+- Once the week's Monday is over, picks are closed
+- Picks are filed under their week and player, lock as the week's Monday ends, and name only players in the league, each once
+- Until the week's Monday ends, only the picker sees their picks; after, everyone in the league does
 
 ## The suggestion box
 

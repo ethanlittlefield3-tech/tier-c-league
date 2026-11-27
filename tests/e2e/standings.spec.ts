@@ -76,8 +76,8 @@ test.describe('Settling a week, and the League tab', () => {
     const schedule = page.getByRole('region', { name: 'Schedule' });
     await expect(schedule.locator('.result-head')).toContainText('Week 1');
     await expect(schedule.locator('.schedule-status')).toContainText('Final');
-    await expect(schedule.locator('.result-awards')).toContainText('MVP: You.');
-    await expect(schedule.locator('.result-awards')).toContainText('Spins the Wheel: Maya.');
+    await expect(schedule.locator('.result-awards')).toContainText('MVP You');
+    await expect(schedule.locator('.result-awards')).toContainText('Wheel Maya');
     // Everyone's rank emblem is in the standings, and a name opens their card.
     await expect(page.locator('.standings tbody svg.standings-rank-badge')).toHaveCount(2);
     await page.locator('.standings tbody').getByRole('button', { name: /^Maya, / }).click();

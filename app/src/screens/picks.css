@@ -1,0 +1,147 @@
+/* The Monday picks card (ruling R25): each matchup is two cars facing off,
+   and a tap picks one. It opens like the screen-time card (sheet.css). */
+
+.picks-kicker {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--orange);
+}
+
+.picks-list {
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.picks-match {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+}
+
+.picks-vs {
+  font: italic 900 14px/1 var(--display);
+  color: var(--ink-soft);
+  text-transform: uppercase;
+}
+
+.picks-side {
+  min-width: 0;
+  min-height: 84px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 6px;
+  border: 2px solid rgba(196, 216, 255, 0.16);
+  border-radius: 14px;
+  background: rgba(17, 30, 73, 0.7);
+  color: var(--ink);
+  font: 700 14px/1.2 var(--body);
+  cursor: pointer;
+}
+
+/* The second car faces the first; a decal's letters still read the right way round. */
+.picks-match .picks-side:last-child .picks-car svg {
+  transform: scaleX(-1);
+}
+
+.picks-match .picks-side:last-child .picks-car text {
+  transform: scaleX(-1);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.picks-side[aria-pressed='true'] {
+  border-color: var(--blue);
+  background: rgba(31, 139, 255, 0.22);
+  box-shadow: 0 0 0 3px rgba(31, 139, 255, 0.25);
+}
+
+.picks-side:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.picks-car,
+.picks-car svg {
+  display: block;
+  width: 64px;
+  height: 40px;
+}
+
+.picks-name {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+.picks-count {
+  margin: 14px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+.picks-record {
+  margin: 8px 0 0;
+  text-align: center;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.picks-done {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  margin: 16px 0 0;
+}
+
+/* On Today, while this week's picks are open and not all made. */
+.picks-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 10px 12px 10px 14px;
+  border: 1px solid rgba(255, 138, 30, 0.45);
+  border-radius: 14px;
+  background: rgba(255, 138, 30, 0.1);
+}
+
+.picks-banner h2 {
+  margin: 0;
+  font: italic 900 16px/1.1 var(--display);
+}
+
+.picks-banner p {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.picks-banner button {
+  flex: none;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--orange);
+  color: var(--navy-950);
+  font: 800 13px/1 var(--body);
+  cursor: pointer;
+}
+
+.picks-banner button:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}

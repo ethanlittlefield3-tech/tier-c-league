@@ -63,7 +63,7 @@ export interface FeedInput {
   /** Rematch challenges, and how their side races ended. */
   rematches?: { id: string; data: { from: string; to: string; period: string; at?: number | null; winner?: string | null; points?: Record<string, number>; settledAt?: number | null } }[];
   /** The jobs' news: badges earned and rank changes. */
-  news?: { id: string; data: { kind: string; player: string; at?: number | null; data?: { badge?: string; rank?: Rank; from?: Rank | null; top?: string[]; right?: number; made?: number; week?: number; season?: string; finalist?: string | null; whiffLoser?: string | null } } }[];
+  news?: { id: string; data: { kind: string; player: string | null; at?: number | null; data?: { badge?: string; rank?: Rank; from?: Rank | null; top?: string[]; right?: number; made?: number; week?: number; pickers?: number; upset?: { winner: string; loser: string; pickedBy: number; of: number } | null; season?: string; finalist?: string | null; whiffLoser?: string | null } } }[];
   /** The Wheel of Shame's latest draws, their spins and the votes on their proof. */
   wheel?: {
     eligible: number;
@@ -245,7 +245,7 @@ export function feedEvents(input: FeedInput): FeedEvent[] {
   // share one line, so a big week doesn't flood the feed.
   const badgeNews = (input.news ?? [])
     .filter(({ data }) => data.kind === 'badge' && typeof data.at === 'number' && BADGES.some((found) => found.id === data.data?.badge))
-    .sort((a, b) => (a.data.player < b.data.player ? -1 : a.data.player > b.data.player ? 1 : (a.data.at as number) - (b.data.at as number)));
+    .sort((a, b) => ((a.data.player ?? '') < (b.data.player ?? '') ? -1 : (a.data.player ?? '') > (b.data.player ?? '') ? 1 : (a.data.at as number) - (b.data.at as number)));
   const clusters: (typeof badgeNews)[] = [];
   for (const item of badgeNews) {
     const last = clusters.at(-1);
@@ -254,7 +254,7 @@ export function feedEvents(input: FeedInput): FeedEvent[] {
   }
   for (const cluster of clusters) {
     const first = cluster[0]!;
-    const who = name(first.data.player);
+    const who = name(first.data.player ?? '');
     const badges = cluster.map((item) => BADGES.find((found) => found.id === item.data.data?.badge)!);
     const at = Math.max(...cluster.map((item) => item.data.at as number));
     if (badges.length === 1) {
@@ -267,14 +267,25 @@ export function feedEvents(input: FeedInput): FeedEvent[] {
 
   for (const { id, data } of input.news ?? []) {
     if (typeof data.at !== 'number') continue;
-    const who = name(data.player);
-    if (data.kind === 'picks' && data.data?.top?.length) {
-      const top = data.data.top.map(name);
+    // A picks summary with no right picks names nobody.
+    const who = name(data.player ?? '');
+    // A week's picks, once it is final (ruling R25): the best record, the
+    // biggest upset, and how many picked.
+    if (data.kind === 'picks' && data.data) {
+      const { top = [], right = 0, made = 0, week, pickers, upset } = data.data;
       const text =
-        top.length === 1
-          ? `Top picker in Week ${data.data.week}: ${top[0]}, ${data.data.right} right of ${data.data.made}`
-          : `Top pickers in Week ${data.data.week}: ${list(data.data.top, name)}, ${data.data.right} right each`;
-      events.push({ id: `news-${id}`, at: data.at, kind: 'picks', text });
+        top.length === 0
+          ? `Week ${week} picks: nobody called a winner`
+          : top.length === 1
+            ? `Week ${week} picks: ${name(top[0]!)} called ${right} of ${made}, best in the league`
+            : `Week ${week} picks: ${list(top, name)} called ${right} each, best in the league`;
+      const detail = [
+        upset ? `Upset of the week: ${name(upset.winner)} beat ${name(upset.loser)}, and ${upset.pickedBy === 0 ? 'nobody' : `only ${upset.pickedBy} of ${upset.of}`} saw it coming.` : '',
+        typeof pickers === 'number' ? `${pickers} ${pickers === 1 ? 'player' : 'players'} picked.` : '',
+      ]
+        .filter(Boolean)
+        .join(' ');
+      events.push({ id: `news-${id}`, at: data.at, kind: 'picks', text, ...(detail ? { detail } : {}) });
     }
     // The season's champion, and who left the league in the offseason.
     const seasonWords = `Season ${String(data.data?.season ?? '').replace(/^s/, '')}`;

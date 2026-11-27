@@ -907,10 +907,10 @@ service cloud.firestore {
         }
 
         // ---- Predictions (SCOPE.md, "Predictions") -----------------------------
-        // Before a week starts, each player picks the winners of its 1v1
-        // matchups, by Sunday 11:59 pm, and can change them until then. Filed
+        // Each player picks the winners of a week's 1v1 matchups, by 11:59 pm
+        // on its Monday (ruling R25), and can change them until then. Filed
         // under the week and the player, and hidden from everyone else until
-        // the week starts. The weekly job scores them when the week is final.
+        // that Monday ends. The weekly job scores them when the week is final.
         match /predictions/{pickId} {
           allow get: if isMember(L)
             && (resource.data.player == claim(L).player || request.time >= resource.data.lockAt);
@@ -927,8 +927,9 @@ service cloud.firestore {
             && isPlayer(L, picks.player)
             && monday.period == picks.period
             && monday.dayIndex == 0
-            && picks.lockAt == monday.start
-            && request.time < monday.start
+            // Picks close as the week's Monday ends, at 11:59 pm (ruling R25).
+            && picks.lockAt == monday.end
+            && request.time < monday.end
             && picks.at == request.time
             && picks.picks is list
             && picks.picks.size() <= 12

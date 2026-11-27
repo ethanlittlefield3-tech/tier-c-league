@@ -4,7 +4,6 @@ import type { CarParts } from '../art/car/draw.ts';
 import { RankBadge } from '../art/RankBadge.tsx';
 import { RANK_NAMES, nemesisOf, recordText, type Rank, type Rival } from '@tcl/engine';
 import { useAll, useDoc, useNow } from '../data/hooks.ts';
-import { Picks } from './Picks.tsx';
 import { PlayerCard } from './PlayerCard.tsx';
 import { Schedule, type WeekDoc } from './Schedule.tsx';
 import { BadgesPanel } from './Badges.tsx';
@@ -54,7 +53,7 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
   const league = useDoc<{ season?: string | null; banner?: { player: string; season: string } | null }>(leaguePath);
   const seasonId = league.data?.season ?? null;
   const seasonPath = seasonId ? `${leaguePath}/seasons/${seasonId}` : null;
-  const season = useDoc<{ timeZone: string; regularWeeks: number; playoffs?: string }>(seasonPath);
+  const season = useDoc<{ timeZone: string; kickoff?: string; regularWeeks: number; playoffs?: string }>(seasonPath);
   const bracket = useDoc<{ champion?: string | null }>(seasonPath ? `${seasonPath}/playoffs/bracket` : null);
   const standings = useDoc<{ rows?: Row[] }>(seasonPath ? `${seasonPath}/standings/current` : null);
   const weeks = useAll<WeekDoc>(seasonPath ? `${seasonPath}/weeks` : null);
@@ -189,20 +188,9 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
         )}
       </section>
 
-      <Schedule weeks={weeks.docs} currentPeriod={today.data?.period ?? null} me={props.me.player} name={name} />
+      <Schedule weeks={weeks.docs} currentPeriod={today.data?.period ?? null} kickoff={season.data?.kickoff ?? null} me={props.me.player} name={name} />
 
       {seasonPath && <Playoffs league={props.me.league} seasonPath={seasonPath} me={props.me.player} name={name} banner={league.data?.banner ?? null} />}
-
-      {today.data && (
-        <Picks
-          me={props.me}
-          seasonId={seasonId}
-          today={today.data}
-          weeks={weeks.docs as { id: string; data: { week: number; pairs?: { a: string; b: string }[] } }[]}
-          name={(player) => (player === props.me.player ? 'You' : name(player))}
-          now={now}
-        />
-      )}
 
       <TrophyCase me={props.me} name={name} playoffsPending={season.data && season.data.playoffs !== 'none' && !bracket.data?.champion ? seasonId : null} />
 

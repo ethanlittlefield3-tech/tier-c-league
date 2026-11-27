@@ -1,6 +1,6 @@
 /**
- * Predictions (SCOPE.md, "Live rivalry and social"): before a week starts,
- * each player picks the winners of its 1v1 matchups. A pick is right when the
+ * Predictions (SCOPE.md, "Live rivalry and social"): by 11:59 pm on a week's
+ * Monday (ruling R25), each player picks the winners of its 1v1 matchups. A pick is right when the
  * player picked won. The week's top picker gets a shoutout, and the season's
  * best record wins Prophet. Predictions never change a score.
  */
@@ -32,6 +32,38 @@ export function scorePicks(picks: readonly string[], pairs: readonly { a: string
     if (results[pick]?.outcome === 'win') right += 1;
   }
   return { made, right };
+}
+
+/** A win that most pickers missed: who won, who lost, and how many of the players who picked that matchup saw it coming. */
+export interface PickUpset {
+  winner: string;
+  loser: string;
+  pickedBy: number;
+  of: number;
+}
+
+/**
+ * The week's biggest upset, for the feed: the win picked by the smallest share
+ * of the players who picked that matchup, and by under half of them. A draw is
+ * never an upset. Level shares go to the matchup more players picked, then to
+ * the first on the schedule.
+ */
+export function pickUpset(lists: readonly (readonly string[])[], pairs: readonly { a: string; b: string }[], results: Record<string, { outcome: string }>): PickUpset | null {
+  let best: PickUpset | null = null;
+  for (const pair of pairs) {
+    const winner = results[pair.a]?.outcome === 'win' ? pair.a : results[pair.b]?.outcome === 'win' ? pair.b : null;
+    if (winner === null) continue;
+    const picked = lists.map((picks) => pickFor(picks, pair)).filter((pick) => pick !== null);
+    const of = picked.length;
+    const pickedBy = picked.filter((pick) => pick === winner).length;
+    if (of === 0 || pickedBy * 2 >= of) continue;
+    const share = pickedBy / of;
+    const bestShare = best ? best.pickedBy / best.of : Infinity;
+    if (share < bestShare || (share === bestShare && best !== null && of > best.of)) {
+      best = { winner, loser: winner === pair.a ? pair.b : pair.a, pickedBy, of };
+    }
+  }
+  return best;
 }
 
 /**

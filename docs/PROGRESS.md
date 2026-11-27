@@ -230,6 +230,12 @@ Last updated 2026-11-25, after Rumble: group play is built.
 - **Alerts, part 1: on the phone** (2026-11-25). Profile has an Alerts panel: turn them on with a tap, switch each of the 7 kinds on or off, and set quiet hours. A new player is offered alerts right under their recovery key. A service worker shows the alerts, opens the app at the right screen when one is tapped, and keeps the app's files on the phone so it opens with no signal. The push token is fetched again on every open.
   - New rules for devices: a phone signs up only as the player its claim holds. 4 new rule tests and 1 rewritten. Weakening the rule 14 ways was caught 13 times; the other is still refused by the checks on each field. 3 engine tests and 5 flow tests.
   - Sending them is next: the tick job, every 10 minutes. Alerts also wait on the Cloud Messaging web push key from the commish.
+- **Monday picks and an official-looking Schedule** (2026-11-27, ruling R25).
+  - Picks left League. The first time the app opens on a week's Monday, a card pops up with that week's 1v1s, each two cars facing off; a tap picks one. Picks close at 11:59 pm that night, and nobody sees them until then. Closed, the card comes back from a slim banner on Today until 11:59 pm. Week 1 has picks now too.
+  - When the week is final, the feed's picks post sums it up: the best record, the biggest upset (the win picked by the fewest) and how many picked.
+  - The Schedule panel is the same size, restyled inside like a fixtures card: a strip with the week's dates, ruled rows with the names either side of the score or "vs", gold for the winner, and the awards as tags.
+  - New rule: picks lock as the week's Monday ends. 2 new rule tests, 3 rewritten. 2 engine tests, 2 app tests, and the 3 picks flow tests rewritten. Flow tests about anything else now close the picks card if it pops up, so a test run on a real Monday goes the same as any other day.
+  - Fixed on the way: 5 alert flow tests failed when run between 9 pm and midnight in New York, because the "Log your day" reminder joined in. Their test phone now has the daily reminders off.
 - **The commish's third round of changes** (2026-11-27, ruling R24).
   - League's standings panel has three tabs: Standings, Badges and Rank. Rank ends with every rank and the share of the most a week can score where each starts. Profile no longer shows badges or rank.
   - Feed's post box starts folded to two buttons, "Trash talk" with your opponent's name and "Brag"; a tap opens that one. Posts are smaller, so more of the feed fits on a screen.
