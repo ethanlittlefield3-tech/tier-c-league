@@ -1,3 +1,4 @@
+import { ItemIcon } from '../art/itemIcons.tsx';
 import { createPortal } from 'preact/compat';
 import type { CarParts } from '../art/car/draw.ts';
 import { useEffect, useRef, useState } from 'preact/hooks';
@@ -25,8 +26,9 @@ import type { CalDay } from '../today/kit.ts';
 import { playerWeek, type KitPlay } from '../today/week.ts';
 import { PowerUps, type Play } from './PowerUps.tsx';
 import { ReceiptsDue } from './ReceiptsDue.tsx';
+import { DropShotFloors } from './GroupBoard.tsx';
 import { GroupBoardFor, MatchExtras, OpponentDay } from './Match.tsx';
-import { Scoreboard, type Boost } from './Scoreboard.tsx';
+import { Scoreboard, boostOf } from './Scoreboard.tsx';
 import { usePicksDue } from './usePicksDue.ts';
 import './picks.css';
 import type { Draw } from './Wheel.tsx';
@@ -34,7 +36,7 @@ import './wheel.css';
 import { GoalMark } from './GoalMark.tsx';
 import { ScreenSheet } from './ScreenSheet.tsx';
 import { WeekStrip } from './WeekStrip.tsx';
-import { EventBanner, ModeBanner, PlayoffBanner } from './ModeBanner.tsx';
+import { EventBanner, PlayoffBanner } from './ModeBanner.tsx';
 import { Offseason } from './Offseason.tsx';
 import { RumblePanel } from './RumblePanel.tsx';
 import { rumbleDraws, useRumble } from './useRumble.ts';
@@ -87,16 +89,6 @@ const EMPTY: DayEntry = { goals: { mind: false, body: false, wildcard: false }, 
 /** A goal that counts: hit, or counted by a power-up. */
 const GOAL_IN = new Set<string>(['hit', 'boosted', 'swappedIn']);
 
-/** Today's dial on the scoreboard: the goals in, whether screen time is logged, and a rest day. */
-function boostOf(cells: readonly { today: boolean; rest: boolean; score: { goals: Record<string, string>; screen: { state: string } } | null }[]): Boost {
-  const today = cells.find((cell) => cell.today);
-  if (!today) return { goals: 0, screen: false, rest: false };
-  return {
-    goals: today.rest ? 0 : Object.values(today.score?.goals ?? {}).filter((state) => GOAL_IN.has(state)).length,
-    screen: today.score?.screen.state === 'logged',
-    rest: today.rest,
-  };
-}
 
 /** "Thu", for the scoreboard. */
 const weekdayShort = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' });
@@ -487,8 +479,11 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
       )}
       <ReceiptsDue me={props.me} seasonId={seasonId} now={now} receipts={myReceipts.docs} />
       {paired && opponentId && theirWeek && weekDays.length > 0 && todayCal.data ? (
+        <div class="board-stack">
         <Scoreboard
           week={todayCal.data.week}
+          mode={mode === 'rumble' || mode === 'dropShot' ? mode : null}
+          items={mode === 'rumble' ? { mine: rumble.items[`${dates.today}_${me}`] ?? null, theirs: rumble.items[`${dates.today}_${opponentId}`] ?? null } : null}
           status={daysLeft(myWeek.cells) > 0 ? `${weekdayShort(dates.today)} \u00b7 Live` : 'Week over'}
           me={{ name: 'You', car: myProfile.data?.car, stickers: myProfile.data?.stickers, points: myWeek.totals.points, beers: myWeek.totals.beers, boost: boostOf(myWeek.cells) }}
           them={{
@@ -505,6 +500,29 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
           cells={myWeek.cells}
           onOpponent={() => setTheirDayOpen(true)}
         />
+        {mode === 'rumble' && todayCal.data && dates && (
+          <RumblePanel
+            where={{ league: props.me.league, season: seasonId, player: me }}
+            now={now}
+            today={todayCal.data as CalendarDoc & { noon?: number }}
+            vsHouse={targets.includes('HOUSE')}
+            mine={rumble.items[`${dates.today}_${me}`] ?? null}
+            theirs={opponentId ? (rumble.items[`${dates.today}_${opponentId}`] ?? null) : null}
+            opponent={
+              opponentId
+                ? {
+                    id: opponentId,
+                    name: opponentProfile.data?.displayName ?? 'Your opponent',
+                    goals: Object.fromEntries(LANES.map((lane) => [lane, opponentRoster.data?.goals?.[lane]?.text ?? ''])) as Partial<Record<Lane, string>>,
+                    resting: isRestDay({ date: dates.today, calendar: todayCal.data, restDate: opponentRest.data?.date ?? null }),
+                  }
+                : null
+            }
+            myBoot={myBoots.find((boot) => boot.date === dates.today)?.lane ?? null}
+          />
+        )}
+        {mode === 'dropShot' && <DropShotFloors mine={myWeek.cells} theirs={theirWeek.cells} name={opponentProfile.data?.displayName ?? 'Your opponent'} />}
+        </div>
       ) : !paired ? (
         <GroupBoardFor me={props.me} />
       ) : (
@@ -532,13 +550,6 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
         />
       )}
 
-      {mode !== 'regular' && weekDoc.data && (
-        <ModeBanner
-          me={me}
-          week={weekDoc.data}
-          name={(player) => (player === me ? 'You' : player === 'HOUSE' ? 'The House' : (everyone.docs.find((found) => found.id === player)?.data.displayName ?? 'Player'))}
-        />
-      )}
 
       <section class="checklist" aria-label="Your day">
         <div class="checklist-head">
@@ -648,7 +659,17 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
         </div>
         <div class="today-total">
           {breakdown(shown) && <p class="today-breakdown">{breakdown(shown)}</p>}
-          {ruleOneHere ? <p class="today-kit">Rule One: this day scores 0</p> : aerialHere ? <p class="today-kit">Aerial: this day counts double</p> : null}
+          {ruleOneHere ? (
+            <p class="today-kit">
+              <ItemIcon item="ruleOne" />
+              Rule One: this day scores 0
+            </p>
+          ) : aerialHere ? (
+            <p class="today-kit">
+              <ItemIcon item="aerial" />
+              Aerial: this day counts double
+            </p>
+          ) : null}
           {fixes.map((change) =>
             change.receipt ? (
               <p class="today-fix">
@@ -675,27 +696,6 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
         {status}
       </p>
 
-      {mode === 'rumble' && todayCal.data && dates && (
-        <RumblePanel
-          where={{ league: props.me.league, season: seasonId, player: me }}
-          now={now}
-          today={todayCal.data as CalendarDoc & { noon?: number }}
-          vsHouse={targets.includes('HOUSE')}
-          mine={rumble.items[`${dates.today}_${me}`] ?? null}
-          theirs={opponentId ? (rumble.items[`${dates.today}_${opponentId}`] ?? null) : null}
-          opponent={
-            opponentId
-              ? {
-                  id: opponentId,
-                  name: opponentProfile.data?.displayName ?? 'Your opponent',
-                  goals: Object.fromEntries(LANES.map((lane) => [lane, opponentRoster.data?.goals?.[lane]?.text ?? ''])) as Partial<Record<Lane, string>>,
-                  resting: isRestDay({ date: dates.today, calendar: todayCal.data, restDate: opponentRest.data?.date ?? null }),
-                }
-              : null
-          }
-          myBoot={myBoots.find((boot) => boot.date === dates.today)?.lane ?? null}
-        />
-      )}
 
       {period && week.docs.length > 0 && (
         <PowerUps

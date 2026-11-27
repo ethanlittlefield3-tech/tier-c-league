@@ -1,3 +1,4 @@
+import { ItemIcon } from '../art/itemIcons.tsx';
 import { LANES, REMATCH_LAST_DAY, RUMBLE_NAMES, isPairedMode, rematchFor, weekPeriod, type Lane } from '@tcl/engine';
 import { createPortal } from 'preact/compat';
 import { useEffect, useRef, useState } from 'preact/hooks';
@@ -9,7 +10,7 @@ import { formatPoints, formatScreenShort, pointsChip } from '../today/model.ts';
 import type { DayCell } from '../today/week.ts';
 import { GoalMark } from './GoalMark.tsx';
 import { useMatchup } from './useMatchup.ts';
-import { DropShotFloors, GroupBoard } from './GroupBoard.tsx';
+import { GroupBoard } from './GroupBoard.tsx';
 import { useWeekBoard } from './useWeekBoard.ts';
 import { ReceiptAsk } from './ReceiptAsk.tsx';
 import './match.css';
@@ -174,9 +175,16 @@ function GroupMatch(props: { me: Me; now: number; match: ReturnType<typeof useMa
   }
   return (
     <div class="match">
-      <GroupBoard me={props.me} week={match.weekDoc} ids={board.ids} weeks={board.weeks} totals={board.totals} players={board.players} />
+      <GroupBoard me={props.me} week={match.weekDoc} ids={board.ids} weeks={board.weeks} totals={board.totals} players={board.players} status={statusOf(board.weeks[props.me.player], match.dates?.today)} />
     </div>
   );
+}
+
+/** "Thu · Live" while the week has days to go, else "Week over", for a board's corner. */
+function statusOf(cells: { state: string }[] | undefined, today: string | undefined): string {
+  const going = (cells ?? []).some((cell) => cell.state !== 'locked');
+  if (!going || !today) return 'Week over';
+  return `${new Date(`${today}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' })} \u00b7 Live`;
 }
 
 /** The group-play board, in a week with no single opponent: shown on Game Day in place of the scoreboard. */
@@ -231,9 +239,24 @@ export function OpponentDay(props: { me: Me; onClose: () => void }) {
           <>
             <div class="match-notes">
               {theirToday?.rest && <span class="match-note match-note-rest">Rest day</span>}
-              {match.mode === 'rumble' && match.rumbleItems[`${todayDate}_${them.id}`] && <span class="match-note">Item: {RUMBLE_NAMES[match.rumbleItems[`${todayDate}_${them.id}`]!]}</span>}
-              {on('aerial') && <span class="match-note">Aerial: counts double</span>}
-              {on('ruleOne') && <span class="match-note">Rule One: scores 0</span>}
+              {match.mode === 'rumble' && match.rumbleItems[`${todayDate}_${them.id}`] && (
+                <span class="match-note">
+                  <ItemIcon item={match.rumbleItems[`${todayDate}_${them.id}`]!} />
+                  Item: {RUMBLE_NAMES[match.rumbleItems[`${todayDate}_${them.id}`]!]}
+                </span>
+              )}
+              {on('aerial') && (
+                <span class="match-note">
+                  <ItemIcon item="aerial" />
+                  Aerial: counts double
+                </span>
+              )}
+              {on('ruleOne') && (
+                <span class="match-note">
+                  <ItemIcon item="ruleOne" />
+                  Rule One: scores 0
+                </span>
+              )}
             </div>
             <div class="squares match-squares">
               <div class="square square-screen" data-logged={log?.screenMinutes !== null && log?.screenMinutes !== undefined}>
@@ -307,7 +330,6 @@ export function MatchExtras(props: { me: Me }) {
         myRequests={match.myRequests}
       />
       {rematch}
-      {match.mode === 'dropShot' && <DropShotFloors mine={match.myWeek.cells} theirs={match.theirWeek.cells} name={them.name} />}
       {match.myDemolition && (
         <p class="match-secret">
           Your Demolition: {dayName(match.myDemolition.date)}, their {LANE_NAMES[match.myDemolition.lane]} goal. Only you can see it until noon the next day.

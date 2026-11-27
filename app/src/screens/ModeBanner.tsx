@@ -19,6 +19,24 @@ export function ModeBanner(props: {
 }) {
   const mode = props.week.mode as GroupMode | undefined;
   if (!mode || !(mode in MODE_NAMES)) return null;
+  const detail = youLine(props);
+  return (
+    <p class="mode-banner" role="note">
+      <strong>
+        Week {props.week.week}: {MODE_NAMES[mode]}.
+      </strong>{' '}
+      {MODE_BLURBS[mode]} {detail} The board shows how it stands.
+    </p>
+  );
+}
+
+/** Where you stand in a group-play week, in a line: your squad, your duo, the Bounty, or the Alley's rule. */
+export function youLine(props: {
+  me: string;
+  week: { mode?: string; teams?: { blue: string[]; orange: string[] } | null; duos?: { a: string[]; b: string[] }[] | null; bounty?: BountyTarget | null; roster?: string[] | null };
+  name: (player: string) => string;
+}): string {
+  const mode = props.week.mode as GroupMode | undefined;
   const others = (players: string[]) => players.filter((player) => player !== props.me).map(props.name);
   const list = (names: string[]) => (names.length <= 1 ? (names[0] ?? '') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`);
   let detail = '';
@@ -40,14 +58,7 @@ export function ModeBanner(props: {
   }
   if (mode === 'bounty') detail = `This week's Bounty: ${bountyText(props.week.bounty ?? defaultBounty((props.week.roster ?? []).length))}.`;
   if (mode === 'alley') detail = 'No power-ups this week; Rule One still works.';
-  return (
-    <p class="mode-banner" role="note">
-      <strong>
-        Week {props.week.week}: {MODE_NAMES[mode]}.
-      </strong>{' '}
-      {MODE_BLURBS[mode]} {detail} The board shows how it stands.
-    </p>
-  );
+  return detail;
 }
 
 /**

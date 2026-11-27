@@ -46,8 +46,8 @@ test.describe('Group play on the phone', () => {
     for (const player of ['sam', 'jo']) await log(player, season.today, NONE, 240);
     await button(page, "I've saved it").click();
 
-    await expect(page.locator('.mode-banner')).toContainText('Week 2: Team Week.');
-    await expect(page.locator('.mode-banner')).toContainText("You're on Blue with Maya.");
+    await expect(page.getByRole('region', { name: 'Week 2: Team Week' })).toBeVisible();
+    await expect(page.locator('.group-you')).toContainText("You're on Blue with Maya.");
 
     // Demolition: pick who on the other squad, then the day and the goal.
     await page.locator('.power-tile[data-item="demolition"]').click();
@@ -78,7 +78,7 @@ test.describe('Group play on the phone', () => {
     await log(me, season.today, ONE);
     await log('sam', season.today, ALL);
     await button(page, "I've saved it").click();
-    await expect(page.locator('.mode-banner')).toContainText('You and Maya, against Sam and Jo.');
+    await expect(page.locator('.group-you')).toContainText('You and Maya, against Sam and Jo.');
     await tab(page, 'Game Day').click();
     const board = page.getByRole('region', { name: 'Week 2: 2v2' });
     await expect(board.locator('.group-side').first()).toContainText('Your duo');
@@ -89,7 +89,7 @@ test.describe('Group play on the phone', () => {
     const { season, log } = await groupWeek(page, request, (me, today) => ({ mode: 'bounty', roster: [me, 'maya', 'sam', 'jo'], bounty: { kind: 'dry', date: today } }));
     await log('maya', season.today, ALL, 30, 2);
     await button(page, "I've saved it").click();
-    await expect(page.locator('.mode-banner')).toContainText(`This week's Bounty: No beers league-wide on ${dayName(season.today)}.`);
+    await expect(page.locator('.group-target')).toHaveText(`No beers league-wide on ${dayName(season.today)}`);
     await tab(page, 'Game Day').click();
     const board = page.getByRole('region', { name: 'Week 2: Bounty Week' });
     await expect(board.locator('.group-target')).toHaveText(`No beers league-wide on ${dayName(season.today)}`);
@@ -103,7 +103,8 @@ test.describe('Group play on the phone', () => {
     await log('maya', season.today, ONE);
     await log('sam', season.today, NONE, 240);
     await button(page, "I've saved it").click();
-    await expect(page.locator('.mode-banner')).toContainText('No power-ups this week; Rule One still works.');
+    // The week's power-ups, as icons: none lit in the Alley but Rule One.
+    await expect(page.getByRole('list', { name: 'Power-ups this week' }).locator('li[data-on="true"]')).toHaveText(['Rule One']);
     await tab(page, 'Game Day').click();
     const board = page.getByRole('region', { name: 'Week 2: Alley' });
     await expect(board.locator('.alley-car')).toHaveCount(4);
@@ -124,7 +125,7 @@ test.describe('Group play on the phone', () => {
     await log('maya', done, ONE);
     await button(page, "I've saved it").click();
     await tab(page, 'Game Day').click();
-    const floors = page.getByRole('region', { name: 'Drop Shot' });
+    const floors = page.getByRole('region', { name: 'Drop Shot', exact: true });
     await expect(floors.getByRole('img', { name: "Maya's floor: 1 of 20 tiles broken" })).toBeVisible();
     await expect(floors.getByRole('img', { name: 'Your floor: 0 of 20 tiles broken' })).toBeVisible();
     await expect(floors.locator('.group-lead')).toContainText("You've landed 2 hits; Maya has landed 0.");

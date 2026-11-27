@@ -277,3 +277,278 @@
 .rumble-boot .btn {
   margin-top: 12px;
 }
+
+/* ---- Game Day's group card (the commish's request, 2026-11-27) ------------
+   One card in the scoreboard's place: the mode, where you stand, the sides
+   with their cars, today's dials and week points, and the week's power-ups
+   as icons. */
+
+.board.group-board .group-blurb {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+.group-you {
+  margin: 8px 0 0;
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 207, 63, 0.3);
+  border-radius: 10px;
+  background: rgba(255, 207, 63, 0.1);
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.board .group-sides {
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: start;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.board .group-vs {
+  align-self: center;
+  margin: 0;
+}
+
+.board .group-side {
+  padding: 8px 9px;
+  background: rgba(5, 10, 26, 0.35);
+}
+
+.board .group-side[data-team='blue'] {
+  border-color: rgba(61, 155, 255, 0.35);
+}
+
+.board .group-side[data-team='orange'] {
+  border-color: rgba(255, 138, 30, 0.35);
+}
+
+.board .group-side[data-mine='true'] {
+  box-shadow: 0 0 0 2px rgba(255, 207, 63, 0.35);
+}
+
+.group-side-cars {
+  display: flex;
+  justify-content: center;
+  height: 24px;
+  margin-bottom: 4px;
+}
+
+.group-mini-car,
+.group-mini-car svg {
+  display: block;
+  width: 40px;
+  height: 24px;
+}
+
+.group-side-cars .group-mini-car + .group-mini-car {
+  margin-left: -12px;
+}
+
+.group-side[data-team='orange'] .group-mini-car svg {
+  transform: scaleX(-1);
+}
+
+.group-house {
+  display: inline-block;
+  border-radius: 6px;
+  background: repeating-linear-gradient(45deg, rgba(255, 207, 63, 0.3) 0 4px, transparent 4px 8px);
+}
+
+.board .group-side-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+  font-size: 13px;
+}
+
+/* Today's dial, small, beside each player. */
+.group-board .boost {
+  grid-area: auto;
+  width: 22px;
+  height: 22px;
+}
+
+.group-board .boost-value {
+  display: none;
+}
+
+.group-board .boost-slice {
+  stroke: #3d9bff;
+  stroke-width: 6;
+}
+
+.group-board .group-side[data-team='orange'] .boost-slice,
+.group-adds li:not([data-me='true']) .boost-slice,
+.alley-places li:not([data-me='true']) .boost-slice {
+  stroke: #ff8a1e;
+}
+
+.group-board .boost-slice.boost-screen {
+  stroke: var(--gold);
+}
+
+.group-dial-gap {
+  width: 22px;
+}
+
+.group-meter {
+  margin-top: 8px;
+}
+
+.group-meter .meter-text {
+  margin-top: 4px;
+  font-size: 12px;
+  text-align: center;
+}
+
+/* The other duo matchups, a line each. */
+.group-match-line .group-line li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid rgba(196, 216, 255, 0.12);
+  border-radius: 10px;
+}
+
+.group-line li span:last-child {
+  text-align: right;
+}
+
+.group-line-vs {
+  font: italic 900 11px/1 var(--display);
+  text-transform: uppercase;
+}
+
+.group-line strong {
+  font: italic 900 15px/1 var(--display);
+  color: var(--ink);
+}
+
+/* Bounty: the bar with its share, then each player's adds as a bar. */
+.group-bounty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.group-bounty .group-bar {
+  flex: 1;
+  margin: 0;
+}
+
+.group-bounty-share {
+  font: italic 900 18px/1 var(--display);
+  color: var(--gold);
+}
+
+.group-adds li {
+  display: grid;
+  grid-template-columns: 40px minmax(48px, auto) minmax(0, 1fr) 22px auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.group-add-bar {
+  position: relative;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(196, 216, 255, 0.1);
+}
+
+.group-add-bar span {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--blue), var(--gold));
+  transform-origin: left center;
+}
+
+/* The Alley: places with their medals, and who spins. */
+.board .alley-places li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 22px auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.group-medal {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgba(255, 207, 63, 0.18);
+  font: italic 900 12px/1.5 var(--display);
+  color: var(--gold);
+}
+
+.alley-places li[data-place='1'] .group-medal {
+  background: var(--gold);
+  color: #1a1200;
+}
+
+.group-medal-wheel {
+  background: rgba(255, 90, 102, 0.18);
+  color: #ff9aa2;
+}
+
+/* The week's power-ups, as icons: lit if the week offers them. */
+.group-powers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 10px 0 0;
+  border-top: 1px solid rgba(196, 216, 255, 0.1);
+  list-style: none;
+}
+
+.group-powers li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border: 1px solid rgba(127, 233, 168, 0.4);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #7fe9a8;
+}
+
+.group-powers li[data-on='false'] {
+  border-color: rgba(196, 216, 255, 0.15);
+  color: var(--ink-soft);
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+.group-powers svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* A Rumble item's icon beside its name. */
+.rumble-item {
+  position: relative;
+  padding-left: 52px;
+}
+
+.rumble-icon {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  width: 30px;
+  height: 30px;
+  padding: 4px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  background: var(--gold);
+  color: #1a1200;
+}

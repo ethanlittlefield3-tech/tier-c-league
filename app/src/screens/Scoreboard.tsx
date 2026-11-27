@@ -1,5 +1,7 @@
+import { MODE_NAMES, RUMBLE_NAMES, type GroupMode, type RumbleItem } from '@tcl/engine';
 import { CarArt } from '../art/car/CarArt.tsx';
 import type { CarParts } from '../art/car/draw.ts';
+import { ItemIcon } from '../art/itemIcons.tsx';
 import { formatPoints } from '../today/model.ts';
 import type { DayCell } from '../today/week.ts';
 import { leadText, meterText } from './WeekStrip.tsx';
@@ -43,7 +45,7 @@ function slice(index: number): string {
  * today and one for screen time, so you can see at a glance how a side's day
  * is going. Full, it reads 100 in gold. On a rest day the goal slices rest.
  */
-function BoostGauge(props: { boost: Boost; label: string }) {
+export function DayDial(props: { boost: Boost; label: string }) {
   const { boost } = props;
   return (
     <span class="boost" role="img" aria-label={props.label} data-full={boost.goals === 3 && boost.screen} data-rest={boost.rest}>
@@ -60,8 +62,22 @@ function BoostGauge(props: { boost: Boost; label: string }) {
   );
 }
 
-/** A side's car, with a boost flame that grows as its dial fills. */
-function BoardCar(props: { side: BoardSide; team: 'blue' | 'orange' }) {
+/** A goal that counts: hit, or counted by a power-up. */
+const GOAL_IN = new Set<string>(['hit', 'boosted', 'swappedIn']);
+
+/** Today's dial for a side: the goals in, whether screen time is logged, and a rest day. */
+export function boostOf(cells: readonly { today: boolean; rest: boolean; score: { goals: Record<string, string>; screen: { state: string } } | null }[]): Boost {
+  const today = cells.find((cell) => cell.today);
+  if (!today) return { goals: 0, screen: false, rest: false };
+  return {
+    goals: today.rest ? 0 : Object.values(today.score?.goals ?? {}).filter((state) => GOAL_IN.has(state)).length,
+    screen: today.score?.screen.state === 'logged',
+    rest: today.rest,
+  };
+}
+
+/** A side's car, with a boost flame that grows as its dial fills, and today's Rumble item on its roof. */
+function BoardCar(props: { side: BoardSide; team: 'blue' | 'orange'; item?: RumbleItem | null }) {
   const level = fullness(props.side.boost);
   return (
     <span class="board-car" data-team={props.team}>
@@ -72,11 +88,18 @@ function BoardCar(props: { side: BoardSide; team: 'blue' | 'orange' }) {
         </svg>
       </span>
       <CarArt parts={props.side.car} stickers={props.side.stickers} team={props.team} bare class="board-car-art" />
+      {props.item && (
+        <span class="board-item" title={RUMBLE_NAMES[props.item]}>
+          <ItemIcon item={props.item} />
+        </span>
+      )}
     </span>
   );
 }
 
-const goalsWords = (boost: Boost) => `${boost.rest ? 'rest day' : `${boost.goals} of 3 goals in`}, screen time ${boost.screen ? 'logged' : 'not logged'}`;
+export const dayWords = (boost: Boost) => `${boost.rest ? 'rest day' : `${boost.goals} of 3 goals in`}, screen time ${boost.screen ? 'logged' : 'not logged'}`;
+
+const goalsWords = dayWords;
 
 /**
  * Game Day's scoreboard (the commish's request, 2026-11-27): you against your
@@ -85,6 +108,10 @@ const goalsWords = (boost: Boost) => `${boost.rest ? 'rest day' : `${boost.goals
  */
 export function Scoreboard(props: {
   week: number;
+  /** A group-play 1v1 (Rumble or Drop Shot) names its mode in the header. */
+  mode?: GroupMode | null;
+  /** Rumble: today's item on each side, shown on the cars. */
+  items?: { mine: RumbleItem | null; theirs: RumbleItem | null } | null;
   /** "Thu · Live", or "Week over". */
   status: string;
   me: BoardSide;
@@ -100,13 +127,16 @@ export function Scoreboard(props: {
   return (
     <section class="week board" aria-labelledby="week-title">
       <div class="board-head">
-        <h2 id="week-title">Week {props.week}</h2>
+        <h2 id="week-title">
+          Week {props.week}
+          {props.mode && <span class="board-mode">: {MODE_NAMES[props.mode]}</span>}
+        </h2>
         <span class="board-status">{props.status}</span>
       </div>
       <div class="board-sides">
         <div class="board-side week-side week-me" data-team="blue">
-          <BoardCar side={me} team="blue" />
-          <BoostGauge boost={me.boost} label={`Your day: ${goalsWords(me.boost)}`} />
+          <BoardCar side={me} team="blue" item={props.items?.mine} />
+          <DayDial boost={me.boost} label={`Your day: ${goalsWords(me.boost)}`} />
           <span class="board-name">You</span>
           <strong class="board-points">{formatPoints(me.points)}</strong>
         </div>
@@ -114,8 +144,8 @@ export function Scoreboard(props: {
           VS
         </span>
         <button type="button" class="board-side week-side week-them" data-team="orange" aria-label={`See ${them.name}'s day: ${formatPoints(them.points)} this week, ${goalsWords(them.boost)}`} onClick={props.onOpponent}>
-          <BoardCar side={them} team="orange" />
-          <BoostGauge boost={them.boost} label={`${them.name}'s day: ${goalsWords(them.boost)}`} />
+          <BoardCar side={them} team="orange" item={props.items?.theirs} />
+          <DayDial boost={them.boost} label={`${them.name}'s day: ${goalsWords(them.boost)}`} />
           <span class="board-name">
             {them.name}
             {them.nemesis && (

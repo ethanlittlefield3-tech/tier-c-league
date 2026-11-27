@@ -728,3 +728,18 @@ button.check-row:focus-visible {
     opacity: 0;
   }
 }
+
+/* A power-up named in a line carries its icon (the commish's request, 2026-11-27). */
+.today-kit,
+.match-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.today-kit svg,
+.match-note svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}

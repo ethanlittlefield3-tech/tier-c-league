@@ -302,3 +302,53 @@ button.board-side:focus-visible {
   stroke: var(--gold);
   opacity: 0.25;
 }
+
+/* A group-play 1v1 names its mode, and Rumble's items sit on the cars. */
+.board-mode {
+  color: var(--gold);
+}
+
+.board-item {
+  position: absolute;
+  top: -6px;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--gold);
+  color: #1a1200;
+  box-shadow: 0 0 10px rgba(255, 207, 63, 0.6);
+}
+
+.board-item svg {
+  width: 15px;
+  height: 15px;
+}
+
+.board-car[data-team='blue'] .board-item {
+  left: calc(50% + 20px);
+}
+
+.board-car[data-team='orange'] .board-item {
+  right: calc(50% + 20px);
+}
+
+/* What Rumble and Drop Shot add hangs right under the scoreboard, as one card. */
+.board-stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.board-stack > .board:not(:last-child) {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.board-stack > :not(.board) {
+  margin-top: 0;
+  border-top: 1px dashed rgba(196, 216, 255, 0.18);
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  background: linear-gradient(180deg, #0f1b42, #0a1330);
+}

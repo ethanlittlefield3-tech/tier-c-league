@@ -19,7 +19,7 @@ test.describe('The group play preview', () => {
     const modes = page.getByRole('group', { name: 'Mode' });
     await expect(modes.getByRole('button')).toHaveText(['Rumble', 'Team Week', '2v2', 'Bounty Week', 'Drop Shot', 'Alley']);
     await expect(page.getByRole('region', { name: 'Week 1: Team Week' })).toBeVisible();
-    await expect(page.locator('.mode-banner')).toContainText('Maya');
+    await expect(page.locator('.group-you')).toContainText('Maya');
     for (const [mode, title] of [
       ['2v2', 'Week 1: 2v2'],
       ['Bounty Week', 'Week 1: Bounty Week'],
@@ -30,7 +30,7 @@ test.describe('The group play preview', () => {
       await modes.getByRole('button', { name: mode, exact: true }).click();
       await expect(page.getByRole('region', { name: title })).toBeVisible();
     }
-    await expect(page.getByRole('list', { name: "Today's items" })).toContainText('Your item:');
+    await expect(page.getByRole('region', { name: "Today's items" })).toContainText('Your item:');
     await modes.getByRole('button', { name: 'Drop Shot', exact: true }).click();
     await expect(page.getByRole('region', { name: 'Drop Shot', exact: true })).toBeVisible();
   });

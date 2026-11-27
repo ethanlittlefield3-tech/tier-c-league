@@ -1,3 +1,4 @@
+import { ItemIcon } from '../art/itemIcons.tsx';
 import { useState } from 'preact/hooks';
 import { LANES, type Lane } from '@tcl/engine';
 import type { Trouble } from '../data/identity.ts';
@@ -41,26 +42,9 @@ function weekday(date: string, names: string[]): string {
 const shortDay = (date: string) => weekday(date, SHORT);
 const longDay = (date: string) => weekday(date, LONG);
 
-/** The small pictures on the tiles, drawn for this app. */
+/** A tile's picture: the shared power-up icons. */
 function Glyph(props: { item: Item }) {
-  const line = { fill: 'none', stroke: 'currentColor', 'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' } as const;
-  const paths: Record<Item, preact.JSX.Element> = {
-    // A car's nose lifting off: up and away.
-    aerial: <path {...line} d="M4 17c4-1 7-4 9-8l3-5M16 4l-1 4 4-1M7 20h4" />,
-    // A burst.
-    demolition: <path {...line} d="M12 3l1.8 5.2L19 6l-2.6 4.8L21 13l-5.2.9L17 19l-5-3-5 3 1.2-5.1L3 13l4.6-2.2L5 6l5.2 2.2Z" />,
-    // A bolt.
-    fullBoost: <path {...line} d="M13 3 6 13h5l-1 8 7-10h-5Z" />,
-    // A shield with a 1.
-    ruleOne: <path {...line} d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6ZM11 9l2-1v8" />,
-    // A moon: the day off.
-    rest: <path {...line} d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5Z" />,
-  };
-  return (
-    <svg class="power-glyph" viewBox="0 0 24 24" aria-hidden="true">
-      {paths[props.item]}
-    </svg>
-  );
+  return <ItemIcon item={props.item} class="power-glyph" />;
 }
 
 /**

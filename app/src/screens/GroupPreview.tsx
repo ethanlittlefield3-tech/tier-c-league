@@ -1,12 +1,13 @@
 import { useState } from 'preact/hooks';
-import { GROUP_MODES, HOUSE, MODE_NAMES, RUMBLE_NAMES, RUMBLE_TEXT, type DayLog, type GroupMode, type Lane } from '@tcl/engine';
+import { GROUP_MODES, HOUSE, MODE_NAMES, RUMBLE_NAMES, RUMBLE_TEXT, daysLeft, winMeter, type DayLog, type GroupMode, type Lane } from '@tcl/engine';
 import type { Me } from '../data/identity.ts';
 import { groupLines } from '../group/words.ts';
 import { PREVIEW_DAYS, PREVIEW_PLAYERS, itemOn, nowOn, previewBoard, previewSettle, previewWeek, sampleLogs, type PreviewLogs } from '../group/preview.ts';
 import { formatPoints, formatScreenShort } from '../today/model.ts';
 import { Back, Heading } from '../ui/parts.tsx';
 import { DropShotFloors, GroupBoard } from './GroupBoard.tsx';
-import { ModeBanner } from './ModeBanner.tsx';
+import { Scoreboard, boostOf } from './Scoreboard.tsx';
+import { ItemIcon } from '../art/itemIcons.tsx';
 import './preview.css';
 
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -53,6 +54,10 @@ export function GroupPreview(props: { onBack: () => void }) {
   const board = previewBoard(mode, logs, now);
   const settled = day === 'final' ? previewSettle(mode, logs) : null;
   const today = day === 'final' ? null : PREVIEW_DAYS[day]!;
+  const status = day === 'final' ? 'Final' : `${DAY_NAMES[day]} \u00b7 Live`;
+  // The 1v1 modes' win meter: points so far, with the days left to swing it.
+  const left = daysLeft(board.weeks.you ?? []);
+  const meter = left > 0 ? winMeter({ points: board.totals.you?.points ?? 0, dailyAverage: null }, { points: board.totals.maya?.points ?? 0, dailyAverage: null }, left) : null;
   const mine: DayLog | null = today ? (logs.you?.[today.date] ?? { goals: {}, screenMinutes: null, beers: 0 }) : null;
 
   const changeMine = (change: (log: DayLog) => DayLog) => {
@@ -94,33 +99,46 @@ export function GroupPreview(props: { onBack: () => void }) {
           </div>
         </section>
 
-        <ModeBanner me="you" week={{ ...week, teams: week.teams ?? undefined, duos: week.duos ?? undefined, roster: week.roster ?? undefined }} name={nameOf} />
-
         {mode === 'teamWeek' || mode === 'twoVTwo' || mode === 'bounty' || mode === 'alley' ? (
-          <GroupBoard me={ME} week={week} ids={board.ids} weeks={board.weeks} totals={board.totals} players={PLAYERS} />
+          <GroupBoard me={ME} week={week} ids={board.ids} weeks={board.weeks} totals={board.totals} players={PLAYERS} status={status} />
         ) : (
-          <section class="panel group-board" aria-labelledby="preview-board-title">
-            <h2 id="preview-board-title">Week 1: {MODE_NAMES[mode]}</h2>
-            <Pairs pairs={week.pairs} totals={board.totals} />
-            {mode === 'dropShot' && board.weeks.you && board.weeks.maya && <DropShotFloors mine={board.weeks.you} theirs={board.weeks.maya} name="Maya" />}
+          // Rumble and Drop Shot are 1v1s: the same scoreboard as Game Day, you against Maya.
+          <div class="board-stack">
+            <Scoreboard
+              week={1}
+              mode={mode}
+              status={status}
+              items={mode === 'rumble' && today ? { mine: itemOn(day as number, 'you'), theirs: itemOn(day as number, 'maya') } : null}
+              me={{ name: 'You', car: PLAYERS.you!.car, points: board.totals.you?.points ?? 0, beers: board.totals.you?.beers ?? 0, boost: boostOf(board.weeks.you ?? []) }}
+              them={{ name: 'Maya', car: PLAYERS.maya!.car, points: board.totals.maya?.points ?? 0, beers: board.totals.maya?.beers ?? 0, boost: boostOf(board.weeks.maya ?? []), nemesis: false }}
+              meter={meter}
+              record="A made-up matchup"
+              cells={board.weeks.you ?? []}
+              onOpponent={() => undefined}
+            />
             {mode === 'rumble' && today && (
-              <ul class="preview-items" aria-label="Today's items">
+              <section class="panel rumble" aria-label="Today's items">
                 {(['you', 'maya'] as const).map((id) => {
                   const item = itemOn(day as number, id);
                   return (
                     item && (
-                      <li>
+                      <p class="rumble-item" data-item={item}>
+                        <ItemIcon item={item} class="rumble-icon" />
                         <strong>
                           {id === 'you' ? 'Your item' : "Maya's item"}: {RUMBLE_NAMES[item]}
-                        </strong>{' '}
-                        {RUMBLE_TEXT[item]}
-                      </li>
+                        </strong>
+                        <span>{RUMBLE_TEXT[item]}</span>
+                      </p>
                     )
                   );
                 })}
-              </ul>
+              </section>
             )}
-          </section>
+            {mode === 'dropShot' && board.weeks.you && board.weeks.maya && <DropShotFloors mine={board.weeks.you} theirs={board.weeks.maya} name="Maya" />}
+            <section class="panel" aria-label="The other matchups">
+              <Pairs pairs={week.pairs.filter((pair) => pair.a !== 'you')} totals={board.totals} />
+            </section>
+          </div>
         )}
 
         {today && mine && (

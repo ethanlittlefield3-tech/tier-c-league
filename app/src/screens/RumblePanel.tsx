@@ -1,3 +1,4 @@
+import { ItemIcon } from '../art/itemIcons.tsx';
 import { useState } from 'preact/hooks';
 import { LANES, RUMBLE_NAMES, RUMBLE_TEXT, type Lane, type RumbleItem } from '@tcl/engine';
 import type { Trouble } from '../data/identity.ts';
@@ -57,11 +58,13 @@ export function RumblePanel(props: {
     <section class="panel rumble" aria-labelledby="rumble-title">
       <h2 id="rumble-title">Today's Rumble items</h2>
       <p class="rumble-item" data-item={props.mine ?? 'none'}>
+        {props.mine && <ItemIcon item={props.mine} class="rumble-icon" />}
         <strong>You: {props.mine ? RUMBLE_NAMES[props.mine] : 'arrives at 12:00 am'}</strong>
         {props.mine && <span>{RUMBLE_TEXT[props.mine]}</span>}
       </p>
       {props.opponent && (
         <p class="rumble-item" data-item={props.theirs ?? 'none'}>
+          {props.theirs && <ItemIcon item={props.theirs} class="rumble-icon" />}
           <strong>
             {props.opponent.name}: {props.theirs ? RUMBLE_NAMES[props.theirs] : 'not out yet'}
           </strong>
