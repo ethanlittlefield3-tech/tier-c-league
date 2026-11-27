@@ -199,67 +199,6 @@
   box-shadow: 0 0 0 2px var(--navy-950);
 }
 
-/* ---- A tab that is not built yet ------------------------------------------ */
-
-.soon {
-  max-width: 440px;
-  margin: 6px auto 0;
-  padding: 28px 22px 26px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  text-align: center;
-  border: 1px solid rgba(196, 216, 255, 0.14);
-  border-radius: 22px;
-  background:
-    radial-gradient(120% 70% at 50% 0%, rgba(31, 139, 255, 0.2), transparent 62%),
-    linear-gradient(180deg, rgba(17, 30, 73, 0.92), rgba(10, 19, 48, 0.92));
-}
-
-/* The tab's icon on a hexagon, like a badge. */
-.soon-icon {
-  width: 92px;
-  height: 104px;
-  margin-bottom: 6px;
-  display: grid;
-  place-items: center;
-  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
-  background: linear-gradient(160deg, #2a56b8, #0d1a44 70%);
-  color: #cfe6ff;
-}
-
-.soon-icon .tab-icon {
-  width: 46px;
-  height: 46px;
-}
-
-.soon-chip {
-  margin: 0;
-  padding: 5px 12px;
-  border-radius: 999px;
-  background: rgba(196, 216, 255, 0.12);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-}
-
-.soon h2 {
-  margin: 4px 0 0;
-  font: italic 900 26px/1.1 var(--display);
-}
-
-.soon-text {
-  margin: 0;
-  max-width: 30ch;
-  font-size: 15px;
-  line-height: 1.45;
-  color: var(--ink-soft);
-  text-wrap: pretty;
-}
-
 @media (prefers-reduced-motion: no-preference) {
   /* Backwards, not both: once the page has eased in, no transform is left
      on it, so a fixed card inside it (the screen-time card) sits on the

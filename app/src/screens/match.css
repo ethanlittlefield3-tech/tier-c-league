@@ -47,17 +47,6 @@
   height: auto;
 }
 
-.match-car-them svg {
-  transform: scaleX(-1);
-}
-
-/* A decal's letters still read the right way round. */
-.match-car-them text {
-  transform: scaleX(-1);
-  transform-box: fill-box;
-  transform-origin: center;
-}
-
 .match-name {
   max-width: 100%;
   font-weight: 700;
@@ -358,15 +347,6 @@
   width: 28px;
   height: 28px;
   border-width: 2px;
-}
-
-/* Beers, with a small Poke beside them. */
-.match-day-foot {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 10px;
 }
 
 .match-poke {

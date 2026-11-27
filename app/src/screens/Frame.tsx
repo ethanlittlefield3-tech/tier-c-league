@@ -28,17 +28,15 @@ import './frame.css';
 interface TabInfo {
   id: Tab;
   label: string;
-  /** What the tab will hold, in a line, until it is built. */
-  soon: string;
 }
 
 // SCOPE.md, "Screens", with Today and Match combined into Game Day (the
 // commish's request, 2026-11-27): four bottom tabs cover the whole game.
 const TABS: readonly TabInfo[] = [
-  { id: 'today', label: 'Game Day', soon: 'Your matchup, your day, your power-ups and your opponent.' },
-  { id: 'feed', label: 'Feed', soon: 'The live feed and the wall: taunts, brags, comments and reactions.' },
-  { id: 'league', label: 'League', soon: 'Standings, the schedule, results, the playoff bracket and the trophy case.' },
-  { id: 'garage', label: 'Garage', soon: 'Build your car on a turntable. Every badge you earn unlocks a part.' },
+  { id: 'today', label: 'Game Day' },
+  { id: 'feed', label: 'Feed' },
+  { id: 'league', label: 'League' },
+  { id: 'garage', label: 'Garage' },
 ];
 
 /** What a tab's dot tells a screen reader. */

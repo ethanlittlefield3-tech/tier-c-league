@@ -16,7 +16,6 @@ export interface DayEntry {
 }
 
 export const SCREEN_MAX = 1440;
-export const SCREEN_STEP = 15;
 export const BEERS_MAX = 30;
 
 export function leagueDates(now: number, timeZone: string): { today: DateStr; yesterday: DateStr } {
