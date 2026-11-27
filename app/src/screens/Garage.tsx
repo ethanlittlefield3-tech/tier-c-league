@@ -9,6 +9,7 @@ import { useDoc } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
 import { whyOf } from '../data/why.ts';
+import { isNew, lastSeen } from '../ui/seen.ts';
 import '../art/car/backdrops.css';
 import './garage.css';
 
@@ -31,6 +32,21 @@ const SLOTS: { slot: PartSlot; name: string }[] = [
   { slot: 'topper', name: 'Topper' },
   { slot: 'backdrop', name: 'Backdrop' },
 ];
+
+/** What a slot's parts are called, for its count: "5 of 18 bodies unlocked". */
+const PLURALS: Record<PartSlot, string> = {
+  body: 'bodies',
+  paint: 'paints',
+  paint2: 'accent colors',
+  finish: 'finishes',
+  decal: 'decals',
+  wheels: 'wheels',
+  boost: 'boosts',
+  trail: 'trails',
+  explosion: 'goal explosions',
+  topper: 'toppers',
+  backdrop: 'backdrops',
+};
 
 /** A small picture for each slot, on its button. */
 const SLOT_ICONS: Record<PartSlot, string> = {
@@ -61,7 +77,12 @@ interface Option {
   locked: string | null;
   /** The badge that unlocks it, for its label. */
   badge: Badge | null;
+  /** Unlocked since your last visit to the Garage. */
+  fresh?: boolean;
 }
+
+/** New parts first, then the rest of yours, then what is still locked, each in catalog order. */
+const placeOf = (option: Option) => (option.fresh ? 0 : option.locked ? 2 : 1);
 
 /**
  * Every part in a slot: the starter kit, then what badges unlock, then (for
@@ -110,7 +131,7 @@ function angleOf(element: Element | null): number {
  * unlocks a part; a locked part shows the badge that unlocks it.
  */
 export function Garage(props: { me: Me }) {
-  const profile = useDoc<{ car?: Partial<CarParts>; badges?: Record<string, unknown>; stickers?: Partial<Record<string, { until?: unknown }>>; rank?: string; seasons?: Record<string, number> }>(`leagues/${props.me.league}/players/${props.me.player}`);
+  const profile = useDoc<{ car?: Partial<CarParts>; badges?: Record<string, { at?: number }>; stickers?: Partial<Record<string, { until?: unknown }>>; rank?: string; seasons?: Record<string, number> }>(`leagues/${props.me.league}/players/${props.me.player}`);
   const saved: CarParts = { ...STARTER_CAR, ...(profile.data?.car ?? {}) };
   const [draft, setDraft] = useState<CarParts | null>(null);
   const mine = draft ?? saved;
@@ -121,6 +142,11 @@ export function Garage(props: { me: Me }) {
   const [note, setNote] = useState<{ error: boolean; text: string } | null>(null);
   const [boom, setBoom] = useState(0);
   const earned = profile.data?.badges ?? {};
+  // A part unlocked since your last visit is marked New, for the whole of this
+  // visit. Opening the tab counts as the visit (see Frame's tabs).
+  const [since] = useState(() => lastSeen(props.me, 'garage'));
+  const freshBadge = (id: string) => isNew(earned[id]?.at, since);
+  const freshSlots = new Set(BADGES.flatMap((badge) => (freshBadge(badge.id) ? badge.unlocks.map((part) => part.slot) : [])));
 
   // The turntable turns on its own until you take hold of it (SCOPE.md, "2.5D
   // art": you drag to spin the car). A drag turns it under your finger and lets
@@ -202,7 +228,10 @@ export function Garage(props: { me: Me }) {
       });
   };
 
-  const options = partsFor(slot, { badges: earned, rank: profile.data?.rank ?? null, seasons: profile.data?.seasons ?? {} });
+  const options = partsFor(slot, { badges: earned, rank: profile.data?.rank ?? null, seasons: profile.data?.seasons ?? {} })
+    .map((option) => ({ ...option, fresh: option.badge !== null && !option.locked && freshBadge(option.badge.id) }))
+    .sort((a, b) => placeOf(a) - placeOf(b));
+  const unlocked = options.filter((option) => !option.locked).length;
   const count = Object.keys(earned).length;
   const slotName = SLOTS.find((each) => each.slot === slot)?.name;
   return (
@@ -253,12 +282,23 @@ export function Garage(props: { me: Me }) {
 
       <div class="garage-slots" role="group" aria-label="Part">
         {SLOTS.map(({ slot: each, name }) => (
-          <button key={each} type="button" class="garage-slot" aria-pressed={slot === each} onClick={() => setSlot(each)}>
+          <button
+            key={each}
+            type="button"
+            class="garage-slot"
+            aria-pressed={slot === each}
+            aria-describedby={freshSlots.has(each) ? 'garage-new-note' : undefined}
+            onClick={() => setSlot(each)}
+          >
             <SlotIcon slot={each} />
             <span>{name}</span>
+            {freshSlots.has(each) && <span class="garage-dot" aria-hidden="true" />}
           </button>
         ))}
       </div>
+      <span id="garage-new-note" hidden>
+        New since your last visit
+      </span>
 
       {note && (
         <p class={note.error ? 'field-error' : 'panel-text garage-note'} role={note.error ? 'alert' : 'status'}>
@@ -281,8 +321,11 @@ export function Garage(props: { me: Me }) {
         </div>
       )}
 
+      <p class="garage-have">
+        {unlocked} of {options.length} {PLURALS[slot]} unlocked
+      </p>
       <ul class="garage-parts" aria-label={slotName}>
-        {options.map(({ part, badge, locked }) => {
+        {options.map(({ part, badge, locked, fresh }) => {
           const on = mine[part.slot as keyof CarParts] === part.id && !locked;
           const tried = trying?.part.id === part.id && trying.part.slot === part.slot;
           const art =
@@ -304,13 +347,20 @@ export function Garage(props: { me: Me }) {
                 class="garage-part"
                 data-locked={Boolean(locked)}
                 data-trying={tried}
+                data-fresh={fresh}
                 aria-pressed={on}
+                aria-describedby={fresh ? 'garage-new-note' : undefined}
                 aria-label={locked ? `${part.name}, locked${badge ? `: earn ${badge.name}` : ''}` : part.name}
                 onClick={() => pick(part, locked)}
               >
                 <span class="garage-part-art">{art}</span>
                 <span class="garage-part-name">{part.name}</span>
                 {locked && <span class="garage-lock">{badge ? badge.name : 'Locked'}</span>}
+                {fresh && (
+                  <span class="garage-new" aria-hidden="true">
+                    New
+                  </span>
+                )}
               </button>
             </li>
           );

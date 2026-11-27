@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { RANK_NAMES, RANK_WEEKS, rankMove, type Rank } from '@tcl/engine';
+import { RANKS, RANK_FLOORS, RANK_NAMES, RANK_WEEKS, rankMove, type Rank } from '@tcl/engine';
 import { RankBadge } from '../art/RankBadge.tsx';
 import { CarArt } from '../art/car/CarArt.tsx';
 import type { CarParts } from '../art/car/draw.ts';
@@ -26,14 +26,36 @@ export const weekName = (period: string) => `Week ${Number(period.slice(1))}`;
  * Your rank, in Profile (SCOPE.md, "Ranks and trophies"): your form over the
  * last 4 weeks, as a share of the most a week can score.
  */
+/** Every rank, lowest first, with the share of the most a week can score that it takes. */
+function RankTiers() {
+  const floor = (rank: Rank) => RANK_FLOORS.find(([each]) => each === rank)?.[1] ?? null;
+  return (
+    <div class="rank-tiers">
+      <ol aria-label="Every rank">
+        {RANKS.map((rank) => {
+          const at = floor(rank);
+          return (
+            <li key={rank}>
+              <RankBadge rank={rank} class="rank-tier-badge" />
+              <span class="rank-tier-name">{RANK_NAMES[rank]}</span>
+              <span class="rank-tier-floor">{at === null ? 'below 0%' : `${Math.round(at * 100)}%+`}</span>
+            </li>
+          );
+        })}
+      </ol>
+      <p class="fine-print">Your rank is your average over your last {RANK_WEEKS} final weeks, as a share of the most a week can score.</p>
+    </div>
+  );
+}
+
+/** Your rank (SCOPE.md, "Rank tiers"), on League's Rank tab, with every tier underneath. */
 export function RankPanel(props: { rank: Rank | null; history: RankEntry[] }) {
   const recent = props.history.slice(-RANK_WEEKS);
   const share = recent.length ? recent.reduce((sum, week) => sum + week.points / week.max, 0) / recent.length : 0;
   return (
-    <section class="panel rank-panel" aria-labelledby="profile-rank-title">
-      <h2 id="profile-rank-title">Rank</h2>
+    <div class="rank-panel">
       {props.rank === null ? (
-        <p class="panel-text">Unranked until your first week is final. Rank follows your last 4 weeks, as a share of the most a week can score.</p>
+        <p class="panel-text">Unranked until your first week is final.</p>
       ) : (
         <>
           <div class="rank-now">
@@ -61,7 +83,8 @@ export function RankPanel(props: { rank: Rank | null; history: RankEntry[] }) {
           </ol>
         </>
       )}
-    </section>
+      <RankTiers />
+    </div>
   );
 }
 

@@ -8,10 +8,8 @@ import { loadData } from '../data/load.ts';
 import { whyOf } from '../data/why.ts';
 import { NAME_MAX, nameProblem, tidyName } from '../join/name.ts';
 import { Back, Field, Heading } from '../ui/parts.tsx';
-import { activeStickers, type Rank, type StickerId } from '@tcl/engine';
+import { activeStickers, type StickerId } from '@tcl/engine';
 import { Alerts } from './Alerts.tsx';
-import { BadgesPanel } from './Badges.tsx';
-import { RankPanel, type RankEntry } from './Rank.tsx';
 import './profile.css';
 import './ideas.css';
 
@@ -35,7 +33,7 @@ const STICKER_WHY: Record<StickerId, string> = {
 export function Profile(props: { me: Me; onBack: () => void; onRenamed: (me: Me) => void; onSignedOut: () => void; onCommish: () => void; onLog: () => void; onIdeas?: () => void }) {
   const league = useDoc<{ commish?: string; coCommish?: string | null }>(`leagues/${props.me.league}`);
   const isCommish = league.data !== null && (league.data.commish === props.me.player || league.data.coCommish === props.me.player);
-  const mine = useDoc<{ rank?: Rank; rankHistory?: RankEntry[]; badges?: Record<string, unknown>; car?: Partial<CarParts>; stickers?: Partial<Record<string, { until?: unknown }>> }>(`leagues/${props.me.league}/players/${props.me.player}`);
+  const mine = useDoc<{ car?: Partial<CarParts>; stickers?: Partial<Record<string, { until?: unknown }>> }>(`leagues/${props.me.league}/players/${props.me.player}`);
   const [name, setName] = useState(props.me.displayName);
   const [nameNote, setNameNote] = useState<{ error: boolean; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
@@ -188,10 +186,6 @@ export function Profile(props: { me: Me; onBack: () => void; onRenamed: (me: Me)
             {key !== null ? 'Hide my key' : fetchingKey ? 'Getting it' : 'Show my key'}
           </button>
         </section>
-
-        <RankPanel rank={mine.data?.rank ?? null} history={mine.data?.rankHistory ?? []} />
-
-        <BadgesPanel earned={mine.data?.badges ?? {}} />
 
         <Alerts me={props.me} />
 

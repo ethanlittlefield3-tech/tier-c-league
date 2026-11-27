@@ -261,3 +261,45 @@
     opacity: 1;
   }
 }
+
+/* Every rank, lowest first, under your own. */
+.rank-tiers {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(196, 216, 255, 0.12);
+}
+
+.rank-tiers ol {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rank-tiers li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+}
+
+.rank-tier-badge {
+  width: 30px;
+  height: 30px;
+}
+
+.rank-tier-name {
+  font: 800 11px/1.2 var(--body);
+}
+
+.rank-tier-floor {
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
+.rank-tiers .fine-print {
+  margin: 10px 0 0;
+}

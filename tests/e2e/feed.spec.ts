@@ -41,6 +41,7 @@ const wallPosts = async (request: APIRequestContext, league: TestLeague): Promis
 test.describe('Feed and the wall', () => {
   test('The feed fits the phone: the quick-chat lines swipe sideways inside their panel', async ({ page, request, browser }) => {
     const { riley } = await rivals(page, request, browser);
+    await button(page, 'Trash talk Riley').click();
     const chips = page.getByRole('group', { name: 'Quick chat' });
     await expect(chips.getByRole('button')).toHaveCount(10);
     const fit = await page.locator('.feed').evaluate((feed) => ({ feed: feed.getBoundingClientRect().width, page: window.innerWidth, chips: feed.querySelector('.feed-chips')!.scrollWidth, shown: feed.querySelector('.feed-chips')!.clientWidth }));
@@ -52,7 +53,10 @@ test.describe('Feed and the wall', () => {
 
   test("A quick-chat line lands on both phones, with the opponent's name filled in", async ({ page, request, browser }) => {
     const { league, riley } = await rivals(page, request, browser);
-    await expect(riley.phone.getByRole('button', { name: 'Talk to Alex' })).toHaveAttribute('aria-pressed', 'true');
+    // The post box starts folded: just its two buttons.
+    await expect(riley.phone.getByRole('group', { name: 'Quick chat' })).toHaveCount(0);
+    await button(riley.phone, 'Trash talk Alex').click();
+    await expect(button(riley.phone, 'Trash talk Alex')).toHaveAttribute('aria-pressed', 'true');
     await riley.phone.getByRole('group', { name: 'Quick chat' }).getByRole('button', { name: 'Touch grass, Alex.' }).click();
     await expect(riley.phone.getByText('Sent to Alex.')).toBeVisible();
 
@@ -70,6 +74,7 @@ test.describe('Feed and the wall', () => {
 
   test('Your own taunt can use {name}, and can be saved for later', async ({ page, request, browser }) => {
     const { league, riley } = await rivals(page, request, browser);
+    await button(riley.phone, 'Trash talk Alex').click();
     await riley.phone.getByLabel('Your own taunt').fill('Is that all, {name}?');
     await button(riley.phone, 'Save it for later').click();
     await button(riley.phone, 'Send').click();
@@ -197,7 +202,7 @@ test.describe('Feed and the wall', () => {
     const league = await createLeague(request);
     await enterAsCommish(page, league);
     await tab(page, 'Feed').click();
-    await expect(page.getByRole('button', { name: 'Talk trash' })).toHaveAttribute('aria-pressed', 'true');
+    await button(page, 'Trash talk').click();
     await expect(page.getByText('Taunts open once you have an opponent, after the draft.')).toBeVisible();
     await expect(page.getByText('Nothing on the wall yet. Start something.')).toBeVisible();
   });

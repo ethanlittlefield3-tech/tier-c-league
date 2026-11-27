@@ -13,15 +13,15 @@ async function runWeekly(league: TestLeague): Promise<void> {
   await run(process.execPath, [weeklyJob], { env: { ...process.env, FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080', GCLOUD_PROJECT: 'demo-tier-c', LEAGUE_ID: league.id } });
 }
 
-async function openProfile(page: Page) {
-  await button(page, 'Your profile, Alex').click();
-  const panel = page.getByRole('region', { name: 'Rank' });
-  await panel.scrollIntoViewIfNeeded();
-  return panel;
+/** League's Rank tab, by the standings. */
+async function openRank(page: Page) {
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'League', exact: true }).click();
+  await page.getByRole('tab', { name: 'Rank', exact: true }).click();
+  return page.getByRole('tabpanel', { name: 'Rank' });
 }
 
 test.describe('Ranks', () => {
-  test('Once a week is final, your rank shows in Profile, with your recent weeks', async ({ page, request }) => {
+  test("Once a week is final, your rank shows on League's Rank tab, with your recent weeks and every rank underneath; Profile no longer has it", async ({ page, request }) => {
     const league = await createLeague(request);
     const season = await startSeason(request, league);
     await quietPlayer(request, league, 'riley', 'Riley');
@@ -42,9 +42,13 @@ test.describe('Ranks', () => {
     // A phone's first rank arrives quietly, in Profile.
     await enterAsCommish(page, league);
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    const panel = await openProfile(page);
+    const panel = await openRank(page);
     await expect(panel.locator('.rank-name')).toHaveText('Grand Champ');
     await expect(panel.getByRole('list', { name: 'Recent weeks' })).toContainText('Week 1: 33 of 39');
+    await expect(panel.getByRole('list', { name: 'Every rank' }).getByRole('listitem')).toHaveCount(7);
+    await expect(panel.getByRole('list', { name: 'Every rank' })).toContainText('Grand Champ80%+');
+    await button(page, 'Your profile, Alex').click();
+    await expect(page.getByRole('heading', { name: 'Rank', exact: true })).toHaveCount(0);
   });
 
   test('A rank change plays its scene the next time the app opens, once, with your car boosting through; a rank down gets its own', async ({ page, request }) => {

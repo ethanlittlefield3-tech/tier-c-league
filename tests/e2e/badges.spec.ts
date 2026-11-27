@@ -7,7 +7,6 @@ import { createLeague, finishWeekOne, listIds, quietPlayer, readDoc, startSeason
 
 const run = promisify(execFile);
 const weeklyJob = fileURLToPath(new URL('../../jobs/weekly.ts', import.meta.url));
-const button = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
 const tab = (page: Page, name: string) => page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name, exact: true });
 
 async function runWeekly(league: TestLeague): Promise<string> {
@@ -42,9 +41,10 @@ test.describe('Badges', () => {
     // Badges earned together share one line in the feed.
     const news = page.locator('.feed-event[data-kind="badge"]', { hasText: 'First Blood' });
     await expect(news).toContainText(badges.length > 1 ? `You earned ${badges.length} badges` : 'You earned First Blood');
-    await button(page, 'Your profile, Alex').click();
-    const panel = page.getByRole('region', { name: 'Badges' });
-    await panel.scrollIntoViewIfNeeded();
+    // Your badges are on League's Badges tab, by the standings.
+    await tab(page, 'League').click();
+    await page.getByRole('tab', { name: 'Badges', exact: true }).click();
+    const panel = page.getByRole('tabpanel', { name: 'Badges' });
     await expect(panel.getByRole('list', { name: 'Earned' })).toContainText('First Blood');
     await expect(panel).toContainText(`${badges.length} of 51 earned`);
   });

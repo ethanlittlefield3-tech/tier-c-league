@@ -1,5 +1,7 @@
+import { createPortal } from 'preact/compat';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { LANES, daysLeft, holidayOf, isPairedMode, rumbleWeek, type WeekInput, paceSoFar, receiptFixes, receiptStatus, recentDailyAverage, weekPeriod, winMeter, type BountyTarget, type Lane, type Square, type StoredReceipt, type WeekMode } from '@tcl/engine';
+import { GoalExplosion } from '../art/car/GoalExplosion.tsx';
 import { useAll, useDoc, useNow, usePeek, useWhere } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
@@ -77,6 +79,9 @@ interface RosterDoc {
 const LANE_NAMES: Record<Lane, string> = { mind: 'Mind', body: 'Body', wildcard: 'Wildcard' };
 const EMPTY: DayEntry = { goals: { mind: false, body: false, wildcard: false }, screenMinutes: null, beers: 0 };
 
+/** A goal that counts: hit, or counted by a power-up. */
+const GOAL_IN = new Set<string>(['hit', 'boosted', 'swappedIn']);
+
 const TROUBLE: Record<Trouble, string> = {
   'not-open': 'The league is not open yet.',
   offline: 'No answer from the league. Your log is saved on this phone and goes through when the signal is back.',
@@ -145,6 +150,8 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
   // The last entry this phone saved, by day. Taps build on it rather than on
   // what the screen last showed, so a quick second tap never undoes the first.
   const lastSaved = useRef<{ date: string; entry: DayEntry } | null>(null);
+  // A tap that gets all three goals in plays your goal explosion.
+  const [burst, setBurst] = useState(0);
 
   const leaguePath = `leagues/${props.me.league}`;
   const league = useDoc<LeagueDoc>(leaguePath);
@@ -205,8 +212,8 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
   const rosters = useAll<RosterDoc>(seasonPath && sideTargets.length > 0 ? `${seasonPath}/roster` : null);
   const weekKit = useWhere<KitPlay & { player: string }>(seasonPath && sideTargets.length > 0 ? `${seasonPath}/kit` : null, 'period', period);
   const opponentProfile = useDoc<{ displayName?: string; rankHistory?: { points: number }[] }>(opponentId ? `${leaguePath}/players/${opponentId}` : null);
-  // Your recent weeks, for the win meter.
-  const myProfile = useDoc<{ rankHistory?: { points: number }[] }>(`${leaguePath}/players/${me}`);
+  // Your recent weeks, for the win meter, and your goal explosion, for a perfect day.
+  const myProfile = useDoc<{ rankHistory?: { points: number }[]; car?: { explosion?: string } }>(`${leaguePath}/players/${me}`);
   const opponentRoster = useDoc<RosterDoc>(seasonPath && opponentId ? `${seasonPath}/roster/${opponentId}` : null);
   const opponentRest = useDoc<{ date: string }>(seasonPath && period && opponentId ? `${seasonPath}/kit/${period}_${opponentId}_rest` : null);
   const draftState = useDoc<{ step: string; votesCloseAt?: number }>(seasonPath ? `${seasonPath}/draft/state` : null);
@@ -330,18 +337,23 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
   const ruleOneHere = ruleOnes.some((play) => play.date === date);
   // Commish docks, corrections and voids on this day.
   const fixes = myFixes.filter((change) => change.date === date);
-  const score = liveDayScore({
-    par: season.data.par,
-    entry,
-    restDay,
-    locked: dayWindow === 'locked',
-    aerial: aerialHere,
-    fullBoost: boostLanes,
-    event: holiday,
-    ruleOne: ruleOneHere,
-    voided: fixes.flatMap((change) => (change.void ? [change.void] : [])),
-    adjustments: fixes.map((change) => change.amount).filter((amount) => amount !== 0),
-  });
+  const par = season.data.par;
+  const scoreOf = (logged: DayEntry) =>
+    liveDayScore({
+      par,
+      entry: logged,
+      restDay,
+      locked: dayWindow === 'locked',
+      aerial: aerialHere,
+      fullBoost: boostLanes,
+      event: holiday,
+      ruleOne: ruleOneHere,
+      voided: fixes.flatMap((change) => (change.void ? [change.void] : [])),
+      adjustments: fixes.map((change) => change.amount).filter((amount) => amount !== 0),
+    });
+  const score = scoreOf(entry);
+  /** All three goals are in, on a goal day. */
+  const allIn = (logged: DayEntry) => !restDay && LANES.every((lane) => GOAL_IN.has(scoreOf(logged).goals[lane]));
 
   /** What the next save starts from: this phone's last save for the day, if the screen hasn't caught up with it yet. */
   const base = (): DayEntry => (lastSaved.current && lastSaved.current.date === date ? lastSaved.current.entry : entry);
@@ -359,7 +371,9 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
 
   const toggleGoal = (lane: Lane) => {
     const from = base();
-    save({ ...from, goals: { ...from.goals, [lane]: !from.goals[lane] } });
+    const next = { ...from, goals: { ...from.goals, [lane]: !from.goals[lane] } };
+    if (editable && !allIn(from) && allIn(next)) setBurst((count) => count + 1);
+    save(next);
   };
   const setBeers = (change: number) => {
     const from = base();
@@ -664,6 +678,15 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
           onClose={closeSheet}
         />
       )}
+
+      {/* All three goals in: your goal explosion, over the whole screen. */}
+      {burst > 0 &&
+        createPortal(
+          <div key={burst} class="today-burst" aria-hidden="true">
+            <GoalExplosion kind={myProfile.data?.car?.explosion ?? 'stock'} />
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

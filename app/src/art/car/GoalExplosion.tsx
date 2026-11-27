@@ -1,7 +1,8 @@
 // A goal explosion (SCOPE.md, "Car parts": played when you win a week), drawn
 // for this app. Each kind is a burst of small pieces flying out from the
-// middle; the CSS in garage.css moves them with transform and opacity only,
-// and the resting state is the finished burst: nothing left on screen.
+// middle; boom.css moves them with transform and opacity only, and the
+// resting state is the finished burst: nothing left on screen.
+import './boom.css';
 
 interface Kind {
   colors: string[];

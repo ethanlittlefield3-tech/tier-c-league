@@ -73,6 +73,27 @@ test.describe('Today', () => {
     await expect(total(page)).toContainText('0');
   });
 
+  test('The tap that gets all three goals in plays your goal explosion; two goals, or taking one back, plays nothing', async ({ page, request }) => {
+    const { league, player } = await onToday(page, request);
+    await patchDoc(request, `leagues/${league.id}/players/${player}`, { car: { explosion: 'confetti' } });
+    const burst = page.locator('.today-burst .boom');
+    await goal(page, 'mind').click();
+    await goal(page, 'body').click();
+    await expect(goal(page, 'body')).toHaveAttribute('aria-pressed', 'true');
+    await expect(burst).toHaveCount(0);
+    await goal(page, 'wildcard').click();
+    await expect(burst).toHaveCount(1);
+    await expect(burst).toHaveAttribute('data-kind', 'confetti');
+    await expect(page.locator('.today-burst')).toHaveAttribute('aria-hidden', 'true');
+    // Taking one back plays nothing; getting all three in again plays it again.
+    await goal(page, 'wildcard').click();
+    await expect(goal(page, 'wildcard')).toHaveAttribute('aria-pressed', 'false');
+    await goal(page, 'wildcard').click();
+    await expect(goal(page, 'wildcard')).toHaveAttribute('aria-pressed', 'true');
+    await expect(burst).toHaveCount(1);
+    await saved(page);
+  });
+
   test('Screen time moves in 15-minute steps and scores against par', async ({ page, request }) => {
     const { season, player } = await onToday(page, request);
     await logScreen(page, '15 minutes more', 4);

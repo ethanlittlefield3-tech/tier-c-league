@@ -544,3 +544,51 @@
   height: 44px;
   font-size: 16px;
 }
+
+/* Folded, the post box is just its two buttons. */
+.feed-compose[data-open='false'] {
+  padding: 8px;
+}
+
+.feed-compose[data-open='false'] .feed-switch {
+  margin-bottom: 0;
+  background: transparent;
+  gap: 8px;
+  padding: 0;
+}
+
+.feed-compose[data-open='false'] .feed-switch button {
+  background: rgba(196, 216, 255, 0.1);
+  color: var(--ink);
+}
+
+/* Compact posts: more of the feed on a screen. */
+.feed-post {
+  padding: 8px 12px;
+  border-radius: 14px;
+}
+
+.feed-who {
+  font-size: 14px;
+}
+
+.feed-text {
+  margin: 3px 0 6px;
+  font-size: 14.5px;
+  line-height: 1.35;
+}
+
+.feed-react {
+  min-height: 30px;
+  padding: 0 8px;
+  font-size: 12.5px;
+}
+
+.feed-link {
+  min-height: 30px;
+  font-size: 12.5px;
+}
+
+.feed-car {
+  width: 30px;
+}

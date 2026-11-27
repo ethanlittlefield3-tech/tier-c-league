@@ -28,7 +28,7 @@ export const RANK_NAMES: Record<Rank, string> = {
 export const RANK_WEEKS = 4;
 
 /** Each rank's floor, as a share of the most a week can score. Bronze is anything below 0. */
-const FLOORS: readonly [Rank, number][] = [
+export const RANK_FLOORS: readonly [Rank, number][] = [
   ['grandChamp', 0.8],
   ['champion', 0.65],
   ['diamond', 0.5],
@@ -48,7 +48,7 @@ export function maxWeekPoints(par: number): number {
 /** The rank for a share of the most a week can score. */
 function rankOfShare(share: number): Rank {
   // A floor is "or more": 31.2 of 39 is exactly 80%, which division alone puts a hair under.
-  return FLOORS.find(([, floor]) => share + 1e-9 >= floor)?.[0] ?? 'bronze';
+  return RANK_FLOORS.find(([, floor]) => share + 1e-9 >= floor)?.[0] ?? 'bronze';
 }
 
 /** A rank from weekly points, oldest first, before bonuses, at one par. `null` with no final week yet. */

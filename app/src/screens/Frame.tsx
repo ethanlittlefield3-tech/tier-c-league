@@ -4,7 +4,7 @@ import { CarArt } from '../art/car/CarArt.tsx';
 import type { CarParts } from '../art/car/draw.ts';
 import { TAB_ICONS, type Tab } from '../art/tabIcons.tsx';
 import type { Me } from '../data/identity.ts';
-import { useDoc } from '../data/hooks.ts';
+import { useDoc, useLatest, useNow } from '../data/hooks.ts';
 import { loadData } from '../data/load.ts';
 import { AuditLog } from './AuditLog.tsx';
 import { Ideas } from './Ideas.tsx';
@@ -21,6 +21,8 @@ import { Profile } from './Profile.tsx';
 import { Today } from './Today.tsx';
 import { Wheel } from './Wheel.tsx';
 import { useOnline } from '../ui/online.ts';
+import { SPOTS, isNew, lastSeen, markSeen, newestFromOthers, startSeen, type Spot } from '../ui/seen.ts';
+import { useOpponent } from './useOpponent.ts';
 import './frame.css';
 
 interface TabInfo {
@@ -38,6 +40,97 @@ const TABS: readonly TabInfo[] = [
   { id: 'league', label: 'League', soon: 'Standings, the schedule, results, the playoff bracket and the trophy case.' },
   { id: 'garage', label: 'Garage', soon: 'Build your car on a turntable. Every badge you earn unlocks a part.' },
 ];
+
+/** What a tab's dot tells a screen reader. */
+const DOT_NOTES: Record<Spot, string> = {
+  feed: 'New posts since you last looked',
+  match: 'Your opponent has logged since you last looked',
+  league: 'New results since you last looked',
+  garage: 'New parts since you last looked',
+};
+
+const seenNow = (me: Me) => Object.fromEntries(SPOTS.map((spot) => [spot, lastSeen(me, spot)])) as Record<Spot, number | null>;
+
+/**
+ * The five tabs along the bottom. A dot marks what is new since you last
+ * opened a tab: a post by someone else on Feed, your opponent logging today on
+ * Match, a week going final on League, a part unlocked in the Garage. Opening
+ * the tab clears it.
+ */
+function Tabs(props: { me: Me; tab: Tab; onTab: (tab: Tab) => void; newestBadge: number | null }) {
+  const now = useNow();
+  const opponent = useOpponent(props.me, now);
+  const wall = useLatest<{ by?: string; at?: number; deleted?: boolean }>(`leagues/${props.me.league}/wall`, 'at', 6);
+  const finals = useLatest<{ finalAt?: number }>(opponent.seasonPath ? `${opponent.seasonPath}/weeks` : null, 'finalAt', 1);
+  const theirDay = useDoc<{ updatedAt?: number }>(opponent.seasonPath && opponent.id && opponent.today ? `${opponent.seasonPath}/days/${opponent.id}_${opponent.today}` : null);
+  const [seen, setSeen] = useState(() => {
+    startSeen(props.me);
+    return seenNow(props.me);
+  });
+  const latest: Record<Spot, number | null | undefined> = {
+    feed: newestFromOthers(wall.docs.map((post) => post.data), props.me.player),
+    match: theirDay.data?.updatedAt,
+    league: finals.docs[0]?.data.finalAt,
+    garage: props.newestBadge,
+  };
+  const shown = useRef(latest);
+  shown.current = latest;
+  // Opening a tab counts as a look, and so does leaving it. A look covers
+  // everything it could show, even if this phone's clock runs a little behind.
+  useEffect(() => {
+    const spot = SPOTS.find((each) => each === props.tab);
+    if (!spot) return undefined;
+    const look = () => markSeen(props.me, spot, Math.max(Date.now(), shown.current[spot] ?? 0));
+    look();
+    setSeen(seenNow(props.me));
+    return look;
+  }, [props.tab]);
+  const dotted = (tab: Tab) => tab !== props.tab && tab in latest && isNew(latest[tab as Spot], seen[tab as Spot]);
+  return (
+    <nav class="frame-tabs" aria-label="Main">
+      {TABS.map((info) => {
+        const Icon = TAB_ICONS[info.id];
+        const dot = dotted(info.id);
+        return (
+          <button
+            class="frame-tab"
+            type="button"
+            aria-current={info.id === props.tab ? 'page' : undefined}
+            aria-describedby={dot ? `frame-dot-${info.id}` : undefined}
+            onClick={() => props.onTab(info.id)}
+          >
+            <Icon />
+            <span>{info.label}</span>
+            {dot && <span class="frame-dot" aria-hidden="true" />}
+          </button>
+        );
+      })}
+      {SPOTS.map((spot) => (
+        <span id={`frame-dot-${spot}`} hidden>
+          {DOT_NOTES[spot]}
+        </span>
+      ))}
+    </nav>
+  );
+}
+
+/**
+ * True once the page has scrolled down a little, so the header can shrink to
+ * a slim bar. It switches back near the top, a little lower than it switched
+ * on, so it never flickers at the edge.
+ */
+function useScrolled(): boolean {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const page = document.getElementById('app');
+    if (!page) return undefined;
+    const look = () => setScrolled((was) => (was ? page.scrollTop > 12 : page.scrollTop > 56));
+    look();
+    page.addEventListener('scroll', look, { passive: true });
+    return () => page.removeEventListener('scroll', look);
+  }, []);
+  return scrolled;
+}
 
 /** A tab's page until it is built: what it will hold. */
 function Soon(props: { tab: TabInfo }) {
@@ -73,7 +166,10 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
   const online = useOnline();
   // A rank change since this phone last showed one plays its scene as the app
   // opens: decided on the server's answer, not the phone's own older copy.
-  const profile = useDoc<{ rank?: Rank; rankHistory?: RankEntry[]; car?: Partial<CarParts>; stickers?: Partial<Record<string, { until?: unknown }>> }>(`leagues/${props.me.league}/players/${props.me.player}`);
+  const profile = useDoc<{ rank?: Rank; rankHistory?: RankEntry[]; car?: Partial<CarParts>; stickers?: Partial<Record<string, { until?: unknown }>>; badges?: Record<string, { at?: number }> }>(
+    `leagues/${props.me.league}/players/${props.me.player}`,
+  );
+  const scrolled = useScrolled();
   const settled = !profile.loading && !profile.fromCache;
   const rankScene = useRankScene(props.me.league, props.me.player, settled ? (profile.data?.rank ?? null) : undefined);
   // A week you won, since this phone last looked, plays your goal explosion first.
@@ -162,9 +258,10 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
   }
 
   const current = TABS.find((info) => info.id === tab) ?? TABS[0]!;
+  const newestBadge = Math.max(0, ...Object.values(profile.data?.badges ?? {}).map((badge) => badge.at ?? 0)) || null;
   return (
     <div class="frame" data-tab={tab}>
-      <header class="frame-top">
+      <header class="frame-top" data-compact={scrolled}>
         <div class="frame-titles">
           <p class="frame-league">{props.me.leagueName}</p>
           <h1 class="frame-title">{current.label}</h1>
@@ -182,17 +279,7 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
       <main class="frame-body" key={tab}>
         {tab === 'today' ? <Today me={props.me} onDraft={() => setDraftOpen(true)} onWheel={() => setWheelOpen(true)} /> : tab === 'match' ? <Match me={props.me} /> : tab === 'feed' ? <Feed me={props.me} onWheel={() => setWheelOpen(true)} /> : tab === 'league' ? <League me={props.me} onPlayer={setDayOf} /> : tab === 'garage' ? <Garage me={props.me} /> : <Soon tab={current} />}
       </main>
-      <nav class="frame-tabs" aria-label="Main">
-        {TABS.map((info) => {
-          const Icon = TAB_ICONS[info.id];
-          return (
-            <button class="frame-tab" type="button" aria-current={info.id === tab ? 'page' : undefined} onClick={() => setTab(info.id)}>
-              <Icon />
-              <span>{info.label}</span>
-            </button>
-          );
-        })}
-      </nav>
+      <Tabs me={props.me} tab={tab} onTab={setTab} newestBadge={newestBadge} />
     </div>
   );
 }

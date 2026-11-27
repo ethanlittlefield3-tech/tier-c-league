@@ -124,4 +124,59 @@ test.describe('The Garage', () => {
     await page.getByRole('button', { name: 'Watch it', exact: true }).click();
     await expect(page.locator('.garage-boom[data-kind="stock"]')).toHaveCount(1);
   });
+
+  test('Each slot says how many of its parts are yours, and lists yours first, with what is still locked below', async ({ page, request }) => {
+    const league = await createLeague(request);
+    await enterAsCommish(page, league);
+    await openGarage(page);
+    await page.getByRole('group', { name: 'Part' }).getByRole('button', { name: 'Decal', exact: true }).click();
+    await expect(page.locator('.garage-have')).toHaveText(/^\d+ of \d+ decals unlocked$/);
+    const order = await page.locator('.garage-parts .garage-part').evaluateAll((parts) => parts.map((part) => part.getAttribute('data-locked')));
+    expect(order).toContain('true');
+    expect(order.indexOf('true')).toBeGreaterThan(0);
+    expect(order.slice(order.indexOf('true'))).not.toContain('false');
+  });
+
+  test('A part unlocked since your last visit is marked New, first in its list, with a dot on its slot and on the Garage tab; it is not new on the next visit', async ({ page, request }) => {
+    const league = await createLeague(request);
+    const profile = `leagues/${league.id}/players/${league.commish}`;
+    // A badge from before this phone's first look is not new.
+    await patchDoc(request, profile, { badges: { hatTrick: { at: new Date(Date.now() - 3_600_000), season: 's1' } } });
+    await enterAsCommish(page, league);
+    await openGarage(page);
+    const slots = page.getByRole('group', { name: 'Part' });
+    await slots.getByRole('button', { name: 'Decal', exact: true }).click();
+    await expect(page.getByRole('list', { name: 'Decal' }).getByRole('button', { name: 'Flame decal', exact: true })).toBeVisible();
+    await expect(page.locator('.garage-new')).toHaveCount(0);
+    await slots.getByRole('button', { name: 'Paint', exact: true }).click();
+    const have = page.locator('.garage-have');
+    const before = Number((await have.textContent())?.split(' ')[0]);
+
+    // Away from the Garage, Perfect Week is earned.
+    await tab(page, 'Today').click();
+    const now = await page.evaluate(() => Date.now());
+    await patchDoc(request, profile, { badges: { perfectWeek: { at: new Date(now + 1000), season: 's1' } } });
+    await expect(tab(page, 'Garage')).toHaveAccessibleDescription('New parts since you last looked');
+    await expect(tab(page, 'Garage').locator('.frame-dot')).toBeVisible();
+
+    await openGarage(page);
+    await expect(tab(page, 'Garage').locator('.frame-dot')).toHaveCount(0);
+    await expect(slots.getByRole('button', { name: 'Paint', exact: true })).toHaveAccessibleDescription('New since your last visit');
+    await expect(slots.getByRole('button', { name: 'Topper', exact: true })).toHaveAccessibleDescription('New since your last visit');
+    await expect(slots.getByRole('button', { name: 'Decal', exact: true }).locator('.garage-dot')).toHaveCount(0);
+    await slots.getByRole('button', { name: 'Paint', exact: true }).click();
+    const first = page.getByRole('list', { name: 'Paint' }).getByRole('button').first();
+    await expect(first).toHaveAccessibleName('Chrome finish');
+    await expect(first).toHaveAccessibleDescription('New since your last visit');
+    await expect(first.locator('.garage-new')).toHaveText('New');
+    await expect(have).toHaveText(new RegExp(`^${before + 1} of \\d+ paints unlocked$`));
+
+    // Next visit, it is one of yours like the rest.
+    await tab(page, 'Today').click();
+    await expect(tab(page, 'Garage').locator('.frame-dot')).toHaveCount(0);
+    await openGarage(page);
+    await slots.getByRole('button', { name: 'Paint', exact: true }).click();
+    await expect(page.locator('.garage-new')).toHaveCount(0);
+    await expect(page.getByRole('list', { name: 'Paint' }).getByRole('button', { name: 'Chrome finish', exact: true })).toBeVisible();
+  });
 });

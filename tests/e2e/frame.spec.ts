@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { enter, expectInApp, joinAs, tapToEnter } from './helpers.ts';
+import { enter, enterAsCommish, expectInApp, joinAs, tapToEnter } from './helpers.ts';
 import { createLeague, listIds, readDoc, type TestLeague } from './league.ts';
 
 const button = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
@@ -34,7 +34,7 @@ test.describe('The app frame', () => {
     await expect(page.getByRole('heading', { name: 'Feed', level: 1 })).toBeVisible();
     await expect(tab(page, 'Feed')).toHaveAttribute('aria-current', 'page');
     await expect(tab(page, 'Today')).not.toHaveAttribute('aria-current', 'page');
-    await expect(page.getByRole('button', { name: 'Talk trash' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Trash talk' })).toBeVisible();
   });
 
   test('Every tab is built: none says it is coming soon', async ({ page, request }) => {
@@ -59,6 +59,20 @@ test.describe('The app frame', () => {
       expect(box!.width).toBeGreaterThanOrEqual(44);
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(screen.width);
+  });
+
+  test('Scrolling down shrinks the header to a slim bar, and it grows back at the top', async ({ page, request }) => {
+    const league = await createLeague(request);
+    await enterAsCommish(page, league);
+    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Garage', exact: true }).click();
+    const header = page.locator('.frame-top');
+    await expect(header).toHaveAttribute('data-compact', 'false');
+    await page.locator('#app').evaluate((app) => app.scrollTo(0, 400));
+    await expect(header).toHaveAttribute('data-compact', 'true');
+    await expect(page.getByRole('heading', { level: 1, name: 'Garage' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Your profile, Alex', exact: true })).toBeVisible();
+    await page.locator('#app').evaluate((app) => app.scrollTo(0, 0));
+    await expect(header).toHaveAttribute('data-compact', 'false');
   });
 
   test('Your car, top right, is your icon, and opens your Profile', async ({ page, request }) => {

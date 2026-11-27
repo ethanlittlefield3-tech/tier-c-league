@@ -26,7 +26,7 @@ function BadgeRow(props: { badge: Badge; earned: boolean }) {
 }
 
 /**
- * Your badges, in Profile (SCOPE.md, "Garage and achievements"): what you
+ * Your badges, on League's Badges tab (SCOPE.md, "Garage and achievements"): what you
  * have earned, and what each unlocks for your car. The rest are listed
  * underneath, so everyone knows how to earn them.
  */
@@ -35,8 +35,7 @@ export function BadgesPanel(props: { earned: Record<string, unknown> }) {
   const rest = BADGES.filter((badge) => props.earned[badge.id] === undefined);
   const groups = Object.keys(BADGE_GROUPS) as BadgeGroup[];
   return (
-    <section class="panel badges" aria-labelledby="profile-badges-title">
-      <h2 id="profile-badges-title">Badges</h2>
+    <div class="badges">
       <p class="panel-text">
         {mine.length} of {BADGES.length} earned. Each one unlocks a part for your car.
       </p>
@@ -64,6 +63,6 @@ export function BadgesPanel(props: { earned: Record<string, unknown> }) {
           );
         })}
       </details>
-    </section>
+    </div>
   );
 }

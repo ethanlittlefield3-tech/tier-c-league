@@ -7,6 +7,8 @@ import { useAll, useDoc, useNow } from '../data/hooks.ts';
 import { Picks } from './Picks.tsx';
 import { PlayerCard } from './PlayerCard.tsx';
 import { Schedule, type WeekDoc } from './Schedule.tsx';
+import { BadgesPanel } from './Badges.tsx';
+import { RankPanel, type RankEntry } from './Rank.tsx';
 import { Playoffs } from './Playoffs.tsx';
 import { TrophyCase } from './Trophies.tsx';
 import type { Me } from '../data/identity.ts';
@@ -56,7 +58,9 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
   const bracket = useDoc<{ champion?: string | null }>(seasonPath ? `${seasonPath}/playoffs/bracket` : null);
   const standings = useDoc<{ rows?: Row[] }>(seasonPath ? `${seasonPath}/standings/current` : null);
   const weeks = useAll<WeekDoc>(seasonPath ? `${seasonPath}/weeks` : null);
-  const players = useAll<{ displayName?: string; car?: Partial<CarParts>; rivals?: Record<string, Rival>; stickers?: Partial<Record<string, { until?: unknown }>>; rank?: Rank; badges?: Record<string, unknown> }>(`${leaguePath}/players`);
+  const players = useAll<{ displayName?: string; car?: Partial<CarParts>; rivals?: Record<string, Rival>; stickers?: Partial<Record<string, { until?: unknown }>>; rank?: Rank; rankHistory?: RankEntry[]; badges?: Record<string, unknown> }>(`${leaguePath}/players`);
+  // The standings panel's tabs: the table, your badges, and your rank.
+  const [view, setView] = useState<'standings' | 'badges' | 'rank'>('standings');
   const [card, setCard] = useState<string | null>(null);
   const dates = season.data ? seasonDates(now, season.data) : null;
   const today = useDoc<{ period: string; date: string; week: number; dayIndex: number }>(seasonPath && dates ? `${seasonPath}/calendar/${dates.today}` : null);
@@ -92,7 +96,22 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
   return (
     <div class="league">
       <section class="panel league-panel" aria-labelledby="standings-title">
-        <h2 id="standings-title">Standings</h2>
+        <h2 id="standings-title" class="sr-only">Standings</h2>
+        <div class="league-tabs" role="tablist" aria-label="Standings, badges and rank">
+          {(
+            [
+              ['standings', 'Standings'],
+              ['badges', 'Badges'],
+              ['rank', 'Rank'],
+            ] as const
+          ).map(([id, label]) => (
+            <button key={id} type="button" role="tab" id={`league-tab-${id}`} aria-selected={view === id} aria-controls={`league-view-${id}`} onClick={() => setView(id)}>
+              {label}
+            </button>
+          ))}
+        </div>
+        {view === 'standings' && (
+          <div role="tabpanel" id="league-view-standings" aria-labelledby="league-tab-standings">
         {rows.length === 0 ? (
           <>
             <p class="panel-text">The standings start once Week 1 settles, at noon on the Monday after it ends.</p>
@@ -155,7 +174,19 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
             </tbody>
           </table>
         )}
-        <p class="panel-text">Season Points are every point you score, plus 5 for a 1v1 win and 2 for a draw, and group play's bonuses.</p>
+            <p class="panel-text">Season Points are every point you score, plus 5 for a 1v1 win and 2 for a draw, and group play's bonuses.</p>
+          </div>
+        )}
+        {view === 'badges' && (
+          <div role="tabpanel" id="league-view-badges" aria-labelledby="league-tab-badges">
+            <BadgesPanel earned={lookOf(props.me.player)?.badges ?? {}} />
+          </div>
+        )}
+        {view === 'rank' && (
+          <div role="tabpanel" id="league-view-rank" aria-labelledby="league-tab-rank">
+            <RankPanel rank={lookOf(props.me.player)?.rank ?? null} history={lookOf(props.me.player)?.rankHistory ?? []} />
+          </div>
+        )}
       </section>
 
       <Schedule weeks={weeks.docs} currentPeriod={today.data?.period ?? null} me={props.me.player} name={name} />

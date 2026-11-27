@@ -224,20 +224,25 @@ function dayLabel(at: number, now: number): string {
   return new Date(at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
-/** One place to post: a switch between talking to this week's opponent and a brag for everyone. */
+/**
+ * One place to post: just two buttons, Trash talk and Brag, until you tap
+ * one, which opens it. Tapping the open one again folds it away.
+ */
 function Compose(props: { me: Me; opponent: { id: string | null; name: string; vsHouse: boolean }; saved: string[] }) {
-  const [mode, setMode] = useState<'talk' | 'brag'>('talk');
+  const [mode, setMode] = useState<'talk' | 'brag' | null>(null);
+  const pick = (next: 'talk' | 'brag') => setMode(mode === next ? null : next);
   return (
-    <section class="panel feed-compose" aria-label="Post to the feed">
-      <div class="feed-switch" role="group" aria-label="Talk or brag">
-        <button type="button" aria-pressed={mode === 'talk'} onClick={() => setMode('talk')}>
-          {props.opponent.id ? `Talk to ${props.opponent.name}` : 'Talk trash'}
+    <section class="panel feed-compose" data-open={mode !== null} aria-label="Post to the feed">
+      <div class="feed-switch" role="group" aria-label="Trash talk or brag">
+        <button type="button" aria-pressed={mode === 'talk'} aria-expanded={mode === 'talk'} onClick={() => pick('talk')}>
+          {props.opponent.id ? `Trash talk ${props.opponent.name}` : 'Trash talk'}
         </button>
-        <button type="button" aria-pressed={mode === 'brag'} onClick={() => setMode('brag')}>
+        <button type="button" aria-pressed={mode === 'brag'} aria-expanded={mode === 'brag'} onClick={() => pick('brag')}>
           Brag
         </button>
       </div>
-      {mode === 'talk' ? <Talk me={props.me} opponent={props.opponent} saved={props.saved} /> : <Brag me={props.me} />}
+      {mode === 'talk' && <Talk me={props.me} opponent={props.opponent} saved={props.saved} />}
+      {mode === 'brag' && <Brag me={props.me} />}
     </section>
   );
 }

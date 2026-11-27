@@ -429,3 +429,34 @@
   font-size: 15px;
   color: var(--ink-soft);
 }
+
+/* The standings panel's tabs: the table, your badges, your rank. */
+.league-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(196, 216, 255, 0.08);
+}
+
+.league-tabs button {
+  flex: 1;
+  min-height: 40px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-soft);
+  font: 800 14px/1 var(--body);
+  cursor: pointer;
+}
+
+.league-tabs button[aria-selected='true'] {
+  background: var(--blue);
+  color: #ffffff;
+}
+
+.league-tabs button:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}

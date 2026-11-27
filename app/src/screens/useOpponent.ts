@@ -5,8 +5,9 @@ import { seasonDates } from '../today/model.ts';
 /**
  * Who you face this week, for the wall: just the opponent's id and name.
  * Before kickoff it is your Week 1 rival. `vsHouse` is true in a bye week.
+ * Also the season's path and today's date, for the tab dots.
  */
-export function useOpponent(me: Me, now: number): { id: string | null; name: string; vsHouse: boolean } {
+export function useOpponent(me: Me, now: number): { id: string | null; name: string; vsHouse: boolean; seasonPath: string | null; today: string | null } {
   const leaguePath = `leagues/${me.league}`;
   const league = useDoc<{ season?: string | null }>(leaguePath);
   const seasonId = league.data?.season ?? null;
@@ -20,5 +21,5 @@ export function useOpponent(me: Me, now: number): { id: string | null; name: str
   const targets = week.data?.targets?.[me.player] ?? [];
   const id = targets.find((target) => target !== 'HOUSE') ?? null;
   const profile = useDoc<{ displayName?: string }>(id ? `${leaguePath}/players/${id}` : null);
-  return { id, name: profile.data?.displayName ?? 'your opponent', vsHouse: targets.includes('HOUSE') };
+  return { id, name: profile.data?.displayName ?? 'your opponent', vsHouse: targets.includes('HOUSE'), seasonPath, today: dates?.today ?? null };
 }
