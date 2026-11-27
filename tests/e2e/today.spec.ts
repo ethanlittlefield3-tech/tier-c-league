@@ -58,12 +58,13 @@ test.describe('Today', () => {
     await expect(page.getByRole('button', { name: /^Today ·/ })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  test('Tapping a goal marks it hit, adds 1, and saves it', async ({ page, request }) => {
+  test('Tapping a goal marks it hit, adds 1, and saves it; the breakdown and "Saved" share one quiet line', async ({ page, request }) => {
     const { season, player } = await onToday(page, request);
     await goal(page, 'mind').click();
     await expect(goal(page, 'mind')).toHaveAttribute('aria-pressed', 'true');
     await expect(total(page)).toContainText('+1');
     await saved(page);
+    await expect(page.locator('.today-line')).toHaveText(/^Goals \+1.*Saved$/);
     const day = await dayDoc(request, season, player, season.today);
     expect(day).toMatchObject({ player, date: season.today, goals: { mind: true, body: false, wildcard: false }, screenMinutes: null, beers: 0 });
 

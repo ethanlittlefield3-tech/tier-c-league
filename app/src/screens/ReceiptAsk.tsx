@@ -24,7 +24,8 @@ type Log = { goals?: Partial<Record<Lane, boolean>>; screenMinutes?: number | nu
 /**
  * Receipts? (SCOPE.md, "Receipts on demand"): ask your opponent to prove a
  * square they claimed, today or yesterday until it locks at noon. 3 requests
- * a week.
+ * a week. On Game Day it folds into a slim bar until tapped (the commish's
+ * request, 2026-11-27); from League, it is open.
  */
 export function ReceiptAsk(props: {
   me: Me;
@@ -37,7 +38,10 @@ export function ReceiptAsk(props: {
   logs: Record<string, Log>;
   theirReceipts: Asked[];
   myRequests: Asked[];
+  /** Start folded into a slim bar that opens on a tap. */
+  folded?: boolean;
 }) {
+  const [open, setOpen] = useState(!props.folded);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<{ error: boolean; text: string } | null>(null);
   // `url` is null while loading, and 'gone' once the photo has been deleted after 14 days.
@@ -70,12 +74,34 @@ export function ReceiptAsk(props: {
 
   const label = (square: Square, log: Log) => (square === 'screen' ? `Screen time · ${formatScreenShort(log.screenMinutes ?? null)}` : `${NAME[square]} · ${props.them.goals[square]?.text ?? 'goal'}`);
 
+  const left = thisPeriod ? 3 - used(thisPeriod).length : null;
+  const waiting = props.theirReceipts.filter((found) => receiptStatus({ ...found.data, now: props.now }) === 'pending').length;
+
   return (
-    <section class="panel receipts" aria-labelledby="receipts-title">
-      <h2 id="receipts-title">Receipts?</h2>
-      <p class="panel-text">
-        Ask {props.them.name} to prove a square. {thisPeriod ? `You have ${3 - used(thisPeriod).length} of 3 requests left this week.` : ''}
-      </p>
+    <section class="panel receipts" data-folded={props.folded ? !open : undefined} aria-labelledby="receipts-title">
+      {props.folded ? (
+        <h2 class="receipts-head">
+          <button type="button" class="receipts-bar" aria-expanded={open} aria-controls="receipts-body" onClick={() => setOpen(!open)}>
+            <span id="receipts-title">Receipts?</span>
+            <span class="receipts-bar-note">
+              Ask {props.them.name} for proof{left !== null ? ` \u00b7 ${left} of 3 left` : ''}
+              {waiting > 0 ? ` \u00b7 ${waiting} waiting` : ''}
+            </span>
+            <svg class="receipts-chevron" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+        </h2>
+      ) : (
+        <>
+          <h2 id="receipts-title">Receipts?</h2>
+          <p class="panel-text">
+            Ask {props.them.name} to prove a square. {left !== null ? `You have ${left} of 3 requests left this week.` : ''}
+          </p>
+        </>
+      )}
+      {open && (
+      <div id="receipts-body" class="receipts-body">
       {props.days.length === 0 && <p class="panel-text">No day is open to receipts right now.</p>}
       {props.days.map((day) => {
         const log = props.logs[day.date] ?? {};
@@ -149,6 +175,8 @@ export function ReceiptAsk(props: {
             Close
           </button>
         </figure>
+      )}
+      </div>
       )}
     </section>
   );

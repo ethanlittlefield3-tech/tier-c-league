@@ -104,4 +104,10 @@ describe('Who leads this week', () => {
     expect(leadText({ points: 9, beers: 3 }, { points: 9, beers: 1 }, 'Maya')).toBe('Level on points: Maya leads on fewer beers');
     expect(leadText({ points: 9, beers: 1 }, { points: 9, beers: 1 }, 'Maya')).toBe('All square');
   });
+
+  it("Against The House, which scores the league's average, the gap shows to a tenth", async () => {
+    const { leadText } = await import('../src/screens/WeekStrip.tsx');
+    expect(leadText({ points: 15, beers: 0 }, { points: 12.4, beers: 1.5 }, 'The House')).toBe('You lead by 2.6');
+    expect(leadText({ points: 10, beers: 0 }, { points: 32 / 3, beers: 1 }, 'The House')).toBe('The House leads by 0.7');
+  });
 });

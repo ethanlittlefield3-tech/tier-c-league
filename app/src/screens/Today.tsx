@@ -4,6 +4,7 @@ import type { CarParts } from '../art/car/draw.ts';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { LANES, daysLeft, holidayOf, isPairedMode, nemesisOf, recordText, rumbleWeek, type Rival, type WeekInput, paceSoFar, receiptFixes, receiptStatus, recentDailyAverage, weekPeriod, winMeter, type BountyTarget, type Lane, type Square, type StoredReceipt, type WeekMode } from '@tcl/engine';
 import { GoalExplosion } from '../art/car/GoalExplosion.tsx';
+import { BeerMug, ScreenClock } from '../art/dayIcons.tsx';
 import { useAll, useDoc, useNow, usePeek, useWhere } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
@@ -27,7 +28,7 @@ import { playerWeek, type KitPlay } from '../today/week.ts';
 import { PowerUps, type Play } from './PowerUps.tsx';
 import { ReceiptsDue } from './ReceiptsDue.tsx';
 import { DropShotFloors } from './GroupBoard.tsx';
-import { GroupBoardFor, MatchExtras, OpponentDay } from './Match.tsx';
+import { GroupBoardFor, HouseScoreboard, MatchExtras, OpponentDay } from './Match.tsx';
 import { Scoreboard, boostOf } from './Scoreboard.tsx';
 import { usePicksDue } from './usePicksDue.ts';
 import './picks.css';
@@ -120,19 +121,6 @@ function sheetDate(date: string): string {
   const [year, month, day] = date.split('-').map(Number) as [number, number, number];
   const weekday = (new Date(Date.UTC(year, month - 1, day)).getUTCDay() + 6) % 7;
   return `${(DAY_NAMES[weekday] ?? '').slice(0, 3)} ${shortDate(date)}`;
-}
-
-/** A mug of beer, drawn for this app. */
-function BeerMug() {
-  return (
-    <svg class="beer-mug" viewBox="0 0 40 40" aria-hidden="true">
-      <path d="M9 13h19v20a3 3 0 0 1-3 3H12a3 3 0 0 1-3-3Z" fill="#ffb53a" stroke="#050914" stroke-width="2" />
-      <path d="M28 17h3a4 4 0 0 1 4 4v4a4 4 0 0 1-4 4h-3" fill="none" stroke="#050914" stroke-width="5" />
-      <path d="M28 17h3a4 4 0 0 1 4 4v4a4 4 0 0 1-4 4h-3" fill="none" stroke="#ffb53a" stroke-width="2.5" />
-      <path d="M13 18v13M18.5 18v13M24 18v13" stroke="#ffd98a" stroke-width="2" stroke-linecap="round" />
-      <path d="M8 13a4 4 0 0 1 4-5 5 5 0 0 1 8-2 4.5 4.5 0 0 1 7 3 3.5 3.5 0 0 1 1 4Z" fill="#ffffff" stroke="#050914" stroke-width="2" stroke-linejoin="round" />
-    </svg>
-  );
 }
 
 /** A card in place of the day, when there is no day to log. */
@@ -527,16 +515,20 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
         <GroupBoardFor me={props.me} />
       ) : (
         weekDays.length > 0 &&
-        todayCal.data && (
-          <WeekStrip
+        todayCal.data &&
+        (targets.includes('HOUSE') ? (
+          <HouseScoreboard
+            me={props.me}
             week={todayCal.data.week}
+            mode={mode === 'rumble' || mode === 'dropShot' ? mode : null}
+            status={daysLeft(myWeek.cells) > 0 ? `${weekdayShort(dates.today)} \u00b7 Live` : 'Week over'}
+            mine={{ name: 'You', car: myProfile.data?.car, stickers: myProfile.data?.stickers, points: myWeek.totals.points, beers: myWeek.totals.beers, boost: boostOf(myWeek.cells) }}
+            myAverage={recentDailyAverage(myProfile.data?.rankHistory) ?? paceSoFar(myWeek.cells)}
             cells={myWeek.cells}
-            me={myWeek.totals}
-            opponent={theirWeek ? { ...theirWeek.totals, name: opponentProfile.data?.displayName ?? 'Your opponent' } : null}
-            vsHouse={targets.includes('HOUSE')}
-            meter={meter}
           />
-        )
+        ) : (
+          <WeekStrip week={todayCal.data.week} cells={myWeek.cells} me={myWeek.totals} />
+        ))
       )}
 
       {holiday && <EventBanner event={holiday} today={showing === 'today'} />}
@@ -620,10 +612,7 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
             onClick={() => setSheetOpen(true)}
           >
             <span class="check-mark check-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <circle cx="12" cy="13" r="7.5" fill="none" stroke="currentColor" stroke-width="2" />
-                <path d="M12 9v4l2.5 2M10 3h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-              </svg>
+              <ScreenClock />
             </span>
             <span class="check-text">
               <small>Screen time {'\u00b7'} everyone</small>
@@ -658,7 +647,12 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
           </section>
         </div>
         <div class="today-total">
-          {breakdown(shown) && <p class="today-breakdown">{breakdown(shown)}</p>}
+          <p class="today-line">
+            <span class="today-breakdown">{breakdown(shown)}</span>
+            <span class={error ? 'today-status today-status-error' : 'today-status'} role="status">
+              {status}
+            </span>
+          </p>
           {ruleOneHere ? (
             <p class="today-kit">
               <ItemIcon item="ruleOne" />
@@ -692,9 +686,6 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
           Get a signal before then, or what you logged on this phone won't count.
         </p>
       )}
-      <p class={error ? 'today-status today-status-error' : 'today-status'} role="status">
-        {status}
-      </p>
 
 
       {period && week.docs.length > 0 && (

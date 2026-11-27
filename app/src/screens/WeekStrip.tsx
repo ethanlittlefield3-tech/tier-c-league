@@ -10,19 +10,19 @@ export interface WeekSide {
   beers: number;
 }
 
-/** Who leads, in plain words. A tie on points goes to fewer beers (SCOPE.md, "Winning a 1v1"). */
+/**
+ * Who leads, in plain words. A tie on points goes to fewer beers (SCOPE.md,
+ * "Winning a 1v1"). The House scores an average, so a gap shows to a tenth.
+ */
 export function leadText(me: WeekSide, them: WeekSide, name: string): string {
-  if (me.points > them.points) return `You lead by ${me.points - them.points}`;
-  if (them.points > me.points) return `${name} leads by ${them.points - me.points}`;
+  const gap = Math.round((me.points - them.points) * 10) / 10;
+  if (gap > 0) return `You lead by ${gap}`;
+  if (gap < 0) return `${name} leads by ${-gap}`;
   if (me.beers < them.beers) return 'Level on points: you lead on fewer beers';
   if (them.beers < me.beers) return `Level on points: ${name} leads on fewer beers`;
   return 'All square';
 }
 
-/**
- * This week at a glance: the score against your opponent, and your seven days
- * (SCOPE.md, Today: "week bars").
- */
 /** What the win meter says: who's favored, or that it's too close to call. */
 export function meterText(share: number, name: string): string {
   const percent = (value: number) => `${Math.round(value * 100)}%`;
@@ -31,57 +31,18 @@ export function meterText(share: number, name: string): string {
   return 'Too close to call';
 }
 
-export function WeekStrip(props: {
-  week: number;
-  cells: DayCell[];
-  me: WeekSide;
-  opponent: (WeekSide & { name: string }) | null;
-  vsHouse: boolean;
-  /** Your share of the win meter, or null once no day is left. */
-  meter?: number | null;
-}) {
+/**
+ * This week before the schedule is out: your points so far and your seven
+ * days. With an opponent, or The House, Game Day shows the scoreboard instead.
+ */
+export function WeekStrip(props: { week: number; cells: DayCell[]; me: WeekSide }) {
   return (
     <section class="week" aria-labelledby="week-title">
       <div class="week-score">
         <h2 id="week-title">Week {props.week}</h2>
-        {props.opponent ? (
-          <>
-            <p class="week-vs">
-              <span class="week-side week-me">
-                You <strong>{formatPoints(props.me.points)}</strong>
-              </span>
-              <span class="week-versus">vs</span>
-              <span class="week-side week-them">
-                {props.opponent.name} <strong>{formatPoints(props.opponent.points)}</strong>
-              </span>
-            </p>
-            <p class="week-lead">{leadText(props.me, props.opponent, props.opponent.name)}</p>
-            {props.meter !== null && props.meter !== undefined && (
-              <div
-                class="meter"
-                role="meter"
-                aria-label="Win meter"
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={Math.round(props.meter * 100)}
-                aria-valuetext={meterText(props.meter, props.opponent.name)}
-              >
-                <div class="meter-bar" aria-hidden="true">
-                  <span class="meter-me" style={{ transform: `scaleX(${props.meter.toFixed(3)})` }} />
-                </div>
-                <p class="meter-text" aria-hidden="true">
-                  {meterText(props.meter, props.opponent.name)}
-                </p>
-              </div>
-            )}
-          </>
-        ) : props.vsHouse ? (
-          <p class="week-lead">You face The House this week. It scores the league's average.</p>
-        ) : (
-          <p class="week-lead">
-            You <strong>{formatPoints(props.me.points)}</strong> so far. Your opponent shows here once the schedule is out.
-          </p>
-        )}
+        <p class="week-lead">
+          You <strong>{formatPoints(props.me.points)}</strong> so far. Your opponent shows here once the schedule is out.
+        </p>
       </div>
       <ol class="week-days">
         {props.cells.map((cell) => (

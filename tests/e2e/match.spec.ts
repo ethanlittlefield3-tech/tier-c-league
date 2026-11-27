@@ -4,7 +4,7 @@ import { addPlayer, createLeague, futureDays, patchDoc, readDoc, setGoals, setTa
 
 const button = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
 const tab = (page: Page, name: string) => page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name, exact: true });
-const theirGoal = (page: Page, lane: string) => page.locator(`.match-squares .square-goal[data-lane="${lane}"]`);
+const theirGoal = (page: Page, lane: string) => page.locator(`.match-check .check-goal[data-lane="${lane}"]`);
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const dayName = (date: string) => DAYS[(new Date(`${date}T12:00:00Z`).getUTCDay() + 6) % 7]!;
 
@@ -25,7 +25,7 @@ async function onMatch(page: Page, request: APIRequestContext, opponent: 'maya' 
   }
   await button(page, "I've saved it").click();
   await expect(page.getByRole('heading', { name: 'Game Day', level: 1 })).toBeVisible();
-  return { league, season, me, dayA, period };
+  return { league, season, me, dayA, dayB, period };
 }
 
 /** Opens Maya's day from her car on the scoreboard. */
@@ -124,7 +124,7 @@ test.describe('Game Day: your matchup', () => {
     await expect(car('orange')).toHaveAttribute('data-car', 'bruiser racingRed');
   });
 
-  test("A tap on your opponent's car opens their day, live, in team orange: their goals, screen time and beers; Close goes back", async ({ page, request }) => {
+  test("A tap on your opponent's car opens their day, live, in team orange, as checklist rows like yours: their goals, screen time and beers; Close goes back", async ({ page, request }) => {
     const { season } = await onMatch(page, request);
     await theirDay(page);
     await expect(theirGoal(page, 'mind')).toContainText('Study 1 hour');
@@ -132,7 +132,8 @@ test.describe('Game Day: your matchup', () => {
     await mayaLogs(request, season.path, season.today, { goals: { mind: true, body: true, wildcard: false }, screenMinutes: 60, beers: 1 });
     await expect(theirGoal(page, 'mind')).toHaveAttribute('data-state', 'hit');
     await expect(theirGoal(page, 'body')).toHaveAttribute('data-state', 'hit');
-    await expect(page.locator('.match-squares .square-screen .square-value')).toHaveText('1 h');
+    await expect(page.locator('.match-check .check-screen .square-value')).toHaveText('1 h');
+    await expect(page.locator('.match-check .check-screen .square-chip')).toHaveText('+2 pts');
     await expect(page.locator('.match-beers')).toContainText('1');
     // 2 goals, 1 hour at par 3 is +2, and 1 beer: +3.
     await expect(page.locator('.match-day-total')).toContainText('+3');
@@ -175,10 +176,29 @@ test.describe('Game Day: your matchup', () => {
     await expect(page.locator('.match-secret')).toHaveText(`Your Demolition: ${dayName(dayA)}, their Body goal. Only you can see it until noon the next day.`);
   });
 
-  test('Against The House, Game Day says so', async ({ page, request }) => {
+  test("Against The House, Game Day shows the scoreboard, with The House scoring the league's average and no day to open", async ({ page, request }) => {
     await onMatch(page, request, 'house');
-    await expect(page.locator('.week-lead')).toHaveText("You face The House this week. It scores the league's average.");
-    await expect(page.locator('.board')).toHaveCount(0);
+    const house = page.locator('.board-side[data-house="true"]');
+    await expect(house.locator('.board-name')).toHaveText('The House');
+    await expect(page.getByRole('img', { name: "The House scores the league's average" })).toBeVisible();
+    await expect(page.locator('.board-record')).toHaveText("The House scores the league's average this week.");
+    await expect(page.getByRole('button', { name: /^See .*'s day/ })).toHaveCount(0);
+    await expect(page.locator('.board-side[data-team="blue"] .board-name')).toHaveText('You');
+  });
+
+  test("The House's score is everyone else's average so far: the players not facing The House", async ({ page, request }) => {
+    const { league, season, me, dayB, period } = await onMatch(page, request, 'house');
+    await addPlayer(request, league, season, 'sam', 'Sam');
+    await writeDoc(request, `${season.path}/kit/${period}_sam_rest`, { player: 'sam', item: 'rest', period, date: dayB, at: new Date() });
+    await writeDoc(request, `${season.path}/weeks/${period}`, { week: 2, mode: 'regular', pairs: [{ a: me, b: 'HOUSE' }, { a: 'maya', b: 'sam' }], targets: { [me]: ['HOUSE'], maya: ['sam'], sam: ['maya'] } });
+    // Today Maya scores +4 (3 goals, 1 hour at par 3 is +2, 1 beer) and Sam 0 (1 goal, 4 hours is −1). The
+    // days this week that have already locked are no-shows for all three of us, so The House, at their
+    // average, is 2 ahead of you.
+    await mayaLogs(request, season.path, season.today, { goals: { mind: true, body: true, wildcard: true }, screenMinutes: 60, beers: 1 });
+    await writeDoc(request, `${season.path}/days/sam_${season.today}`, { player: 'sam', date: season.today, goals: { mind: true, body: false, wildcard: false }, screenMinutes: 240, beers: 0, firstAt: new Date(), updatedAt: new Date() });
+    await expect(page.locator('.board .week-lead')).toHaveText('The House leads by 2');
+    const points = async (side: string) => Number((await page.locator(`${side} .board-points`).textContent())!.replace('−', '-'));
+    expect(await points('.board-side[data-house="true"]')).toBe((await points('.board-side[data-team="blue"]')) + 2);
   });
 
   test('Before the schedule is out, Game Day waits for an opponent', async ({ page, request }) => {

@@ -96,6 +96,7 @@ test.describe('This week', () => {
 
   test('Against The House, the scoreboard says so', async ({ page, request }) => {
     await inWeek(page, request, 'house');
-    await expect(page.locator('.week-lead')).toHaveText("You face The House this week. It scores the league's average.");
+    await expect(page.locator('.board-side[data-house="true"] .board-name')).toHaveText('The House');
+    await expect(page.locator('.board-record')).toHaveText("The House scores the league's average this week.");
   });
 });

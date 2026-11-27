@@ -1,4 +1,4 @@
-import { HOUSE, MODE_BLURBS, MODE_NAMES, RULES, alleyBonus, alleyRace, bountyProgress, bountyText, decideSides, defaultBounty, dropShotFloors, kitForMode, tilesBroken, winMeter, type DayCell, type GroupMode } from '@tcl/engine';
+import { HOUSE, MODE_NAMES, RULES, alleyBonus, alleyRace, bountyProgress, bountyText, decideSides, defaultBounty, dropShotFloors, kitForMode, tilesBroken, winMeter, type DayCell, type GroupMode } from '@tcl/engine';
 import { CarArt } from '../art/car/CarArt.tsx';
 import { ItemIcon } from '../art/itemIcons.tsx';
 import { ordinal, score } from '../group/words.ts';
@@ -384,7 +384,6 @@ export function GroupBoard(props: BoardProps & { status?: string }) {
         </h2>
         {props.status && <span class="board-status">{props.status}</span>}
       </div>
-      <p class="group-blurb">{MODE_BLURBS[mode]}</p>
       {you && <p class="group-you">{you}</p>}
       {mode === 'teamWeek' && <TeamBoard {...props} />}
       {mode === 'twoVTwo' && <DuoBoard {...props} />}

@@ -369,11 +369,17 @@
   color: var(--ink-soft);
 }
 
-.today-breakdown {
+/* One quiet line under the checklist: the day's breakdown, then "Saved"
+   (the commish's request, 2026-11-27). */
+.today-line {
   margin: 6px 0 0;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.4;
   color: var(--ink-soft);
+}
+
+.today-breakdown:not(:empty) + .today-status:not(:empty)::before {
+  content: ' \00b7  ';
 }
 
 .today-kit {
@@ -386,11 +392,7 @@
 }
 
 .today-status {
-  min-height: 18px;
-  margin: 0;
-  font-size: 13px;
-  text-align: center;
-  color: var(--ink-soft);
+  color: rgba(167, 181, 217, 0.8);
 }
 
 .today-status-error {

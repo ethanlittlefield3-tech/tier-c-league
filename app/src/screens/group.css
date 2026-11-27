@@ -283,13 +283,6 @@
    with their cars, today's dials and week points, and the week's power-ups
    as icons. */
 
-.board.group-board .group-blurb {
-  margin: 2px 0 0;
-  font-size: 12.5px;
-  line-height: 1.4;
-  color: var(--ink-soft);
-}
-
 .group-you {
   margin: 8px 0 0;
   padding: 6px 10px;

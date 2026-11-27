@@ -142,35 +142,6 @@
   color: var(--gold);
 }
 
-/* Read-only: no pointer, and a hit goal in team orange. */
-.match-squares .square {
-  cursor: default;
-}
-
-.match-squares .square-goal[data-state='hit'] {
-  border-color: #ffc47c;
-  background: linear-gradient(180deg, #f08a2a, #c85f0c);
-  box-shadow: 0 8px 24px rgba(255, 138, 30, 0.3);
-}
-
-.match-squares .square-goal[data-state='hit'] .goal-mark-hit {
-  color: #c85f0c;
-}
-
-.match-squares .square-chip.match-chip {
-  background: #c85f0c;
-}
-
-.match-beers {
-  margin: 0;
-  font-size: 15px;
-  color: var(--ink-soft);
-}
-
-.match-beers strong {
-  color: #ffc47c;
-}
-
 .match-week h2 {
   margin: 0 0 10px;
 }
@@ -316,39 +287,6 @@
   margin-top: 12px;
 }
 
-/* Tighter tiles on Match: their day at a glance, all four in a short block. */
-.match .match-squares {
-  gap: 8px;
-}
-
-.match .match-squares .square {
-  min-height: 84px;
-  padding: 10px 12px;
-  border-radius: 16px;
-}
-
-.match .match-squares .square-goal-text {
-  font-size: 15px;
-}
-
-.match .match-squares .square-label {
-  font-size: 13px;
-}
-
-.match .match-squares .square-value {
-  font-size: 24px;
-}
-
-.match .match-squares .square-screen[data-logged='false'] .square-value {
-  font-size: 18px;
-}
-
-.match .match-squares .goal-mark {
-  width: 28px;
-  height: 28px;
-  border-width: 2px;
-}
-
 .match-poke {
   display: flex;
   flex-direction: column;
@@ -424,4 +362,31 @@
 
 .match-day .match-their-week {
   margin-top: 12px;
+}
+
+/* Their day, as checklist rows like yours. */
+.match-check {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.match-check .check-row {
+  min-height: 54px;
+}
+
+/* Their goals light up in team orange. */
+.match-check .check-goal[data-state='hit']::before,
+.match-check .check-goal[data-state='swappedIn']::before {
+  background: linear-gradient(90deg, rgba(255, 138, 30, 0.34), rgba(255, 138, 30, 0.05));
+}
+
+.match-check .check-mark .goal-mark-hit {
+  background: var(--orange);
+  box-shadow: 0 0 14px rgba(255, 138, 30, 0.6);
+}
+
+.match-check .check-chip {
+  background: rgba(255, 138, 30, 0.3);
+  color: #ffdcb8;
 }

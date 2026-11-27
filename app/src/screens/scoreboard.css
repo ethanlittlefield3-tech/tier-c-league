@@ -352,3 +352,27 @@ button.board-side:focus-visible {
   border-top-right-radius: 0;
   background: linear-gradient(180deg, #0f1b42, #0a1330);
 }
+
+/* Against The House: a little house in a car's place, and AVG where a dial
+   would be, since The House scores the league's average. */
+.board-house {
+  display: block;
+  width: 72px;
+  height: 44px;
+}
+
+.boost.boost-house {
+  box-sizing: border-box;
+  border: 2px dashed rgba(255, 207, 63, 0.55);
+  border-radius: 50%;
+}
+
+.boost-house .boost-value {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--gold);
+}
+
+.board-side[data-house='true'] .board-points {
+  color: var(--gold);
+}

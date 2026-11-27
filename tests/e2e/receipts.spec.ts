@@ -63,15 +63,26 @@ async function asked(request: APIRequestContext, setup: Setup, square: string, o
   return id;
 }
 
+/** Game Day's Receipts? bar, tapped open. */
+async function openReceipts(page: Page) {
+  const receipts = page.getByRole('region', { name: 'Receipts?' });
+  await receipts.getByRole('button', { name: /^Receipts\?/ }).click();
+  return receipts;
+}
+
 test.describe('Receipts', () => {
-  test('Ask your opponent for receipts; they prove it with a photo, and you can see it', async ({ page, request, browser }) => {
+  test('Ask your opponent for receipts from a slim bar on Game Day; they prove it with a photo, and you can see it', async ({ page, request, browser }) => {
     const setup = await rivals(page, request, browser);
     const { league, season, riley } = setup;
     const receipts = page.getByRole('region', { name: 'Receipts?' });
-    await expect(receipts).toContainText('You have 3 of 3 requests left this week.');
+    const bar = receipts.getByRole('button', { name: /^Receipts\?/ });
+    await expect(bar).toContainText('Ask Riley for proof · 3 of 3 left');
+    await expect(bar).toHaveAttribute('aria-expanded', 'false');
+    await expect(receipts.getByRole('button', { name: 'Ask for receipts: Body · 10k steps' })).toHaveCount(0);
+    await bar.click();
     await receipts.getByRole('button', { name: 'Ask for receipts: Body · 10k steps' }).click();
     await expect(receipts.getByRole('status')).toContainText('Asked. Riley has');
-    await expect(receipts).toContainText('You have 2 of 3 requests left this week.');
+    await expect(bar).toContainText('Ask Riley for proof · 2 of 3 left · 1 waiting');
     const id = `${riley.player}_${season.today}_body`;
     await expect.poll(async () => (await readDoc(request, `${season.path}/receipts/${id}`))?.by).toBe(league.commish);
 
@@ -99,7 +110,7 @@ test.describe('Receipts', () => {
     await card.getByRole('button', { name: 'Back down' }).click();
     await expect(setup.riley.phone.locator('.today-fix')).toHaveText('Receipts: backed down, body voided');
     await expect.poll(async () => typeof (await readDoc(request, `${setup.season.path}/receipts/${id}`))?.backedDownAt).toBe('string');
-    await expect(page.getByRole('region', { name: 'Receipts?' }).locator('.receipt-row[data-status="backedDown"]')).toContainText('Backed down: voided');
+    await expect((await openReceipts(page)).locator('.receipt-row[data-status="backedDown"]')).toContainText('Backed down: voided');
     await setup.riley.phone.context().close();
   });
 
@@ -108,7 +119,7 @@ test.describe('Receipts', () => {
     await asked(request, setup, 'body', { deadline: new Date(Date.now() - 60_000) });
     await expect(setup.riley.phone.locator('.today-fix')).toHaveText('Receipts: no proof in time, body voided, −1');
     await expect(setup.riley.phone.getByRole('group', { name: 'Receipts on your Body goal' })).toHaveCount(0);
-    await expect(page.getByRole('region', { name: 'Receipts?' }).locator('.receipt-row[data-status="failed"]')).toContainText('No proof: voided, −1');
+    await expect((await openReceipts(page)).locator('.receipt-row[data-status="failed"]')).toContainText('No proof: voided, −1');
     await setup.riley.phone.context().close();
   });
 
@@ -127,7 +138,8 @@ test.describe('Receipts', () => {
     await asked(request, setup, 'wildcard', { slot: 2 });
     await asked(request, setup, 'screen', { slot: 3 });
     const receipts = page.getByRole('region', { name: 'Receipts?' });
-    await expect(receipts).toContainText('You have 0 of 3 requests left this week.');
+    await expect(receipts).toContainText('0 of 3 left');
+    await openReceipts(page);
     await expect(receipts.getByRole('button', { name: 'Ask for receipts: Body · 10k steps' })).toBeDisabled();
     await expect(receipts).toContainText('You have used your 3 requests this week.');
     await setup.riley.phone.context().close();

@@ -1,5 +1,6 @@
+import { BeerMug, ScreenClock } from '../art/dayIcons.tsx';
 import { ItemIcon } from '../art/itemIcons.tsx';
-import { LANES, REMATCH_LAST_DAY, RUMBLE_NAMES, isPairedMode, rematchFor, weekPeriod, type Lane } from '@tcl/engine';
+import { HOUSE, LANES, REMATCH_LAST_DAY, RUMBLE_NAMES, daysLeft, houseSide, isPairedMode, paceSoFar, rematchFor, weekPeriod, winMeter, type GroupMode, type Lane } from '@tcl/engine';
 import { createPortal } from 'preact/compat';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { useDoc, useNow, useWhere } from '../data/hooks.ts';
@@ -13,10 +14,25 @@ import { useMatchup } from './useMatchup.ts';
 import { GroupBoard } from './GroupBoard.tsx';
 import { useWeekBoard } from './useWeekBoard.ts';
 import { ReceiptAsk } from './ReceiptAsk.tsx';
+import { Scoreboard, type BoardSide } from './Scoreboard.tsx';
 import './match.css';
 import './sheet.css';
 
 const LANE_NAMES: Record<Lane, string> = { mind: 'Mind', body: 'Body', wildcard: 'Wildcard' };
+
+/** A goal that counts: hit, or counted by a power-up. */
+const GOAL_IN = new Set<string>(['hit', 'boosted', 'swappedIn']);
+
+/** A goal's state, in words, for a screen reader. */
+const STATE_WORDS: Record<string, string> = {
+  hit: 'hit',
+  boosted: 'counted by Full Boost',
+  swappedIn: 'counted by Swap',
+  swappedOut: 'swapped away',
+  booted: 'booted',
+  rest: 'rest day',
+  missed: 'not hit yet',
+};
 const LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -196,6 +212,58 @@ export function GroupBoardFor(props: { me: Me }) {
 }
 
 /**
+ * Against The House (the commish's request, 2026-11-27): the scoreboard, as
+ * in any 1v1, with The House scoring the league's average as it stands:
+ * everyone's week except yours and anyone else's facing The House, the same
+ * way the weekly job settles it. Its pace for the win meter is the average of
+ * theirs.
+ */
+export function HouseScoreboard(props: {
+  me: Me;
+  week: number;
+  mode: GroupMode | null;
+  status: string;
+  mine: BoardSide;
+  /** Your recent daily average, for the win meter. */
+  myAverage: number | null;
+  cells: DayCell[];
+}) {
+  const now = useNow();
+  const match = useMatchup(props.me, now);
+  const board = useWeekBoard({
+    seasonPath: match.seasonPath,
+    leaguePath: `leagues/${props.me.league}`,
+    week: match.weekDoc ?? null,
+    days: match.days,
+    par: match.season?.par ?? 3,
+    now,
+    timeZone: match.season?.timeZone ?? 'America/New_York',
+    today: match.dates?.today,
+  });
+  const facing = new Set([props.me.player, ...(match.weekDoc?.pairs ?? []).flatMap((pair) => (pair.a === HOUSE ? [pair.b] : pair.b === HOUSE ? [pair.a] : []))]);
+  const others = board.ids.filter((id) => !facing.has(id));
+  const house = houseSide(others.map((id) => board.totals[id] ?? { points: 0, beers: 0 }));
+  const paces = others.map((id) => paceSoFar(board.weeks[id] ?? [])).filter((pace): pace is number => pace !== null);
+  const left = daysLeft(props.cells);
+  const meter =
+    left > 0
+      ? winMeter({ points: props.mine.points, dailyAverage: props.myAverage }, { points: house.points, dailyAverage: paces.length > 0 ? paces.reduce((sum, pace) => sum + pace, 0) / paces.length : null }, left)
+      : null;
+  return (
+    <Scoreboard
+      week={props.week}
+      mode={props.mode}
+      status={props.status}
+      me={props.mine}
+      them={{ name: 'The House', car: null, points: house.points, beers: house.beers, boost: { goals: 0, screen: false, rest: false }, nemesis: false, house: true }}
+      meter={meter}
+      record="The House scores the league's average this week."
+      cells={props.cells}
+    />
+  );
+}
+
+/**
  * Your opponent's day (the commish's request, 2026-11-27): a tap on their car
  * on Game Day's scoreboard opens it over the page. Their goals, screen time,
  * beers and day total, live, and anything played on the day.
@@ -258,26 +326,55 @@ export function OpponentDay(props: { me: Me; onClose: () => void }) {
                 </span>
               )}
             </div>
-            <div class="squares match-squares">
-              <div class="square square-screen" data-logged={log?.screenMinutes !== null && log?.screenMinutes !== undefined}>
-                <span class="square-label">Screen time</span>
-                <span class="square-value">{formatScreenShort(log?.screenMinutes ?? null)}</span>
-                {score && log && log.screenMinutes !== null && <span class="square-chip match-chip">{pointsChip(score.screen.points)}</span>}
-              </div>
+            {/* Their day as checklist rows, like your own on Game Day. */}
+            <ul class="checklist-rows match-check" aria-label={`${name}'s goals, screen time and beers today`}>
               {LANES.map((lane) => {
                 const state = score?.goals[lane] ?? 'missed';
                 const text = them.goals[lane]?.text ?? '';
                 return (
-                  <div class="square square-goal" data-lane={lane} data-state={state} aria-label={`${name}'s ${LANE_NAMES[lane]}: ${text || 'not set yet'}, ${state}`}>
-                    <span class="square-goal-text">{text || 'Set at the draft'}</span>
-                    <GoalMark state={state} />
-                  </div>
+                  <li class="check-row check-goal" data-lane={lane} data-state={state}>
+                    <span class="check-mark">
+                      <GoalMark state={state} />
+                    </span>
+                    <span class="check-text">
+                      <small>{LANE_NAMES[lane]}</small>
+                      <span class="check-goal-text">{text || 'Set at the draft'}</span>
+                    </span>
+                    {GOAL_IN.has(state) && <span class="check-chip" aria-hidden="true">+1</span>}
+                    <span class="sr-only">, {STATE_WORDS[state] ?? state}</span>
+                  </li>
                 );
               })}
-            </div>
-            <p class="match-beers">
-              Beers today: <strong>{log?.beers ?? 0}</strong>
-            </p>
+              <li class="check-row check-screen" data-logged={log?.screenMinutes !== null && log?.screenMinutes !== undefined}>
+                <span class="check-mark check-icon" aria-hidden="true">
+                  <ScreenClock />
+                </span>
+                <span class="check-text">
+                  <small>Screen time</small>
+                  <span class="square-value">{formatScreenShort(log?.screenMinutes ?? null)}</span>
+                </span>
+                {score && log && log.screenMinutes !== null && log.screenMinutes !== undefined && (
+                  <span class="square-chip" data-sign={score.screen.points > 0 ? 'up' : score.screen.points < 0 ? 'down' : 'zero'}>
+                    {pointsChip(score.screen.points)}
+                  </span>
+                )}
+              </li>
+              <li class="check-row check-beers">
+                <span class="check-mark check-icon" aria-hidden="true">
+                  <BeerMug />
+                </span>
+                <span class="check-text">
+                  <small>Beers</small>
+                  <span class="square-value match-beers">{log?.beers ?? 0}</span>
+                </span>
+                {(log?.beers ?? 0) > 0 && (
+                  <span class="square-chip" data-sign="down">
+                    {'\u2212'}
+                    {log?.beers ?? 0}
+                  </span>
+                )}
+              </li>
+            </ul>
             {match.theirWeek && (
               <div class="match-their-week">
                 <div class="match-letters" aria-hidden="true">
@@ -328,6 +425,7 @@ export function MatchExtras(props: { me: Me }) {
         logs={match.theirLogs}
         theirReceipts={match.theirReceipts}
         myRequests={match.myRequests}
+        folded
       />
       {rematch}
       {match.myDemolition && (

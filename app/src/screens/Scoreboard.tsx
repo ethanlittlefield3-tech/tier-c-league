@@ -1,6 +1,7 @@
 import { MODE_NAMES, RUMBLE_NAMES, type GroupMode, type RumbleItem } from '@tcl/engine';
 import { CarArt } from '../art/car/CarArt.tsx';
 import type { CarParts } from '../art/car/draw.ts';
+import { HouseArt } from '../art/dayIcons.tsx';
 import { ItemIcon } from '../art/itemIcons.tsx';
 import { formatPoints } from '../today/model.ts';
 import type { DayCell } from '../today/week.ts';
@@ -101,6 +102,9 @@ export const dayWords = (boost: Boost) => `${boost.rest ? 'rest day' : `${boost.
 
 const goalsWords = dayWords;
 
+/** The House scores an average, shown to a tenth. */
+const tenth = (points: number) => Math.round(points * 10) / 10;
+
 /**
  * Game Day's scoreboard (the commish's request, 2026-11-27): you against your
  * opponent this week, each car with its boost gauge for today, the win meter
@@ -115,13 +119,14 @@ export function Scoreboard(props: {
   /** "Thu · Live", or "Week over". */
   status: string;
   me: BoardSide;
-  them: BoardSide & { nemesis: boolean };
+  /** Your opponent, or The House, which scores the league's average and has no day of its own to open. */
+  them: BoardSide & { nemesis: boolean; house?: boolean };
   /** Your share of the win meter, or null once no day is left. */
   meter: number | null;
   /** "All-time against Maya: 1–0–2". */
   record: string;
   cells: DayCell[];
-  onOpponent: () => void;
+  onOpponent?: () => void;
 }) {
   const { me, them } = props;
   return (
@@ -143,6 +148,20 @@ export function Scoreboard(props: {
         <span class="board-vs" aria-hidden="true">
           VS
         </span>
+        {them.house ? (
+          <div class="board-side week-side week-them" data-team="orange" data-house="true">
+            <span class="board-car" data-team="orange">
+              <HouseArt class="board-car-art board-house" />
+            </span>
+            <span class="boost boost-house" role="img" aria-label="The House scores the league's average">
+              <span class="boost-value" aria-hidden="true">
+                AVG
+              </span>
+            </span>
+            <span class="board-name">The House</span>
+            <strong class="board-points">{formatPoints(tenth(them.points))}</strong>
+          </div>
+        ) : (
         <button type="button" class="board-side week-side week-them" data-team="orange" aria-label={`See ${them.name}'s day: ${formatPoints(them.points)} this week, ${goalsWords(them.boost)}`} onClick={props.onOpponent}>
           <BoardCar side={them} team="orange" item={props.items?.theirs} />
           <DayDial boost={them.boost} label={`${them.name}'s day: ${goalsWords(them.boost)}`} />
@@ -162,6 +181,7 @@ export function Scoreboard(props: {
             Tap for their day
           </span>
         </button>
+        )}
       </div>
       <div class="board-lead">
         <p class="week-lead">{leadText(me, them, them.name)}</p>
