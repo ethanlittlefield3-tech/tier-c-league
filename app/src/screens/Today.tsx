@@ -26,7 +26,7 @@ import { playerWeek, type KitPlay } from '../today/week.ts';
 import { PowerUps, type Play } from './PowerUps.tsx';
 import { ReceiptsDue } from './ReceiptsDue.tsx';
 import { GroupBoardFor, MatchExtras, OpponentDay } from './Match.tsx';
-import { Scoreboard } from './Scoreboard.tsx';
+import { Scoreboard, type Boost } from './Scoreboard.tsx';
 import { usePicksDue } from './usePicksDue.ts';
 import './picks.css';
 import type { Draw } from './Wheel.tsx';
@@ -87,12 +87,15 @@ const EMPTY: DayEntry = { goals: { mind: false, body: false, wildcard: false }, 
 /** A goal that counts: hit, or counted by a power-up. */
 const GOAL_IN = new Set<string>(['hit', 'boosted', 'swappedIn']);
 
-/** Today's boost on the scoreboard: goals in today, 0 to 3, or a rest day. */
-function boostOf(cells: readonly { today: boolean; rest: boolean; score: { goals: Record<string, string> } | null }[]): number | 'rest' {
+/** Today's dial on the scoreboard: the goals in, whether screen time is logged, and a rest day. */
+function boostOf(cells: readonly { today: boolean; rest: boolean; score: { goals: Record<string, string>; screen: { state: string } } | null }[]): Boost {
   const today = cells.find((cell) => cell.today);
-  if (!today) return 0;
-  if (today.rest) return 'rest';
-  return Object.values(today.score?.goals ?? {}).filter((state) => GOAL_IN.has(state)).length;
+  if (!today) return { goals: 0, screen: false, rest: false };
+  return {
+    goals: today.rest ? 0 : Object.values(today.score?.goals ?? {}).filter((state) => GOAL_IN.has(state)).length,
+    screen: today.score?.screen.state === 'logged',
+    rest: today.rest,
+  };
 }
 
 /** "Thu", for the scoreboard. */
@@ -376,6 +379,11 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
   const score = scoreOf(entry);
   /** All three goals are in, on a goal day. */
   const allIn = (logged: DayEntry) => !restDay && LANES.every((lane) => GOAL_IN.has(scoreOf(logged).goals[lane]));
+  /** The dial is full: all three goals in and screen time logged. Filling it plays your goal explosion. */
+  const dialFull = (logged: DayEntry) => allIn(logged) && logged.screenMinutes !== null;
+  const celebrate = (from: DayEntry, next: DayEntry) => {
+    if (editable && !dialFull(from) && dialFull(next)) setBurst((count) => count + 1);
+  };
 
   /** What the next save starts from: this phone's last save for the day, if the screen hasn't caught up with it yet. */
   const base = (): DayEntry => (lastSaved.current && lastSaved.current.date === date ? lastSaved.current.entry : entry);
@@ -394,7 +402,7 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
   const toggleGoal = (lane: Lane) => {
     const from = base();
     const next = { ...from, goals: { ...from.goals, [lane]: !from.goals[lane] } };
-    if (editable && !allIn(from) && allIn(next)) setBurst((count) => count + 1);
+    celebrate(from, next);
     save(next);
   };
   const setBeers = (change: number) => {
@@ -753,7 +761,10 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
           par={season.data.par}
           editable={editable || screenFix}
           onSave={(minutes) => {
-            save({ ...base(), screenMinutes: minutes }, true);
+            const from = base();
+            const next = { ...from, screenMinutes: minutes };
+            celebrate(from, next);
+            save(next, true);
             closeSheet();
           }}
           onClose={closeSheet}

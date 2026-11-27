@@ -73,15 +73,16 @@ test.describe('Game Day: your matchup', () => {
     }
   });
 
-  test("Each car's boost gauge fills a slice for every goal in today, yours and your opponent's, live", async ({ page, request }) => {
+  test("Each car's dial fills a slice for every goal in today and one for screen time, yours and your opponent's, live", async ({ page, request }) => {
     const { season } = await onMatch(page, request);
-    await expect(page.getByRole('img', { name: 'Your boost: 0 of 3 goals in today' })).toBeVisible();
-    await expect(page.getByRole('img', { name: "Maya's boost: 0 of 3 goals in today" })).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Your day: 0 of 3 goals in, screen time not logged' })).toBeVisible();
+    await expect(page.getByRole('img', { name: "Maya's day: 0 of 3 goals in, screen time not logged" })).toBeVisible();
     await page.locator('.check-goal[data-lane="mind"]').click();
-    await expect(page.getByRole('img', { name: 'Your boost: 1 of 3 goals in today' })).toBeVisible();
-    await mayaLogs(request, season.path, season.today, { goals: { mind: true, body: true, wildcard: false }, screenMinutes: null, beers: 0 });
-    await expect(page.getByRole('img', { name: "Maya's boost: 2 of 3 goals in today" })).toBeVisible();
-    await expect(page.locator('.week-them .boost-slice[data-on="true"]')).toHaveCount(2);
+    await expect(page.getByRole('img', { name: 'Your day: 1 of 3 goals in, screen time not logged' })).toBeVisible();
+    await mayaLogs(request, season.path, season.today, { goals: { mind: true, body: true, wildcard: false }, screenMinutes: 60, beers: 0 });
+    await expect(page.getByRole('img', { name: "Maya's day: 2 of 3 goals in, screen time logged" })).toBeVisible();
+    await expect(page.locator('.week-them .boost-slice[data-on="true"]')).toHaveCount(3);
+    await expect(page.locator('.week-them .boost-value')).toHaveText('75');
   });
 
   test('You can poke your opponent once a day, and the league keeps it', async ({ page, request }) => {

@@ -1,6 +1,7 @@
 import { createPortal } from 'preact/compat';
 import { useEffect, useRef } from 'preact/hooks';
 import { RANK_NAMES, recordText, type Rank, type Rival } from '@tcl/engine';
+import { BackdropArt } from '../art/car/BackdropArt.tsx';
 import { backdropOf } from '../art/car/backdrops.ts';
 import { CarArt } from '../art/car/CarArt.tsx';
 import type { CarParts } from '../art/car/draw.ts';
@@ -53,6 +54,7 @@ export function PlayerCard(props: { stats: PlayerStats; onDay?: () => void; onCl
       <section class="sheet player-card" role="dialog" aria-modal="true" aria-labelledby="player-card-title">
         {/* The showroom: their car, big, on the backdrop they picked. */}
         <div class="player-card-showroom backdrop" data-backdrop={backdropOf(stats.car?.backdrop)} role="img" aria-label={`${stats.name}'s car`}>
+          <BackdropArt kind={backdropOf(stats.car?.backdrop)} />
           <CarArt parts={stats.car} stickers={stats.stickers} rank={stats.rank} class="player-card-showroom-car" />
         </div>
         <div class="player-card-head">

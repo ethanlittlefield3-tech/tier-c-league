@@ -232,7 +232,7 @@ service cloud.firestore {
           && owns(car.wheels, {'stock': '', 'glazed': 'century', 'muscle': 'gymRat', 'square': 'wildOne', 'turf': 'touchGrass', 'frost': 'dryMonth', 'tpRoll': 'brewmaster', 'pepperoni': 'happyHour', 'lightning': 'comeback', 'forceField': 'untouchable'}, badges)
           && owns(car.boost, {'team': '', 'gold': 'ironStreak', 'ghost': 'ghost', 'phoenix': 'recoveringAddict', 'suds': 'dryWeek', 'gasLeak': 'happyHour', 'hotStreak': 'winStreak', 'skullSmoke': 'demolisher', 'jet': 'airMail', 'twinTurbo': 'dynamicDuo', 'cashCannon': 'bountyHunter', 'spotlight': 'showOff'}, badges)
           && owns(car.get('trail', 'stream'), {'stream': '', 'sparks': '', 'rings': '', 'flames': ''}, badges)
-          && owns(car.get('backdrop', 'garage'), {'garage': '', 'stadium': '', 'tunnel': '', 'podium': 'champion'}, badges)
+          && owns(car.get('backdrop', 'garage'), {'garage': '', 'stadium': '', 'tunnel': '', 'rooftop': '', 'canyon': '', 'snowfield': '', 'arcade': '', 'podium': 'champion'}, badges)
           && owns(car.explosion, {'stock': '', 'inferno': 'century', 'zen': 'monkMode', 'foam': 'brewmaster', 'stinkBomb': 'brewmaster', 'shockwave': 'blowout', 'thunder': 'rumbleRoyale', 'quackAttack': 'teamPlayer', 'shatter': 'floorBreaker', 'skullRain': 'floorBreaker', 'confetti': 'fanFavorite', 'golden': 'champion', 'cashSplash': 'mvpMagnet'}, badges)
           && owns(car.topper, {'none': '', 'auraRing': 'perfectWeek', 'brainrotBeanie': 'earlyBird', 'clogBuster': 'cleanSheet', 'roadCone': 'designatedDriver', 'partyHat': 'happyHour', 'broom': 'sweep', 'megaphone': 'trashTalker', 'rubberChicken': 'fanFavorite', 'crystalBall': 'prophet', 'trophy': 'champion', 'dunceCap': 'bustCollector', 'whistle': 'commish'}, badges);
       }

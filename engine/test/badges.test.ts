@@ -46,12 +46,12 @@ describe('The badge catalog', () => {
     expect(parts).toEqual(expect.arrayContaining(['Trophy topper', 'Golden goal explosion', 'Gold finish', "Champion's podium", 'Flame decal', 'Brick']));
   });
 
-  it('The starter kit also has an accent in any of the 15 paints (or none), 4 finishes, 4 boost trail styles and 3 backdrops', () => {
+  it('The starter kit also has an accent in any of the 15 paints (or none), 4 finishes, 4 boost trail styles and 7 backdrops (ruling R27)', () => {
     const slot = (name: string) => STARTER_PARTS.filter((part) => part.slot === name).map((part) => part.id);
     expect(slot('paint2')).toEqual(['none', ...slot('paint')]);
     expect(slot('finish')).toEqual(['gloss', 'matte', 'metallic', 'pearl']);
     expect(slot('trail')).toEqual(['stream', 'sparks', 'rings', 'flames']);
-    expect(slot('backdrop')).toEqual(['garage', 'stadium', 'tunnel']);
+    expect(slot('backdrop')).toEqual(['garage', 'stadium', 'tunnel', 'rooftop', 'canyon', 'snowfield', 'arcade']);
   });
 
   it('An accent can go on any of 5 places, alone or together', () => {

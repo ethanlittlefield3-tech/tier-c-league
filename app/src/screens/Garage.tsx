@@ -1,5 +1,6 @@
 import { useRef, useState } from 'preact/hooks';
 import { ACCENT_ZONES, BADGES, RANK_DECAL, STARTER_PARTS, seasonDecals, type Badge, type Part, type PartSlot } from '@tcl/engine';
+import { BackdropArt } from '../art/car/BackdropArt.tsx';
 import { backdropOf } from '../art/car/backdrops.ts';
 import { CarArt } from '../art/car/CarArt.tsx';
 import { BurstIcon, GoalExplosion } from '../art/car/GoalExplosion.tsx';
@@ -138,7 +139,11 @@ export function Garage(props: { me: Me }) {
   // A locked part, tried on: it shows on the car, but is never saved.
   const [trying, setTrying] = useState<{ part: Part; why: string } | null>(null);
   const car = trying ? { ...mine, [trying.part.slot]: trying.part.id } : mine;
-  const [slot, setSlot] = useState<PartSlot>('body');
+  // The build sheet: one slot open at a time, or none, as it opens: your whole
+  // build at a glance (the commish's request, 2026-11-27).
+  const [slot, setSlot] = useState<PartSlot | null>(null);
+  // One step back: the car as it was before your last change.
+  const [undo, setUndo] = useState<CarParts | null>(null);
   const [note, setNote] = useState<{ error: boolean; text: string } | null>(null);
   const [boom, setBoom] = useState(0);
   const earned = profile.data?.badges ?? {};
@@ -198,16 +203,22 @@ export function Garage(props: { me: Me }) {
       if (part.slot === 'explosion') setBoom((count) => count + 1);
       return;
     }
+    if (part.slot === 'explosion') setBoom((count) => count + 1);
+    change({ ...mine, [part.slot]: part.id }, `${part.name} is on your car.`);
+  };
+
+  /** Saves a change to your car at once, and keeps the car before it for Undo. */
+  const change = (next: CarParts, done: string, before: CarParts | null = mine) => {
     setTrying(null);
-    const next = { ...mine, [part.slot]: part.id };
     setDraft(next);
     setNote(null);
-    if (part.slot === 'explosion') setBoom((count) => count + 1);
+    setUndo(before);
     void loadData()
       .then((api) => api.saveCar(props.me, next))
-      .then(() => setNote({ error: false, text: `${part.name} is on your car.` }))
+      .then(() => setNote({ error: false, text: done }))
       .catch((failure: unknown) => {
         setDraft(null);
+        setUndo(null);
         setNote({ error: true, text: TROUBLE[whyOf(failure)] });
       });
   };
@@ -215,157 +226,181 @@ export function Garage(props: { me: Me }) {
   // Where the accent goes (ruling R22): each place is on or off, saved at once.
   const toggleZone = (zone: string) => {
     const zones = mine.accents.includes(zone) ? mine.accents.filter((each) => each !== zone) : [...mine.accents, zone];
-    const next = { ...mine, accents: zones };
-    setDraft(next);
-    setTrying(null);
-    setNote(null);
-    void loadData()
-      .then((api) => api.saveCar(props.me, next))
-      .then(() => setNote({ error: false, text: zones.length ? `Accent on: ${zones.map((each) => ACCENT_ZONES.find((found) => found.id === each)?.name.toLowerCase()).join(', ')}.` : 'No accent anywhere.' }))
-      .catch((failure: unknown) => {
-        setDraft(null);
-        setNote({ error: true, text: TROUBLE[whyOf(failure)] });
-      });
+    change({ ...mine, accents: zones }, zones.length ? `Accent on: ${zones.map((each) => ACCENT_ZONES.find((found) => found.id === each)?.name.toLowerCase()).join(', ')}.` : 'No accent anywhere.');
   };
 
-  const options = partsFor(slot, { badges: earned, rank: profile.data?.rank ?? null, seasons: profile.data?.seasons ?? {} })
+  const profileParts = { badges: earned, rank: profile.data?.rank ?? null, seasons: profile.data?.seasons ?? {} };
+  /** What a slot holds now, for its row on the build sheet. */
+  const nowIn = (each: PartSlot) => {
+    const id = String(mine[each as keyof CarParts] ?? '');
+    const name = partsFor(each, profileParts).find((option) => option.part.id === id)?.part.name ?? id;
+    return each === 'paint2' && id !== 'none' ? `${name} \u00b7 ${mine.accents.length || 'no'} ${mine.accents.length === 1 ? 'place' : 'places'}` : name;
+  };
+
+  const options = (slot ? partsFor(slot, profileParts) : [])
     .map((option) => ({ ...option, fresh: option.badge !== null && !option.locked && freshBadge(option.badge.id) }))
     .sort((a, b) => placeOf(a) - placeOf(b));
   const unlocked = options.filter((option) => !option.locked).length;
   const count = Object.keys(earned).length;
-  const slotName = SLOTS.find((each) => each.slot === slot)?.name;
   return (
     <div class="garage">
-      <section class="garage-stage backdrop" data-backdrop={backdropOf(car.backdrop)} aria-label="Your car">
-        <button
-          type="button"
-          class="garage-turntable"
-          data-turn={angle === null ? 'auto' : dragging ? 'drag' : 'rest'}
-          aria-label="Turn your car"
-          onPointerDown={grab}
-          onPointerMove={drag}
-          onPointerUp={letGo}
-          onPointerCancel={letGo}
-          onClick={turnRound}
-        >
-          <span class="garage-platform" aria-hidden="true">
-            <span class="garage-dial" style={angle === null ? undefined : { transform: `rotate(${Math.round(angle)}deg)` }}>
-              <span class="garage-ring" />
-            </span>
-          </span>
-          <span
-            ref={turning}
-            class="garage-turn"
-            data-side={side}
-            data-mirrored={angle !== null && face(angle) < 0}
-            style={angle === null ? undefined : { transform: `scaleX(${face(angle).toFixed(3)})` }}
-          >
-            <CarArt parts={car} stickers={profile.data?.stickers} rank={profile.data?.rank} class="garage-car" />
-          </span>
-        </button>
-        {boom > 0 && <GoalExplosion key={boom} kind={car.explosion} class="garage-boom" />}
-      </section>
-      <p class="garage-count">
-        {count} of {BADGES.length} badges earned. Each one unlocks a part.
-      </p>
-
-      {trying && (
-        <div class="garage-trying">
-          <p role="status">
-            <strong>Trying on {trying.part.name}.</strong> {trying.why}
-          </p>
-          <button type="button" class="btn-quiet" onClick={() => setTrying(null)}>
-            Back to my car
-          </button>
-        </div>
-      )}
-
-      <div class="garage-slots" role="group" aria-label="Part">
-        {SLOTS.map(({ slot: each, name }) => (
+      {/* The car stays in view at the top while you change it. */}
+      <div class="garage-dock">
+        <section class="garage-stage backdrop" data-backdrop={backdropOf(car.backdrop)} aria-label="Your car">
+          <BackdropArt kind={backdropOf(car.backdrop)} />
           <button
-            key={each}
             type="button"
-            class="garage-slot"
-            aria-pressed={slot === each}
-            aria-describedby={freshSlots.has(each) ? 'garage-new-note' : undefined}
-            onClick={() => setSlot(each)}
+            class="garage-turntable"
+            data-turn={angle === null ? 'auto' : dragging ? 'drag' : 'rest'}
+            aria-label="Turn your car"
+            onPointerDown={grab}
+            onPointerMove={drag}
+            onPointerUp={letGo}
+            onPointerCancel={letGo}
+            onClick={turnRound}
           >
-            <SlotIcon slot={each} />
-            <span>{name}</span>
-            {freshSlots.has(each) && <span class="garage-dot" aria-hidden="true" />}
+            <span class="garage-platform" aria-hidden="true">
+              <span class="garage-dial" style={angle === null ? undefined : { transform: `rotate(${Math.round(angle)}deg)` }}>
+                <span class="garage-ring" />
+              </span>
+            </span>
+            <span
+              ref={turning}
+              class="garage-turn"
+              data-side={side}
+              data-mirrored={angle !== null && face(angle) < 0}
+              style={angle === null ? undefined : { transform: `scaleX(${face(angle).toFixed(3)})` }}
+            >
+              <CarArt parts={car} stickers={profile.data?.stickers} rank={profile.data?.rank} class="garage-car" />
+            </span>
           </button>
-        ))}
+          {boom > 0 && <GoalExplosion key={boom} kind={car.explosion} class="garage-boom" />}
+        </section>
+        <div class="garage-hud">
+          {trying ? (
+            <div class="garage-trying">
+              <p role="status">
+                <strong>Trying on {trying.part.name}.</strong> {trying.why}
+              </p>
+              <button type="button" class="btn-quiet" onClick={() => setTrying(null)}>
+                Back to my car
+              </button>
+            </div>
+          ) : note ? (
+            <div class="garage-noted">
+              <p class={note.error ? 'field-error' : 'panel-text garage-note'} role={note.error ? 'alert' : 'status'}>
+                {note.text}
+              </p>
+              {undo && !note.error && (
+                <button type="button" class="garage-undo" onClick={() => change(undo, 'Undone.', null)}>
+                  Undo
+                </button>
+              )}
+            </div>
+          ) : (
+            <p class="garage-count">
+              {count} of {BADGES.length} badges earned. Each one unlocks a part.
+            </p>
+          )}
+        </div>
       </div>
       <span id="garage-new-note" hidden>
         New since your last visit
       </span>
 
-      {note && (
-        <p class={note.error ? 'field-error' : 'panel-text garage-note'} role={note.error ? 'alert' : 'status'}>
-          {note.text}
-        </p>
-      )}
-      {slot === 'explosion' && (
-        <button type="button" class="btn btn-second garage-watch" onClick={() => setBoom((count) => count + 1)}>
-          Watch it
-        </button>
-      )}
-
-      {slot === 'paint2' && (
-        <div class="garage-zones" role="group" aria-label="Where the accent goes">
-          {ACCENT_ZONES.map((zone) => (
-            <button key={zone.id} type="button" class="garage-zone" aria-pressed={mine.accents.includes(zone.id)} onClick={() => toggleZone(zone.id)}>
-              {zone.name}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <p class="garage-have">
-        {unlocked} of {options.length} {PLURALS[slot]} unlocked
-      </p>
-      <ul class="garage-parts" aria-label={slotName}>
-        {options.map(({ part, badge, locked, fresh }) => {
-          const on = mine[part.slot as keyof CarParts] === part.id && !locked;
-          const tried = trying?.part.id === part.id && trying.part.slot === part.slot;
-          const art =
-            part.slot === 'paint' ? (
-              <Swatch paint={part.id} />
-            ) : part.slot === 'explosion' ? (
-              <BurstIcon kind={part.id} />
-            ) : part.slot === 'backdrop' ? (
-              <span class="garage-part-backdrop backdrop" data-backdrop={backdropOf(part.id)}>
-                <CarArt parts={mine} bare />
-              </span>
-            ) : (
-              <CarArt parts={{ ...mine, [part.slot]: part.id }} rank={profile.data?.rank} bare={part.slot !== 'boost' && part.slot !== 'trail'} />
-            );
+      {/* Your build: every slot with what is on it now. Tap one to change it. */}
+      <div class="garage-slots" role="group" aria-label="Part">
+        {SLOTS.map(({ slot: each, name }) => {
+          const open = slot === each;
           return (
-            <li key={part.id}>
+            <div key={each} class="garage-slot-row" data-open={open}>
               <button
                 type="button"
-                class="garage-part"
-                data-locked={Boolean(locked)}
-                data-trying={tried}
-                data-fresh={fresh}
-                aria-pressed={on}
-                aria-describedby={fresh ? 'garage-new-note' : undefined}
-                aria-label={locked ? `${part.name}, locked${badge ? `: earn ${badge.name}` : ''}` : part.name}
-                onClick={() => pick(part, locked)}
+                class="garage-slot"
+                aria-label={name}
+                aria-expanded={open}
+                aria-controls={`garage-panel-${each}`}
+                aria-describedby={freshSlots.has(each) ? `garage-now-${each} garage-new-note` : `garage-now-${each}`}
+                onClick={() => setSlot(open ? null : each)}
               >
-                <span class="garage-part-art">{art}</span>
-                <span class="garage-part-name">{part.name}</span>
-                {locked && <span class="garage-lock">{badge ? badge.name : 'Locked'}</span>}
-                {fresh && (
-                  <span class="garage-new" aria-hidden="true">
-                    New
-                  </span>
-                )}
+                <SlotIcon slot={each} />
+                <span class="garage-slot-name">{name}</span>
+                <span class="garage-slot-now" id={`garage-now-${each}`}>
+                  {nowIn(each)}
+                </span>
+                {freshSlots.has(each) && <span class="garage-dot" aria-hidden="true" />}
+                <svg class="garage-chevron" viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
               </button>
-            </li>
+              {open && (
+                <div class="garage-panel" id={`garage-panel-${each}`}>
+                  {each === 'explosion' && (
+                    <button type="button" class="btn btn-second garage-watch" onClick={() => setBoom((count) => count + 1)}>
+                      Watch it
+                    </button>
+                  )}
+                  {each === 'paint2' && (
+                    <div class="garage-zones" role="group" aria-label="Where the accent goes">
+                      {ACCENT_ZONES.map((zone) => (
+                        <button key={zone.id} type="button" class="garage-zone" aria-pressed={mine.accents.includes(zone.id)} onClick={() => toggleZone(zone.id)}>
+                          {zone.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <p class="garage-have">
+                    {unlocked} of {options.length} {PLURALS[each]} unlocked
+                  </p>
+                  <ul class="garage-parts" aria-label={name}>
+              {options.map(({ part, badge, locked, fresh }) => {
+                const on = mine[part.slot as keyof CarParts] === part.id && !locked;
+                const tried = trying?.part.id === part.id && trying.part.slot === part.slot;
+                const art =
+                  part.slot === 'paint' ? (
+                    <Swatch paint={part.id} />
+                  ) : part.slot === 'explosion' ? (
+                    <BurstIcon kind={part.id} />
+                  ) : part.slot === 'backdrop' ? (
+                    <span class="garage-part-backdrop backdrop" data-backdrop={backdropOf(part.id)}>
+                      <BackdropArt kind={backdropOf(part.id)} />
+                      <CarArt parts={mine} bare />
+                    </span>
+                  ) : (
+                    <CarArt parts={{ ...mine, [part.slot]: part.id }} rank={profile.data?.rank} bare={part.slot !== 'boost' && part.slot !== 'trail'} />
+                  );
+                return (
+                  <li key={part.id}>
+                    <button
+                      type="button"
+                      class="garage-part"
+                      data-locked={Boolean(locked)}
+                      data-trying={tried}
+                      data-fresh={fresh}
+                      aria-pressed={on}
+                      aria-describedby={fresh ? 'garage-new-note' : undefined}
+                      aria-label={locked ? `${part.name}, locked${badge ? `: earn ${badge.name}` : ''}` : part.name}
+                      onClick={() => pick(part, locked)}
+                    >
+                      <span class="garage-part-art">{art}</span>
+                      <span class="garage-part-name">{part.name}</span>
+                      {locked && <span class="garage-lock">{badge ? badge.name : 'Locked'}</span>}
+                      {fresh && (
+                        <span class="garage-new" aria-hidden="true">
+                          New
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
+                  </ul>
+                </div>
+              )}
+            </div>
           );
         })}
-      </ul>
+      </div>
     </div>
   );
 }

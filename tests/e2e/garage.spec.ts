@@ -116,6 +116,60 @@ test.describe('The Garage', () => {
     await expect(car).toHaveAttribute('data-side', 'left');
   });
 
+  test('The build sheet lists every slot with what is on it now; one opens at a time, and a change can be undone', async ({ page, request }) => {
+    const league = await createLeague(request);
+    const profile = `leagues/${league.id}/players/${league.commish}`;
+    await enterAsCommish(page, league);
+    await openGarage(page);
+    const slots = page.getByRole('group', { name: 'Part' });
+    const paint = slots.getByRole('button', { name: 'Paint', exact: true });
+    // It opens with every slot closed: the whole build at a glance.
+    await expect(slots.getByRole('button')).toHaveCount(11);
+    await expect(paint).toHaveAccessibleDescription('Cobalt');
+    await slots.getByRole('button', { name: 'Body', exact: true }).click();
+    await expect(slots.getByRole('button', { name: 'Body', exact: true })).toHaveAttribute('aria-expanded', 'true');
+    await paint.click();
+    await expect(paint).toHaveAttribute('aria-expanded', 'true');
+    await expect(slots.getByRole('button', { name: 'Body', exact: true })).toHaveAttribute('aria-expanded', 'false');
+    await page.getByRole('list', { name: 'Paint' }).getByRole('button', { name: 'Racing Red', exact: true }).click();
+    await expect(page.getByRole('status')).toHaveText('Racing Red is on your car.');
+    await expect(paint).toHaveAccessibleDescription('Racing Red');
+    await page.getByRole('button', { name: 'Undo', exact: true }).click();
+    await expect(page.getByRole('status')).toHaveText('Undone.');
+    await expect(paint).toHaveAccessibleDescription('Cobalt');
+    await expect.poll(async () => ((await readDoc(request, profile))?.car as { paint?: string } | undefined)?.paint).toBe('cobalt');
+    await expect(page.getByRole('button', { name: 'Undo', exact: true })).toHaveCount(0);
+    // Tapping the open slot closes it.
+    await paint.click();
+    await expect(page.getByRole('list', { name: 'Paint' })).toHaveCount(0);
+  });
+
+  test('Your car stays in view at the top while you scroll the parts', async ({ page, request }) => {
+    const league = await createLeague(request);
+    await enterAsCommish(page, league);
+    await openGarage(page);
+    await page.getByRole('group', { name: 'Part' }).getByRole('button', { name: 'Paint', exact: true }).click();
+    await page.locator('#app').evaluate((app) => app.scrollTo(0, 900));
+    const stage = await page.getByRole('region', { name: 'Your car' }).boundingBox();
+    const tabs = await page.getByRole('navigation', { name: 'Main' }).boundingBox();
+    expect(stage!.y).toBeGreaterThanOrEqual(0);
+    expect(stage!.y + stage!.height).toBeLessThan(tabs!.y);
+    expect(stage!.y).toBeLessThan(120);
+  });
+
+  test('Seven backdrops are everyone\'s, the new ones included, and each is a drawn scene', async ({ page, request }) => {
+    const league = await createLeague(request);
+    await enterAsCommish(page, league);
+    await openGarage(page);
+    await page.getByRole('group', { name: 'Part' }).getByRole('button', { name: 'Backdrop', exact: true }).click();
+    const list = page.getByRole('list', { name: 'Backdrop' });
+    for (const name of ['Garage', 'Stadium at night', 'Neon tunnel', 'City rooftop', 'Desert canyon', 'Snowfield', 'Arcade']) await expect(list.getByRole('button', { name, exact: true })).toBeVisible();
+    await expect(page.locator('.garage-have')).toHaveText('7 of 8 backdrops unlocked');
+    await list.getByRole('button', { name: 'Snowfield', exact: true }).click();
+    await expect(page.getByRole('region', { name: 'Your car' })).toHaveAttribute('data-backdrop', 'snowfield');
+    await expect(page.getByRole('region', { name: 'Your car' }).locator('svg.backdrop-art')).toHaveCount(1);
+  });
+
   test('A goal explosion plays on the turntable when you pick one, or tap Watch it', async ({ page, request }) => {
     const league = await createLeague(request);
     await enterAsCommish(page, league);
@@ -161,8 +215,8 @@ test.describe('The Garage', () => {
 
     await openGarage(page);
     await expect(tab(page, 'Garage').locator('.frame-dot')).toHaveCount(0);
-    await expect(slots.getByRole('button', { name: 'Paint', exact: true })).toHaveAccessibleDescription('New since your last visit');
-    await expect(slots.getByRole('button', { name: 'Topper', exact: true })).toHaveAccessibleDescription('New since your last visit');
+    await expect(slots.getByRole('button', { name: 'Paint', exact: true })).toHaveAccessibleDescription(/New since your last visit/);
+    await expect(slots.getByRole('button', { name: 'Topper', exact: true })).toHaveAccessibleDescription(/New since your last visit/);
     await expect(slots.getByRole('button', { name: 'Decal', exact: true }).locator('.garage-dot')).toHaveCount(0);
     await slots.getByRole('button', { name: 'Paint', exact: true }).click();
     const first = page.getByRole('list', { name: 'Paint' }).getByRole('button').first();

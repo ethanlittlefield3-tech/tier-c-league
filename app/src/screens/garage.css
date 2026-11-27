@@ -101,52 +101,155 @@
   color: var(--ink-soft);
 }
 
-/* The slots: a grid of icons, so nothing scrolls sideways. */
+/* The build sheet (the commish's request, 2026-11-27): every slot in one
+   list, with what is on it now. Tapping one opens its parts under it. */
 .garage-slots {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 6px;
+  margin-top: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(196, 216, 255, 0.16);
+  border-radius: 18px;
+  background: rgba(10, 19, 48, 0.7);
+}
+
+.garage-slot-row + .garage-slot-row {
+  border-top: 1px solid rgba(196, 216, 255, 0.08);
 }
 
 .garage-slot {
-  min-width: 0;
-  min-height: 58px;
-  display: flex;
-  flex-direction: column;
+  width: 100%;
+  min-height: 52px;
+  display: grid;
+  grid-template-columns: 24px auto minmax(0, 1fr) 16px;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 6px 2px;
-  border: 1px solid rgba(196, 216, 255, 0.18);
-  border-radius: 14px;
-  background: rgba(17, 30, 73, 0.6);
-  color: var(--ink-soft);
-  font: 700 11px/1.1 var(--body);
+  gap: 12px;
+  padding: 8px 14px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
   cursor: pointer;
 }
 
 .garage-slot svg {
   width: 22px;
   height: 22px;
+  color: var(--ink-soft);
 }
 
-.garage-slot[aria-pressed='true'] {
-  border-color: var(--blue);
-  background: rgba(31, 139, 255, 0.22);
-  color: var(--ink);
+.garage-slot-name {
+  font: italic 900 16px/1.1 var(--display);
+}
+
+.garage-slot-now {
+  overflow: hidden;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  text-align: right;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.garage-slot .garage-chevron {
+  width: 16px;
+  height: 16px;
+}
+
+.garage-slot-row[data-open='true'] {
+  background: rgba(31, 139, 255, 0.08);
+}
+
+.garage-slot-row[data-open='true'] .garage-slot svg:first-child {
+  color: #7cc4ff;
+}
+
+.garage-slot-row[data-open='true'] .garage-chevron {
+  transform: rotate(180deg);
 }
 
 .garage-slot:focus-visible {
   outline: 3px solid var(--ink);
+  outline-offset: -3px;
+}
+
+.garage-panel {
+  padding: 2px 12px 14px;
+}
+
+.garage-panel .garage-have {
+  margin-top: 6px;
+}
+
+/* The car, pinned under the header while you scroll the build sheet. The
+   header has shrunk to its slim bar by the time the car sticks. */
+.garage-dock {
+  position: sticky;
+  top: calc(45px + env(safe-area-inset-top, 0px));
+  z-index: 1;
+  margin: 0 -16px;
+  background: var(--navy-900);
+}
+
+.garage-dock .garage-stage {
+  margin: 0;
+}
+
+.garage-hud {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 16px 6px;
+  border-bottom: 1px solid rgba(196, 216, 255, 0.1);
+}
+
+.garage-hud .garage-count {
+  margin: 0;
+}
+
+.garage-noted {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.garage-noted p {
+  margin: 0;
+  font-size: 13.5px;
+}
+
+.garage-undo {
+  flex: none;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid rgba(196, 216, 255, 0.3);
+  border-radius: 999px;
+  background: rgba(196, 216, 255, 0.08);
+  color: var(--ink);
+  font: 800 13px/1 var(--body);
+  cursor: pointer;
+}
+
+.garage-undo:focus-visible {
+  outline: 3px solid var(--ink);
   outline-offset: 2px;
+}
+
+/* Only the tiles on screen are drawn: the rest wait until you scroll to them. */
+.garage-parts li {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 104px;
 }
 
 /* Trying on a locked part: it shows on the car, with how to earn it. */
 .garage-trying {
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 0 0 10px;
+  margin: 0;
   padding: 10px 12px;
   border: 1px solid rgba(255, 207, 63, 0.5);
   border-radius: 14px;
@@ -170,7 +273,7 @@
 }
 
 .garage-note {
-  margin: 10px 0 0;
+  margin: 0;
 }
 
 /* How many of this slot's parts are yours. */
@@ -418,4 +521,11 @@
   font: 800 10px/1.5 var(--body);
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+/* On the build sheet, a slot's dot sits on its icon. */
+.garage-slot .garage-dot {
+  top: 12px;
+  right: auto;
+  left: 30px;
 }

@@ -73,19 +73,21 @@ test.describe('Today', () => {
     await expect(total(page)).toContainText('0');
   });
 
-  test('The tap that gets all three goals in plays your goal explosion; two goals, or taking one back, plays nothing', async ({ page, request }) => {
+  test('Filling the dial, all three goals in and screen time logged, plays your goal explosion; less than that, or taking one back, plays nothing', async ({ page, request }) => {
     const { league, player } = await onToday(page, request);
     await patchDoc(request, `leagues/${league.id}/players/${player}`, { car: { explosion: 'confetti' } });
     const burst = page.locator('.today-burst .boom');
     await goal(page, 'mind').click();
     await goal(page, 'body').click();
-    await expect(goal(page, 'body')).toHaveAttribute('aria-pressed', 'true');
-    await expect(burst).toHaveCount(0);
     await goal(page, 'wildcard').click();
+    await expect(goal(page, 'wildcard')).toHaveAttribute('aria-pressed', 'true');
+    // Three goals, but no screen time yet: nothing.
+    await expect(burst).toHaveCount(0);
+    await logScreen(page, '15 minutes more', 2);
     await expect(burst).toHaveCount(1);
     await expect(burst).toHaveAttribute('data-kind', 'confetti');
     await expect(page.locator('.today-burst')).toHaveAttribute('aria-hidden', 'true');
-    // Taking one back plays nothing; getting all three in again plays it again.
+    // Taking a goal back plays nothing; getting it in again fills the dial again.
     await goal(page, 'wildcard').click();
     await expect(goal(page, 'wildcard')).toHaveAttribute('aria-pressed', 'false');
     await goal(page, 'wildcard').click();

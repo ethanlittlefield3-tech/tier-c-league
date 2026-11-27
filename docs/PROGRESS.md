@@ -230,6 +230,12 @@ Last updated 2026-11-25, after Rumble: group play is built.
 - **Alerts, part 1: on the phone** (2026-11-25). Profile has an Alerts panel: turn them on with a tap, switch each of the 7 kinds on or off, and set quiet hours. A new player is offered alerts right under their recovery key. A service worker shows the alerts, opens the app at the right screen when one is tapped, and keeps the app's files on the phone so it opens with no signal. The push token is fetched again on every open.
   - New rules for devices: a phone signs up only as the player its claim holds. 4 new rule tests and 1 rewritten. Weakening the rule 14 ways was caught 13 times; the other is still refused by the checks on each field. 3 engine tests and 5 flow tests.
   - Sending them is next: the tick job, every 10 minutes. Alerts also wait on the Cloud Messaging web push key from the commish.
+- **The dial, the Garage build sheet and new backdrops** (2026-11-27, ruling R27).
+  - The scoreboard's dial has a fourth, gold slice for screen time; filling it, all three goals in and screen time logged, plays your goal explosion.
+  - The power-up icons sit in the middle of their rings, and Rule One's days are the same day tiles as the others.
+  - The Garage is one build sheet: each slot shows what is on it now, tapping one opens its parts under it, the car stays pinned at the top while you scroll, and Undo takes back your last change. Part tiles off screen aren't drawn until you scroll to them.
+  - Four new backdrops, everyone's from the start (City rooftop, Desert canyon, Snowfield, Arcade), and the four old ones redrawn with much more detail, as drawn scenes in the Garage and the showroom.
+  - 3 new flow tests; the dial, explosion and Garage tests follow the changes.
 - **Game Day, and odds** (2026-11-27, ruling R26).
   - Today and Match are one tab, Game Day, so there are four tabs: Game Day, Feed, League, Garage. An alert that opened Match opens Game Day.
   - From the top: the scoreboard, with each car's boost gauge (a slice for every goal in today) and a flame that grows with it; a tap on your opponent's car opens their day (goals, screen time, beers, their week). Then your day as a checklist: a goal you get in lights up from the left, its check pops in and a +1 slides in. Then the power-ups as glowing round icons, a slim Poke bar, receipts from your opponent, a rematch, Drop Shot's floors and your Demolition when there are any, and the picks banner last.

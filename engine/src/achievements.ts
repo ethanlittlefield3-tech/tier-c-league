@@ -151,6 +151,11 @@ export const STARTER_PARTS: readonly Part[] = [
   part('backdrop', 'garage', 'Garage'),
   part('backdrop', 'stadium', 'Stadium at night'),
   part('backdrop', 'tunnel', 'Neon tunnel'),
+  // More backdrops (ruling R27).
+  part('backdrop', 'rooftop', 'City rooftop'),
+  part('backdrop', 'canyon', 'Desert canyon'),
+  part('backdrop', 'snowfield', 'Snowfield'),
+  part('backdrop', 'arcade', 'Arcade'),
 ];
 
 /** Where the accent paint goes: any of these, alone or together (ruling R22). */

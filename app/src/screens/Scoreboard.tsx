@@ -9,50 +9,60 @@ import './scoreboard.css';
 const LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
+/** A side's day so far, for its dial: goals in, screen time logged, and a rest day (goals off). */
+export interface Boost {
+  goals: number;
+  screen: boolean;
+  rest: boolean;
+}
+
 export interface BoardSide {
   name: string;
   car: Partial<CarParts> | null | undefined;
   stickers?: Partial<Record<string, { until?: unknown }>> | null;
   points: number;
   beers: number;
-  /** Goals in today, 0 to 3, or `rest` on a rest day. */
-  boost: number | 'rest';
+  boost: Boost;
 }
 
-/** One goal's slice of the boost ring: three slices of 110 degrees, from the top, with gaps. */
+/** How full a dial is, from 0 to 1: a quarter for each goal in and for screen time. */
+const fullness = (boost: Boost) => (boost.goals + (boost.screen ? 1 : 0)) / 4;
+
+/** One quarter of the dial: four slices of 80 degrees, from the top, with gaps. */
 function slice(index: number): string {
   const point = (degrees: number) => {
     const radians = ((degrees - 90) * Math.PI) / 180;
     return `${(20 + 16 * Math.cos(radians)).toFixed(2)} ${(20 + 16 * Math.sin(radians)).toFixed(2)}`;
   };
-  const start = index * 120 + 5;
-  return `M ${point(start)} A 16 16 0 0 1 ${point(start + 110)}`;
+  const start = index * 90 + 5;
+  return `M ${point(start)} A 16 16 0 0 1 ${point(start + 80)}`;
 }
 
 /**
- * A boost gauge (the commish's request, 2026-11-27): one slice for each goal
- * in today, so you can see at a glance how a side's day is going. A rest day
- * reads "Rest".
+ * The day dial (the commish's requests, 2026-11-27): a slice for each goal in
+ * today and one for screen time, so you can see at a glance how a side's day
+ * is going. Full, it reads 100 in gold. On a rest day the goal slices rest.
  */
-function BoostGauge(props: { boost: number | 'rest'; label: string }) {
-  const filled = props.boost === 'rest' ? 0 : props.boost;
+function BoostGauge(props: { boost: Boost; label: string }) {
+  const { boost } = props;
   return (
-    <span class="boost" role="img" aria-label={props.label} data-full={filled === 3}>
+    <span class="boost" role="img" aria-label={props.label} data-full={boost.goals === 3 && boost.screen} data-rest={boost.rest}>
       <svg viewBox="0 0 40 40" aria-hidden="true">
         {[0, 1, 2].map((index) => (
-          <path class="boost-slice" data-on={index < filled} d={slice(index)} />
+          <path class="boost-slice" data-on={index < boost.goals} d={slice(index)} />
         ))}
+        <path class="boost-slice boost-screen" data-on={boost.screen} d={slice(3)} />
       </svg>
       <span class="boost-value" aria-hidden="true">
-        {props.boost === 'rest' ? 'Rest' : Math.round((filled / 3) * 100)}
+        {boost.rest ? 'Rest' : Math.round(fullness(boost) * 100)}
       </span>
     </span>
   );
 }
 
-/** A side's car, with a boost flame that grows with its goals today. */
+/** A side's car, with a boost flame that grows as its dial fills. */
 function BoardCar(props: { side: BoardSide; team: 'blue' | 'orange' }) {
-  const level = props.side.boost === 'rest' ? 0 : props.side.boost / 3;
+  const level = fullness(props.side.boost);
   return (
     <span class="board-car" data-team={props.team}>
       <span class="board-flame" aria-hidden="true" style={{ transform: `scaleX(${level.toFixed(2)})`, opacity: level > 0 ? 1 : 0 }}>
@@ -66,7 +76,7 @@ function BoardCar(props: { side: BoardSide; team: 'blue' | 'orange' }) {
   );
 }
 
-const goalsWords = (boost: number | 'rest') => (boost === 'rest' ? 'rest day' : `${boost} of 3 goals in today`);
+const goalsWords = (boost: Boost) => `${boost.rest ? 'rest day' : `${boost.goals} of 3 goals in`}, screen time ${boost.screen ? 'logged' : 'not logged'}`;
 
 /**
  * Game Day's scoreboard (the commish's request, 2026-11-27): you against your
@@ -96,7 +106,7 @@ export function Scoreboard(props: {
       <div class="board-sides">
         <div class="board-side week-side week-me" data-team="blue">
           <BoardCar side={me} team="blue" />
-          <BoostGauge boost={me.boost} label={`Your boost: ${goalsWords(me.boost)}`} />
+          <BoostGauge boost={me.boost} label={`Your day: ${goalsWords(me.boost)}`} />
           <span class="board-name">You</span>
           <strong class="board-points">{formatPoints(me.points)}</strong>
         </div>
@@ -105,7 +115,7 @@ export function Scoreboard(props: {
         </span>
         <button type="button" class="board-side week-side week-them" data-team="orange" aria-label={`See ${them.name}'s day: ${formatPoints(them.points)} this week, ${goalsWords(them.boost)}`} onClick={props.onOpponent}>
           <BoardCar side={them} team="orange" />
-          <BoostGauge boost={them.boost} label={`${them.name}'s boost: ${goalsWords(them.boost)}`} />
+          <BoostGauge boost={them.boost} label={`${them.name}'s day: ${goalsWords(them.boost)}`} />
           <span class="board-name">
             {them.name}
             {them.nemesis && (

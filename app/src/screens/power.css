@@ -260,7 +260,9 @@
   box-shadow: 0 0 20px color-mix(in srgb, var(--tint) 55%, transparent);
 }
 
-.power-tile .power-glyph {
+.power-ring .power-glyph {
+  grid-area: auto;
+  display: block;
   width: 26px;
   height: 26px;
 }

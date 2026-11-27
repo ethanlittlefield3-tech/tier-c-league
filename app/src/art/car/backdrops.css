@@ -1,5 +1,38 @@
-/* What a car stands in front of (ruling R21), in the Garage and the showroom.
-   Drawn with gradients only: nothing to download. */
+/* What a car stands in front of (rulings R21 and R27), in the Garage and the
+   showroom. The scene itself is an SVG drawn in code (BackdropArt.tsx) that
+   sits behind everything in the box; these colors show until it does. */
+
+.backdrop {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.backdrop-art {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.backdrop[data-backdrop='rooftop'] {
+  background: #0a1230;
+}
+
+.backdrop[data-backdrop='canyon'] {
+  background: #6b2a3c;
+}
+
+.backdrop[data-backdrop='snowfield'] {
+  background: #2a4a7a;
+}
+
+.backdrop[data-backdrop='arcade'] {
+  background: #0a0420;
+}
 
 .backdrop[data-backdrop='garage'] {
   background:

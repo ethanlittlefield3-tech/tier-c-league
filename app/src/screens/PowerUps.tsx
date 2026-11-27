@@ -424,14 +424,15 @@ export function PowerUps(props: {
               Take back Rule One on {longDay(play.date)}
             </button>
           ))}
+          {/* The days it can go on, as the same day tiles as the other power-ups. */}
           {ones.next !== null &&
-            ruleOneOpen
-              .filter((date) => !props.ruleOnes.some((play) => play.date === date))
-              .map((date) => (
-                <button type="button" class="btn btn-second" disabled={busy} onClick={() => act((api) => api.declareRuleOne(props.where, ones.next!, date))}>
-                  Use Rule One on {longDay(date)}
-                </button>
-              ))}
+            ruleOneOpen.some((date) => !props.ruleOnes.some((play) => play.date === date)) &&
+            dayButtons(
+              ruleOneOpen.filter((date) => !props.ruleOnes.some((play) => play.date === date)),
+              null,
+              (date) => act((api) => api.declareRuleOne(props.where, ones.next!, date)),
+              (date) => `Use Rule One on ${longDay(date)}`,
+            )}
         </div>
       )}
 
