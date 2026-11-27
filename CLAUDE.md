@@ -33,6 +33,7 @@ npm run checkpoint:a  # rebuild docs/CHECKPOINT-A.md from the engine tests
 npm run checkpoint:b  # rebuild docs/CHECKPOINT-B.md from the security-rule tests
 npm run art           # redraw the title-screen scene (scripts/art/title-scene.mjs)
 npm run icons         # redraw the app icon and launch pictures (scripts/art/icons.mjs)
+npm run rules:catalog # rebuild the Garage's part lists in the security rules from the engine's catalog
 ```
 
 ## Conventions

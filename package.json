@@ -24,7 +24,8 @@
     "build": "npm run build -w app",
     "art": "node scripts/art/title-scene.mjs",
     "test:e2e": "firebase --config firebase/firebase.json emulators:exec --only auth,firestore --project demo-tier-c \"playwright test -c tests/e2e/playwright.config.ts --trace off\"",
-    "icons": "node scripts/art/icons.mjs"
+    "icons": "node scripts/art/icons.mjs",
+    "rules:catalog": "node scripts/rules-catalog.ts"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^6.0.0",

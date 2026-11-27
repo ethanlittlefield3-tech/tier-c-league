@@ -50,6 +50,10 @@ interface Body {
   extra?: string;
   /** Drawn under the body, like a rear wing. */
   under?: string;
+  /** Drawn on the body, inside its outline, like a cart's mesh or a couch's seams. */
+  inner?: string;
+  /** A joke body: no door seams, handle or vents. */
+  novelty?: true;
 }
 
 const BODIES: Record<string, Body> = {
@@ -144,6 +148,107 @@ const BODIES: Record<string, Body> = {
     light: [179, 42],
     extra: `<path d="M2 47Q2 44 5 44L14 44L14 54L5 54Q2 54 2 51Z" fill="#e9eef5" stroke="${INK}" stroke-width="1.6"/><path d="M178 44L187 44Q190 44 190 47L190 51Q190 54 187 54L178 54Z" fill="#e9eef5" stroke="${INK}" stroke-width="1.6"/>`,
   },
+// The joke bodies (ruling R23), each from a shame badge or a silly one.
+  // A porta-potty, on wheels, with a crescent-moon vent and the door taken.
+  portaPotty: {
+    shape: 'M58 56L58 -6Q58 -14 66 -14L134 -14Q142 -14 142 -6L142 56Z',
+    glass: ['M96 -6a7 7 0 1 0 9 9a6 6 0 1 1 -9 -9Z'],
+    shine: 'M62 -6Q62 -12 68 -12',
+    wheels: [
+      [74, 60, 11],
+      [126, 60, 11],
+    ],
+    band: { x1: 70, x2: 130, y1: 24, y2: 40 },
+    roof: [100, -22],
+    exhaust: [58, 46],
+    light: [138, 32],
+    extra: `<path d="M54 -10Q54 -20 100 -22Q146 -20 146 -10Z" fill="#e9eef5" stroke="${INK}" stroke-width="2"/><rect x="80" y="10" width="40" height="44" rx="2" fill="none" stroke="${INK}" stroke-width="1.4" opacity="0.6"/><rect x="86" y="14" width="18" height="6" rx="1" fill="#e0242f" stroke="${INK}" stroke-width="0.8"/><text x="95" y="18.8" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="900" font-size="4.6" fill="#ffffff">BUSY</text><circle cx="116" cy="34" r="1.8" fill="#e9eef5" stroke="${INK}" stroke-width="0.8"/>`,
+    novelty: true,
+  },
+  // A shopping cart: a painted wire basket, a red handle, and caster wheels.
+  cart: {
+    shape: 'M26 8L174 8L160 44L40 44Z',
+    glass: [],
+    shine: 'M30 10H170',
+    wheels: [
+      [52, 58, 8],
+      [148, 58, 8],
+    ],
+    band: { x1: 44, x2: 156, y1: 16, y2: 36 },
+    roof: [100, 8],
+    exhaust: [30, 26],
+    light: [168, 16],
+    inner: `<path d="M38 8V44M50 8V44M62 8V44M74 8V44M86 8V44M98 8V44M110 8V44M122 8V44M134 8V44M146 8V44M158 8V44M26 20H174M26 32H174" stroke="${INK}" stroke-width="1" opacity="0.5"/>`,
+    extra: `<path d="M40 44L44 50H156L160 44M52 50V52M148 50V52" fill="none" stroke="${INK}" stroke-width="2"/><path d="M26 8L14 2H6" fill="none" stroke="${INK}" stroke-width="3" stroke-linecap="round"/><rect x="0" y="-1" width="10" height="5" rx="2" fill="#e0242f" stroke="${INK}" stroke-width="1.2"/>`,
+    novelty: true,
+  },
+  // A hot dog in a bun, with a bubble cockpit and mustard.
+  glizzy: {
+    shape: 'M16 30Q16 14 34 14L166 14Q184 14 184 30Q184 44 166 44L34 44Q16 44 16 30Z',
+    glass: ['M84 15Q88 0 100 0Q112 0 116 15Z'],
+    shine: 'M36 17H164',
+    wheels: [
+      [40, 60, 12],
+      [160, 60, 12],
+    ],
+    band: { x1: 34, x2: 166, y1: 20, y2: 38 },
+    roof: [100, 0],
+    exhaust: [16, 30],
+    light: [182, 26],
+    under: `<path d="M8 40Q6 28 22 30L178 30Q194 28 192 40Q194 56 176 56L24 56Q6 56 8 40Z" fill="#e8b36a" stroke="${INK}" stroke-width="2.4"/><path d="M24 50H176" stroke="#c98a3a" stroke-width="1.4" opacity="0.8"/>`,
+    extra: `<path d="M30 18q6 -6 12 0t12 0t12 0t12 0M124 18q6 -6 12 0t12 0t12 0t12 0" fill="none" stroke="#ffd21f" stroke-width="2.4" stroke-linecap="round"/>`,
+    novelty: true,
+  },
+  // A coffin on wheels, brass handles and all.
+  coffin: {
+    shape: 'M8 40L26 14L156 10L188 24L188 42L156 54L26 52Z',
+    glass: ['M120 18L150 17L156 24L120 25Z'],
+    shine: 'M28 16L154 12',
+    wheels: [
+      [46, 58, 13],
+      [150, 58, 13],
+    ],
+    band: { x1: 30, x2: 156, y1: 22, y2: 40 },
+    roof: [92, 12],
+    exhaust: [8, 40],
+    light: [186, 32],
+    extra: `<path d="M44 46H72M96 46H124" stroke="#d6b77c" stroke-width="2.6" stroke-linecap="round"/><path d="M70 18V30M64 22H76" stroke="#e9eef5" stroke-width="2.2" stroke-linecap="round"/>`,
+    novelty: true,
+  },
+  // A couch, with a potato on it.
+  couch: {
+    shape: 'M10 54L10 30Q10 22 18 22L26 22L26 4Q26 -2 34 -2L166 -2Q174 -2 174 4L174 22L182 22Q190 22 190 30L190 54Z',
+    glass: [],
+    shine: 'M30 0H170',
+    wheels: [
+      [36, 60, 9],
+      [164, 60, 9],
+    ],
+    band: { x1: 30, x2: 170, y1: 4, y2: 20 },
+    roof: [140, -2],
+    exhaust: [10, 44],
+    light: [188, 40],
+    inner: `<path d="M26 22H174M72 26V54M128 26V54M100 -2V22" stroke="${INK}" stroke-width="1.2" opacity="0.45"/><path d="M26 34H174" stroke="#ffffff" stroke-width="1" opacity="0.2"/>`,
+    extra: `<ellipse cx="70" cy="22" rx="13" ry="9" fill="#c9965a" stroke="${INK}" stroke-width="1.6"/><circle cx="66" cy="20" r="1.4" fill="${INK}"/><circle cx="73" cy="20" r="1.4" fill="${INK}"/><path d="M65 25q4 2 8 0" fill="none" stroke="${INK}" stroke-width="1.1"/><circle cx="62" cy="25" r="0.9" fill="#8a5a2a"/><circle cx="78" cy="18" r="0.9" fill="#8a5a2a"/>`,
+    novelty: true,
+  },
+  // A toaster, two slices up, one of them burnt.
+  toast: {
+    shape: 'M22 56L22 14Q22 2 36 2L164 2Q178 2 178 14L178 56Z',
+    glass: ['M140 10L166 10Q170 10 170 14L170 22L140 22Z'],
+    shine: 'M28 10Q28 4 36 4L164 4',
+    wheels: [
+      [52, 60, 13],
+      [148, 60, 13],
+    ],
+    band: { x1: 30, x2: 136, y1: 24, y2: 46 },
+    roof: [70, -16],
+    exhaust: [22, 44],
+    light: [174, 48],
+    under: `<path d="M52 4L52 -10Q52 -16 58 -16L82 -16Q88 -16 88 -10L88 4Z" fill="#e8b36a" stroke="${INK}" stroke-width="2"/><path d="M56 -9Q56 -12 60 -12L80 -12Q84 -12 84 -9L84 4L56 4Z" fill="#f5d59a"/><path d="M96 4L96 -8Q96 -14 102 -14L126 -14Q132 -14 132 -8L132 4Z" fill="#6b3e17" stroke="${INK}" stroke-width="2"/><path d="M100 -7Q100 -10 104 -10L124 -10Q128 -10 128 -7L128 4L100 4Z" fill="#8a5a2a"/>`,
+    extra: `<rect x="178" y="18" width="8" height="5" rx="2" fill="#e9eef5" stroke="${INK}" stroke-width="1.2"/><circle cx="156" cy="38" r="4" fill="#e9eef5" stroke="${INK}" stroke-width="1.2"/><path d="M156 35.5V38" stroke="${INK}" stroke-width="1.2"/>`,
+    novelty: true,
+  },
 };
 
 interface Paint {
@@ -176,6 +281,11 @@ const PAINTS: Record<string, Paint> = {
   ice: { light: '#f2fbff', mid: '#bfe6ff', dark: '#6fb3e0' },
   clown: { light: '#fff38a', mid: '#ffd21f', dark: '#e07a12' },
   galaxy: { light: '#7a4fd0', mid: '#2b0f5c', dark: '#0b0730' },
+  // The joke paints (ruling R23).
+  rust: { light: '#d98a4a', mid: '#9a4f1f', dark: '#4f230b' },
+  camo: { light: '#8fa86a', mid: '#5c7a3a', dark: '#2f3f1c' },
+  hazard: { light: '#ffe066', mid: '#ffcc00', dark: '#a68400' },
+  pickle: { light: '#b9e07a', mid: '#6fa83a', dark: '#3a5f17' },
 };
 
 /** A paint's three tones, for its swatch in the Garage. */
@@ -218,6 +328,16 @@ function finishOverlay(paint: string, body: Body): string {
     if (paint === 'ice') spots.push(`<path d="M${x - 2} ${y}H${x + 2}M${x} ${y - 2}V${y + 2}" stroke="#ffffff" stroke-width="0.9" opacity="0.85"/>`);
   }
   if (paint === 'galaxy') spots.push(`<ellipse cx="${n((x1 + x2) / 2)}" cy="34" rx="46" ry="12" fill="#ff5fc8" opacity="0.22"/>`);
+  for (let i = 0; i < 9; i += 1) {
+    const x = n(x1 + ((x2 - x1) * ((i * 5) % 9)) / 9 + 6);
+    const y = n(8 + ((i * 11) % 44));
+    if (paint === 'rust') spots.push(`<path d="M${x} ${y}q5 -4 9 0t3 7q-5 4 -10 1t-2 -8z" fill="#5a2a0e" opacity="0.7"/><circle cx="${n(x + 3)}" cy="${n(y + 3)}" r="1.4" fill="#e8a060" opacity="0.6"/>`);
+    if (paint === 'camo') spots.push(`<path d="M${x} ${y}q8 -6 16 -1t4 9q-8 6 -16 2t-4 -10z" fill="${['#3a4a24', '#8a7a4a', '#2a3518'][i % 3]}" opacity="0.85"/>`);
+    if (paint === 'pickle') spots.push(`<circle cx="${x}" cy="${y}" r="2.2" fill="#d4f59a" stroke="#3a5f17" stroke-width="0.6" opacity="0.9"/>`);
+  }
+  if (paint === 'hazard') {
+    for (let x = x1 - 20; x < x2 + 20; x += 14) spots.push(`<path d="M${x} 60L${x + 7} 60L${x + 37} 0L${x + 30} 0Z" fill="#141414" opacity="0.9"/>`);
+  }
   if (paint === 'sunrise') spots.push(`<circle cx="${n(x2 - 30)}" cy="46" r="12" fill="#fff3b8" opacity="0.35"/>`);
   return spots.join('');
 }
@@ -254,6 +374,23 @@ function wheel(kind: string, cx: number, cy: number, r: number, id: string): str
       }).join('')}${hub('#ffffff')}`;
     case 'lightning':
       return `${tire}<circle cx="${cx}" cy="${cy}" r="${rimR}" fill="#2a3350" stroke="${INK}" stroke-width="1.2"/><path d="M${n(cx + 1.5)} ${n(cy - rimR + 1.5)}L${n(cx - 3.5)} ${n(cy + 1)}L${n(cx)} ${n(cy + 1)}L${n(cx - 1.5)} ${n(cy + rimR - 1.5)}L${n(cx + 4)} ${n(cy - 1.5)}L${n(cx + 0.5)} ${n(cy - 1.5)}Z" fill="#ffd21f" stroke="${INK}" stroke-width="0.8" stroke-linejoin="round"/>`;
+    // The joke wheels (ruling R23).
+    case 'glazed':
+      return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#d9a066" stroke="${INK}" stroke-width="2.2"/><circle cx="${cx}" cy="${cy}" r="${n(r * 0.82)}" fill="#ff8ac8"/>${Array.from({ length: 9 }, (_, i) => {
+        const a = ((i * 40 + 10) * Math.PI) / 180;
+        const x = n(cx + Math.cos(a) * r * 0.58);
+        const y = n(cy + Math.sin(a) * r * 0.58);
+        return `<rect x="${x - 1.4}" y="${y - 0.5}" width="2.8" height="1" rx="0.5" fill="${['#ffd21f', '#1f8bff', '#ffffff', '#2fd06a'][i % 4]}" transform="rotate(${i * 47} ${x} ${y})"/>`;
+      }).join('')}<circle cx="${cx}" cy="${cy}" r="${n(r * 0.3)}" fill="${INK}" stroke="#b07d4a" stroke-width="1.2"/>`;
+    case 'pepperoni':
+      return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#d9a066" stroke="${INK}" stroke-width="2.2"/><circle cx="${cx}" cy="${cy}" r="${n(r * 0.8)}" fill="#ffd56b"/>${[0, 72, 144, 216, 288].map((deg) => {
+        const a = (deg * Math.PI) / 180;
+        return `<circle cx="${n(cx + Math.cos(a) * r * 0.45)}" cy="${n(cy + Math.sin(a) * r * 0.45)}" r="${n(r * 0.16)}" fill="#c4232c"/>`;
+      }).join('')}<circle cx="${cx}" cy="${cy}" r="${n(r * 0.14)}" fill="#c4232c"/><path d="M${cx} ${n(cy - r * 0.8)}V${n(cy + r * 0.8)}M${n(cx - r * 0.8)} ${cy}H${n(cx + r * 0.8)}" stroke="#e8b36a" stroke-width="0.8" opacity="0.8"/>`;
+    case 'square':
+      return `<rect x="${n(cx - r)}" y="${n(cy - r)}" width="${2 * r}" height="${2 * r}" rx="2" fill="#0c1122" stroke="${INK}" stroke-width="2.4"/><rect x="${n(cx - r * 0.55)}" y="${n(cy - r * 0.55)}" width="${n(r * 1.1)}" height="${n(r * 1.1)}" fill="url(#${id}-rim)" stroke="${INK}" stroke-width="1.2"/>${hub('#ffcf3f')}`;
+    case 'tpRoll':
+      return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#ffffff" stroke="${INK}" stroke-width="2.2"/><circle cx="${cx}" cy="${cy}" r="${n(r * 0.72)}" fill="none" stroke="#d6dbe6" stroke-width="1"/><circle cx="${cx}" cy="${cy}" r="${n(r * 0.5)}" fill="none" stroke="#d6dbe6" stroke-width="1"/><circle cx="${cx}" cy="${cy}" r="${n(r * 0.32)}" fill="#c98a3a" stroke="${INK}" stroke-width="1.2"/><circle cx="${cx}" cy="${cy}" r="${n(r * 0.18)}" fill="${INK}"/><path d="M${n(cx + r * 0.9)} ${n(cy + r * 0.4)}q6 4 3 12" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round"/>`;
     case 'forceField':
       return `<circle cx="${cx}" cy="${cy}" r="${n(r + 3.5)}" fill="none" stroke="#5ff0ff" stroke-width="2" opacity="0.55"/>${tire}<circle cx="${cx}" cy="${cy}" r="${rimR}" fill="#0b2240" stroke="#5ff0ff" stroke-width="1.6"/><path d="M${cx} ${n(cy - r * 0.32)}L${n(cx + r * 0.28)} ${n(cy - r * 0.16)}L${n(cx + r * 0.28)} ${n(cy + r * 0.16)}L${cx} ${n(cy + r * 0.32)}L${n(cx - r * 0.28)} ${n(cy + r * 0.16)}L${n(cx - r * 0.28)} ${n(cy - r * 0.16)}Z" fill="#5ff0ff" opacity="0.8"/>`;
     default:
@@ -279,6 +416,19 @@ function boost(kind: string, [x, y]: [number, number], team: 'blue' | 'orange', 
       return [0, 1].map((i) => `<path d="M${x} ${y - 3 + i * 6}H${x - 90}" stroke="#ffffff" stroke-width="${2.6 - i}" stroke-linecap="round" opacity="${0.9 - i * 0.3}"/>`).join('') + `<circle cx="${x - 2}" cy="${y}" r="4" fill="#bfe6ff" opacity="0.9"/>`;
     case 'twinTurbo':
       return flame(hot, warm, cool, -6, 64, 6) + flame(hot, warm, cool, 6, 64, 6);
+    // The joke boost trails (ruling R23).
+    case 'gasLeak':
+      return [0, 1, 2, 3].map((i) => `<g opacity="${n(0.85 - i * 0.15)}"><circle cx="${x - 14 - i * 18}" cy="${y + (i % 2 ? -3 : 3)}" r="${6 + i * 2}" fill="#7ed957"/><circle cx="${x - 20 - i * 18}" cy="${y - 4 + (i % 2 ? -3 : 3)}" r="${4 + i * 1.5}" fill="#a8f07a"/></g>`).join('') + `<path d="M${x - 30} ${y - 16}q3 -4 6 0t6 0M${x - 58} ${y + 16}q3 -4 6 0t6 0" fill="none" stroke="#5aa83a" stroke-width="1.4" stroke-linecap="round"/>`;
+    case 'suds':
+      return [0, 1, 2, 3, 4, 5].map((i) => `<circle cx="${x - 12 - i * 13}" cy="${y + ((i * 7) % 5) * 3 - 6}" r="${3 + (i % 3) * 2}" fill="#d6fbff" fill-opacity="0.25" stroke="#ffffff" stroke-width="1.2" opacity="${n(0.95 - i * 0.1)}"/>`).join('');
+    case 'cashCannon':
+      return [0, 1, 2, 3].map((i) => `<g transform="rotate(${(i % 2 ? 1 : -1) * (12 + i * 6)} ${x - 18 - i * 18} ${y})"><rect x="${x - 26 - i * 18}" y="${y - 4}" width="16" height="8" rx="1" fill="#2fd06a" stroke="#0f6a32" stroke-width="1"/><text x="${x - 18 - i * 18}" y="${y + 2.4}" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="900" font-size="6" fill="#0f6a32">$</text></g>`).join('');
+    case 'skullSmoke':
+      return `<path d="M${x} ${y - 6}Q${x - 40} ${y - 14} ${x - 80} ${y}Q${x - 40} ${y + 14} ${x} ${y + 6}Z" fill="#a9b4c8" opacity="0.35"/>` + [0, 1, 2].map((i) => {
+        const sx = x - 22 - i * 22;
+        const sy = y + (i % 2 ? -4 : 4);
+        return `<g opacity="${n(0.95 - i * 0.2)}"><path d="M${sx - 5} ${sy}q0 -6 5 -6q5 0 5 6q0 3 -2 3v2h-6v-2q-2 0 -2 -3z" fill="#e9eef5" stroke="${INK}" stroke-width="0.8"/><circle cx="${sx - 2}" cy="${sy - 1}" r="1.2" fill="${INK}"/><circle cx="${sx + 2}" cy="${sy - 1}" r="1.2" fill="${INK}"/></g>`;
+      }).join('');
     case 'spotlight':
       return `<linearGradient id="${id}-beam" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stop-color="#fffbe0" stop-opacity="0.9"/><stop offset="1" stop-color="#fffbe0" stop-opacity="0"/></linearGradient><path d="M${x} ${y - 4}L${x - 80} ${y - 22}L${x - 80} ${y + 22}L${x} ${y + 4}Z" fill="url(#${id}-beam)"/>`;
     default:
@@ -298,6 +448,19 @@ function topper(kind: string, [x, y]: [number, number]): string {
       return `<path d="M${x - 7} ${y}L${x - 5} ${y - 5}L${x + 5} ${y - 5}L${x + 7} ${y}Z" fill="#ffcf3f" stroke="${INK}" stroke-width="1.4" stroke-linejoin="round"/><circle cx="${x}" cy="${y - 13}" r="9" fill="#9a6bff" stroke="${INK}" stroke-width="1.6"/><path d="M${x - 4} ${y - 17}Q${x - 2} ${y - 20} ${x + 1} ${y - 19}" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" fill="none"/>`;
     case 'trophy':
       return `<path d="M${x - 8} ${y - 22}H${x + 8}V${y - 16}Q${x + 8} ${y - 9} ${x} ${y - 8}Q${x - 8} ${y - 9} ${x - 8} ${y - 16}Z" fill="#ffcf3f" stroke="${INK}" stroke-width="1.6" stroke-linejoin="round"/><path d="M${x - 8} ${y - 19}Q${x - 13} ${y - 19} ${x - 12} ${y - 14}M${x + 8} ${y - 19}Q${x + 13} ${y - 19} ${x + 12} ${y - 14}" fill="none" stroke="${INK}" stroke-width="1.4"/><path d="M${x - 1.5} ${y - 8}H${x + 1.5}V${y - 3}H${x + 5}V${y}H${x - 5}V${y - 3}H${x - 1.5}Z" fill="#ffcf3f" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round"/>`;
+    // The joke toppers (ruling R23).
+    case 'clogBuster':
+      return `<rect x="${x - 1.6}" y="${y - 30}" width="3.2" height="22" rx="1.2" fill="#c98a3a" stroke="${INK}" stroke-width="1"/><path d="M${x - 9} ${y}Q${x - 9} ${y - 10} ${x} ${y - 10}Q${x + 9} ${y - 10} ${x + 9} ${y}Z" fill="#e0242f" stroke="${INK}" stroke-width="1.6" stroke-linejoin="round"/>`;
+    case 'roadCone':
+      return `<path d="M${x - 9} ${y}H${x + 9}L${x + 7} ${y - 3}H${x - 7}Z" fill="#ff7a12" stroke="${INK}" stroke-width="1.2"/><path d="M${x - 6} ${y - 3}L${x - 1.5} ${y - 24}H${x + 1.5}L${x + 6} ${y - 3}Z" fill="#ff7a12" stroke="${INK}" stroke-width="1.4" stroke-linejoin="round"/><path d="M${x - 4.4} ${y - 10}H${x + 4.4}M${x - 3} ${y - 17}H${x + 3}" stroke="#ffffff" stroke-width="2.2"/>`;
+    case 'rubberChicken':
+      return `<path d="M${x - 12} ${y}Q${x - 10} ${y - 10} ${x} ${y - 9}Q${x + 6} ${y - 9} ${x + 6} ${y - 18}Q${x + 6} ${y - 25} ${x + 11} ${y - 24}Q${x + 14} ${y - 22} ${x + 10} ${y - 19}Q${x + 9} ${y - 8} ${x + 4} ${y - 2}Z" fill="#ffd21f" stroke="${INK}" stroke-width="1.4" stroke-linejoin="round"/><path d="M${x + 13} ${y - 23}l4 1l-4 1.6z" fill="#ff7a12" stroke="${INK}" stroke-width="0.8"/><path d="M${x + 8} ${y - 26}q1 -3 3 -1q1 -3 3 0" fill="#e0242f" stroke="${INK}" stroke-width="0.8"/><circle cx="${x + 10}" cy="${y - 21.5}" r="0.9" fill="${INK}"/>`;
+    case 'brainrotBeanie':
+      return `<path d="M${x - 11} ${y}Q${x - 11} ${y - 14} ${x} ${y - 14}Q${x + 11} ${y - 14} ${x + 11} ${y}Z" fill="#e0242f" stroke="${INK}" stroke-width="1.4"/><path d="M${x - 11} ${y - 2}Q${x} ${y - 6} ${x + 11} ${y - 2}" fill="none" stroke="#ffd21f" stroke-width="1.6"/><path d="M${x - 5.5} ${y - 13}Q${x} ${y - 4} ${x + 5.5} ${y - 13}" fill="none" stroke="#1f8bff" stroke-width="1.6"/><rect x="${x - 0.8}" y="${y - 19}" width="1.6" height="5" fill="${INK}"/><path d="M${x} ${y - 19}l-11 -3l1 -2l10 3l10 -3l1 2z" fill="#2fd06a" stroke="${INK}" stroke-width="0.9" stroke-linejoin="round"/>`;
+    case 'auraRing':
+      return `<ellipse cx="${x}" cy="${y - 16}" rx="13" ry="3.6" fill="none" stroke="#fff3a0" stroke-width="4" opacity="0.35"/><ellipse cx="${x}" cy="${y - 16}" rx="12" ry="3.2" fill="none" stroke="#ffcf3f" stroke-width="2.2"/><path d="M${x - 17} ${y - 22}l1 2l2 1l-2 1l-1 2l-1 -2l-2 -1l2 -1z M${x + 17} ${y - 24}l1 2l2 1l-2 1l-1 2l-1 -2l-2 -1l2 -1z" fill="#fff3a0"/>`;
+    case 'dunceCap':
+      return `<path d="M${x - 10} ${y}L${x} ${y - 30}L${x + 10} ${y}Z" fill="#f4f6fa" stroke="${INK}" stroke-width="1.6" stroke-linejoin="round"/><text x="${x}" y="${y - 6}" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="900" font-size="8" fill="${INK}">D</text>`;
     case 'whistle':
       return `<path d="M${x - 10} ${y}Q${x - 14} ${y - 10} ${x - 4} ${y - 12}" fill="none" stroke="#ff3f5a" stroke-width="1.6"/><path d="M${x - 6} ${y - 12}H${x + 10}V${y - 6}H${x + 2}A5 5 0 1 1 ${x - 6} ${y - 12}Z" fill="#e9eef5" stroke="${INK}" stroke-width="1.6" stroke-linejoin="round"/>`;
     default:
@@ -341,6 +504,29 @@ function decal(kind: string, { x1, x2, y1, y2 }: Body['band']): string {
       return `<text x="${door}" y="${mid + 5}" text-anchor="middle" font-family="system-ui, sans-serif" font-style="italic" font-weight="900" font-size="14" fill="#ffffff" stroke="${INK}" stroke-width="1" paint-order="stroke">OG</text>`;
     case 'mvp':
       return `<path d="M${door - 12} ${mid - 7}H${door + 12}V${mid + 2}Q${door + 12} ${mid + 7} ${door} ${mid + 9}Q${door - 12} ${mid + 7} ${door - 12} ${mid + 2}Z" fill="#ffcf3f" stroke="${INK}" stroke-width="1.2"/><text x="${door}" y="${mid + 3}" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="900" font-size="8" fill="${INK}">MVP</text>`;
+    // The joke decals (ruling R23).
+    case 'skidMarks':
+      return `<path d="M${x1 + 8} ${y2 - 3}C${x1 + 40} ${y2 - 10} ${x1 + 70} ${y2 + 1} ${x1 + 104} ${y2 - 6}" stroke="#6b3e17" stroke-width="3.4" stroke-linecap="round" fill="none" opacity="0.9"/><path d="M${x1 + 20} ${y2}C${x1 + 46} ${y2 - 5} ${x1 + 72} ${y2 + 3} ${x1 + 92} ${y2 - 1}" stroke="#8a5a2a" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.8"/>`;
+    case 'skillIssue':
+      return `<rect x="${door - 22}" y="${mid - 6}" width="44" height="12" rx="2" fill="#e0242f" stroke="${INK}" stroke-width="1" transform="rotate(-6 ${door} ${mid})"/><text x="${door}" y="${mid + 2.6}" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="900" font-size="7" fill="#ffffff" transform="rotate(-6 ${door} ${mid})">SKILL ISSUE</text>`;
+    case 'ballChaser':
+      return `<circle cx="${door - 16}" cy="${mid}" r="6" fill="#ffffff" stroke="${INK}" stroke-width="1"/><path d="M${door - 16} ${mid - 2.5}l2.4 1.7l-0.9 2.8h-3l-0.9 -2.8z" fill="${INK}"/><text x="${door + 8}" y="${mid + 2.5}" text-anchor="middle" font-family="system-ui, sans-serif" font-style="italic" font-weight="900" font-size="6.5" fill="#ffffff" stroke="${INK}" stroke-width="0.6" paint-order="stroke">BALL CHASER</text>`;
+    case 'ownGoal':
+      return `<rect x="${door - 22}" y="${mid - 8}" width="16" height="14" fill="none" stroke="#ffffff" stroke-width="1"/><path d="M${door - 22} ${mid - 3}H${door - 6}M${door - 22} ${mid + 2}H${door - 6}M${door - 17} ${mid - 8}V${mid + 6}M${door - 12} ${mid - 8}V${mid + 6}" stroke="#ffffff" stroke-width="0.5" opacity="0.8"/><circle cx="${door - 12}" cy="${mid + 2}" r="3" fill="#ffffff" stroke="${INK}" stroke-width="0.8"/><text x="${door + 10}" y="${mid + 2.5}" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="900" font-size="6.5" fill="#ff3f5a" stroke="${INK}" stroke-width="0.6" paint-order="stroke">OWN GOAL</text>`;
+    case 'npc':
+      return `<rect x="${door - 9}" y="${mid - 9}" width="18" height="18" rx="5" fill="#d6dbe6" stroke="${INK}" stroke-width="1.2"/><circle cx="${door - 3.5}" cy="${mid - 2}" r="1.3" fill="${INK}"/><circle cx="${door + 3.5}" cy="${mid - 2}" r="1.3" fill="${INK}"/><path d="M${door - 4} ${mid + 4}H${door + 4}" stroke="${INK}" stroke-width="1.2"/><text x="${door + 18}" y="${mid + 3}" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="900" font-size="8" fill="#ffffff" stroke="${INK}" stroke-width="0.6" paint-order="stroke">NPC</text>`;
+    case 'aura':
+      return `<text x="${door}" y="${mid + 3}" text-anchor="middle" font-family="system-ui, sans-serif" font-style="italic" font-weight="900" font-size="9" fill="#c9a6ff" stroke="#34197a" stroke-width="1.2" paint-order="stroke">−1000 AURA</text>`;
+    case 'bigBrain':
+      return `<path d="M${door - 11} ${mid + 4}q-3 -9 5 -11q2 -5 8 -3q6 -3 9 3q6 1 4 8q2 6 -5 7h-16q-6 -1 -5 -4z" fill="#ff9acb" stroke="${INK}" stroke-width="1.1"/><path d="M${door - 6} ${mid - 3}q3 2 0 5M${door + 1} ${mid - 6}q-3 4 1 6M${door + 6} ${mid - 2}q-3 2 0 5" fill="none" stroke="#c4467e" stroke-width="0.9"/><path d="M${door + 15} ${mid - 8}l1 2.4l2.4 1l-2.4 1l-1 2.4l-1 -2.4l-2.4 -1l2.4 -1z" fill="#fff3a0"/>`;
+    case 'copium':
+      return `<rect x="${door - 7}" y="${mid - 10}" width="14" height="20" rx="5" fill="#2fd06a" stroke="${INK}" stroke-width="1.2"/><rect x="${door - 3}" y="${mid - 13}" width="6" height="4" rx="1" fill="#8a93a6" stroke="${INK}" stroke-width="0.9"/><text x="${door}" y="${mid + 2}" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="900" font-size="3.6" fill="${INK}">COPIUM</text>`;
+    case 'rip':
+      return `<path d="M${door - 9} ${mid + 9}V${mid - 3}Q${door - 9} ${mid - 11} ${door} ${mid - 11}Q${door + 9} ${mid - 11} ${door + 9} ${mid - 3}V${mid + 9}Z" fill="#a9b4c8" stroke="${INK}" stroke-width="1.2"/><text x="${door}" y="${mid + 1}" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="900" font-size="6" fill="${INK}">RIP</text><path d="M${door - 5} ${mid + 5}H${door + 5}" stroke="${INK}" stroke-width="0.6" opacity="0.6"/>`;
+    case 'ratio':
+      return `<path d="M${door - 20} ${mid - 8}H${door + 20}Q${door + 23} ${mid - 8} ${door + 23} ${mid - 5}V${mid + 3}Q${door + 23} ${mid + 6} ${door + 20} ${mid + 6}H${door - 8}L${door - 14} ${mid + 11}L${door - 13} ${mid + 6}H${door - 20}Q${door - 23} ${mid + 6} ${door - 23} ${mid + 3}V${mid - 5}Q${door - 23} ${mid - 8} ${door - 20} ${mid - 8}Z" fill="#ffffff" stroke="${INK}" stroke-width="1"/><text x="${door}" y="${mid + 1.5}" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="900" font-size="7" fill="#e0242f">L + RATIO</text>`;
+    case 'numberTwo':
+      return `<path d="M${door - 10} ${mid + 8}q-2 -5 3 -6q-2 -5 4 -6q-1 -5 3 -6q4 1 3 6q6 1 4 6q5 1 3 6z" fill="#7a4a1a" stroke="${INK}" stroke-width="1.1"/><circle cx="${door - 2}" cy="${mid + 1}" r="1.5" fill="#ffffff"/><circle cx="${door + 3}" cy="${mid + 1}" r="1.5" fill="#ffffff"/><circle cx="${door - 2}" cy="${mid + 1.3}" r="0.7" fill="${INK}"/><circle cx="${door + 3}" cy="${mid + 1.3}" r="0.7" fill="${INK}"/><path d="M${door - 2} ${mid + 4.5}q2.5 2 5 0" fill="none" stroke="${INK}" stroke-width="0.8"/>`;
     case 'dumpsterFire':
       return `<path d="M${door - 9} ${mid - 1}H${door + 9}L${door + 7} ${mid + 9}H${door - 7}Z" fill="#2f8a4a" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round"/><path d="M${door - 6} ${mid - 1}Q${door - 7} ${mid - 8} ${door - 2} ${mid - 11}Q${door - 1} ${mid - 6} ${door + 2} ${mid - 9}Q${door + 7} ${mid - 5} ${door + 5} ${mid - 1}Z" fill="#ff8a1e" stroke="#ffe27a" stroke-width="0.8"/>`;
     default:
@@ -471,7 +657,7 @@ function finishLayer(id: string, finish: string, body: Body, bottom: number, wid
 
 /** The color a boost trail mostly is, for its style's extra pieces. */
 function trailColor(kind: string, team: 'blue' | 'orange'): string {
-  const colors: Record<string, string> = { gold: '#ffcf3f', ghost: '#ffffff', phoenix: '#ff8a1e', hotStreak: '#ff5a2a', jet: '#bfe6ff', spotlight: '#fffbe0' };
+  const colors: Record<string, string> = { gold: '#ffcf3f', ghost: '#ffffff', phoenix: '#ff8a1e', hotStreak: '#ff5a2a', jet: '#bfe6ff', spotlight: '#fffbe0', gasLeak: '#7ed957', suds: '#d6fbff', cashCannon: '#2fd06a', skullSmoke: '#e9eef5' };
   return colors[kind] ?? TEAM[team][1];
 }
 
@@ -513,7 +699,9 @@ export function drawCar(parts: Partial<CarParts>, options: { team?: 'blue' | 'or
   const width = Math.max(...body.wheels.map(([x, , r]) => x + r), 200);
   const bottom = Math.max(...body.wheels.map(([, y, r]) => y + r));
   const left = options.bare ? -6 : -96;
-  const viewBox = `${left} -32 ${n(width - left + 12)} ${n(bottom + 32 + 8)}`;
+  // A tall body (a porta-potty) or a high roof gets more room above.
+  const top = Math.min(-32, body.roof[1] - 28);
+  const viewBox = `${left} ${top} ${n(width - left + 12)} ${n(bottom - top + 8)}`;
   const decalArt = car.decal === 'rank' ? rankDecal(options.rank, body.band) : /^season-s[0-9]+-[0-9]{4}$/.test(car.decal) ? seasonDecal(car.decal, body.band) : decal(car.decal, body.band);
   return [
     `<svg viewBox="${viewBox}" xmlns="http://www.w3.org/2000/svg"${options.title ? ` role="img" aria-label="${attribute(options.title)}"` : ' aria-hidden="true"'}>`,
@@ -533,7 +721,8 @@ export function drawCar(parts: Partial<CarParts>, options: { team?: 'blue' | 'or
     finishOverlay(paint, body),
     car.paint2 !== 'none' ? accent(id, car.paint2, Array.isArray(car.accents) ? car.accents : ['lower'], body, bottom, width) : '',
     finishLayer(id, car.finish, body, bottom, width),
-    bodyDetail(body, bottom),
+    body.inner ?? '',
+    body.novelty ? '' : bodyDetail(body, bottom),
     `<rect x="-10" y="${bottom - 22}" width="${width + 20}" height="30" fill="#000000" opacity="0.22"/>`,
     `<g filter="url(#${id}-shade)">${decalArt}</g>`,
     ...(options.stickers ?? []).map((kind, at) => sticker(kind, at, body.band)),

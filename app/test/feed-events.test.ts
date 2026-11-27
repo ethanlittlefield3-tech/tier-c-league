@@ -287,7 +287,7 @@ describe('The live feed', () => {
     });
     expect(events.map((event) => [event.kind, event.text, event.detail ?? null])).toEqual([
       ['badge', 'Maya earned Hat Trick', '3 perfect days in a row, rest days skipped. Unlocks: Flame decal.'],
-      ['badge', 'You earned Happy Hour (shame)', '10 or more beers in one week. Unlocks: Party hat topper.'],
+      ['badge', 'You earned Happy Hour (shame)', '10 or more beers in one week. Unlocks: Party hat topper, Glizzy Wagon body, Large Pepperoni wheels and Gas-leak boost trail.'],
       ['rank', 'Sam ranked up to Platinum', null],
       ['rank', 'Jordan dropped to Silver', null],
       ['rank', 'You are ranked Gold', null],

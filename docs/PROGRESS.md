@@ -230,6 +230,7 @@ Last updated 2026-11-25, after Rumble: group play is built.
 - **Alerts, part 1: on the phone** (2026-11-25). Profile has an Alerts panel: turn them on with a tap, switch each of the 7 kinds on or off, and set quiet hours. A new player is offered alerts right under their recovery key. A service worker shows the alerts, opens the app at the right screen when one is tapped, and keeps the app's files on the phone so it opens with no signal. The push token is fetched again on every open.
   - New rules for devices: a phone signs up only as the player its claim holds. 4 new rule tests and 1 rewritten. Weakening the rule 14 ways was caught 13 times; the other is still refused by the checks on each field. 3 engine tests and 5 flow tests.
   - Sending them is next: the tick job, every 10 minutes. Alerts also wait on the Cloud Messaging web push key from the commish.
+- **Joke parts** (2026-11-26, ruling R23). 39 new parts, each from an existing badge: 6 bodies, 11 decals, 6 toppers, 4 wheels, 4 boost trails, 4 goal explosions and 4 paints. Locked ones can be tried on in the Garage.
 - **Garage detail and accent places** (2026-11-26, ruling R22). Every car has more detail, and the accent can go on any of 5 places, alone or together.
 - **The commish's second round of layout changes** (2026-11-26).
   - A double tap no longer zooms the page.
