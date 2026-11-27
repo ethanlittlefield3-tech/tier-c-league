@@ -15,7 +15,6 @@ import { CommishPlayers } from './CommishPlayers.tsx';
 import { CommishModeration } from './CommishModeration.tsx';
 import { CommishScores } from './CommishScores.tsx';
 import { DraftControls } from './DraftControls.tsx';
-import { GroupPreview } from './GroupPreview.tsx';
 import './commish.css';
 
 interface LeagueDoc {
@@ -303,9 +302,6 @@ export function Commish(props: { me: Me; onBack: () => void }) {
   const finished = season.data?.status === 'finished';
   const off = useOffseason(`leagues/${props.me.league}`, seasonId ? `leagues/${props.me.league}/seasons/${seasonId}` : null, finished);
   const loading = league.loading || season.loading || (finished && off.loading);
-  // Every group-play mode in a made-up league, to try out (the commish's request, 2026-11-27).
-  const [previewOpen, setPreviewOpen] = useState(false);
-  if (previewOpen) return <GroupPreview onBack={() => setPreviewOpen(false)} />;
 
   return (
     <main class="screen commish">
@@ -314,13 +310,6 @@ export function Commish(props: { me: Me; onBack: () => void }) {
         <Heading>Commish tools</Heading>
         <p class="lead">For the commish only.</p>
 
-        <section class="panel" aria-labelledby="preview-title">
-          <h2 id="preview-title">Group play preview</h2>
-          <p class="panel-text">Try every group-play mode in a made-up league: the real boards, scored and settled the real way. Nothing in it touches your league.</p>
-          <button type="button" class="btn btn-second" onClick={() => setPreviewOpen(true)}>
-            Open the preview
-          </button>
-        </section>
 
         {league.data?.code && (
           <section class="panel">

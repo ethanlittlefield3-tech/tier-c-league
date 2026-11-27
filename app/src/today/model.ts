@@ -114,12 +114,6 @@ export function formatScreen(minutes: number | null): string {
   return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`;
 }
 
-/** Screen time after a step, kept to 15-minute marks between 0 and 24 hours. Not logged yet starts from 0. */
-export function stepScreen(minutes: number | null, delta: number): number {
-  const next = Math.floor(((minutes ?? 0) + delta) / SCREEN_STEP) * SCREEN_STEP;
-  return Math.min(SCREEN_MAX, Math.max(0, next));
-}
-
 /** "+3", "0" or "−2", with a true minus sign. */
 export function formatPoints(points: number): string {
   if (points > 0) return `+${points}`;
@@ -139,20 +133,6 @@ export function formatScreenShort(minutes: number | null): string {
 /** "+1 pt", "+2 pts", "0 pts", "−1 pt". */
 export function pointsChip(points: number): string {
   return `${formatPoints(points)} ${Math.abs(points) === 1 ? 'pt' : 'pts'}`;
-}
-
-/** The screen-time scale at a par: one row an hour up to 7 hours, then "each hour more". */
-export function screenScale(par: number): { label: string; points: string }[] {
-  const rows = [{ label: 'Under 1 h', points: formatPoints(par) }];
-  for (let hour = 1; hour < 7; hour += 1) rows.push({ label: `${hour}–${hour + 1} h`, points: formatPoints(par - hour) });
-  rows.push({ label: 'Each hour more', points: formatPoints(-1) });
-  return rows;
-}
-
-/** Which row of the scale a screen time falls in: 0 for under an hour, 7 for 7 hours or more. */
-export function scaleRowOf(minutes: number | null): number | null {
-  if (minutes === null) return null;
-  return Math.min(7, Math.floor(minutes / 60));
 }
 
 /** The day total, part by part: "Goals +2 · screen +1 · beers −1". */

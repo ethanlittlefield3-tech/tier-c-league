@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { rumbleDay } from '@tcl/engine';
-import { breakdown, formatPoints, formatScreen, formatScreenShort, isRestDay, leagueDates, liveDayScore, seasonDates, pointsChip, scaleRowOf, screenScale, stepScreen, windowOf } from '../src/today/model.ts';
+import { breakdown, formatPoints, formatScreen, formatScreenShort, isRestDay, leagueDates, liveDayScore, seasonDates, pointsChip, windowOf } from '../src/today/model.ts';
 
 const NY = 'America/New_York';
 const at = (iso: string) => new Date(iso).getTime();
@@ -96,15 +96,6 @@ describe('Screen time and points, as the app writes them', () => {
     expect(formatScreen(135)).toBe('2 h 15 min');
   });
 
-  it('Screen time moves in 15-minute steps, from 0 to 24 hours', () => {
-    expect(stepScreen(null, 15)).toBe(15);
-    expect(stepScreen(null, -15)).toBe(0);
-    expect(stepScreen(60, -15)).toBe(45);
-    expect(stepScreen(0, -15)).toBe(0);
-    expect(stepScreen(1440, 15)).toBe(1440);
-    expect(stepScreen(37, 0)).toBe(30);
-  });
-
   it('Points carry a sign, and a true minus sign', () => {
     expect(formatPoints(3)).toBe('+3');
     expect(formatPoints(0)).toBe('0');
@@ -119,35 +110,6 @@ describe('The screen-time sheet', () => {
     expect(formatScreenShort(45)).toBe('45m');
     expect(formatScreenShort(120)).toBe('2 h');
     expect(formatScreenShort(135)).toBe('2 h 15m');
-  });
-
-  it('The scale shows each hour at the season\'s par: at par 3, under 1 hour is +3 and 6 to 7 hours is -3', () => {
-    const scale = screenScale(3);
-    expect(scale.map((row) => [row.label, row.points])).toEqual([
-      ['Under 1 h', '+3'],
-      ['1–2 h', '+2'],
-      ['2–3 h', '+1'],
-      ['3–4 h', '0'],
-      ['4–5 h', '−1'],
-      ['5–6 h', '−2'],
-      ['6–7 h', '−3'],
-      ['Each hour more', '−1'],
-    ]);
-  });
-
-  it('At another par the scale moves with it', () => {
-    expect(screenScale(5)[0]).toMatchObject({ label: 'Under 1 h', points: '+5' });
-    expect(screenScale(1)[2]).toMatchObject({ label: '2–3 h', points: '−1' });
-  });
-
-  it('The row for the time logged is the one lit up', () => {
-    expect(scaleRowOf(null)).toBeNull();
-    expect(scaleRowOf(0)).toBe(0);
-    expect(scaleRowOf(59)).toBe(0);
-    expect(scaleRowOf(135)).toBe(2);
-    expect(scaleRowOf(419)).toBe(6);
-    expect(scaleRowOf(420)).toBe(7);
-    expect(scaleRowOf(900)).toBe(7);
   });
 
   it('Points chips say pt or pts', () => {

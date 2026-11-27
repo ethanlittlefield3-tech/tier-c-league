@@ -1,7 +1,7 @@
 // The five tab icons, drawn for this app. They share one line weight and
 // corner style, so they read as a set at 26 pixels.
 
-export type Tab = 'today' | 'match' | 'feed' | 'league' | 'garage';
+export type Tab = 'today' | 'feed' | 'league' | 'garage';
 
 const line = {
   class: 'tab-icon',
@@ -22,17 +22,6 @@ function TodayIcon() {
       <path d="M14.5 9.2l2.6 1.9-1 3.1h-3.2l-1-3.1Z" />
       <path d="M14.5 5v4.2M21.3 10.4l-4.2.7M18.6 17.6l-2.5-3.4M10.4 17.6l2.5-3.4M7.7 10.4l4.2.7" />
       <path d="M2.5 9.5h2.5M1.5 12.5h3M2.5 15.5h2.5" />
-    </svg>
-  );
-}
-
-/** Match: two badges, face to face. */
-function MatchIcon() {
-  return (
-    <svg {...line}>
-      <path d="M7 6.5 11 8.8v4.6L7 15.7l-4-2.3V8.8Z" />
-      <path d="m17 8.3 4 2.3v4.6l-4 2.3-4-2.3v-4.6Z" />
-      <path d="M11.6 4.5 10.4 7M13.6 19.5l-1.2-2.5" />
     </svg>
   );
 }
@@ -73,7 +62,6 @@ function GarageIcon() {
 
 export const TAB_ICONS: Record<Tab, () => preact.JSX.Element> = {
   today: TodayIcon,
-  match: MatchIcon,
   feed: FeedIcon,
   league: LeagueIcon,
   garage: GarageIcon,

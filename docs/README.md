@@ -123,7 +123,7 @@ A week in about an hour and a half: a demo league whose days last 8 minutes, wit
 
 1. On GitHub, open **Actions**, choose **Fast test week**, then **Run workflow**. The defaults are fine.
 2. Its log says where to find the code and key, as for the demo league. You have 5 minutes before Monday of Week 1 starts.
-3. Get in on a computer and play along: log your days, set a power-up, answer the receipts request. Today says it is a fast test league, and noon and midnight come round on its clock.
+3. Get in on a computer and play along: log your days, set a power-up, answer the receipts request. Game Day says it is a fast test league, and noon and midnight come round on its clock.
 4. About an hour in, Week 1 goes final and the Wheel is drawn. If you spin, prove your dare before the run ends, about 100 minutes in, so the made-up players can vote on it.
 5. Delete it after with **Demo league**, **delete**, and the league id from the log.
 
@@ -132,10 +132,6 @@ A week in about an hour and a half: a demo league whose days last 8 minutes, wit
 1. On the phone, open Tier C from the Home Screen, tap your badge, and under **Alerts** tap **Turn on alerts**, then **Allow**.
 2. On GitHub, open **Actions**, choose **Send a test alert**, then **Run workflow**.
 3. Within a minute, the phone shows "Test alert". Only the commish's phones get it.
-
-## Trying the group-play modes
-
-In the app, tap your badge, then **Commish tools**, then **Open the preview**. It is a made-up league of six with every group-play mode: pick a mode and a day, log your own day, and tap **Final** to see how the week would settle. Nothing in it is saved or seen by your league.
 
 ## Starting a season
 

@@ -1,34 +1,5 @@
-import { HOUSE, MODE_BLURBS, MODE_NAMES, bountyText, defaultBounty, type BountyTarget, type GroupMode, type HolidayEvent } from '@tcl/engine';
+import { HOUSE, bountyText, defaultBounty, type BountyTarget, type GroupMode, type HolidayEvent } from '@tcl/engine';
 import './group.css';
-
-/**
- * Today in a group-play week: the mode in a line, and what it means for you
- * this week (SCOPE.md, "Group play"). The board on Game Day shows how it stands.
- */
-export function ModeBanner(props: {
-  me: string;
-  week: {
-    week?: number;
-    mode?: string;
-    teams?: { blue: string[]; orange: string[] };
-    duos?: { a: string[]; b: string[] }[];
-    bounty?: BountyTarget | null;
-    roster?: string[];
-  };
-  name: (player: string) => string;
-}) {
-  const mode = props.week.mode as GroupMode | undefined;
-  if (!mode || !(mode in MODE_NAMES)) return null;
-  const detail = youLine(props);
-  return (
-    <p class="mode-banner" role="note">
-      <strong>
-        Week {props.week.week}: {MODE_NAMES[mode]}.
-      </strong>{' '}
-      {MODE_BLURBS[mode]} {detail} The board shows how it stands.
-    </p>
-  );
-}
 
 /** Where you stand in a group-play week, in a line: your squad, your duo, the Bounty, or the Alley's rule. */
 export function youLine(props: {

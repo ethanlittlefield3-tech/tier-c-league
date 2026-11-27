@@ -45,7 +45,7 @@ function BountyWeek(props: { me: Me; seasonId: string; id: string; week: WeekDoc
     setNote(null);
     void loadData()
       .then((api) => api.setGroupPlay(props.me, props.seasonId, props.id, { bounty: target }))
-      .then(() => setNote({ error: false, text: 'Saved. Everyone sees it on Today.' }))
+      .then(() => setNote({ error: false, text: 'Saved. Everyone sees it on Game Day.' }))
       .catch((failure: unknown) => setNote({ error: true, text: TROUBLE[whyOf(failure)] }))
       .finally(() => setBusy(false));
   };

@@ -138,21 +138,6 @@ function useScrolled(): boolean {
   return scrolled;
 }
 
-/** A tab's page until it is built: what it will hold. */
-function Soon(props: { tab: TabInfo }) {
-  const Icon = TAB_ICONS[props.tab.id];
-  return (
-    <section class="soon" aria-labelledby="soon-title">
-      <div class="soon-icon">
-        <Icon />
-      </div>
-      <p class="soon-chip">Coming soon</p>
-      <h2 id="soon-title">{props.tab.label}</h2>
-      <p class="soon-text">{props.tab.soon}</p>
-    </section>
-  );
-}
-
 /**
  * The app itself, once a phone is in a league: a header with the tab's name
  * and your badge, the tab's page, and five tabs along the bottom. Your badge
@@ -286,7 +271,7 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
         </p>
       )}
       <main class="frame-body" key={tab}>
-        {tab === 'today' ? <Today me={props.me} onDraft={() => setDraftOpen(true)} onWheel={() => setWheelOpen(true)} onPicks={() => setPicksOpen(true)} /> : tab === 'feed' ? <Feed me={props.me} onWheel={() => setWheelOpen(true)} /> : tab === 'league' ? <League me={props.me} onPlayer={setDayOf} /> : tab === 'garage' ? <Garage me={props.me} /> : <Soon tab={current} />}
+        {tab === 'today' ? <Today me={props.me} onDraft={() => setDraftOpen(true)} onWheel={() => setWheelOpen(true)} onPicks={() => setPicksOpen(true)} /> : tab === 'feed' ? <Feed me={props.me} onWheel={() => setWheelOpen(true)} /> : tab === 'league' ? <League me={props.me} onPlayer={setDayOf} /> : <Garage me={props.me} />}
       </main>
       <Tabs me={props.me} tab={tab} onTab={setTab} newestBadge={newestBadge} />
       {/* Monday's picks pop up once, over whichever tab is open (ruling R25). */}

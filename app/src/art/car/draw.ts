@@ -534,12 +534,6 @@ function decal(kind: string, { x1, x2, y1, y2 }: Body['band']): string {
   }
 }
 
-/** How wide and tall a body is drawn, for the frame around it. */
-export function bodyBounds(body: string): { width: number } {
-  const known = BODIES[body] ?? BODIES.dart!;
-  return { width: Math.max(...known.wheels.map(([x, , r]) => x + r), known.light[0] + 10) };
-}
-
 /** A sticker, slapped on high up behind the door at a slight tilt, clear of the rear wheel. */
 function sticker(kind: string, at: number, { x1, x2, y1 }: Body['band']): string {
   const cx = n(x1 + (x2 - x1) * 0.22 + at * 19);
