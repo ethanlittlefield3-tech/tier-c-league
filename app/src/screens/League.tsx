@@ -2,7 +2,7 @@ import { useState } from 'preact/hooks';
 import { CarArt } from '../art/car/CarArt.tsx';
 import type { CarParts } from '../art/car/draw.ts';
 import { RankBadge } from '../art/RankBadge.tsx';
-import { RANK_NAMES, nemesisOf, recordText, type Rank, type Rival } from '@tcl/engine';
+import { RANK_NAMES, nemesisOf, recordText, weekOdds, type Rank, type Rival } from '@tcl/engine';
 import { useAll, useDoc, useNow } from '../data/hooks.ts';
 import { PlayerCard } from './PlayerCard.tsx';
 import { Schedule, type WeekDoc } from './Schedule.tsx';
@@ -188,7 +188,14 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
         )}
       </section>
 
-      <Schedule weeks={weeks.docs} currentPeriod={today.data?.period ?? null} kickoff={season.data?.kickoff ?? null} me={props.me.player} name={name} />
+      <Schedule
+        weeks={weeks.docs}
+        currentPeriod={today.data?.period ?? null}
+        kickoff={season.data?.kickoff ?? null}
+        me={props.me.player}
+        name={name}
+        odds={(pair, week) => weekOdds(lookOf(pair.a)?.rankHistory, lookOf(pair.b)?.rankHistory, seasonId, week)}
+      />
 
       {seasonPath && <Playoffs league={props.me.league} seasonPath={seasonPath} me={props.me.player} name={name} banner={league.data?.banner ?? null} />}
 

@@ -10,7 +10,7 @@ This file will grow into the plain-steps guide for running, deploying, backing u
 | --- | --- |
 | `docs/` | The spec (`SCOPE.md`), the build brief (`PHASE1.md`), the progress log, the decisions log and the checkpoint reports |
 | `engine/` | Every game rule as plain code: scoring, calendar, schedule, standings, awards, power-up timing and receipts |
-| `app/` | The phone app: the install guide, the intro, joining or getting back in, Today, Match, Feed, League, Profile, the draft, the Wheel of Shame and Commish tools |
+| `app/` | The phone app: the install guide, the intro, joining or getting back in, Game Day (your day and your matchup), Feed, League, Garage, Profile, the draft, the Wheel of Shame and Commish tools |
 | `firebase/` | The security rules, which decide what each phone may read and write |
 | `tests/rules/` | Tests that try to break those rules against a local copy of the database |
 | `tests/e2e/` | Tests that tap through the app in a browser at iPhone size |

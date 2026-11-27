@@ -1,7 +1,6 @@
-import { LANES, REMATCH_LAST_DAY, RUMBLE_NAMES, isPairedMode, nemesisOf, recordText, rematchFor, weekPeriod, type Lane, type Rival } from '@tcl/engine';
-import { CarArt } from '../art/car/CarArt.tsx';
-import type { CarParts } from '../art/car/draw.ts';
-import { useState } from 'preact/hooks';
+import { LANES, REMATCH_LAST_DAY, RUMBLE_NAMES, isPairedMode, rematchFor, weekPeriod, type Lane } from '@tcl/engine';
+import { createPortal } from 'preact/compat';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { useDoc, useNow, useWhere } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
@@ -13,8 +12,8 @@ import { useMatchup } from './useMatchup.ts';
 import { DropShotFloors, GroupBoard } from './GroupBoard.tsx';
 import { useWeekBoard } from './useWeekBoard.ts';
 import { ReceiptAsk } from './ReceiptAsk.tsx';
-import { leadText } from './WeekStrip.tsx';
 import './match.css';
+import './sheet.css';
 
 const LANE_NAMES: Record<Lane, string> = { mind: 'Mind', body: 'Body', wildcard: 'Wildcard' };
 const LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -129,14 +128,6 @@ const REMATCH_TROUBLE: Record<Trouble, string> = {
   refused: 'The league said no: a rematch is for the week right after a loss, by its Wednesday.',
 };
 
-function Notice(props: { title: string; children: string }) {
-  return (
-    <section class="today-notice">
-      <h2>{props.title}</h2>
-      <p>{props.children}</p>
-    </section>
-  );
-}
 
 /** One player's seven days, as a row of cells. */
 function WeekRow(props: { who: string; team: 'blue' | 'orange'; cells: DayCell[] }) {
@@ -188,134 +179,121 @@ function GroupMatch(props: { me: Me; now: number; match: ReturnType<typeof useMa
   );
 }
 
-/**
- * Match (SCOPE.md, "Screens"): this week's matchup or mode. In a 1v1 week
- * (a regular week, Rumble or Drop Shot), your opponent's live day in team
- * orange, and both weeks side by side; in Team Week, 2v2, Bounty Week and
- * the Alley, the mode's live board.
- */
-export function Match(props: { me: Me }) {
+/** The group-play board, in a week with no single opponent: shown on Game Day in place of the scoreboard. */
+export function GroupBoardFor(props: { me: Me }) {
   const now = useNow();
   const match = useMatchup(props.me, now);
-  const mine = useDoc<{ car?: Partial<CarParts>; rivals?: Record<string, Rival>; stickers?: Partial<Record<string, { until?: unknown }>> }>(`leagues/${props.me.league}/players/${props.me.player}`);
+  if (match.loading || !match.seasonId || !match.today || isPairedMode(match.mode)) return null;
+  return <GroupMatch me={props.me} now={now} match={match} />;
+}
 
-  if (match.loading) {
-    return (
-      <div class="waiting today-waiting" aria-busy="true">
-        <div class="waiting-ring" />
-        <p role="status">Getting this week</p>
-      </div>
-    );
-  }
-  if (!match.seasonId || !match.season) return <Notice title="No season yet">Your commish sets up the season. Your matchups show here from kickoff.</Notice>;
-  const rematch =
-    match.today && match.dates ? <Rematch me={props.me} seasonId={match.seasonId} week={match.today.week} period={match.today.period} dayIndex={match.today.dayIndex} date={match.dates.today} /> : null;
-  if (!match.today || !match.myWeek) return <Notice title="No matchup today">There is no week in play today. Check the League tab for what is next.</Notice>;
-  if (!isPairedMode(match.mode)) return <GroupMatch me={props.me} now={now} match={match} />;
-  if (match.vsHouse) {
-    return (
-      <div class="match">
-        {rematch}
-        <Notice title="You face The House">The House scores the league's average for the week, worked out when the week settles. Every point you score still counts.</Notice>
-      </div>
-    );
-  }
-  if (!match.opponent || !match.theirWeek) return <Notice title="No opponent yet">Your opponent shows here once the schedule is out, after the draft.</Notice>;
-
+/**
+ * Your opponent's day (the commish's request, 2026-11-27): a tap on their car
+ * on Game Day's scoreboard opens it over the page. Their goals, screen time,
+ * beers and day total, live, and anything played on the day.
+ */
+export function OpponentDay(props: { me: Me; onClose: () => void }) {
+  const now = useNow();
+  const match = useMatchup(props.me, now);
+  const title = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    title.current?.focus({ preventScroll: true });
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') props.onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
   const them = match.opponent;
-  const theirToday = match.theirWeek.cells.find((cell) => cell.today) ?? null;
+  const theirToday = match.theirWeek?.cells.find((cell) => cell.today) ?? null;
   const score = theirToday?.score ?? null;
   const todayDate = match.dates?.today ?? '';
-  const on = (item: string) => them.kit.find((play) => play.item === item && play.date === todayDate);
-  const log = them.log;
+  const on = (item: string) => them?.kit.find((play) => play.item === item && play.date === todayDate);
+  const log = them?.log;
+  const name = them?.name ?? 'Your opponent';
 
-  return (
-    <div class="match">
-      <section class="match-board" aria-label="This week's score">
-        <div class="match-side" data-team="blue">
-          <CarArt parts={mine.data?.car} stickers={mine.data?.stickers} team="blue" class="match-car" />
-          <span class="match-name">You</span>
-          <span class="match-points">{formatPoints(match.myWeek.totals.points)}</span>
-        </div>
-        <span class="match-vs" aria-hidden="true">
-          VS
-        </span>
-        <div class="match-side" data-team="orange">
-          <CarArt parts={them.car} stickers={them.stickers} team="orange" class="match-car match-car-them" />
-          <span class="match-name">{them.name}</span>
-          {nemesisOf(mine.data?.rivals) === them.id && (
-            <span class="match-nemesis">
-              <span role="img" aria-hidden="true">
-                💀
-              </span>{' '}
-              Nemesis
-            </span>
-          )}
-          <span class="match-points">{formatPoints(match.theirWeek.totals.points)}</span>
-        </div>
-        <p class="match-lead">{leadText(match.myWeek.totals, match.theirWeek.totals, them.name)}</p>
-        <p class="match-record">
-          All-time against {them.name}: {recordText(mine.data?.rivals?.[them.id])}
-        </p>
-      </section>
-
-      <section class="week match-week" aria-labelledby="match-week-title">
-        <h2 id="match-week-title">This week</h2>
-        <div class="match-letters" aria-hidden="true">
-          <span />
-          {match.myWeek.cells.map((cell) => (
-            <span data-today={cell.today}>{LETTERS[cell.dayIndex]}</span>
-          ))}
-        </div>
-        <WeekRow who="You" team="blue" cells={match.myWeek.cells} />
-        <WeekRow who={them.name} team="orange" cells={match.theirWeek.cells} />
-      </section>
-
-      {rematch}
-
-      {match.mode === 'dropShot' && <DropShotFloors mine={match.myWeek.cells} theirs={match.theirWeek.cells} name={them.name} />}
-
-      <section class="match-day" aria-labelledby="match-day-title">
+  return createPortal(
+    <div class="sheet-layer">
+      <div class="sheet-backdrop" onClick={props.onClose} />
+      <section class="sheet match-day" role="dialog" aria-modal="true" aria-labelledby="match-day-title">
         <div class="match-day-head">
-          <h2 id="match-day-title">{them.name}'s day</h2>
+          <h2 id="match-day-title" ref={title} tabIndex={-1}>
+            {name}'s day
+          </h2>
           <p class="match-day-total" data-sign={!score ? 'zero' : score.total > 0 ? 'up' : score.total < 0 ? 'down' : 'zero'}>
             {score ? formatPoints(score.total) : '0'}
             <span>{theirToday?.state === 'locked' ? 'final' : 'so far'}</span>
           </p>
         </div>
-        <div class="match-notes">
-          {theirToday?.rest && <span class="match-note match-note-rest">Rest day</span>}
-          {match.mode === 'rumble' && match.rumbleItems[`${todayDate}_${them.id}`] && (
-            <span class="match-note">Item: {RUMBLE_NAMES[match.rumbleItems[`${todayDate}_${them.id}`]!]}</span>
-          )}
-          {on('aerial') && <span class="match-note">Aerial: counts double</span>}
-          {on('ruleOne') && <span class="match-note">Rule One: scores 0</span>}
-        </div>
-        <div class="squares match-squares">
-          <div class="square square-screen" data-logged={log?.screenMinutes !== null && log?.screenMinutes !== undefined}>
-            <span class="square-label">Screen time</span>
-            <span class="square-value">{formatScreenShort(log?.screenMinutes ?? null)}</span>
-            {score && log && log.screenMinutes !== null && <span class="square-chip match-chip">{pointsChip(score.screen.points)}</span>}
-          </div>
-          {LANES.map((lane) => {
-            const state = score?.goals[lane] ?? 'missed';
-            const text = them.goals[lane]?.text ?? '';
-            return (
-              <div class="square square-goal" data-lane={lane} data-state={state} aria-label={`${them.name}'s ${LANE_NAMES[lane]}: ${text || 'not set yet'}, ${state}`}>
-                <span class="square-goal-text">{text || 'Set at the draft'}</span>
-                <GoalMark state={state} />
+        {!them ? (
+          <p class="sheet-lead">Getting their day.</p>
+        ) : (
+          <>
+            <div class="match-notes">
+              {theirToday?.rest && <span class="match-note match-note-rest">Rest day</span>}
+              {match.mode === 'rumble' && match.rumbleItems[`${todayDate}_${them.id}`] && <span class="match-note">Item: {RUMBLE_NAMES[match.rumbleItems[`${todayDate}_${them.id}`]!]}</span>}
+              {on('aerial') && <span class="match-note">Aerial: counts double</span>}
+              {on('ruleOne') && <span class="match-note">Rule One: scores 0</span>}
+            </div>
+            <div class="squares match-squares">
+              <div class="square square-screen" data-logged={log?.screenMinutes !== null && log?.screenMinutes !== undefined}>
+                <span class="square-label">Screen time</span>
+                <span class="square-value">{formatScreenShort(log?.screenMinutes ?? null)}</span>
+                {score && log && log.screenMinutes !== null && <span class="square-chip match-chip">{pointsChip(score.screen.points)}</span>}
               </div>
-            );
-          })}
-        </div>
-        <div class="match-day-foot">
-          <p class="match-beers">
-            Beers today: <strong>{log?.beers ?? 0}</strong>
-          </p>
-          {todayDate && <Poke me={props.me} seasonId={match.seasonId} date={todayDate} to={them.id} name={them.name} />}
-        </div>
+              {LANES.map((lane) => {
+                const state = score?.goals[lane] ?? 'missed';
+                const text = them.goals[lane]?.text ?? '';
+                return (
+                  <div class="square square-goal" data-lane={lane} data-state={state} aria-label={`${name}'s ${LANE_NAMES[lane]}: ${text || 'not set yet'}, ${state}`}>
+                    <span class="square-goal-text">{text || 'Set at the draft'}</span>
+                    <GoalMark state={state} />
+                  </div>
+                );
+              })}
+            </div>
+            <p class="match-beers">
+              Beers today: <strong>{log?.beers ?? 0}</strong>
+            </p>
+            {match.theirWeek && (
+              <div class="match-their-week">
+                <div class="match-letters" aria-hidden="true">
+                  <span />
+                  {match.theirWeek.cells.map((cell) => (
+                    <span data-today={cell.today}>{LETTERS[cell.dayIndex]}</span>
+                  ))}
+                </div>
+                <WeekRow who={name} team="orange" cells={match.theirWeek.cells} />
+              </div>
+            )}
+          </>
+        )}
+        <button type="button" class="btn picks-done" onClick={props.onClose}>
+          Close
+        </button>
       </section>
+    </div>,
+    document.body,
+  );
+}
 
+/**
+ * The rest of Match, below Game Day's power-ups (the commish's request,
+ * 2026-11-27): a slim poke, then asking your opponent for receipts, then a
+ * rematch, Drop Shot's floors and your Demolition, when there are any.
+ */
+export function MatchExtras(props: { me: Me }) {
+  const now = useNow();
+  const match = useMatchup(props.me, now);
+  if (match.loading || !match.seasonId || !match.season || !match.today || !match.dates) return null;
+  const rematch = <Rematch me={props.me} seasonId={match.seasonId} week={match.today.week} period={match.today.period} dayIndex={match.today.dayIndex} date={match.dates.today} />;
+  if (!isPairedMode(match.mode)) return null;
+  const them = match.opponent;
+  if (match.vsHouse || !them || !match.myWeek || !match.theirWeek) return rematch;
+  const todayDate = match.dates.today;
+  return (
+    <div class="match-extras">
+      <Poke me={props.me} seasonId={match.seasonId} date={todayDate} to={them.id} name={them.name} />
       <ReceiptAsk
         me={props.me}
         seasonId={match.seasonId}
@@ -328,8 +306,8 @@ export function Match(props: { me: Me }) {
         theirReceipts={match.theirReceipts}
         myRequests={match.myRequests}
       />
-
-
+      {rematch}
+      {match.mode === 'dropShot' && <DropShotFloors mine={match.myWeek.cells} theirs={match.theirWeek.cells} name={them.name} />}
       {match.myDemolition && (
         <p class="match-secret">
           Your Demolition: {dayName(match.myDemolition.date)}, their {LANE_NAMES[match.myDemolition.lane]} goal. Only you can see it until noon the next day.

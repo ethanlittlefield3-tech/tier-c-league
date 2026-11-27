@@ -83,6 +83,20 @@
   text-align: center;
 }
 
+.picks-odds {
+  font: 700 11.5px/1.2 var(--body);
+  color: var(--ink-soft);
+}
+
+.picks-odds[data-fav='true'] {
+  color: var(--gold);
+}
+
+.picks-note {
+  margin: 10px 0 0;
+  text-align: center;
+}
+
 .picks-count {
   margin: 14px 0 0;
   font-size: 13px;

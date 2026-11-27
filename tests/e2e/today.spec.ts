@@ -4,7 +4,7 @@ import { createLeague, patchDoc, readDoc, setGoals, setWindow, startSeason, writ
 
 const button = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
 const total = (page: Page) => page.locator('.today-points');
-const goal = (page: Page, lane: string) => page.locator(`.square-goal[data-lane="${lane}"]`);
+const goal = (page: Page, lane: string) => page.locator(`.check-goal[data-lane="${lane}"]`);
 const screenCard = (page: Page) => page.getByRole('button', { name: /^Screen time:/ });
 const sheet = (page: Page) => page.getByRole('dialog', { name: 'Unproductive screen time' });
 const yesterdayPill = (page: Page) => page.getByRole('button', { name: /^Yesterday/ });
@@ -97,25 +97,25 @@ test.describe('Today', () => {
   test('Screen time moves in 15-minute steps and scores against par', async ({ page, request }) => {
     const { season, player } = await onToday(page, request);
     await logScreen(page, '15 minutes more', 4);
-    await expect(page.locator('.square-screen .square-value')).toHaveText('1 h');
+    await expect(page.locator('.check-screen .square-value')).toHaveText('1 h');
     // At par 3, 1 hour scores +2.
-    await expect(page.locator('.square-screen .square-chip')).toHaveText('+2 pts');
+    await expect(page.locator('.check-screen .square-chip')).toHaveText('+2 pts');
     await expect(total(page)).toContainText('+2');
     await saved(page);
     expect((await dayDoc(request, season, player, season.today))?.screenMinutes).toBe(60);
 
     await logScreen(page, '15 minutes less', 1);
-    await expect(page.locator('.square-screen .square-value')).toHaveText('45m');
+    await expect(page.locator('.check-screen .square-value')).toHaveText('45m');
     await expect(total(page)).toContainText('+3');
   });
 
   test('Clear it takes screen time back to not logged', async ({ page, request }) => {
     const { season, player } = await onToday(page, request);
     await logScreen(page, '15 minutes more', 1);
-    await expect(page.locator('.square-screen .square-value')).toHaveText('15m');
+    await expect(page.locator('.check-screen .square-value')).toHaveText('15m');
     await screenCard(page).click();
     await sheet(page).getByRole('button', { name: 'Clear it' }).click();
-    await expect(page.locator('.square-screen .square-value')).toHaveText('Not logged');
+    await expect(page.locator('.check-screen .square-value')).toHaveText('Not logged');
     await saved(page);
     expect((await dayDoc(request, season, player, season.today))?.screenMinutes).toBeNull();
   });
@@ -137,9 +137,9 @@ test.describe('Today', () => {
     // Three goals and two beers, one right after another, before the screen can redraw.
     await page.evaluate(() => {
       const tap = (selector: string) => document.querySelector<HTMLButtonElement>(selector)!.click();
-      tap('.square-goal[data-lane="mind"]');
-      tap('.square-goal[data-lane="body"]');
-      tap('.square-goal[data-lane="wildcard"]');
+      tap('.check-goal[data-lane="mind"]');
+      tap('.check-goal[data-lane="body"]');
+      tap('.check-goal[data-lane="wildcard"]');
       tap('button[aria-label="One beer more"]');
       tap('button[aria-label="One beer more"]');
     });
@@ -232,10 +232,13 @@ test.describe('Today', () => {
     { name: 'an iPhone 13', width: 390, height: 797 },
     { name: 'a small iPhone SE', width: 375, height: 647 },
   ]) {
-    test(`All four squares are on screen without scrolling, on ${phone.name}`, async ({ page, request }) => {
+    test(`Your three goals and screen time are on screen without scrolling, on ${phone.name}`, async ({ page, request }) => {
       // The Home Screen app's own size: the screen less the status bar.
       await page.setViewportSize({ width: phone.width, height: phone.height });
-      await onToday(page, request);
+      const { season } = await onToday(page, request);
+      // The tightest case: before noon, yesterday can still be fixed, so both day pills show.
+      await setWindow(request, season, season.yesterday, { start: new Date(Date.now() - 20 * HOUR), lock: new Date(Date.now() + 2 * HOUR) });
+      await expect(yesterdayPill(page)).toBeVisible();
       const tabs = await page.getByRole('navigation', { name: 'Main' }).boundingBox();
       for (const square of [screenCard(page), goal(page, 'mind'), goal(page, 'body'), goal(page, 'wildcard')]) {
         const box = await square.boundingBox();
@@ -248,7 +251,7 @@ test.describe('Today', () => {
     });
   }
 
-  test('Beers, the day total and the power-ups are below, a scroll away, with buttons big enough to tap', async ({ page, request }) => {
+  test('Beers and the power-ups are below, a scroll away, with buttons big enough to tap', async ({ page, request }) => {
     await onToday(page, request);
     await page.locator('.power').scrollIntoViewIfNeeded();
     await expect(page.locator('.power')).toBeInViewport();
@@ -287,7 +290,7 @@ test.describe('Today', () => {
     await sheet(page).getByRole('button', { name: '1 hour more' }).click();
     await sheet(page).getByRole('button', { name: 'Close' }).click();
     await expect(sheet(page)).toHaveCount(0);
-    await expect(page.locator('.square-screen .square-value')).toHaveText('Not logged');
+    await expect(page.locator('.check-screen .square-value')).toHaveText('Not logged');
     expect(await dayDoc(request, season, player, season.today)).toBeNull();
     // The focus goes back to the card that opened it.
     await expect(screenCard(page)).toBeFocused();

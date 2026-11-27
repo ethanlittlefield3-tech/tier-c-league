@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { MODE_BLURBS, MODE_NAMES, addDays, type GroupMode } from '@tcl/engine';
+import { MODE_BLURBS, MODE_NAMES, addDays, isPairedMode, type GroupMode, type WeekMode } from '@tcl/engine';
 import { groupLines, type GroupDoc } from '../group/words.ts';
 
 export interface Result {
@@ -27,6 +27,7 @@ export interface WeekDoc {
   group?: GroupDoc | null;
 }
 
+const percent = (chance: number) => `${Math.round(chance * 100)}%`;
 const points = (value: number) => (Number.isInteger(value) ? String(value) : value.toFixed(1));
 const modeName = (mode: string | undefined) => (mode && mode in MODE_NAMES ? MODE_NAMES[mode as GroupMode] : null);
 const modeBlurb = (mode: string | undefined) => (mode && mode in MODE_BLURBS ? MODE_BLURBS[mode as GroupMode] : null);
@@ -53,7 +54,15 @@ function Arrow(props: { back?: boolean }) {
  * opens on this week's faceoffs, and the arrows go back through the results,
  * with each week's MVP, Bust and Wheel, and on to the weeks to come.
  */
-export function Schedule(props: { weeks: { id: string; data: WeekDoc }[]; currentPeriod: string | null; kickoff?: string | null; me: string; name: (player: string) => string }) {
+export function Schedule(props: {
+  weeks: { id: string; data: WeekDoc }[];
+  currentPeriod: string | null;
+  kickoff?: string | null;
+  me: string;
+  name: (player: string) => string;
+  /** A 1v1's odds, side a's chance from 0 to 1: shown before the week is settled. */
+  odds?: (pair: { a: string; b: string }, week: number) => number;
+}) {
   const weeks = props.weeks.filter((week) => week.data.phase !== 'playoff').sort((a, b) => a.data.week - b.data.week);
   // This week if it is on the schedule, else the latest week with results, else the first to come.
   const start = (() => {
@@ -94,7 +103,7 @@ export function Schedule(props: { weeks: { id: string; data: WeekDoc }[]; curren
               <Arrow />
             </button>
           </div>
-          <WeekBody week={week.data} dates={props.kickoff ? weekDates(props.kickoff, week.data.week) : null} current={week.id === props.currentPeriod} me={props.me} name={props.name} />
+          <WeekBody week={week.data} dates={props.kickoff ? weekDates(props.kickoff, week.data.week) : null} current={week.id === props.currentPeriod} me={props.me} name={props.name} odds={props.odds} />
         </>
       )}
     </section>
@@ -106,8 +115,9 @@ export function Schedule(props: { weeks: { id: string; data: WeekDoc }[]; curren
  * row a matchup, the names either side of the score once it is settled, or
  * of "vs" before. Its awards follow, once settled.
  */
-function WeekBody(props: { week: WeekDoc; dates: string | null; current: boolean; me: string; name: (player: string) => string }) {
+function WeekBody(props: { week: WeekDoc; dates: string | null; current: boolean; me: string; name: (player: string) => string; odds?: (pair: { a: string; b: string }, week: number) => number }) {
   const { week, name, me } = props;
+  const isPaired = isPairedMode((week.mode ?? 'regular') as WeekMode);
   const strip = (label: string) => (
     <p class="schedule-strip">
       <span>{props.dates ?? `Week ${week.week}`}</span>
@@ -182,11 +192,20 @@ function WeekBody(props: { week: WeekDoc; dates: string | null; current: boolean
       <div class="schedule-board">
         {strip(week.mode === 'teamWeek' ? 'Teams' : 'Matchups')}
         <ul class="pairs">
-          {(week.pairs ?? []).map((pair) => (
-            <li class="fixture" data-me={pair.a === me || pair.b === me}>
-              <span class="fixture-name">{name(pair.a)}</span> <span class="fixture-vs">vs</span> <span class="fixture-name fixture-right">{name(pair.b)}</span>
-            </li>
-          ))}
+          {(week.pairs ?? []).map((pair) => {
+            // The week's odds, once there is something to go on; The House's games have none.
+            const chance = pair.a !== 'HOUSE' && pair.b !== 'HOUSE' && isPaired ? (props.odds?.(pair, week.week) ?? 0.5) : 0.5;
+            return (
+              <li class="fixture" data-me={pair.a === me || pair.b === me}>
+                <span class="fixture-name">{name(pair.a)}</span>{' '}
+                <span class="fixture-mid">
+                  {chance !== 0.5 && <span class="fixture-odds" data-fav={chance > 0.5}>{percent(chance)}</span>} <span class="fixture-vs">vs</span>{' '}
+                  {chance !== 0.5 && <span class="fixture-odds" data-fav={chance < 0.5}>{percent(1 - chance)}</span>}
+                </span>{' '}
+                <span class="fixture-name fixture-right">{name(pair.b)}</span>
+              </li>
+            );
+          })}
           {week.mode === 'teamWeek' &&
             week.teams &&
             (['blue', 'orange'] as const).map((team) => (

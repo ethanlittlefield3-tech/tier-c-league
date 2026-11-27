@@ -224,7 +224,7 @@ test.describe('Feed and the wall', () => {
     const feed = page.getByRole('region', { name: 'The feed' });
 
     // Riley logs today, on Riley's own phone: a check-in, live on Alex's.
-    await riley.phone.locator('.square-goal[data-lane="body"]').click();
+    await riley.phone.locator('.check-goal[data-lane="body"]').click();
     await expect(feed.locator('.feed-event[data-kind="checkIn"]')).toContainText(`Riley logged ${weekday(season.today)}`);
 
     // An Aerial, and a dock with its reason.

@@ -63,7 +63,7 @@ export interface FeedInput {
   /** Rematch challenges, and how their side races ended. */
   rematches?: { id: string; data: { from: string; to: string; period: string; at?: number | null; winner?: string | null; points?: Record<string, number>; settledAt?: number | null } }[];
   /** The jobs' news: badges earned and rank changes. */
-  news?: { id: string; data: { kind: string; player: string | null; at?: number | null; data?: { badge?: string; rank?: Rank; from?: Rank | null; top?: string[]; right?: number; made?: number; week?: number; pickers?: number; upset?: { winner: string; loser: string; pickedBy: number; of: number } | null; season?: string; finalist?: string | null; whiffLoser?: string | null } } }[];
+  news?: { id: string; data: { kind: string; player: string | null; at?: number | null; data?: { badge?: string; rank?: Rank; from?: Rank | null; top?: string[]; right?: number; made?: number; week?: number; pickers?: number; upset?: { winner: string; loser: string; pickedBy: number; of: number; chance?: number | null } | null; expected?: { called: number; of: number }; season?: string; finalist?: string | null; whiffLoser?: string | null } } }[];
   /** The Wheel of Shame's latest draws, their spins and the votes on their proof. */
   wheel?: {
     eligible: number;
@@ -272,7 +272,9 @@ export function feedEvents(input: FeedInput): FeedEvent[] {
     // A week's picks, once it is final (ruling R25): the best record, the
     // biggest upset, and how many picked.
     if (data.kind === 'picks' && data.data) {
-      const { top = [], right = 0, made = 0, week, pickers, upset } = data.data;
+      const { top = [], right = 0, made = 0, week, pickers, upset, expected } = data.data;
+      // The winner's chance in the week's odds, as the favorite or the underdog.
+      const role = typeof upset?.chance === 'number' && upset.chance !== 0.5 ? ` as the ${Math.round(upset.chance * 100)}% ${upset.chance > 0.5 ? 'favorite' : 'underdog'}` : '';
       const text =
         top.length === 0
           ? `Week ${week} picks: nobody called a winner`
@@ -280,7 +282,8 @@ export function feedEvents(input: FeedInput): FeedEvent[] {
             ? `Week ${week} picks: ${name(top[0]!)} called ${right} of ${made}, best in the league`
             : `Week ${week} picks: ${list(top, name)} called ${right} each, best in the league`;
       const detail = [
-        upset ? `Upset of the week: ${name(upset.winner)} beat ${name(upset.loser)}, and ${upset.pickedBy === 0 ? 'nobody' : `only ${upset.pickedBy} of ${upset.of}`} saw it coming.` : '',
+        upset ? `Upset of the week: ${name(upset.winner)} beat ${name(upset.loser)}${role}, and ${upset.pickedBy === 0 ? 'nobody' : `only ${upset.pickedBy} of ${upset.of}`} saw it coming.` : '',
+        expected && expected.of > 0 ? `The odds called ${expected.called} of ${expected.of}.` : '',
         typeof pickers === 'number' ? `${pickers} ${pickers === 1 ? 'player' : 'players'} picked.` : '',
       ]
         .filter(Boolean)

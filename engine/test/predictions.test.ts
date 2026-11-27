@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addRecords, bestPickers, pickFor, pickUpset, scorePicks } from '../src/predictions.ts';
+import { addRecords, bestPickers, oddsCalled, pickFor, pickUpset, scorePicks } from '../src/predictions.ts';
 
 const pairs = [
   { a: 'maya', b: 'sam' },
@@ -46,6 +46,15 @@ describe('Predictions', () => {
     expect(pickUpset([['maya'], ['sam']], pairs, results)).toBeNull();
     expect(pickUpset([['alex'], ['alex'], ['alex']], pairs, results)).toBeNull();
     expect(pickUpset([[], []], pairs, results)).toBeNull();
+  });
+
+  it('The odds called a matchup when the favorite won; an even matchup, a draw or The House is not counted', () => {
+    const week = [...pairs, { a: 'kim', b: 'lee' }];
+    const done = { ...results, kim: { outcome: 'win' }, lee: { outcome: 'loss' } };
+    // Maya was favored and won; Kim was the underdog and won; Alex and Jordan drew.
+    const odds = { 'maya-sam': 0.6, 'alex-jordan': 0.7, 'kim-lee': 0.3, 'riley-HOUSE': 0.9 };
+    expect(oddsCalled(week, odds, done)).toEqual({ called: 1, of: 2 });
+    expect(oddsCalled(week, { ...odds, 'maya-sam': 0.5 }, done)).toEqual({ called: 0, of: 1 });
   });
 
   it("A season's record adds up its weeks", () => {

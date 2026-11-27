@@ -41,7 +41,7 @@ async function rivals(page: Page, request: APIRequestContext, browser: Browser):
     updatedAt: new Date(),
   });
   await enterAsCommish(page, league);
-  await tab(page, 'Match').click();
+  await tab(page, 'Game Day').click();
   return { league, season, riley: { phone, player } };
 }
 

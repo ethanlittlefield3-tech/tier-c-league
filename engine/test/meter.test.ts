@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { daysLeft, paceSoFar, recentDailyAverage, winMeter } from '../src/meter.ts';
+import { daysLeft, historyBefore, paceSoFar, recentDailyAverage, weekOdds, winMeter } from '../src/meter.ts';
 
 const side = (points: number, dailyAverage: number | null = 2) => ({ points, dailyAverage });
 
@@ -41,5 +41,31 @@ describe('The win meter', () => {
     const day = (state: 'locked' | 'open', total: number) => ({ state, score: { total } });
     expect(paceSoFar([day('locked', 4), day('locked', 2), day('open', 6)])).toBe(3);
     expect(paceSoFar([day('open', 6)])).toBeNull();
+  });
+});
+
+describe("A week's odds", () => {
+  const week = (season: string, n: number, points: number) => ({ season, period: `w${String(n).padStart(2, '0')}`, points });
+
+  it("A week's odds come from each player's final weeks before the one just played, since that one is final only on the Tuesday", () => {
+    const history = [week('s1', 1, 20), week('s1', 2, 22), week('s1', 3, 24), week('s1', 4, 26)];
+    // Week 4's odds: weeks 1 and 2 only, so they are the same on Monday as at the end of the week.
+    expect(historyBefore(history, 's1', 4)).toEqual([history[0], history[1]]);
+    // Last season's weeks count too.
+    expect(historyBefore([week('s0', 11, 30), ...history], 's1', 3)).toEqual([week('s0', 11, 30), history[0]]);
+    expect(historyBefore(undefined, 's1', 4)).toEqual([]);
+  });
+
+  it("They are the win meter at kickoff: nothing scored yet, a whole week left, each side's recent daily average", () => {
+    const strong = [week('s1', 1, 35), week('s1', 2, 35)];
+    const weak = [week('s1', 1, 14), week('s1', 2, 14)];
+    expect(weekOdds(strong, weak, 's1', 4)).toBeCloseTo(winMeter({ points: 0, dailyAverage: 5 }, { points: 0, dailyAverage: 2 }, 7));
+    expect(weekOdds(strong, weak, 's1', 4)).toBeGreaterThan(0.5);
+    expect(weekOdds(weak, strong, 's1', 4)).toBeCloseTo(1 - weekOdds(strong, weak, 's1', 4));
+  });
+
+  it('With nothing final to go on, a week is even', () => {
+    expect(weekOdds([], [], 's1', 1)).toBe(0.5);
+    expect(weekOdds([week('s1', 1, 30)], [week('s1', 1, 10)], 's1', 2)).toBe(0.5);
   });
 });

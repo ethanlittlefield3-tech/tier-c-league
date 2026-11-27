@@ -128,7 +128,7 @@
   bottom: 0;
   z-index: 3;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   padding: 6px max(6px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px))
     max(6px, env(safe-area-inset-left, 0px));
   background: linear-gradient(180deg, rgba(14, 25, 62, 0.98), rgba(5, 10, 26, 0.99));

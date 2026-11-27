@@ -11,7 +11,7 @@ const emulator = { ...process.env, FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080', GC
 const tab = (page: Page, name: string) => page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name, exact: true });
 
 test.describe('The demo league', () => {
-  test('The demo job makes a league to try every screen: a receipt on Today, a matchup, the wall, the Wheel and the standings', async ({ page }) => {
+  test('The demo job makes a league to try every screen: a receipt and a matchup on Game Day, the wall, the Wheel and the standings', async ({ page }) => {
     const { stdout } = await run(process.execPath, [job('demo-league')], { env: emulator });
     const id = /id ([a-z0-9]+),/.exec(stdout)?.[1] ?? '';
     expect(id).not.toBe('');
@@ -27,9 +27,9 @@ test.describe('The demo league', () => {
     const demo: TestLeague = { id, code: String(league?.code), name: 'Demo League', commish, commishKey: key };
     await enterAsCommish(page, demo);
 
-    // Today: Maya wants receipts, and there is an opponent this week.
+    // Game Day: Maya wants receipts, and the scoreboard has an opponent this week.
     await expect(page.getByRole('group', { name: 'Receipts on your Body goal' })).toContainText('Maya wants proof of your Body goal');
-    await expect(page.locator('.week-vs')).toContainText('vs');
+    await expect(page.locator('.board-vs')).toHaveText('VS');
 
     // Feed: the Wheel is waiting for you, and Maya's quick-chat line is aimed at you.
     await tab(page, 'Feed').click();

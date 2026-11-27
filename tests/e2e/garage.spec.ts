@@ -153,7 +153,7 @@ test.describe('The Garage', () => {
     const before = Number((await have.textContent())?.split(' ')[0]);
 
     // Away from the Garage, Perfect Week is earned.
-    await tab(page, 'Today').click();
+    await tab(page, 'Game Day').click();
     const now = await page.evaluate(() => Date.now());
     await patchDoc(request, profile, { badges: { perfectWeek: { at: new Date(now + 1000), season: 's1' } } });
     await expect(tab(page, 'Garage')).toHaveAccessibleDescription('New parts since you last looked');
@@ -172,7 +172,7 @@ test.describe('The Garage', () => {
     await expect(have).toHaveText(new RegExp(`^${before + 1} of \\d+ paints unlocked$`));
 
     // Next visit, it is one of yours like the rest.
-    await tab(page, 'Today').click();
+    await tab(page, 'Game Day').click();
     await expect(tab(page, 'Garage').locator('.frame-dot')).toHaveCount(0);
     await openGarage(page);
     await slots.getByRole('button', { name: 'Paint', exact: true }).click();

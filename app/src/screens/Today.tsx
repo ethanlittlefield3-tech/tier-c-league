@@ -1,6 +1,7 @@
 import { createPortal } from 'preact/compat';
+import type { CarParts } from '../art/car/draw.ts';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { LANES, daysLeft, holidayOf, isPairedMode, rumbleWeek, type WeekInput, paceSoFar, receiptFixes, receiptStatus, recentDailyAverage, weekPeriod, winMeter, type BountyTarget, type Lane, type Square, type StoredReceipt, type WeekMode } from '@tcl/engine';
+import { LANES, daysLeft, holidayOf, isPairedMode, nemesisOf, recordText, rumbleWeek, type Rival, type WeekInput, paceSoFar, receiptFixes, receiptStatus, recentDailyAverage, weekPeriod, winMeter, type BountyTarget, type Lane, type Square, type StoredReceipt, type WeekMode } from '@tcl/engine';
 import { GoalExplosion } from '../art/car/GoalExplosion.tsx';
 import { useAll, useDoc, useNow, usePeek, useWhere } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
@@ -24,6 +25,8 @@ import type { CalDay } from '../today/kit.ts';
 import { playerWeek, type KitPlay } from '../today/week.ts';
 import { PowerUps, type Play } from './PowerUps.tsx';
 import { ReceiptsDue } from './ReceiptsDue.tsx';
+import { GroupBoardFor, MatchExtras, OpponentDay } from './Match.tsx';
+import { Scoreboard } from './Scoreboard.tsx';
 import { usePicksDue } from './usePicksDue.ts';
 import './picks.css';
 import type { Draw } from './Wheel.tsx';
@@ -83,6 +86,17 @@ const EMPTY: DayEntry = { goals: { mind: false, body: false, wildcard: false }, 
 
 /** A goal that counts: hit, or counted by a power-up. */
 const GOAL_IN = new Set<string>(['hit', 'boosted', 'swappedIn']);
+
+/** Today's boost on the scoreboard: goals in today, 0 to 3, or a rest day. */
+function boostOf(cells: readonly { today: boolean; rest: boolean; score: { goals: Record<string, string> } | null }[]): number | 'rest' {
+  const today = cells.find((cell) => cell.today);
+  if (!today) return 0;
+  if (today.rest) return 'rest';
+  return Object.values(today.score?.goals ?? {}).filter((state) => GOAL_IN.has(state)).length;
+}
+
+/** "Thu", for the scoreboard. */
+const weekdayShort = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' });
 
 const TROUBLE: Record<Trouble, string> = {
   'not-open': 'The league is not open yet.',
@@ -156,6 +170,8 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
   const lastSaved = useRef<{ date: string; entry: DayEntry } | null>(null);
   // A tap that gets all three goals in plays your goal explosion.
   const [burst, setBurst] = useState(0);
+  // Your opponent's day, opened from their car on the scoreboard.
+  const [theirDayOpen, setTheirDayOpen] = useState(false);
 
   const leaguePath = `leagues/${props.me.league}`;
   const league = useDoc<LeagueDoc>(leaguePath);
@@ -215,9 +231,11 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
   const everyone = useAll<{ displayName?: string }>(mode !== 'regular' ? `${leaguePath}/players` : null);
   const rosters = useAll<RosterDoc>(seasonPath && sideTargets.length > 0 ? `${seasonPath}/roster` : null);
   const weekKit = useWhere<KitPlay & { player: string }>(seasonPath && sideTargets.length > 0 ? `${seasonPath}/kit` : null, 'period', period);
-  const opponentProfile = useDoc<{ displayName?: string; rankHistory?: { points: number }[] }>(opponentId ? `${leaguePath}/players/${opponentId}` : null);
-  // Your recent weeks, for the win meter, and your goal explosion, for a perfect day.
-  const myProfile = useDoc<{ rankHistory?: { points: number }[]; car?: { explosion?: string } }>(`${leaguePath}/players/${me}`);
+  const opponentProfile = useDoc<{ displayName?: string; rankHistory?: { points: number }[]; car?: Partial<CarParts>; stickers?: Partial<Record<string, { until?: unknown }>> }>(
+    opponentId ? `${leaguePath}/players/${opponentId}` : null,
+  );
+  // Your recent weeks, for the win meter; your car, for the scoreboard and a perfect day's goal explosion; your rivalries.
+  const myProfile = useDoc<{ rankHistory?: { points: number }[]; car?: Partial<CarParts>; stickers?: Partial<Record<string, { until?: unknown }>>; rivals?: Record<string, Rival> }>(`${leaguePath}/players/${me}`);
   const opponentRoster = useDoc<RosterDoc>(seasonPath && opponentId ? `${seasonPath}/roster/${opponentId}` : null);
   const opponentRest = useDoc<{ date: string }>(seasonPath && period && opponentId ? `${seasonPath}/kit/${period}_${opponentId}_rest` : null);
   const draftState = useDoc<{ step: string; votesCloseAt?: number }>(seasonPath ? `${seasonPath}/draft/state` : null);
@@ -432,6 +450,15 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
   // The day on screen, with today's items played, once the server has it.
   const shown = (rumbled && myWeek.cells.find((cell) => cell.date === date)?.score) || score;
   const screenPointsShown = entry.screenMinutes === null ? null : score.screen.points;
+  // The win meter: points so far, and each side's recent pace for the days left.
+  const meter =
+    theirWeek && daysLeft(myWeek.cells) > 0
+      ? winMeter(
+          { points: myWeek.totals.points, dailyAverage: recentDailyAverage(myProfile.data?.rankHistory) ?? paceSoFar(myWeek.cells) },
+          { points: theirWeek.totals.points, dailyAverage: recentDailyAverage(opponentProfile.data?.rankHistory) ?? paceSoFar(theirWeek.cells) },
+          daysLeft(myWeek.cells),
+        )
+      : null;
 
   return (
     <div class="today" data-window={dayWindow}>
@@ -450,126 +477,184 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
           </button>
         </section>
       )}
-      {picksDue && picksDue.picked < picksDue.pairs.length && props.onPicks && (
-        <section class="picks-banner" aria-labelledby="picks-banner-title">
-          <div>
-            <h2 id="picks-banner-title">Week {picksDue.week} picks</h2>
-            <p>
-              {picksDue.picked} of {picksDue.pairs.length} picked · closes 11:59 pm
-            </p>
-          </div>
-          <button type="button" onClick={props.onPicks}>
-            Pick
-          </button>
-        </section>
-      )}
       <ReceiptsDue me={props.me} seasonId={seasonId} now={now} receipts={myReceipts.docs} />
-      <div class="today-days" role="group" aria-label="Which day">
-        <button type="button" class="today-day" aria-pressed={showing === 'today'} onClick={() => setPicked('today')}>
-          Today {'\u00b7'} {shortDate(dates.today)}
-        </button>
-        {yesterdayShown && (
-          <button
-            type="button"
-            class="today-day"
-            aria-pressed={showing === 'yesterday'}
-            aria-label={yesterdayOpen ? `Yesterday \u00b7 ${shortDate(dates.yesterday)}, fix until 12:00 pm` : `Yesterday \u00b7 ${shortDate(dates.yesterday)}, screen time can still be fixed for receipts`}
-            onClick={() => setPicked('yesterday')}
-          >
-            Yesterday {'\u00b7'} {shortDate(dates.yesterday)}
-          </button>
-        )}
-      </div>
+      {paired && opponentId && theirWeek && weekDays.length > 0 && todayCal.data ? (
+        <Scoreboard
+          week={todayCal.data.week}
+          status={daysLeft(myWeek.cells) > 0 ? `${weekdayShort(dates.today)} \u00b7 Live` : 'Week over'}
+          me={{ name: 'You', car: myProfile.data?.car, stickers: myProfile.data?.stickers, points: myWeek.totals.points, beers: myWeek.totals.beers, boost: boostOf(myWeek.cells) }}
+          them={{
+            name: opponentProfile.data?.displayName ?? 'Your opponent',
+            car: opponentProfile.data?.car,
+            stickers: opponentProfile.data?.stickers,
+            points: theirWeek.totals.points,
+            beers: theirWeek.totals.beers,
+            boost: boostOf(theirWeek.cells),
+            nemesis: nemesisOf(myProfile.data?.rivals) === opponentId,
+          }}
+          meter={meter}
+          record={`All-time against ${opponentProfile.data?.displayName ?? 'your opponent'}: ${recordText(myProfile.data?.rivals?.[opponentId])}`}
+          cells={myWeek.cells}
+          onOpponent={() => setTheirDayOpen(true)}
+        />
+      ) : !paired ? (
+        <GroupBoardFor me={props.me} />
+      ) : (
+        weekDays.length > 0 &&
+        todayCal.data && (
+          <WeekStrip
+            week={todayCal.data.week}
+            cells={myWeek.cells}
+            me={myWeek.totals}
+            opponent={theirWeek ? { ...theirWeek.totals, name: opponentProfile.data?.displayName ?? 'Your opponent' } : null}
+            vsHouse={targets.includes('HOUSE')}
+            meter={meter}
+          />
+        )
+      )}
 
-      {restDay && <p class="today-rest">Rest day</p>}
-      {dayWindow === 'locked' && <p class="today-locked">This day is locked. Its score is final once the week settles.</p>}
-      {dayWindow === 'before' && <p class="today-locked">This day has not started yet.</p>}
-      {showing === 'yesterday' && editable && <p class="today-locked">Yesterday can be fixed until 12:00 pm today.</p>}
+      {holiday && <EventBanner event={holiday} today={showing === 'today'} />}
 
-      <section class="squares" aria-label="Your squares">
-        <button
-          ref={screenCard}
-          type="button"
-          class="square square-screen"
-          data-logged={entry.screenMinutes !== null}
-          aria-label={`Screen time: ${formatScreen(entry.screenMinutes)}${screenPointsShown === null ? '' : `, ${pointsChip(screenPointsShown)}`}. Open screen time`}
-          onClick={() => setSheetOpen(true)}
-        >
-          <span class="square-label">Screen time {'\u00b7'} everyone</span>
-          <span class="square-value">{formatScreenShort(entry.screenMinutes)}</span>
-          <span class="square-chip" data-sign={screenPointsShown === null ? 'none' : screenPointsShown > 0 ? 'up' : screenPointsShown < 0 ? 'down' : 'zero'}>
-            {screenPointsShown === null ? (editable ? 'Tap to log' : 'Not logged') : pointsChip(screenPointsShown)}
-          </span>
-        </button>
+      {playoffs && weekDoc.data && (
+        <PlayoffBanner
+          me={me}
+          week={weekDoc.data}
+          bracket={bracket.data}
+          name={(player) => (player === me ? 'You' : (everyone.docs.find((found) => found.id === player)?.data.displayName ?? opponentProfile.data?.displayName ?? 'your opponent'))}
+        />
+      )}
 
-        {LANES.map((lane) => {
-          const goal = roster.data?.goals?.[lane]?.text ?? '';
-          const hit = entry.goals[lane];
-          const state = score.goals[lane];
-          return (
-            <button
-              type="button"
-              class="square square-goal"
-              data-lane={lane}
-              data-state={state}
-              aria-pressed={restDay ? undefined : hit}
-              aria-label={`${LANE_NAMES[lane]}: ${goal || 'goal not set yet'}${restDay ? ', rest day' : state === 'boosted' ? ', counted by Full Boost' : ''}`}
-              disabled={!editable || restDay || !goal}
-              onClick={() => toggleGoal(lane)}
-            >
-              <span class="square-goal-text">{goal || 'Set at the draft'}</span>
-              <GoalMark state={state} />
+      {mode !== 'regular' && weekDoc.data && (
+        <ModeBanner
+          me={me}
+          week={weekDoc.data}
+          name={(player) => (player === me ? 'You' : player === 'HOUSE' ? 'The House' : (everyone.docs.find((found) => found.id === player)?.data.displayName ?? 'Player'))}
+        />
+      )}
+
+      <section class="checklist" aria-label="Your day">
+        <div class="checklist-head">
+          <div class="today-days" role="group" aria-label="Which day">
+            {/* With both days up, the pills drop their dates so the row stays on one line on a small phone. */}
+            <button type="button" class="today-day" aria-pressed={showing === 'today'} aria-label={`Today \u00b7 ${shortDate(dates.today)}`} onClick={() => setPicked('today')}>
+              {yesterdayShown ? 'Today' : `Today \u00b7 ${shortDate(dates.today)}`}
             </button>
-          );
-        })}
-      </section>
-
-      <section class="square square-beers" aria-label="Beers">
-        <BeerMug />
-        <div class="beer-words">
-          <h3>Beers</h3>
-          <p>
-            {'\u2212'}1 pt each {'\u00b7'} {myWeek.totals.beers} this week
+            {yesterdayShown && (
+              <button
+                type="button"
+                class="today-day"
+                aria-pressed={showing === 'yesterday'}
+                aria-label={yesterdayOpen ? `Yesterday \u00b7 ${shortDate(dates.yesterday)}, fix until 12:00 pm` : `Yesterday \u00b7 ${shortDate(dates.yesterday)}, screen time can still be fixed for receipts`}
+                onClick={() => setPicked('yesterday')}
+              >
+                Yesterday
+              </button>
+            )}
+          </div>
+          <p class="today-total-line">
+            <span class="today-points" data-sign={shown.total > 0 ? 'up' : shown.total < 0 ? 'down' : 'zero'}>
+              <span class="sr-only">Day total: </span>
+              {formatPoints(shown.total)}
+            </span>
+            <span class="today-when">{showing === 'today' ? 'today' : 'yesterday'}</span>
+            <span class="today-note">{totalNote}</span>
           </p>
         </div>
-        <div class="beer-controls">
-          <button type="button" class="step" aria-label="One beer less" disabled={!editable || entry.beers === 0} onClick={() => setBeers(-1)}>
-            {'\u2212'}
+        {restDay && <p class="today-rest">Rest day</p>}
+        {dayWindow === 'locked' && <p class="today-locked">This day is locked. Its score is final once the week settles.</p>}
+        {dayWindow === 'before' && <p class="today-locked">This day has not started yet.</p>}
+        {showing === 'yesterday' && editable && <p class="today-locked">Yesterday can be fixed until 12:00 pm today.</p>}
+        <div class="checklist-rows">
+          {LANES.map((lane) => {
+            const goal = roster.data?.goals?.[lane]?.text ?? '';
+            const hit = entry.goals[lane];
+            const state = score.goals[lane];
+            const counts = state === 'hit' || state === 'boosted' || state === 'swappedIn';
+            return (
+              <button
+                type="button"
+                class="check-row check-goal"
+                data-lane={lane}
+                data-state={state}
+                aria-pressed={restDay ? undefined : hit}
+                aria-label={`${LANE_NAMES[lane]}: ${goal || 'goal not set yet'}${restDay ? ', rest day' : state === 'boosted' ? ', counted by Full Boost' : ''}`}
+                disabled={!editable || restDay || !goal}
+                onClick={() => toggleGoal(lane)}
+              >
+                <span class="check-mark">
+                  <GoalMark state={state} />
+                </span>
+                <span class="check-text">
+                  <small>{LANE_NAMES[lane]}</small>
+                  <span class="check-goal-text">{goal || 'Set at the draft'}</span>
+                </span>
+                {counts && <span class="check-chip">+1</span>}
+              </button>
+            );
+          })}
+          <button
+            ref={screenCard}
+            type="button"
+            class="check-row check-screen"
+            data-logged={entry.screenMinutes !== null}
+            aria-label={`Screen time: ${formatScreen(entry.screenMinutes)}${screenPointsShown === null ? '' : `, ${pointsChip(screenPointsShown)}`}. Open screen time`}
+            onClick={() => setSheetOpen(true)}
+          >
+            <span class="check-mark check-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="13" r="7.5" fill="none" stroke="currentColor" stroke-width="2" />
+                <path d="M12 9v4l2.5 2M10 3h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+            </span>
+            <span class="check-text">
+              <small>Screen time {'\u00b7'} everyone</small>
+              <span class="square-value">{formatScreenShort(entry.screenMinutes)}</span>
+            </span>
+            <span class="square-chip" data-sign={screenPointsShown === null ? 'none' : screenPointsShown > 0 ? 'up' : screenPointsShown < 0 ? 'down' : 'zero'}>
+              {screenPointsShown === null ? (editable ? 'Log it' : 'Not logged') : pointsChip(screenPointsShown)}
+            </span>
           </button>
-          <p class="beer-count" aria-live="polite">
-            <span class="sr-only">Beers: </span>
-            {entry.beers}
-          </p>
-          <button type="button" class="step" aria-label="One beer more" disabled={!editable || entry.beers >= BEERS_MAX} onClick={() => setBeers(1)}>
-            +
-          </button>
+          <section class="check-row check-beers" aria-label="Beers">
+            <span class="check-mark check-icon" aria-hidden="true">
+              <BeerMug />
+            </span>
+            <div class="beer-words">
+              <h3>Beers</h3>
+              <p>
+                {'\u2212'}1 each {'\u00b7'} {myWeek.totals.beers} this week
+              </p>
+            </div>
+            <div class="beer-controls">
+              <button type="button" class="step" aria-label="One beer less" disabled={!editable || entry.beers === 0} onClick={() => setBeers(-1)}>
+                {'\u2212'}
+              </button>
+              <p class="beer-count" aria-live="polite">
+                <span class="sr-only">Beers: </span>
+                {entry.beers}
+              </p>
+              <button type="button" class="step" aria-label="One beer more" disabled={!editable || entry.beers >= BEERS_MAX} onClick={() => setBeers(1)}>
+                +
+              </button>
+            </div>
+          </section>
         </div>
-      </section>
-
-      <section class="today-total" aria-label="Day total">
-        <p class="today-total-line">
-          <span class="today-points" data-sign={shown.total > 0 ? 'up' : shown.total < 0 ? 'down' : 'zero'}>
-            <span class="sr-only">Day total: </span>
-            {formatPoints(shown.total)}
-          </span>
-          <span class="today-when">{showing === 'today' ? 'today' : 'yesterday'}</span>
-          <span class="today-note">{totalNote}</span>
-        </p>
-        {breakdown(shown) && <p class="today-breakdown">{breakdown(shown)}</p>}
-        {ruleOneHere ? <p class="today-kit">Rule One: this day scores 0</p> : aerialHere ? <p class="today-kit">Aerial: this day counts double</p> : null}
-        {fixes.map((change) =>
-          change.receipt ? (
-            <p class="today-fix">
-              {change.amount < 0 ? 'Receipts: no proof in time' : 'Receipts: backed down'}, {change.void === 'screen' ? 'screen time' : change.void} voided
-              {change.amount < 0 ? `, \u2212${-change.amount}` : ''}
-            </p>
-          ) : (
-            <p class="today-fix">
-              Commish: {change.amount > 0 ? `+${change.amount}` : `\u2212${-change.amount}`}
-              {change.void ? `, ${change.void === 'screen' ? 'screen time' : change.void} voided` : ''}
-            </p>
-          ),
-        )}
+        <div class="today-total">
+          {breakdown(shown) && <p class="today-breakdown">{breakdown(shown)}</p>}
+          {ruleOneHere ? <p class="today-kit">Rule One: this day scores 0</p> : aerialHere ? <p class="today-kit">Aerial: this day counts double</p> : null}
+          {fixes.map((change) =>
+            change.receipt ? (
+              <p class="today-fix">
+                {change.amount < 0 ? 'Receipts: no proof in time' : 'Receipts: backed down'}, {change.void === 'screen' ? 'screen time' : change.void} voided
+                {change.amount < 0 ? `, \u2212${-change.amount}` : ''}
+              </p>
+            ) : (
+              <p class="today-fix">
+                Commish: {change.amount > 0 ? `+${change.amount}` : `\u2212${-change.amount}`}
+                {change.void ? `, ${change.void === 'screen' ? 'screen time' : change.void} voided` : ''}
+              </p>
+            ),
+          )}
+        </div>
       </section>
 
       {lateRisk && (
@@ -603,45 +688,6 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
           myBoot={myBoots.find((boot) => boot.date === dates.today)?.lane ?? null}
         />
       )}
-
-      {holiday && <EventBanner event={holiday} today={showing === 'today'} />}
-
-      {playoffs && weekDoc.data && (
-        <PlayoffBanner
-          me={me}
-          week={weekDoc.data}
-          bracket={bracket.data}
-          name={(player) => (player === me ? 'You' : (everyone.docs.find((found) => found.id === player)?.data.displayName ?? opponentProfile.data?.displayName ?? 'your opponent'))}
-        />
-      )}
-
-      {mode !== 'regular' && weekDoc.data && (
-        <ModeBanner
-          me={me}
-          week={weekDoc.data}
-          name={(player) => (player === me ? 'You' : player === 'HOUSE' ? 'The House' : (everyone.docs.find((found) => found.id === player)?.data.displayName ?? 'Player'))}
-        />
-      )}
-
-      {weekDays.length > 0 && todayCal.data && (
-        <WeekStrip
-          week={todayCal.data.week}
-          cells={myWeek.cells}
-          me={myWeek.totals}
-          opponent={theirWeek ? { ...theirWeek.totals, name: opponentProfile.data?.displayName ?? 'Your opponent' } : null}
-          vsHouse={targets.includes('HOUSE')}
-          meter={
-            theirWeek && daysLeft(myWeek.cells) > 0
-              ? winMeter(
-                  { points: myWeek.totals.points, dailyAverage: recentDailyAverage(myProfile.data?.rankHistory) ?? paceSoFar(myWeek.cells) },
-                  { points: theirWeek.totals.points, dailyAverage: recentDailyAverage(opponentProfile.data?.rankHistory) ?? paceSoFar(theirWeek.cells) },
-                  daysLeft(myWeek.cells),
-                )
-              : null
-          }
-        />
-      )}
-
 
       {period && week.docs.length > 0 && (
         <PowerUps
@@ -682,6 +728,24 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
         />
       )}
 
+      {/* From Match: a slim poke, then receipts from your opponent, then the rest. */}
+      <MatchExtras me={props.me} />
+
+      {/* This week's picks, while open: at the bottom, out of the way. */}
+      {picksDue && picksDue.picked < picksDue.pairs.length && props.onPicks && (
+        <section class="picks-banner" aria-labelledby="picks-banner-title">
+          <div>
+            <h2 id="picks-banner-title">Week {picksDue.week} picks</h2>
+            <p>
+              {picksDue.picked} of {picksDue.pairs.length} picked · closes 11:59 pm
+            </p>
+          </div>
+          <button type="button" onClick={props.onPicks}>
+            Pick
+          </button>
+        </section>
+      )}
+
       {sheetOpen && date && (
         <ScreenSheet
           dateLabel={sheetDate(date)}
@@ -704,6 +768,8 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
           </div>,
           document.body,
         )}
+
+      {theirDayOpen && <OpponentDay me={props.me} onClose={() => setTheirDayOpen(false)} />}
     </div>
   );
 }

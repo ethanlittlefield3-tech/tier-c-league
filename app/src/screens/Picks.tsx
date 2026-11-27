@@ -1,6 +1,6 @@
 import { createPortal } from 'preact/compat';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { addRecords, pickFor } from '@tcl/engine';
+import { addRecords, pickFor, weekOdds } from '@tcl/engine';
 import { CarArt } from '../art/car/CarArt.tsx';
 import type { CarParts } from '../art/car/draw.ts';
 import { useAll, useNow, useWhere } from '../data/hooks.ts';
@@ -44,7 +44,7 @@ export function MondayPicks(props: { me: Me; open: boolean; onOpen: () => void; 
  */
 export function PicksSheet(props: { me: Me; due: PicksDue; onClose: () => void }) {
   const { due } = props;
-  const players = useAll<{ displayName?: string; car?: Partial<CarParts> }>(`leagues/${props.me.league}/players`);
+  const players = useAll<{ displayName?: string; car?: Partial<CarParts>; rankHistory?: { season: string; period: string; points: number }[] }>(`leagues/${props.me.league}/players`);
   const record = useWhere<{ made?: number; right?: number }>(`leagues/${props.me.league}/seasons/${due.seasonId}/predictions`, 'player', props.me.player);
   const [draft, setDraft] = useState<string[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -77,12 +77,26 @@ export function PicksSheet(props: { me: Me; due: PicksDue; onClose: () => void }
       });
   };
 
-  const side = (pair: { a: string; b: string }, id: string) => (
-    <button type="button" class="picks-side" aria-pressed={pickFor(picks, pair) === id} aria-label={name(id)} onClick={() => choose(pair, id)}>
-      <CarArt parts={player(id)?.car} bare class="picks-car" />
-      <span class="picks-name">{name(id)}</span>
-    </button>
-  );
+  // Each side's chance in the week's odds, from their recent weeks; an even matchup shows none.
+  const chanceOf = (pair: { a: string; b: string }, id: string) => {
+    const a = weekOdds(player(pair.a)?.rankHistory, player(pair.b)?.rankHistory, due.seasonId, due.week);
+    return a === 0.5 ? null : id === pair.a ? a : 1 - a;
+  };
+  const side = (pair: { a: string; b: string }, id: string) => {
+    const chance = chanceOf(pair, id);
+    const percent = chance === null ? null : `${Math.round(chance * 100)}%`;
+    return (
+      <button type="button" class="picks-side" aria-pressed={pickFor(picks, pair) === id} aria-label={percent ? `${name(id)}, ${percent} to win` : name(id)} onClick={() => choose(pair, id)}>
+        <CarArt parts={player(id)?.car} bare class="picks-car" />
+        <span class="picks-name">{name(id)}</span>
+        {percent && (
+          <span class="picks-odds" data-fav={chance! > 0.5}>
+            {percent} to win
+          </span>
+        )}
+      </button>
+    );
+  };
 
   return createPortal(
     <div class="sheet-layer">
@@ -106,6 +120,7 @@ export function PicksSheet(props: { me: Me; due: PicksDue; onClose: () => void }
             </li>
           ))}
         </ul>
+        <p class="fine-print picks-note">The odds come from each player's last 4 final weeks.</p>
         <p class="picks-count" aria-live="polite">
           {picked} of {due.pairs.length} picked
         </p>

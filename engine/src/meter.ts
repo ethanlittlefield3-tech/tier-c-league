@@ -50,3 +50,40 @@ export function winMeter(me: MeterSide, them: MeterSide, left: number): number {
   const share = 1 / (1 + Math.exp((-1.702 * gap) / spread));
   return Math.min(0.97, Math.max(0.03, share));
 }
+
+/** How many days a week has, for its odds at kickoff. */
+const WEEK_DAYS = 7;
+
+/**
+ * A player's final weeks before the one just played, oldest first: what a
+ * week's odds go on. The week just played is final only on the Tuesday, so
+ * leaving it out keeps a week's odds the same from its Monday to its end.
+ */
+export function historyBefore<T extends { season: string; period: string }>(history: readonly T[] | null | undefined, season: string, week: number): T[] {
+  const list = history ?? [];
+  const cut = list.findIndex((entry) => {
+    if (entry.season !== season) return false;
+    const regular = /^w(\d+)$/.exec(entry.period);
+    return !regular || Number(regular[1]) >= week - 1;
+  });
+  return cut < 0 ? [...list] : list.slice(0, cut);
+}
+
+/**
+ * A 1v1 week's odds (the commish's request, 2026-11-27): the win meter at
+ * kickoff, with nothing scored yet and the whole week left, from each side's
+ * recent daily average before it. Side a's chance, from 0 to 1. A forecast
+ * only: no point depends on it.
+ */
+export function weekOdds(
+  a: readonly { season: string; period: string; points: number }[] | null | undefined,
+  b: readonly { season: string; period: string; points: number }[] | null | undefined,
+  season: string,
+  week: number,
+): number {
+  const side = (history: typeof a): MeterSide => ({ points: 0, dailyAverage: recentDailyAverage(historyBefore(history, season, week)) });
+  const sideA = side(a);
+  const sideB = side(b);
+  if (sideA.dailyAverage === null || sideB.dailyAverage === null) return 0.5;
+  return winMeter(sideA, sideB, WEEK_DAYS);
+}

@@ -8,7 +8,7 @@ const theirGoal = (page: Page, lane: string) => page.locator(`.match-squares .sq
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const dayName = (date: string) => DAYS[(new Date(`${date}T12:00:00Z`).getUTCDay() + 6) % 7]!;
 
-/** Riley against Maya in Week 2, on the Match tab. Both rest days are moved off today. */
+/** Riley against Maya in Week 2, on Game Day. Both rest days are moved off today. */
 async function onMatch(page: Page, request: APIRequestContext, opponent: 'maya' | 'house' | 'none' = 'maya') {
   const league = await createLeague(request, { name: 'Sunday Squad' });
   const season = await startSeason(request, league);
@@ -24,14 +24,20 @@ async function onMatch(page: Page, request: APIRequestContext, opponent: 'maya' 
     await writeDoc(request, `${season.path}/kit/${period}_${player}_rest`, { player, item: 'rest', period, date: dayB, at: new Date() });
   }
   await button(page, "I've saved it").click();
-  await tab(page, 'Match').click();
+  await expect(page.getByRole('heading', { name: 'Game Day', level: 1 })).toBeVisible();
   return { league, season, me, dayA, period };
+}
+
+/** Opens Maya's day from her car on the scoreboard. */
+async function theirDay(page: Page) {
+  await page.getByRole('button', { name: /^See Maya's day/ }).click();
+  await expect(page.getByRole('dialog', { name: "Maya's day" })).toBeVisible();
 }
 
 const mayaLogs = (request: APIRequestContext, path: string, date: string, entry: { goals: Record<string, boolean>; screenMinutes: number | null; beers: number }) =>
   writeDoc(request, `${path}/days/maya_${date}`, { player: 'maya', date, ...entry, firstAt: new Date(), updatedAt: new Date() });
 
-test.describe('Match', () => {
+test.describe('Game Day: your matchup', () => {
   test('After a loss, you can challenge the winner to a rematch: a side race the next week, by its Wednesday', async ({ page, request }) => {
     const { season, me } = await onMatch(page, request);
     // Last week Maya beat you, and it is final. Today is this week's Tuesday.
@@ -49,15 +55,33 @@ test.describe('Match', () => {
     await expect.poll(async () => (await readDoc(request, `${season.path}/rematches/w01_${me}`))?.to).toBe('maya');
   });
 
-  test('This week sits right under the score, and a small Poke sits beside the beers', async ({ page, request }) => {
+  test('Game Day runs top to bottom: the scoreboard, your day, the power-ups, a slim Poke, then receipts from your opponent', async ({ page, request }) => {
     await onMatch(page, request);
-    await expect(page.locator('.match > section').nth(1)).toHaveClass(/match-week/);
+    const top = async (locator: ReturnType<Page['locator']>) => (await locator.boundingBox())!.y;
+    const order = [page.locator('.board'), page.getByRole('region', { name: 'Your day' }), page.locator('.power'), button(page, 'Poke Maya'), page.getByRole('region', { name: 'Receipts?' })];
+    const ys = [];
+    for (const part of order) ys.push(await top(part));
+    expect([...ys].sort((a, b) => a - b)).toEqual(ys);
+    // The Poke is one slim bar.
     const poke = await button(page, 'Poke Maya').boundingBox();
-    expect(poke!.height).toBeLessThanOrEqual(44);
-    expect(poke!.width).toBeLessThan(200);
-    // Their four tiles are short, so the whole day fits in a glance.
-    const tile = await page.locator('.match-squares .square').first().boundingBox();
-    expect(tile!.height).toBeLessThanOrEqual(100);
+    expect(poke!.height).toBeLessThanOrEqual(48);
+    // On an iPhone, the scoreboard and all three goals are on screen without scrolling.
+    const tabs = await page.getByRole('navigation', { name: 'Main' }).boundingBox();
+    for (const lane of ['mind', 'body', 'wildcard']) {
+      const row = await page.locator(`.check-goal[data-lane="${lane}"]`).boundingBox();
+      expect(row!.y + row!.height).toBeLessThanOrEqual(tabs!.y);
+    }
+  });
+
+  test("Each car's boost gauge fills a slice for every goal in today, yours and your opponent's, live", async ({ page, request }) => {
+    const { season } = await onMatch(page, request);
+    await expect(page.getByRole('img', { name: 'Your boost: 0 of 3 goals in today' })).toBeVisible();
+    await expect(page.getByRole('img', { name: "Maya's boost: 0 of 3 goals in today" })).toBeVisible();
+    await page.locator('.check-goal[data-lane="mind"]').click();
+    await expect(page.getByRole('img', { name: 'Your boost: 1 of 3 goals in today' })).toBeVisible();
+    await mayaLogs(request, season.path, season.today, { goals: { mind: true, body: true, wildcard: false }, screenMinutes: null, beers: 0 });
+    await expect(page.getByRole('img', { name: "Maya's boost: 2 of 3 goals in today" })).toBeVisible();
+    await expect(page.locator('.week-them .boost-slice[data-on="true"]')).toHaveCount(2);
   });
 
   test('You can poke your opponent once a day, and the league keeps it', async ({ page, request }) => {
@@ -71,18 +95,17 @@ test.describe('Match', () => {
     // Still poked after the app opens again.
     await page.reload();
     await tapToEnter(page);
-    await tab(page, 'Match').click();
     await expect(button(page, 'Poked today')).toBeDisabled();
   });
 
-  test('Your all-time record against your opponent shows on Match; whoever has beaten you most is your nemesis, with a skull here and in League', async ({ page, request }) => {
+  test('Your all-time record against your opponent shows on the scoreboard; whoever has beaten you most is your nemesis, with a skull here and in League', async ({ page, request }) => {
     const { league, me } = await onMatch(page, request);
-    await expect(page.locator('.match-record')).toHaveText('All-time against Maya: 0–0–0');
+    await expect(page.locator('.board-record')).toHaveText('All-time against Maya: 0–0–0');
     await expect(page.locator('.match-nemesis')).toHaveCount(0);
 
     await patchDoc(request, `leagues/${league.id}/players/${me}`, { rivals: { maya: { win: 1, draw: 0, loss: 2, lastMet: { season: 's1', week: 1 } } } });
-    await expect(page.locator('.match-record')).toHaveText('All-time against Maya: 1–0–2');
-    await expect(page.locator('.match-side[data-team="orange"] .match-nemesis')).toHaveText('💀 Nemesis');
+    await expect(page.locator('.board-record')).toHaveText('All-time against Maya: 1–0–2');
+    await expect(page.locator('.board-side[data-team="orange"] .match-nemesis')).toHaveText('💀 Nemesis');
 
     await tab(page, 'League').click();
     const rivalries = page.getByRole('region', { name: 'Your rivalries' });
@@ -93,17 +116,16 @@ test.describe('Match', () => {
 
   test("Your car faces your opponent's across the score, each in its own paint, theirs on team orange", async ({ page, request }) => {
     const { league } = await onMatch(page, request);
-    const car = (team: string) => page.locator(`.match-side[data-team="${team}"] .match-car`);
+    const car = (team: string) => page.locator(`.board-side[data-team="${team}"] .board-car-art`);
     await expect(car('blue')).toHaveAttribute('data-car', 'dart cobalt');
     await expect(car('orange')).toHaveAttribute('data-car', 'dart cobalt');
     await patchDoc(request, `leagues/${league.id}/players/maya`, { car: { body: 'bruiser', paint: 'racingRed', decal: 'none', wheels: 'stock', boost: 'team', explosion: 'stock', topper: 'none' } });
     await expect(car('orange')).toHaveAttribute('data-car', 'bruiser racingRed');
-    await expect(car('orange')).toHaveClass(/match-car-them/);
   });
 
-  test("Your opponent's day, live, in team orange: their goals, screen time and beers", async ({ page, request }) => {
+  test("A tap on your opponent's car opens their day, live, in team orange: their goals, screen time and beers; Close goes back", async ({ page, request }) => {
     const { season } = await onMatch(page, request);
-    await expect(page.getByRole('heading', { name: "Maya's day" })).toBeVisible();
+    await theirDay(page);
     await expect(theirGoal(page, 'mind')).toContainText('Study 1 hour');
 
     await mayaLogs(request, season.path, season.today, { goals: { mind: true, body: true, wildcard: false }, screenMinutes: 60, beers: 1 });
@@ -113,24 +135,27 @@ test.describe('Match', () => {
     await expect(page.locator('.match-beers')).toContainText('1');
     // 2 goals, 1 hour at par 3 is +2, and 1 beer: +3.
     await expect(page.locator('.match-day-total')).toContainText('+3');
+    await button(page, 'Close').click();
+    await expect(page.getByRole('dialog', { name: "Maya's day" })).toHaveCount(0);
   });
 
   test('Their Aerial shows when it is on today, and doubles their day', async ({ page, request }) => {
     const { season, period } = await onMatch(page, request);
     await mayaLogs(request, season.path, season.today, { goals: { mind: true, body: false, wildcard: false }, screenMinutes: null, beers: 0 });
+    await theirDay(page);
     await expect(page.locator('.match-day-total')).toContainText('+1');
     await writeDoc(request, `${season.path}/kit/${period}_maya_aerial`, { player: 'maya', item: 'aerial', period, date: season.today, at: new Date() });
     await expect(page.getByText('Aerial: counts double')).toBeVisible();
     await expect(page.locator('.match-day-total')).toContainText('+2');
   });
 
-  test('The score at the top and both weeks match: you in blue, them in orange', async ({ page, request }) => {
+  test('The scoreboard has your week in blue, and their day card has their week in orange', async ({ page, request }) => {
     await onMatch(page, request);
-    await expect(page.locator('.match-side[data-team="orange"] .match-name')).toHaveText('Maya');
-    await expect(page.locator('.match-row')).toHaveCount(2);
-    await expect(page.locator('.match-row[data-team="blue"] .match-cells li')).toHaveCount(7);
+    await expect(page.locator('.board-side[data-team="orange"] .board-name')).toHaveText('Maya');
+    await expect(page.locator('.board .week-days li')).toHaveCount(7);
+    await expect(page.locator('.board .week-lead')).toHaveText(/lead|Level|All square/);
+    await theirDay(page);
     await expect(page.locator('.match-row[data-team="orange"] .match-cells li')).toHaveCount(7);
-    await expect(page.locator('.match-lead')).toHaveText(/lead|Level|All square/);
   });
 
   test('Your own Demolition on them shows here, to you alone', async ({ page, request }) => {
@@ -149,13 +174,15 @@ test.describe('Match', () => {
     await expect(page.locator('.match-secret')).toHaveText(`Your Demolition: ${dayName(dayA)}, their Body goal. Only you can see it until noon the next day.`);
   });
 
-  test('Against The House, Match says so', async ({ page, request }) => {
+  test('Against The House, Game Day says so', async ({ page, request }) => {
     await onMatch(page, request, 'house');
-    await expect(page.getByRole('heading', { name: 'You face The House' })).toBeVisible();
+    await expect(page.locator('.week-lead')).toHaveText("You face The House this week. It scores the league's average.");
+    await expect(page.locator('.board')).toHaveCount(0);
   });
 
-  test('Before the schedule is out, Match waits for an opponent', async ({ page, request }) => {
+  test('Before the schedule is out, Game Day waits for an opponent', async ({ page, request }) => {
     await onMatch(page, request, 'none');
-    await expect(page.getByRole('heading', { name: 'No opponent yet' })).toBeVisible();
+    await expect(page.locator('.week-lead')).toContainText('Your opponent shows here once the schedule is out.');
+    await expect(page.getByRole('button', { name: /^Poke/ })).toHaveCount(0);
   });
 });

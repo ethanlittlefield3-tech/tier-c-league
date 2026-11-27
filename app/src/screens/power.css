@@ -211,3 +211,79 @@
   font-size: 14px;
   color: #ff9aa2;
 }
+
+/* ---- The tray as round icons (the commish's request, 2026-11-27) ----------
+   Four rings in a row, like gauges: a ready power-up's ring glows in its own
+   colour, and an open one lights up fully. */
+
+.power-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.power-tile {
+  min-height: 0;
+  padding: 4px 2px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  background: none;
+  text-align: center;
+}
+
+.power-ring {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border: 2px solid color-mix(in srgb, var(--tint) 35%, transparent);
+  border-radius: 50%;
+  background: rgba(10, 19, 48, 0.9);
+}
+
+.power-tile[data-ready='true'] .power-ring {
+  border-color: color-mix(in srgb, var(--tint) 80%, transparent);
+  background: color-mix(in srgb, var(--tint) 10%, rgba(10, 19, 48, 0.9));
+  box-shadow: 0 0 14px color-mix(in srgb, var(--tint) 35%, transparent);
+}
+
+.power-tile[aria-expanded='true'] {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.power-tile[aria-expanded='true'] .power-ring {
+  border-color: var(--tint);
+  background: color-mix(in srgb, var(--tint) 22%, rgba(10, 19, 48, 0.9));
+  box-shadow: 0 0 20px color-mix(in srgb, var(--tint) 55%, transparent);
+}
+
+.power-tile .power-glyph {
+  width: 26px;
+  height: 26px;
+}
+
+.power-tile .power-name {
+  font-size: 13px;
+}
+
+.power-tile .power-status {
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.power-tile[data-ready='true'] .power-status {
+  color: #7fe9a8;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .power-tile:active .power-ring {
+    transform: scale(0.92);
+  }
+
+  .power-ring {
+    transition: transform 140ms ease-out;
+  }
+}

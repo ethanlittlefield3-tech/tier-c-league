@@ -214,11 +214,14 @@ export function PowerUps(props: {
             type="button"
             class="power-tile"
             data-item={tile.item}
+            data-ready={tile.status === 'Ready' || (tile.item === 'ruleOne' && ones.arrived > ones.used)}
             aria-expanded={open === tile.item}
             aria-controls={`power-${tile.item}`}
             onClick={() => toggle(tile.item)}
           >
-            <Glyph item={tile.item} />
+            <span class="power-ring">
+              <Glyph item={tile.item} />
+            </span>
             <span class="power-name">{tile.name}</span>
             <span class="power-status">{tile.status}</span>
           </button>

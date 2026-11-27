@@ -66,6 +66,28 @@ export function pickUpset(lists: readonly (readonly string[])[], pairs: readonly
   return best;
 }
 
+/** A matchup's key in a week's odds: its two players, as the schedule lists them. */
+export const pairKey = (pair: { a: string; b: string }) => `${pair.a}-${pair.b}`;
+
+/**
+ * How the odds did, for the picks summary: of the decided matchups with a
+ * favorite, how many the favorite won. Even odds, draws and The House's
+ * matchups aren't counted.
+ */
+export function oddsCalled(pairs: readonly { a: string; b: string }[], odds: Record<string, number>, results: Record<string, { outcome: string }>): { called: number; of: number } {
+  let called = 0;
+  let of = 0;
+  for (const pair of pairs) {
+    if (pair.a === HOUSE || pair.b === HOUSE) continue;
+    const chance = odds[pairKey(pair)];
+    const outcome = results[pair.a]?.outcome;
+    if (chance === undefined || chance === 0.5 || (outcome !== 'win' && outcome !== 'loss')) continue;
+    of += 1;
+    if ((chance > 0.5) === (outcome === 'win')) called += 1;
+  }
+  return { called, of };
+}
+
 /**
  * The best records: the most right picks, at least one; a tie goes to the
  * fewer picks made, and players still level share it. The week's top picker

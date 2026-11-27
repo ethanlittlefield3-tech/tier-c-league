@@ -407,3 +407,41 @@
 .match-poke-note:empty {
   display: none;
 }
+
+/* ---- On Game Day (the commish's request, 2026-11-27) ----------------------
+   Below the power-ups: a slim poke bar, then receipts. Your opponent's day
+   opens over the page from their car. */
+
+.match-extras {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.match-extras .match-poke {
+  align-items: stretch;
+}
+
+.match-extras .match-poke-btn {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 14px;
+  border-color: rgba(255, 138, 30, 0.45);
+  background: linear-gradient(90deg, rgba(255, 138, 30, 0.16), rgba(10, 19, 48, 0.6));
+  text-align: left;
+  padding: 0 16px;
+  font-size: 14px;
+}
+
+.match-extras .match-poke-note {
+  max-width: none;
+  text-align: left;
+}
+
+.sheet.match-day {
+  max-width: 420px;
+}
+
+.match-day .match-their-week {
+  margin-top: 12px;
+}

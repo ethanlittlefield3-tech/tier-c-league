@@ -13,7 +13,6 @@ import { Draft } from './Draft.tsx';
 import { Feed } from './Feed.tsx';
 import { Garage } from './Garage.tsx';
 import { League } from './League.tsx';
-import { Match } from './Match.tsx';
 import { MondayPicks } from './Picks.tsx';
 import { PlayerDay } from './PlayerDay.tsx';
 import { RankUp, useRankScene, type RankEntry } from './Rank.tsx';
@@ -33,10 +32,10 @@ interface TabInfo {
   soon: string;
 }
 
-// SCOPE.md, "Screens": five bottom tabs cover the whole game.
+// SCOPE.md, "Screens", with Today and Match combined into Game Day (the
+// commish's request, 2026-11-27): four bottom tabs cover the whole game.
 const TABS: readonly TabInfo[] = [
-  { id: 'today', label: 'Today', soon: 'Your scoreboard, the four squares, beers, your power-ups and the day total.' },
-  { id: 'match', label: 'Match', soon: "This week's matchup: your opponent's live day, and the group-play modes." },
+  { id: 'today', label: 'Game Day', soon: 'Your matchup, your day, your power-ups and your opponent.' },
   { id: 'feed', label: 'Feed', soon: 'The live feed and the wall: taunts, brags, comments and reactions.' },
   { id: 'league', label: 'League', soon: 'Standings, the schedule, results, the playoff bracket and the trophy case.' },
   { id: 'garage', label: 'Garage', soon: 'Build your car on a turntable. Every badge you earn unlocks a part.' },
@@ -49,6 +48,9 @@ const DOT_NOTES: Record<Spot, string> = {
   league: 'New results since you last looked',
   garage: 'New parts since you last looked',
 };
+
+/** The place a tab's dot reports on: Game Day's is your opponent, as Match's was. */
+const spotOf = (tab: Tab): Spot | null => (tab === 'today' ? 'match' : tab === 'feed' || tab === 'league' || tab === 'garage' ? tab : null);
 
 const seenNow = (me: Me) => Object.fromEntries(SPOTS.map((spot) => [spot, lastSeen(me, spot)])) as Record<Spot, number | null>;
 
@@ -79,14 +81,17 @@ function Tabs(props: { me: Me; tab: Tab; onTab: (tab: Tab) => void; newestBadge:
   // Opening a tab counts as a look, and so does leaving it. A look covers
   // everything it could show, even if this phone's clock runs a little behind.
   useEffect(() => {
-    const spot = SPOTS.find((each) => each === props.tab);
+    const spot = spotOf(props.tab);
     if (!spot) return undefined;
     const look = () => markSeen(props.me, spot, Math.max(Date.now(), shown.current[spot] ?? 0));
     look();
     setSeen(seenNow(props.me));
     return look;
   }, [props.tab]);
-  const dotted = (tab: Tab) => tab !== props.tab && tab in latest && isNew(latest[tab as Spot], seen[tab as Spot]);
+  const dotted = (tab: Tab) => {
+    const spot = spotOf(tab);
+    return tab !== props.tab && spot !== null && isNew(latest[spot], seen[spot]);
+  };
   return (
     <nav class="frame-tabs" aria-label="Main">
       {TABS.map((info) => {
@@ -97,7 +102,7 @@ function Tabs(props: { me: Me; tab: Tab; onTab: (tab: Tab) => void; newestBadge:
             class="frame-tab"
             type="button"
             aria-current={info.id === props.tab ? 'page' : undefined}
-            aria-describedby={dot ? `frame-dot-${info.id}` : undefined}
+            aria-describedby={dot ? `frame-dot-${spotOf(info.id)}` : undefined}
             onClick={() => props.onTab(info.id)}
           >
             <Icon />
@@ -183,6 +188,8 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
     const open = (screen: string) => {
       if (screen === 'wheel') setWheelOpen(true);
       else if (screen === 'draft') setDraftOpen(true);
+      // Match is part of Game Day now: an alert for it opens there.
+      else if (screen === 'match') setTab('today');
       else if (TABS.some((info) => info.id === screen)) setTab(screen as Tab);
     };
     const fromLink = location.hash.slice(1);
@@ -279,7 +286,7 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
         </p>
       )}
       <main class="frame-body" key={tab}>
-        {tab === 'today' ? <Today me={props.me} onDraft={() => setDraftOpen(true)} onWheel={() => setWheelOpen(true)} onPicks={() => setPicksOpen(true)} /> : tab === 'match' ? <Match me={props.me} /> : tab === 'feed' ? <Feed me={props.me} onWheel={() => setWheelOpen(true)} /> : tab === 'league' ? <League me={props.me} onPlayer={setDayOf} /> : tab === 'garage' ? <Garage me={props.me} /> : <Soon tab={current} />}
+        {tab === 'today' ? <Today me={props.me} onDraft={() => setDraftOpen(true)} onWheel={() => setWheelOpen(true)} onPicks={() => setPicksOpen(true)} /> : tab === 'feed' ? <Feed me={props.me} onWheel={() => setWheelOpen(true)} /> : tab === 'league' ? <League me={props.me} onPlayer={setDayOf} /> : tab === 'garage' ? <Garage me={props.me} /> : <Soon tab={current} />}
       </main>
       <Tabs me={props.me} tab={tab} onTab={setTab} newestBadge={newestBadge} />
       {/* Monday's picks pop up once, over whichever tab is open (ruling R25). */}

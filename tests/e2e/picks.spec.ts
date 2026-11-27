@@ -19,6 +19,9 @@ test.describe('Predictions', () => {
     const me = String((await readDoc(request, `leagues/${league.id}/lookup/${key}`))?.player);
     await addPlayer(request, league, season, 'maya', 'Maya');
     await addPlayer(request, league, season, 'sam', 'Sam');
+    // Maya scored far more than Sam lately, so she is the favorite.
+    await patchDoc(request, `leagues/${league.id}/players/maya`, { rankHistory: [{ season: 's0', period: 'w10', points: 35, max: 70, rank: 'diamond' }] });
+    await patchDoc(request, `leagues/${league.id}/players/sam`, { rankHistory: [{ season: 's0', period: 'w10', points: 14, max: 70, rank: 'silver' }] });
     // Today is this week's Monday: Maya plays Sam, and you play The House.
     const calendar = `${season.path}/calendar/${season.today}`;
     await patchDoc(request, calendar, { dayIndex: 0 });
@@ -32,6 +35,11 @@ test.describe('Predictions', () => {
     // The House's matchup isn't picked.
     await expect(card.getByRole('group')).toHaveCount(1);
     const matchup = card.getByRole('group', { name: 'Maya against Sam' });
+    // Each side shows its chance to win, from the players' recent weeks.
+    await expect(matchup.getByRole('button', { name: /^Maya, \d+% to win$/ })).toBeVisible();
+    const [maya, sam] = await Promise.all([matchup.locator('.picks-odds').first().textContent(), matchup.locator('.picks-odds').last().textContent()]);
+    expect(parseInt(maya!) + parseInt(sam!)).toBe(100);
+    expect(parseInt(maya!)).toBeGreaterThan(50);
     await matchup.getByRole('button', { name: 'Sam' }).click();
     await expect(matchup.getByRole('button', { name: 'Sam' })).toHaveAttribute('aria-pressed', 'true');
     const saved = () => readDoc(request, `${season.path}/predictions/w02_${me}`);
@@ -60,9 +68,10 @@ test.describe('Predictions', () => {
     await expect(banner).toHaveCount(0);
     await expect.poll(async () => (await saved())?.picks).toEqual(['maya']);
 
-    // Picks are no longer in League.
+    // Picks are no longer in League, and the Schedule shows this week's odds too.
     await tab(page, 'League').click();
     await expect(page.getByRole('heading', { name: 'Schedule' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Schedule' }).getByRole('listitem').filter({ hasText: 'Maya' })).toHaveText(`Maya ${parseInt(maya!)}% vs ${parseInt(sam!)}% Sam`);
     await expect(page.getByRole('region', { name: 'Your picks' })).toHaveCount(0);
   });
 

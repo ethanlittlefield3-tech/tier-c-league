@@ -14,13 +14,14 @@ const line = {
   'aria-hidden': 'true',
 } as const;
 
-/** Today: a calendar page with a check. */
+/** Game Day (Today and Match together): a ball on its way, with speed lines. */
 function TodayIcon() {
   return (
     <svg {...line}>
-      <rect x="3.5" y="5" width="17" height="15.5" rx="3" />
-      <path d="M8 3v4M16 3v4M3.5 10h17" />
-      <path d="m8.5 15 2.5 2.5 4.5-4.5" />
+      <circle cx="14.5" cy="12" r="7" />
+      <path d="M14.5 9.2l2.6 1.9-1 3.1h-3.2l-1-3.1Z" />
+      <path d="M14.5 5v4.2M21.3 10.4l-4.2.7M18.6 17.6l-2.5-3.4M10.4 17.6l2.5-3.4M7.7 10.4l4.2.7" />
+      <path d="M2.5 9.5h2.5M1.5 12.5h3M2.5 15.5h2.5" />
     </svg>
   );
 }

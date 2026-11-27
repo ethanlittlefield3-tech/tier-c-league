@@ -7,7 +7,7 @@ import { addPlayer, createLeague, futureDays, patchDoc, readDoc, setGoals, setTa
 const button = (page: Page, name: string | RegExp) => page.getByRole('button', { name, exact: typeof name === 'string' });
 const tile = (page: Page, item: string) => page.locator(`.power-tile[data-item="${item}"]`);
 const total = (page: Page) => page.locator('.today-points');
-const goal = (page: Page, lane: string) => page.locator(`.square-goal[data-lane="${lane}"]`);
+const goal = (page: Page, lane: string) => page.locator(`.check-goal[data-lane="${lane}"]`);
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const dayName = (date: string) => DAYS[(new Date(`${date}T12:00:00Z`).getUTCDay() + 6) % 7]!;
 const short = (date: string) => dayName(date).slice(0, 3);

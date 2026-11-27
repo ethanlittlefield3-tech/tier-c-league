@@ -1,0 +1,292 @@
+/* Game Day's scoreboard: you in team blue on the left, your opponent in team
+   orange on the right, facing you. Each car has a boost gauge with a slice
+   for each goal in today, and a flame that grows with it. The flame and the
+   slices change only transform and opacity; the resting state is the board. */
+
+.week.board {
+  padding: 12px 12px 12px;
+  border-color: rgba(196, 216, 255, 0.18);
+  background: linear-gradient(160deg, #13275e 0%, #0a1330 55%, #2a1406 100%);
+}
+
+.board-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.board-status {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(255, 138, 30, 0.2);
+  font: 800 10.5px/1.5 var(--body);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--orange);
+}
+
+.board-sides {
+  margin-top: 6px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: start;
+  gap: 4px;
+}
+
+.board-side {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'car car'
+    'name boost'
+    'points boost';
+  align-items: center;
+  column-gap: 6px;
+  padding: 4px 4px 6px;
+  border: 0;
+  border-radius: 14px;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+}
+
+/* Your opponent's side mirrors yours: the gauge on the outside edge. */
+.board-side[data-team='orange'] {
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    'car car'
+    'boost name'
+    'boost points';
+  text-align: right;
+}
+
+button.board-side {
+  cursor: pointer;
+}
+
+button.board-side:active {
+  transform: scale(0.98);
+}
+
+button.board-side:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.board-vs {
+  align-self: center;
+  margin-top: -18px;
+  font: italic 900 15px/1 var(--display);
+  color: var(--ink-soft);
+}
+
+/* The car, with its flame behind it. */
+.board-car {
+  grid-area: car;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  height: 44px;
+}
+
+.board-car-art,
+.board-car-art svg {
+  position: relative;
+  display: block;
+  width: 72px;
+  height: 44px;
+}
+
+.board-side[data-team='orange'] .board-car-art svg {
+  transform: scaleX(-1);
+}
+
+/* A decal's letters still read the right way round. */
+.board-side[data-team='orange'] .board-car-art text {
+  transform: scaleX(-1);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.board-flame {
+  position: absolute;
+  top: 20px;
+  width: 34px;
+  height: 17px;
+  color: #3d9bff;
+  filter: drop-shadow(0 0 6px rgba(61, 155, 255, 0.8));
+}
+
+.board-flame svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Your flame streams out behind you, to the left; theirs to the right. */
+.board-car[data-team='blue'] .board-flame {
+  right: calc(50% + 30px);
+  transform-origin: right center;
+}
+
+.board-car[data-team='orange'] .board-flame {
+  left: calc(50% + 30px);
+  transform-origin: left center;
+  color: #ff8a1e;
+  filter: drop-shadow(0 0 6px rgba(255, 138, 30, 0.8));
+}
+
+.board-car[data-team='orange'] .board-flame svg {
+  transform: scaleX(-1);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .board-flame {
+    transition:
+      transform 420ms cubic-bezier(0.2, 0.9, 0.3, 1),
+      opacity 200ms ease;
+  }
+
+  .boost-slice {
+    transition: opacity 300ms ease;
+  }
+}
+
+.board-name {
+  grid-area: name;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.board-name .match-nemesis {
+  margin-left: 4px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.board-points {
+  grid-area: points;
+  font: italic 900 26px/1 var(--display);
+}
+
+.week-me .board-points {
+  color: #7cc4ff;
+}
+
+.week-them .board-points {
+  color: #ffb066;
+}
+
+.board-tap {
+  grid-column: 1 / -1;
+  margin-top: 1px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+/* The boost gauge: three slices, one a goal. */
+.boost {
+  grid-area: boost;
+  position: relative;
+  width: 40px;
+  height: 40px;
+}
+
+.boost svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.boost-slice {
+  fill: none;
+  stroke-width: 5;
+  stroke-linecap: round;
+  opacity: 0.2;
+}
+
+.week-me .boost-slice {
+  stroke: #3d9bff;
+}
+
+.week-them .boost-slice {
+  stroke: #ff8a1e;
+}
+
+.boost-slice[data-on='true'] {
+  opacity: 1;
+}
+
+.boost-value {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font: italic 900 11px/1 var(--display);
+  color: var(--ink);
+}
+
+.boost[data-full='true'] .boost-value {
+  color: var(--gold);
+}
+
+.board-lead {
+  margin-top: 2px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 10px;
+  flex-wrap: wrap;
+}
+
+.board .week-lead {
+  margin: 0;
+  font-size: 13px;
+}
+
+.board .meter-text {
+  margin: 0;
+  font-size: 12px;
+}
+
+.board .meter {
+  margin: 6px 0 0;
+}
+
+.board .meter-bar {
+  height: 8px;
+}
+
+.board .week-days {
+  margin-top: 8px;
+}
+
+.board .week-days li {
+  gap: 3px;
+}
+
+.board .week-letter {
+  font-size: 12px;
+}
+
+.board .week-cell {
+  height: 30px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.board-record {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+}

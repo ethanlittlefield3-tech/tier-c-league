@@ -12,7 +12,7 @@
 import { randomInt } from 'node:crypto';
 import { FieldValue, Timestamp, getFirestore, type DocumentData } from 'firebase-admin/firestore';
 import { connect } from './admin.ts';
-import { DODGE_PENALTY, STARTER_DARES, STICKER_DAYS, addRecords, bestPickers, dareStatus, pickUpset, rematchResult, scorePicks, seasonTrophies, type PickRecord, type TrophyPlayer, fastDareDue, fastLeagueClock, receiptFixes, rivalRecords, wheelPool, zoneClock, type RivalWeek, type StoredReceipt } from '../engine/src/index.ts';
+import { DODGE_PENALTY, STARTER_DARES, STICKER_DAYS, addRecords, bestPickers, dareStatus, oddsCalled, pairKey, pickUpset, weekOdds, rematchResult, scorePicks, seasonTrophies, type PickRecord, type TrophyPlayer, fastDareDue, fastLeagueClock, receiptFixes, rivalRecords, wheelPool, zoneClock, type RivalWeek, type StoredReceipt } from '../engine/src/index.ts';
 import { fastClockOf } from './lib/fast.ts';
 import { PROOF_DAYS, staleProofs } from './lib/proofs.ts';
 import { revealDemolitions, sameReveals } from './lib/reveals.ts';
@@ -178,11 +178,14 @@ for (const league of leagues) {
     settledWeeks += 1;
     if (settled.status === 'final') {
       addEarlier(settled.lines);
+      // Each player's final weeks before this one, for the week's odds in the picks summary.
+      const histories: Record<string, RankEntry[]> = {};
       // Ranks update when results go final: each player's history gains the week (SCOPE.md, "Ranks and trophies").
       for (const line of settled.lines) {
         const profile = league.ref.collection('players').doc(line.player);
         const found = await profile.get();
         if (!found.exists) continue;
+        histories[line.player] = (found.get('rankHistory') ?? []) as RankEntry[];
         const result = settled.results[line.player];
         const ranked = withWeek((found.get('rankHistory') ?? []) as RankEntry[], {
           season: seasonId,
@@ -216,10 +219,16 @@ for (const league of leagues) {
       if (pickers > 0) {
         const top = bestPickers(scored);
         const best = top.length > 0 ? scored[top[0]!]! : { right: 0, made: 0 };
+        // What the week's odds expected, against what happened.
+        const weekNumber = Number(week.get('week'));
+        const odds = Object.fromEntries(pairs.map((pair) => [pairKey(pair), weekOdds(histories[pair.a], histories[pair.b], seasonId, weekNumber)]));
+        const upset = pickUpset(lists, pairs, settled.results);
+        const upsetPair = upset ? pairs.find((pair) => (pair.a === upset.winner && pair.b === upset.loser) || (pair.b === upset.winner && pair.a === upset.loser)) : undefined;
+        const upsetChance = upset && upsetPair ? (upsetPair.a === upset.winner ? odds[pairKey(upsetPair)]! : 1 - odds[pairKey(upsetPair)]!) : null;
         await league.ref
           .collection('feed')
           .doc(`picks_${seasonId}_${period}`)
-          .set({ at: FieldValue.serverTimestamp(), kind: 'picks', player: top[0] ?? null, data: { top, right: best.right, made: best.made, week: Number(week.get('week')), pickers, upset: pickUpset(lists, pairs, settled.results) } });
+          .set({ at: FieldValue.serverTimestamp(), kind: 'picks', player: top[0] ?? null, data: { top, right: best.right, made: best.made, week: weekNumber, pickers, upset: upset ? { ...upset, chance: upsetChance } : null, expected: oddsCalled(pairs, odds, settled.results) } });
       }
 
       // Rematches raced this week: most points wins, and the loser's car

@@ -425,6 +425,25 @@
   color: var(--ink-soft);
 }
 
+/* Before a week is settled: its odds either side of "vs", the favorite's brighter. */
+.fixture-mid {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.schedule .pairs .fixture-odds {
+  min-width: 30px;
+  font: italic 900 13px/1 var(--display);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+.schedule .pairs .fixture-odds[data-fav='true'] {
+  color: var(--gold);
+}
+
 .fixture-score {
   display: flex;
   align-items: center;

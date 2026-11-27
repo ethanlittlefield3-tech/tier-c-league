@@ -2,7 +2,7 @@ import { expect, test, type APIRequestContext, type Page } from '@playwright/tes
 import { joinAs } from './helpers.ts';
 import { createLeague, readDoc, setGoals, setWindow, startSeason } from './league.ts';
 
-const goal = (page: Page, lane: string) => page.locator(`.square-goal[data-lane="${lane}"]`);
+const goal = (page: Page, lane: string) => page.locator(`.check-goal[data-lane="${lane}"]`);
 
 async function onToday(page: Page, request: APIRequestContext, options: { lockSoon?: boolean } = {}) {
   const league = await createLeague(request, { name: 'Sunday Squad' });

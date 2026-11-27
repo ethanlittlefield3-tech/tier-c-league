@@ -123,6 +123,17 @@ describe('The live feed', () => {
     ]);
   });
 
+  it("The picks summary sets the week's odds against what happened: the underdog's chance in the upset, and how many the odds called", () => {
+    const news = [
+      { id: 'picks_s1_w04', data: { kind: 'picks', player: 'maya', at: 9, data: { top: ['maya'], right: 2, made: 3, week: 4, pickers: 4, upset: { winner: 'jordan', loser: 'sam', pickedBy: 1, of: 4, chance: 0.36 }, expected: { called: 2, of: 3 } } } },
+      { id: 'picks_s1_w05', data: { kind: 'picks', player: 'maya', at: 10, data: { top: ['maya'], right: 1, made: 1, week: 5, pickers: 2, upset: { winner: 'sam', loser: 'jordan', pickedBy: 0, of: 2, chance: 0.61 }, expected: { called: 0, of: 0 } } } },
+    ];
+    expect(feedEvents({ ...none, name, news }).map((event) => event.detail)).toEqual([
+      'Upset of the week: Sam beat Jordan as the 61% favorite, and nobody saw it coming. 2 players picked.',
+      'Upset of the week: Jordan beat Sam as the 36% underdog, and only 1 of 4 saw it coming. The odds called 2 of 3. 4 players picked.',
+    ]);
+  });
+
   it("The picks summary names the week's biggest upset and how many players picked", () => {
     const news = [
       { id: 'picks_s1_w02', data: { kind: 'picks', player: 'maya', at: 9, data: { top: ['maya'], right: 4, made: 5, week: 2, pickers: 5, upset: { winner: 'jordan', loser: 'sam', pickedBy: 1, of: 5 } } } },

@@ -4,7 +4,7 @@ import { enterAsCommish, joinAs } from './helpers.ts';
 import { createLeague, futureDays, patchDoc, readDoc, setGoals, startSeason, thisWeek, writeDoc } from './league.ts';
 
 const button = (page: Page, name: string | RegExp) => page.getByRole('button', { name, exact: typeof name === 'string' });
-const goal = (page: Page, lane: string) => page.locator(`.square-goal[data-lane="${lane}"]`);
+const goal = (page: Page, lane: string) => page.locator(`.check-goal[data-lane="${lane}"]`);
 
 test.describe('Holiday events', () => {
   test('The commish puts a Dry Day on a day that has not started, and can take it off again; each change goes in the audit log', async ({ page, request }) => {

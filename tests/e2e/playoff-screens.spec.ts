@@ -6,7 +6,7 @@ import { addPlayer, createLeague, patchDoc, readDoc, setGoals, startSeason, this
 const button = (page: Page, name: string | RegExp) => page.getByRole('button', { name, exact: typeof name === 'string' });
 const tab = (page: Page, name: string) => page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name, exact: true });
 const tile = (page: Page, item: string) => page.locator(`.power-tile[data-item="${item}"]`);
-const goal = (page: Page, lane: string) => page.locator(`.square-goal[data-lane="${lane}"]`);
+const goal = (page: Page, lane: string) => page.locator(`.check-goal[data-lane="${lane}"]`);
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const short = (date: string) => DAYS[(new Date(`${date}T12:00:00Z`).getUTCDay() + 6) % 7]!;
 

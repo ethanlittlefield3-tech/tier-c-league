@@ -8,7 +8,6 @@ import { addPlayer, createLeague, finishWeekOne, futureDays, patchDoc, readDoc, 
 const run = promisify(execFile);
 const weeklyJob = fileURLToPath(new URL('../../jobs/weekly.ts', import.meta.url));
 const button = (page: Page, name: string | RegExp) => page.getByRole('button', { name, exact: typeof name === 'string' });
-const tab = (page: Page, name: string) => page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name, exact: true });
 const ITEMS = ['Tornado', 'Punch', 'Boot', 'Spike', 'Swap', 'Freeze', 'Magnet'];
 
 async function runWeekly(league: TestLeague): Promise<string> {
@@ -62,9 +61,9 @@ test.describe('Rumble', () => {
     await item('maya', 'freeze');
     await log('maya', ALL);
     await button(page, "I've saved it").click();
-    await page.locator('.square-goal[data-lane="mind"]').click();
+    await page.locator('.check-goal[data-lane="mind"]').click();
     await expect(page.locator('.today-breakdown')).toContainText('Tornado +2');
-    await tab(page, 'Match').click();
+    await page.getByRole('button', { name: /^See Maya's day/ }).click();
     // Maya: 3 goals and 30 minutes is 6, less the 2 your Tornado takes.
     await expect(page.locator('.match-note', { hasText: 'Item: Freeze' })).toBeVisible();
     await expect(page.locator('.match-day-total')).toContainText('4');

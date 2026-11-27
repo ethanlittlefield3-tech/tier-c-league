@@ -3,7 +3,7 @@ import { joinAs } from './helpers.ts';
 import { addPlayer, createLeague, futureDays, readDoc, setGoals, setTargets, startSeason, thisWeek, writeDoc } from './league.ts';
 
 const button = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
-const goal = (page: Page, lane: string) => page.locator(`.square-goal[data-lane="${lane}"]`);
+const goal = (page: Page, lane: string) => page.locator(`.check-goal[data-lane="${lane}"]`);
 const myPoints = (page: Page) => page.locator('.week-me strong');
 const theirPoints = (page: Page) => page.locator('.week-them strong');
 /** "+6", "0" or "−5" as a number. */
