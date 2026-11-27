@@ -35,7 +35,7 @@ async function groupWeek(page: Page, request: APIRequestContext, week: (me: stri
 }
 
 test.describe('Group play on the phone', () => {
-  test("Team Week: Today says which squad you're on, Match shows both squads' averages live, and Demolition can aim at anyone on the other squad", async ({ page, request }) => {
+  test("Team Week: Game Day says which squad you're on, shows both squads' averages live, and Demolition can aim at anyone on the other squad", async ({ page, request }) => {
     const { season, me, dayA, period, log } = await groupWeek(page, request, (me) => ({
       mode: 'teamWeek',
       teams: { blue: [me, 'maya'], orange: ['sam', 'jo'] },
@@ -68,7 +68,7 @@ test.describe('Group play on the phone', () => {
     await expect(board.locator('.group-lead')).toHaveText('Your side leads on average.');
   });
 
-  test('2v2: Today names your duo and your opponents, and Match puts your matchup first', async ({ page, request }) => {
+  test('2v2: Game Day names your duo and your opponents, and puts your matchup first', async ({ page, request }) => {
     const { season, me, log } = await groupWeek(page, request, (me) => ({
       mode: 'twoVTwo',
       roster: [me, 'maya', 'sam', 'jo'],
@@ -85,7 +85,7 @@ test.describe('Group play on the phone', () => {
     await expect(board.getByRole('list', { name: 'Your duo' })).toContainText('Maya');
   });
 
-  test("Bounty Week: Match shows the target and a live bar, and who broke a day's target", async ({ page, request }) => {
+  test("Bounty Week: Game Day shows the target and a live bar, and who broke a day's target", async ({ page, request }) => {
     const { season, log } = await groupWeek(page, request, (me, today) => ({ mode: 'bounty', roster: [me, 'maya', 'sam', 'jo'], bounty: { kind: 'dry', date: today } }));
     await log('maya', season.today, ALL, 30, 2);
     await button(page, "I've saved it").click();
@@ -97,7 +97,7 @@ test.describe('Group play on the phone', () => {
     await expect(board.locator('.group-lead')).toHaveText('Broken by Maya.');
   });
 
-  test('The Alley: Match shows everyone single file in one long lane, and the places', async ({ page, request }) => {
+  test('The Alley: Game Day shows everyone single file in one long lane, and the places', async ({ page, request }) => {
     const { season, me, log } = await groupWeek(page, request, (me) => ({ mode: 'alley', roster: [me, 'maya', 'sam', 'jo'] }));
     await log(me, season.today, ALL);
     await log('maya', season.today, ONE);

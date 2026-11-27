@@ -3,7 +3,7 @@ import './group.css';
 
 /**
  * Today in a group-play week: the mode in a line, and what it means for you
- * this week (SCOPE.md, "Group play"). Match shows how it stands.
+ * this week (SCOPE.md, "Group play"). The board on Game Day shows how it stands.
  */
 export function ModeBanner(props: {
   me: string;
@@ -45,7 +45,7 @@ export function ModeBanner(props: {
       <strong>
         Week {props.week.week}: {MODE_NAMES[mode]}.
       </strong>{' '}
-      {MODE_BLURBS[mode]} {detail} Match shows how it stands.
+      {MODE_BLURBS[mode]} {detail} The board shows how it stands.
     </p>
   );
 }

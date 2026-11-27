@@ -1,5 +1,5 @@
 /**
- * Everyone's week, live, for the group-play boards on Match (SCOPE.md,
+ * Everyone's week, live, for the group-play boards on Game Day (SCOPE.md,
  * "Screens": team totals, the Bounty bar, the Alley lane and the Drop Shot
  * floor). Each player's days are scored by the engine, the same way the
  * weekly job will settle them. A Demolition counts once the job has revealed

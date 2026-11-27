@@ -186,7 +186,7 @@ function WeekBody(props: { week: WeekDoc; dates: string | null; current: boolean
       {modeBlurb(week.mode) && (
         <p class="result-mode">
           {modeBlurb(week.mode)}
-          {props.current && ' Match shows how it stands.'}
+          {props.current && ' Game Day shows how it stands.'}
         </p>
       )}
       <div class="schedule-board">

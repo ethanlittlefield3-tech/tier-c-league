@@ -133,6 +133,10 @@ A week in about an hour and a half: a demo league whose days last 8 minutes, wit
 2. On GitHub, open **Actions**, choose **Send a test alert**, then **Run workflow**.
 3. Within a minute, the phone shows "Test alert". Only the commish's phones get it.
 
+## Trying the group-play modes
+
+In the app, tap your badge, then **Commish tools**, then **Open the preview**. It is a made-up league of six with every group-play mode: pick a mode and a day, log your own day, and tap **Final** to see how the week would settle. Nothing in it is saved or seen by your league.
+
 ## Starting a season
 
 1. In the app, tap your badge, then **Commish tools**.
