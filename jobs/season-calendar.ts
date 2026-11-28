@@ -38,7 +38,7 @@ for (const league of leagues) {
     kickoff: season.get('kickoff'),
     regularWeeks: season.get('regularWeeks'),
     timeZone: season.get('timeZone'),
-    fast: fastClockOf({ demo: league.get('demo') }, { fast: plain(season.get('fast') ?? {}) }) !== null,
+    fast: fastClockOf({ demo: league.get('demo') }, { fast: plain(season.get('fast') ?? {}), practice: season.get('practice') }) !== null,
     // Each group-play week's mode, once the schedule job has given them out.
     modes: weekModes(season.get('modes') as Record<number, string> | undefined),
     // The playoffs' days come from their length and size.

@@ -1,8 +1,8 @@
 # Checkpoint B: what the security rules block
 
-Generated 2026-11-27 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
+Generated 2026-11-28 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 341 of 341 passing.
+- **Tests:** 353 of 353 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -364,6 +364,25 @@ Once the season is over, the commish sets the Stay-or-Leave deadline with an aud
 - Each player answers Stay or Leave for themselves, and can change it, until the deadline
 - The commish runs the league, so can only stay
 - The commish can bring a former player back onto the roster, with an audit entry
+
+## The practice week
+
+Only the commish asks for one, before the season and over before the draft or kickoff, with an audit entry. Only its job writes the practice season, and no phone gives any season a fast clock.
+
+**The practice week**
+
+- Before the season, the commish asks for a practice week: how long each day lasts and when it starts, with an audit entry
+- Only the commish, only with an audit entry
+- Each day lasts 2 to 30 whole minutes, and it starts ahead, within 2 hours
+- Not once the season has started, and not during the draft
+- After the draft, only if it is over before kickoff; before the draft, only if it is over before the draft
+- With no season set up yet, it can run
+- Not while another practice week is on
+- The commish calls it off before it starts, ends it early while it runs, or clears it once its results are up, each with an audit entry
+- A practice week that couldn't run can be dismissed
+- Everyone in the league can see it; nobody else can
+- No phone makes a season called "practice", or marks any season as practice or gives it a fast clock
+- During a practice week, trash talk is marked as practice, so it clears with it; a brag isn't, and nothing is marked practice when no practice week is on
 
 ## Holiday events
 

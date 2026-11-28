@@ -127,6 +127,15 @@ A week in about an hour and a half: a demo league whose days last 8 minutes, wit
 4. About an hour in, Week 1 goes final and the Wheel is drawn. If you spin, prove your dare before the run ends, about 100 minutes in, so the made-up players can vote on it.
 5. Delete it after with **Demo league**, **delete**, and the league id from the log.
 
+## A practice week before the season
+
+Everyone in the league plays one quick 1v1 week on a fast clock, inside the league, before the season starts. Nothing in it counts, and it clears itself after.
+
+1. In the app, open **Commish tools** and find **Practice week**. It only shows before the season starts.
+2. Pick how long each day lasts (2 to 30 minutes) and when it starts (10 minutes to an hour away), then tap **Schedule the practice week**.
+3. The **Send alerts** job (every 10 minutes) starts the **Practice week** job about 20 minutes before the start. To start it yourself, open **Actions**, choose **Practice week**, **Run workflow**, and give it the league's ID.
+4. Everyone sees a gold "Practice week" strip, and Game Day plays the practice week until its results have been up for 30 minutes. **End it now** or **Clear it now** in Commish tools clears it within a few minutes.
+
 ## Checking alerts reach your phone
 
 1. On the phone, open Tier C from the Home Screen, tap your badge, and under **Alerts** tap **Turn on alerts**, then **Allow**.
@@ -147,6 +156,7 @@ A week in about an hour and a half: a demo league whose days last 8 minutes, wit
 | Settle the weeks | Every hour | Posts each week's results once its Sunday locks at noon on Monday, final at midnight on Tuesday; reveals Demolitions; draws the Wheel; keeps the standings; deletes proof photos after 14 days |
 | Send alerts | Every 10 minutes | Works out which alerts came due and sends them to each phone that turned them on, holding them through its quiet hours |
 | Back up the league | Every night | Copies every document to the private backups repo (see below) |
+| Practice week | Started by **Send alerts** for a practice week you scheduled | Sets the week up, sends its alerts and settles it until its results are final (see below) |
 | Keep the schedules running | Once a month | Records the date, because GitHub pauses scheduled jobs in a public repo after 60 days with no activity |
 
 GitHub can run a scheduled job late. If a week's results are late, Commish tools can settle it from your phone.

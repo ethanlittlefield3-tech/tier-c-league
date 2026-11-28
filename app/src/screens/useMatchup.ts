@@ -12,6 +12,7 @@ import type { Me } from '../data/identity.ts';
 import type { CalDay } from '../today/kit.ts';
 import { seasonDates, type DayEntry } from '../today/model.ts';
 import { playerWeek, type KitPlay } from '../today/week.ts';
+import { playSeasonOf } from '../practice/play.ts';
 
 interface SeasonDoc {
   par: number;
@@ -28,7 +29,8 @@ type Logged = DayEntry & { date: string };
 export function useMatchup(me: Me, now: number) {
   const leaguePath = `leagues/${me.league}`;
   const league = useDoc<{ season?: string | null }>(leaguePath);
-  const seasonId = league.data?.season ?? null;
+  // The practice week while one is on (the commish's request, 2026-11-28).
+  const seasonId = playSeasonOf(league.data);
   const seasonPath = seasonId ? `${leaguePath}/seasons/${seasonId}` : null;
   const season = useDoc<SeasonDoc>(seasonPath);
   const dates = season.data ? seasonDates(now, season.data) : null;

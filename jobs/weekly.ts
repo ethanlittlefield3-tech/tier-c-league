@@ -14,6 +14,7 @@ import { FieldValue, Timestamp, getFirestore, type DocumentData } from 'firebase
 import { connect } from './admin.ts';
 import { DODGE_PENALTY, STARTER_DARES, STICKER_DAYS, addRecords, bestPickers, dareStatus, oddsCalled, pairKey, pickUpset, weekOdds, rematchResult, scorePicks, seasonTrophies, type PickRecord, type TrophyPlayer, fastDareDue, fastLeagueClock, receiptFixes, rivalRecords, wheelPool, zoneClock, type RivalWeek, type StoredReceipt } from '../engine/src/index.ts';
 import { fastClockOf } from './lib/fast.ts';
+import { PRACTICE_SEASON } from '../engine/src/practice.ts';
 import { PROOF_DAYS, staleProofs } from './lib/proofs.ts';
 import { revealDemolitions, sameReveals } from './lib/reveals.ts';
 import { approvedDares, drawsDue, type Draw } from './lib/wheel.ts';
@@ -41,16 +42,23 @@ const DAY = 86_400_000;
 const plain = (data: DocumentData) => Object.fromEntries(Object.entries(data).map(([key, value]) => [key, ms(value)]));
 
 const only = process.env.LEAGUE_ID?.trim();
+// The practice job runs this for one league's practice week (SEASON_ID=practice):
+// its days, results and standings, with everything that reaches past the
+// season switched off, so nothing touches a profile (the commish's request,
+// 2026-11-28).
+const practiceRun = Boolean(only) && process.env.SEASON_ID?.trim() === PRACTICE_SEASON;
 const leagues = only ? [await db.collection('leagues').doc(only).get()] : (await db.collection('leagues').get()).docs;
 const now = Date.now();
 let settledWeeks = 0;
 
 for (const league of leagues) {
-  const seasonId = league.get('season');
+  const seasonId = practiceRun ? PRACTICE_SEASON : league.get('season');
   if (!league.exists || typeof seasonId !== 'string') continue;
   const seasonRef = league.ref.collection('seasons').doc(seasonId);
   const season = await seasonRef.get();
   if (!season.exists) continue;
+  // Only a season the practice job made runs as practice.
+  if (practiceRun && season.get('practice') !== true) continue;
   const members = Object.keys((league.get('members') ?? {}) as Record<string, boolean>);
 
   const calendar = (await seasonRef.collection('calendar').get()).docs.map((day) => plain(day.data()));
@@ -181,7 +189,8 @@ for (const league of leagues) {
       // Each player's final weeks before this one, for the week's odds in the picks summary.
       const histories: Record<string, RankEntry[]> = {};
       // Ranks update when results go final: each player's history gains the week (SCOPE.md, "Ranks and trophies").
-      for (const line of settled.lines) {
+      // Never from a practice week.
+      for (const line of practiceRun ? [] : settled.lines) {
         const profile = league.ref.collection('players').doc(line.player);
         const found = await profile.get();
         if (!found.exists) continue;
@@ -216,7 +225,7 @@ for (const league of leagues) {
         await doc.ref.update({ ...record, scoredAt: FieldValue.serverTimestamp() });
       }
       const pickers = Object.values(scored).filter((record) => record.made > 0).length;
-      if (pickers > 0) {
+      if (pickers > 0 && !practiceRun) {
         const top = bestPickers(scored);
         const best = top.length > 0 ? scored[top[0]!]! : { right: 0, made: 0 };
         // What the week's odds expected, against what happened.
@@ -240,7 +249,7 @@ for (const league of leagues) {
         const pointsOf = (player: string) => settled.lines.find((line) => line.player === player)?.points ?? 0;
         const result = rematchResult(from, to, pointsOf(from), pointsOf(to));
         await race.ref.update({ winner: result.winner, points: { [from]: pointsOf(from), [to]: pointsOf(to) }, settledAt: FieldValue.serverTimestamp() });
-        if (result.loser && !race.get('settledAt')) {
+        if (result.loser && !race.get('settledAt') && !practiceRun) {
           await league.ref
             .collection('players')
             .doc(result.loser)
@@ -253,6 +262,13 @@ for (const league of leagues) {
       wentFinal = true;
     }
     console.log(`League ${league.id}, ${period}: ${settled.status}, ${settled.lines.length} players.`);
+  }
+
+  // A practice week stops here, with its standings: no Wheel, badges,
+  // rivalries, playoffs or trophies.
+  if (practiceRun) {
+    await standingsStep(league, seasonRef, seasonId, members, {});
+    continue;
   }
 
   // The Wheel of Shame: once a week is final, a sealed draw for each of its
@@ -313,7 +329,7 @@ for (const league of leagues) {
       const needsDraw = spinners.some((player) => !existing[`${week.id}_${player}_1`]) || redo.length > 0;
       if (!needsDraw) continue;
       // A fast test league's dares are due on its own clock.
-      const fast = fastClockOf({ demo: league.get('demo') }, { fast: plain(season.get('fast') ?? {}) });
+      const fast = fastClockOf({ demo: league.get('demo') }, { fast: plain(season.get('fast') ?? {}), practice: season.get('practice') });
       const dueOf = fast ? (drawnAt: number) => fastDareDue(String(season.get('kickoff')), fast, drawnAt) : undefined;
       // The Whiff Bowl's loser spins for the Season Dare the commish picked, if there is one.
       const seasonDare = typeof week.get('seasonDare') === 'string' ? [String(week.get('seasonDare'))] : null;
@@ -378,7 +394,7 @@ for (const league of leagues) {
         if (typeof winner === 'string') rematchWins[winner] = (rematchWins[winner] ?? 0) + 1;
       }
       const finals = allWeeks.docs.filter((week) => week.get('status') === 'final' && week.get('results')).sort((a, b) => Number(a.get('week')) - Number(b.get('week')));
-      const fast = fastClockOf({ demo: league.get('demo') }, { fast: plain(season.get('fast') ?? {}) });
+      const fast = fastClockOf({ demo: league.get('demo') }, { fast: plain(season.get('fast') ?? {}), practice: season.get('practice') });
       const clock = fast ? fastLeagueClock(String(season.get('kickoff')), fast) : zoneClock(String(season.get('timeZone')));
       const lockOf = (date: string) => calendar.find((day) => day.date === date)?.lock as number | undefined;
       const players: Parameters<typeof seasonBadgeData>[0]['players'] = {};
@@ -471,6 +487,8 @@ for (const league of leagues) {
   if (wentFinal) {
     const finals: RivalWeek[] = [];
     for (const each of (await league.ref.collection('seasons').get()).docs) {
+      // A practice week never counts.
+      if (each.id === PRACTICE_SEASON || each.get('practice') === true) continue;
       for (const week of (await each.ref.collection('weeks').where('status', '==', 'final').get()).docs) {
         if (week.get('results')) finals.push({ season: each.id, week: Number(week.get('week')), results: week.get('results') });
       }
@@ -489,32 +507,7 @@ for (const league of leagues) {
     console.log(`League ${league.id}: rivalry records from ${finals.length} final week${finals.length === 1 ? '' : 's'}.`);
   }
 
-  // The standings, from every week with results. Each player's sealed coin
-  // for the last tiebreak is drawn once, here, with real randomness.
-  // Playoff points never count as Season Points.
-  const settledDocs = (await seasonRef.collection('weeks').get()).docs.filter((week) => week.get('results') && week.get('phase') !== 'playoff');
-  const coins: Record<string, number> = {};
-  for (const player of members) {
-    const coinRef = seasonRef.collection('sealed').doc(`coin_${player}`);
-    const coin = await coinRef.get();
-    if (coin.exists) {
-      coins[player] = Number(coin.get('value'));
-    } else {
-      coins[player] = randomInt(1_000_000_000) / 1_000_000_000;
-      await coinRef.set({ kind: 'coin', player, value: coins[player], revealAt: Timestamp.fromMillis(Date.UTC(2100, 0, 1)) });
-    }
-  }
-  const rows = standingsFrom({
-    members,
-    weeks: settledDocs.map((week) => ({ results: week.get('results'), lines: week.get('lines') ?? [] })),
-    coins,
-    penalties,
-  });
-  await seasonRef
-    .collection('standings')
-    .doc('current')
-    .set({ rows: rows.map(({ coin: _coin, ...row }) => row), asOf: FieldValue.serverTimestamp() });
-  console.log(`League ${league.id}, season ${seasonId}: standings for ${rows.length} players.`);
+  const rows = await standingsStep(league, seasonRef, seasonId, members, penalties);
 
   // The playoffs (SCOPE.md, "Playoffs"): seeded from the standings once the
   // last regular week posts, then each round settled at 6 pm the day after
@@ -698,4 +691,42 @@ async function playoffStep(
     console.log(`League ${league.id}, season ${seasonId}: champion crowned.`);
   }
   return crowned(bracket.champion, bracket.finalist, bracket.whiff?.loser ?? null);
+}
+
+/**
+ * The standings, from every week with results. Each player's sealed coin
+ * for the last tiebreak is drawn once, here, with real randomness.
+ * Playoff points never count as Season Points.
+ */
+async function standingsStep(
+  league: FirebaseFirestore.DocumentSnapshot,
+  seasonRef: FirebaseFirestore.DocumentReference,
+  seasonId: string,
+  members: string[],
+  penalties: Record<string, number>,
+) {
+  const settledDocs = (await seasonRef.collection('weeks').get()).docs.filter((week) => week.get('results') && week.get('phase') !== 'playoff');
+  const coins: Record<string, number> = {};
+  for (const player of members) {
+    const coinRef = seasonRef.collection('sealed').doc(`coin_${player}`);
+    const coin = await coinRef.get();
+    if (coin.exists) {
+      coins[player] = Number(coin.get('value'));
+    } else {
+      coins[player] = randomInt(1_000_000_000) / 1_000_000_000;
+      await coinRef.set({ kind: 'coin', player, value: coins[player], revealAt: Timestamp.fromMillis(Date.UTC(2100, 0, 1)) });
+    }
+  }
+  const rows = standingsFrom({
+    members,
+    weeks: settledDocs.map((week) => ({ results: week.get('results'), lines: week.get('lines') ?? [] })),
+    coins,
+    penalties,
+  });
+  await seasonRef
+    .collection('standings')
+    .doc('current')
+    .set({ rows: rows.map(({ coin: _coin, ...row }) => row), asOf: FieldValue.serverTimestamp() });
+  console.log(`League ${league.id}, season ${seasonId}: standings for ${rows.length} players.`);
+  return rows;
 }

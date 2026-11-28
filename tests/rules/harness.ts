@@ -35,7 +35,7 @@ export const now = () => firebase.firestore.FieldValue.serverTimestamp();
 export const remove = () => firebase.firestore.FieldValue.delete();
 
 const HOUR = 3_600_000;
-const KICKOFF = '2027-01-04';
+export const KICKOFF = '2027-01-04';
 
 export const LEAGUE = 'L1';
 export const SEASON = 's1';

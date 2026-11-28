@@ -14,6 +14,7 @@ import type { Me } from '../data/identity.ts';
 import { seasonDates } from '../today/model.ts';
 import './feed.css';
 import './league.css';
+import { playSeasonOf } from '../practice/play.ts';
 
 interface Row {
   player: string;
@@ -51,7 +52,8 @@ export function League(props: { me: Me; onPlayer?: (player: string) => void }) {
   const now = useNow();
   const leaguePath = `leagues/${props.me.league}`;
   const league = useDoc<{ season?: string | null; banner?: { player: string; season: string } | null }>(leaguePath);
-  const seasonId = league.data?.season ?? null;
+  // The practice week while one is on (the commish's request, 2026-11-28).
+  const seasonId = playSeasonOf(league.data);
   const seasonPath = seasonId ? `${leaguePath}/seasons/${seasonId}` : null;
   const season = useDoc<{ timeZone: string; kickoff?: string; regularWeeks: number; playoffs?: string }>(seasonPath);
   const bracket = useDoc<{ champion?: string | null }>(seasonPath ? `${seasonPath}/playoffs/bracket` : null);

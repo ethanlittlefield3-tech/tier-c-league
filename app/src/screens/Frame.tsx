@@ -24,6 +24,7 @@ import { useOnline } from '../ui/online.ts';
 import { SPOTS, isNew, lastSeen, markSeen, newestFromOthers, startSeen, type Spot } from '../ui/seen.ts';
 import { useOpponent } from './useOpponent.ts';
 import './frame.css';
+import { PracticeStrip } from '../practice/PracticeStrip.tsx';
 
 interface TabInfo {
   id: Tab;
@@ -268,6 +269,7 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
           No signal. What you log is kept on this phone and goes through when you're back online.
         </p>
       )}
+      <PracticeStrip me={props.me} />
       <main class="frame-body" key={tab}>
         {tab === 'today' ? <Today me={props.me} onDraft={() => setDraftOpen(true)} onWheel={() => setWheelOpen(true)} onPicks={() => setPicksOpen(true)} /> : tab === 'feed' ? <Feed me={props.me} onWheel={() => setWheelOpen(true)} /> : tab === 'league' ? <League me={props.me} onPlayer={setDayOf} /> : <Garage me={props.me} />}
       </main>

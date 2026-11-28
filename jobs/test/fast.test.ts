@@ -45,9 +45,11 @@ describe('Making the fast test league', () => {
     expect(at(`${season}/roster/${league.commish}`).goals).toBeTruthy();
   });
 
-  it('The fast clock only ever counts in a demo league', () => {
+  it("The fast clock only ever counts in a demo league, or a practice week the practice job made", () => {
     expect(fastClockOf({ demo: true }, { fast: { startsAt: 5, dayMinutes: 8, bots: ['bot1'] } })).toEqual({ startsAt: 5, dayMinutes: 8, bots: ['bot1'] });
     expect(fastClockOf({}, { fast: { startsAt: 5, dayMinutes: 8, bots: ['bot1'] } })).toBeNull();
+    expect(fastClockOf({}, { fast: { startsAt: 5, dayMinutes: 4 }, practice: true })).toEqual({ startsAt: 5, dayMinutes: 4, bots: [] });
+    expect(fastClockOf({}, { fast: { startsAt: 5, dayMinutes: 4 }, practice: 'yes' })).toBeNull();
     expect(fastClockOf({ demo: true }, {})).toBeNull();
     expect(fastClockOf({ demo: true }, { fast: { startsAt: 5, dayMinutes: 0 } })).toBeNull();
   });

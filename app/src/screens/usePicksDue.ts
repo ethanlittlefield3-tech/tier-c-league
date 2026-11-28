@@ -2,6 +2,7 @@ import { HOUSE, isPairedMode, pickFor, type WeekMode } from '@tcl/engine';
 import { useDoc } from '../data/hooks.ts';
 import type { Me } from '../data/identity.ts';
 import { seasonDates, type SeasonClockDoc } from '../today/model.ts';
+import { playSeasonOf } from '../practice/play.ts';
 
 export interface PicksDue {
   seasonId: string;
@@ -28,7 +29,8 @@ export interface PicksDue {
 export function usePicksDue(me: Me, now: number): PicksDue | null {
   const leaguePath = `leagues/${me.league}`;
   const league = useDoc<{ season?: string | null }>(leaguePath);
-  const seasonId = league.data?.season ?? null;
+  // The practice week while one is on (the commish's request, 2026-11-28).
+  const seasonId = playSeasonOf(league.data);
   const seasonPath = seasonId ? `${leaguePath}/seasons/${seasonId}` : null;
   const season = useDoc<SeasonClockDoc>(seasonPath);
   const dates = season.data ? seasonDates(now, season.data) : null;

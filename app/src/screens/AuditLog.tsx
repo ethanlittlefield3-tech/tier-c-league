@@ -18,6 +18,9 @@ const ACTIONS: Record<string, string> = {
   'key.reissue': 'reissued a recovery key',
   'score.adjust': 'changed a score',
   'idea.delete': 'took down an idea from the suggestion box',
+  'practice.schedule': 'scheduled a practice week',
+  'practice.ending': 'ended the practice week early',
+  'practice.clearing': 'cleared the practice week',
 };
 
 function when(at: number): string {

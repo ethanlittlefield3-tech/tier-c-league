@@ -1,8 +1,8 @@
 # Checkpoint A: the scoring engine
 
-Generated 2026-11-25 by `npm run checkpoint:a`. Do not edit by hand: the rule list comes from the test results and the worked weeks are run through the engine.
+Generated 2026-11-28 by `npm run checkpoint:a`. Do not edit by hand: the rule list comes from the test results and the worked weeks are run through the engine.
 
-- **Tests:** 202 of 202 passing.
+- **Tests:** 423 of 423 passing.
 - **Rulings and calls behind these rules:** `docs/DECISIONS.md`.
 
 ## Worked example weeks
@@ -216,6 +216,7 @@ Week 5, par 3. A draw worth +2 each, a Demolition that misses, one that fizzles 
 - One goal you missed that day counts as hit
 - It fixes one goal only
 - On a goal you hit anyway it changes nothing
+- In the playoffs the #1 seed's extra Full Boost counts too, even on the same day as the first
 - Using it counts as showing up, so the day is not a no-show
 
 ### 4. Weekly kit: timing
@@ -248,6 +249,7 @@ Week 5, par 3. A draw worth +2 each, a Demolition that misses, one that fizzles 
 
 - Anyone can ask for receipts on a square someone else logged
 - A request is allowed until that day locks at noon the next day
+- With the day's own start and lock from its calendar, as in the fast test league, those times decide instead
 - Each player gets 3 requests a week
 - Only a claim can be challenged: a goal marked hit, or logged screen time
 - On a rest day, receipts cover screen time only
@@ -261,6 +263,7 @@ Week 5, par 3. A draw worth +2 each, a Demolition that misses, one that fizzles 
 - No proof by the deadline: the square is voided and the player loses 1 more point
 - Backing down before the deadline is free: the square stops counting and no point is lost
 - Proof or a back-down that arrives after the deadline is too late
+- A player's receipts become fixes to their days, the same shape as the commish's: free when backed down, 1 point when failed, nothing while open or proven
 
 ### 6. Receipts: the proof deadline
 
@@ -380,14 +383,104 @@ Week 5, par 3. A draw worth +2 each, a Demolition that misses, one that fizzles 
 - Date arithmetic crosses months, years and leap days correctly
 - A normal league day is exactly 24 hours from start to start
 
+### A league's clock
+
+- A real league goes by its time zone: 9 pm on a date, and the date and hour at any moment
+- Across a daylight saving change, 9 pm is still 9 pm on the wall
+- The fast test league's hours are slices of its short days
+
 ### A player's week, day by day
 
 - Days that have not started have no score yet; open days score live; locked days are final
 - Each logged day scores as the engine scores it, and the week adds them up with the beers
 - Aerial, Full Boost, Rule One and a moved rest day count on their own days
+- The #1 seed's extra Full Boost in the semifinal is its own play, and counts on its day
 - A Demolition counts only once its day has locked
 - Commish docks and voids land on their day
 - Marks today
+- Marks the day it is told is today, as the fast test league tells it
+
+### A Rumble week
+
+- Each day plays both players' items against each other
+- A Boot counts once its day locks: until then nobody's score shows it
+- The week settles as a 1v1 with the items played, and the player facing The House plays no items
+
+### A season's dares, before the next season starts
+
+- A dare still waiting for its spin, its proof or its vote is open; one counted or dodged is settled
+- A dare voted down is open until its new spin is settled; the old one doesn't count again
+
+### A spin nobody taps (ruling R15)
+
+- The Wheel spins itself at midnight when its deadline's Sunday starts; proof is still due by the end of that Sunday
+
+### A week's odds
+
+- A week's odds come from each player's final weeks before the one just played, since that one is final only on the Tuesday
+- They are the win meter at kickoff: nothing scored yet, a whole week left, each side's recent daily average
+- With nothing final to go on, a week is even
+
+### Alert settings
+
+- Every category is on to start with, and quiet hours run from 11 pm to 8 am
+- Quiet hours can run past midnight: 11 pm to 8 am holds alerts from 11:00 pm until 8:00 am
+- Quiet hours inside one day work too, and the same start and end means none
+
+### Badges: beers
+
+- Dry Week: 0 beers in a week, with every day logged; Dry Month: 4 such weeks running
+- Designated Driver: 0 beers on the Friday and Saturday of one weekend
+- Happy Hour (shame): 10 or more beers in one week; Brewmaster (shame): most beers in a finished season
+
+### Badges: group play
+
+- Rumble Royale: the most points in the league in a Rumble week, every tied player
+- Team Player and Dynamic Duo: on the winning side of a Team Week or a 2v2
+- Bounty Hunter: the top contributor to a count target, hit or missed; a day target has no top contributor
+- Floor Breaker: the most tiles broken in a Drop Shot week, at least one; Alley Cat: 1st in the Alley
+- A week's group-play feats earn their badges
+
+### Badges: lanes and screen time
+
+- Scholar, Gym Rat and Wild One: that lane hit on all 6 goal days of a week
+- Triple Threat: every lane hit on at least 5 days, 3 weeks running
+- Ghost: under an hour for 7 straight days; Touch Grass: under 30 minutes in a day; Monk Mode: 0 minutes
+- Recovering Addict: the weekly average down 3 weeks in a row
+
+### Badges: matchups
+
+- First Blood: the first 1v1 win; a win over The House is not a 1v1
+- Win Streak: 4 1v1 wins in a row; a week against The House neither counts nor breaks it
+- Sweep: every 1v1 week of a finished season won
+- Comeback, Blowout, Photo Finish and Giant Killer go with a win
+- Rivalry King: 5 all-time wins over the same player
+
+### Badges: power-ups, social and career
+
+- Demolisher: 3 landed; Untouchable: one blocked with Full Boost; Air Mail: an Aerial day of +10
+- Clutch: won a week in which you used Rule One
+- Trash Talker: 50 taunts; Show-Off: 10 brags with 3 reactions each; Fan Favorite: 100 reactions
+- Founding Member, Veteran, MVP Magnet, Bust Collector, Wheel Survivor, Grand Champ and Commish
+- Finalist: reached a final; Champion: won the season, which a finalist who wins earns too
+- Badges from features still to come are never earned yet
+
+### Badges: streaks
+
+- Hat Trick: 3 perfect days in a row, with a rest day in between skipped
+- Perfect Week: a perfect day on all 6 goal days of a week
+- Iron Streak and Century: 30 and 100 days of check-ins, with skipped days neither growing nor breaking it
+- Early Bird: logged before 9 am, 7 days straight
+- Clean Sheet: a week with no no-shows, and screen time logged every day
+
+### Dares done on video
+
+- A dare that says "video" is done on video: the video goes in the group chat, and a still from it is the proof the league votes on
+
+### Dares for the Wheel
+
+- The league starts with SCOPE.md's 8 starter dares
+- A dare is up to 80 characters, and a goal up to 60
 
 ### Document IDs: one fixed ID per thing, so the rules can allow exactly one
 
@@ -397,6 +490,84 @@ Week 5, par 3. A draw worth +2 each, a Demolition that misses, one that fizzles 
 - A player's rest day has one document per week
 - Each Rule One has its own numbered document, so a season can never hold more than it issued
 - A square can be asked for receipts once
+
+### Group play and the standings
+
+- Team Week, 2v2, Bounty and Alley aren't head-to-head games: a tie in Season Points skips to the next tiebreak
+- Bounty and Alley weeks count toward nobody’s wins, draws or losses
+- Everyone in the week: the 1v1 pairs, the squads, the duos, or the whole roster
+
+### Group play: 2v2
+
+- The random draw pairs players off in the drawn order, and with an odd count the last three are a trio
+- Duos are matched in order, and an odd duo out faces a House duo, never the trio
+- Frenemies pairs each player with their Week 1 rival; whoever faced The House joins the last duo drawn as its third
+- Players whose rival has left pair up with each other, in the drawn order
+- Duos compare average points: the winners get 3 each on top of their own points
+- The House duo scores the average of everyone outside the odd duo
+
+### Group play: Alley
+
+- Race points are your daily points, and a day with no goals hits the wall for 2 more, except your rest day
+- 1st, 2nd and 3rd earn 5, 3 and 1, and Season Points still count real points, not race points
+- Last place in the race spins the Wheel, even when someone else has fewer points
+- A tie in the race goes to fewer beers; still level shares the place and its bonus
+- A Rule One day never hits the wall
+
+### Group play: Bounty Week
+
+- A hits target counts every hit in its lane across the league, Full Boost included, and hitting it gives everyone 3
+- When the target is hit, the Wheel is the usual one: the lowest points
+- Missed: nobody gets the bonus, and the lowest contributor spins instead of the lowest points, every tied one
+- A zero-beer day is broken by anyone who logs a beer that day, and whoever broke it spins
+- A screen-time day is broken by anyone at or over the limit, or who logs no screen time that day
+- Rule One changes points, not what was logged: a Rule One day can still break a Bounty
+- The bar fills live, from what is logged so far
+- Targets assume one rest day per player: 60 Body hits is the most 10 players can reach
+- With no target set by the start of the week, the Bounty is 2 goals a day each, any lane, with one rest day
+- A target reads as plain words: what, how many, and which day
+- A target names a lane and a count, or a day of the week and, for screen time, a limit
+
+### Group play: Drop Shot
+
+- Each day the higher score lands hits on the other floor equal to the margin, up to 4
+- Each of the 20 tiles takes 2 hits: cracked, then broken
+- Most tiles broken wins, then most hits landed, then fewer beers; still level is a draw
+- Winning more days beats one blowout: the winner gets 5, and both keep their own points
+- Against The House, the House's day is everyone else's average, and a margin under a whole point lands nothing
+
+### Group play: Team Week
+
+- The squads compare average points per player, so a bigger squad has no edge
+- Your own points always count: the losing squad keeps its points and gets no bonus
+- Level on average points goes to the squad with fewer beers per player
+- Still level is a draw, which adds no bonus (provisional, still open)
+- Averages are compared exactly: 31 points across 3 players is level with 62 across 6
+
+### Holiday events: Double Points Day
+
+- Doubles the day's base, negatives too
+- Stacks with an Aerial: the base counts four times
+- Demolitions and docks are never doubled
+- Rule One still makes the day 0
+
+### Holiday events: Dry Day
+
+- A logged day with 0 beers gets +2
+- Any beer loses the +2, and a no-show never gets it
+- The +2 is part of the base, so an Aerial doubles it, and a logged rest day gets it too
+
+### Holiday events: Holiday Pass
+
+- A no-show scores 0, not -5, and a blank rest day 0, not -3
+- A logged day scores as usual
+- Every goal still counts as missed on a no-show, so a Demolition lands, and docks still count
+- A no-show on a Holiday Pass neither grows nor breaks a check-in streak
+
+### Holiday events: on the calendar
+
+- Only the three events count: anything else on a calendar day is no event
+- A player's week scores each day with its calendar day's event
 
 ### Identity: recovery keys and league codes
 
@@ -416,14 +587,165 @@ Week 5, par 3. A draw worth +2 each, a Demolition that misses, one that fizzles 
 - Once the day locks, the same entries take the full penalties
 - A fully logged day shows the same score open or locked
 
+### Predictions
+
+- A pick is one of the two players in a matchup; picking both, or neither, is no pick, and matchups with The House are not picked
+- A pick is right when the player picked won; a draw makes every pick on it wrong
+- The best record is the most right picks; a tie goes to fewer picks made, and players still level share it
+- Nobody is top picker without a single right pick
+- The week's biggest upset is the win the fewest pickers saw coming: picked by under half of those who picked that matchup
+- There is no upset when every winner had half or more of the picks, when a matchup was drawn, or when nobody picked
+- The odds called a matchup when the favorite won; an even matchup, a draw or The House is not counted
+- A season's record adds up its weeks
+
+### Ranks
+
+- The most a week can score is 39 at par 3: six goal days of +6 and a rest day of +3
+- Rank is the average of the last 4 weeks, as a share of that most, in the tiers SCOPE.md lists
+- Only the last 4 weeks count, and until 4 exist the average uses the weeks there are
+- A player with no final week yet is unranked
+- Rank history carries across seasons: each week counts as a share of the most its own season allowed
+- A rank change is up or down; a first rank counts as up
+
+### Receipt deadlines from the calendar
+
+- Asked before 6 pm, proof is due at the end of that day; at 6 pm or later, the end of the next day
+- In the playoffs, proof is due by 6 pm the day after, when the day has locked, whenever it was asked
+
+### Rematch challenges
+
+- After a final week you lost to a player, you can challenge them
+- Not after a win or a draw, not against The House or a squad, and not before the week is final
+- Most points in the race week wins the side race; level points means nobody wins
+
+### Rival picks at the draft
+
+- The first player still unpicked, in draft order, picks next
+- A pick takes both players out of the running, and the rest keep their draft order
+- You pick someone still unpicked, never yourself
+- With one player left there is no pick to make: they face The House
+- Each pick has a 2-minute clock
+- A missed pick is made at random from the players still unpicked, with a random number the caller supplies
+- Week 1 is the picks in draft order, with The House for the odd one out
+- A finished draft's picks make a schedule whose Week 1 is exactly those picks
+
+### Rivalry records
+
+- A rivalry record counts every 1v1 week two players met, across seasons, from each side
+- Weeks against The House don't count
+- Team Week, 2v2, Bounty and Alley weeks make no record; Rumble and Drop Shot are 1v1s, so they do
+- Season 10 comes after season 9, so the last meeting is the latest week
+
+### Rumble items
+
+- There are seven items, one drawn for each player each day
+- Tornado: take 2 points from your opponent and add them to yours; two Tornadoes cancel out
+- Punch: if your day beats theirs, they lose 3; a tie or a loss does nothing
+- Boot: the goal picked scores 0 that day, and their day is no longer perfect
+- Spike: on your perfect day, they lose 1
+- Swap: if you missed a goal and they hit one, your first miss becomes a hit and their first hit a miss
+- Freeze: their screen time points count double, good or bad
+- Magnet: your beers count against them instead of you; your beers still count for tiebreaks
+- Boot, Spike and Swap do nothing on a day the player they touch is resting
+- Rule One by either player cancels both items that day
+- A no-show stays a flat −5: goal and screen items cannot change it, but points can still be taken
+- Items go in order: goals first, then screen time and beers, then points, so Punch sees what Magnet did
+- Docks still come last, and never count toward whose day beats whose
+
+### Season storylines
+
+- A win streak of 3 or more that ends is news: "Alex's 4-game win streak snapped by Maya"
+- So is a streak that reaches 3, and every win after
+- Beating the player with the most Season Points going in is news; with a tie at the top, nobody leads
+- A first win after two or more losses is news
+- So are a blowout of 20 or more, and a win by a single point
+- A recap carries at most 3 headlines, the biggest news first, and weeks against The House make none
+- Team Week, 2v2, Bounty and Alley weeks make no headlines, and neither count toward nor break a streak
+
+### Stickers
+
+- A sticker shows until the time it comes off, a week after it went on
+- Both can show at once, and anything else is ignored
+
+### The badge catalog
+
+- There are 51 badges, each unlocking a part, and the starter kit has 3 bodies and 15 paints
+- A badge adds its parts to the ones a player can use; Champion unlocks four, the gold finish and the podium backdrop among them
+- The starter kit also has an accent in any of the 15 paints (or none), 4 finishes, 4 boost trail styles and 7 backdrops (ruling R27)
+- An accent can go on any of 5 places, alone or together
+- Every season a player finishes gives them a decal with its number and year; any ranked player can wear their rank emblem
+
+### The bracket
+
+- Seeds come from Season Points: 1 plays 4 and 2 plays 3; a missing seed is a bye
+- A semifinal goes to more points, then fewer beers in the round, then the higher seed
+- The final goes to more points; level points go to sudden death
+- Sudden death: the first to miss any goal loses; if both hit everything or both miss, the day decides, then fewer beers in the round, then the higher seed
+
+### The bracket, round by round
+
+- Seeding: the top 4 by Season Points play; everyone else is in the Whiff Bowl, and with fewer than 2 outside there is none
+- Semifinal winners meet in the final, the 1-4 winner first; the Whiff Bowl losers race on the final days
+- A Whiff Bowl with one loser after its first round is settled then
+- The final crowns a champion on points, and the Whiff Bowl racer with the fewest points is last; level points go to sudden death
+- Top 2 is the final from the start, and everyone outside races for "not last" on its days
+
 ### The calendar the security rules read
 
 - Every regular-season day gets one entry, Monday of Week 1 to Sunday of the last week
-- An entry holds the day start, the 6 pm receipt cutoff, the day end and the noon lock, in real time
+- An entry holds the day start, its noon, the 6 pm receipt cutoff, the day end and the noon lock, in real time
 - An entry also holds its week's kit refill, its Sunday, and when its rest day can first be set
 - Entries stay right across a daylight saving change
 - A date outside the regular season has no regular-season entry
 - The kit on offer depends on the kind of week
+
+### The captains' draft
+
+- The captains are last season's top two who are still here, the leader blue
+- In Season 1, two are drawn at random from the draft order, the first drawn blue
+- Each captain starts alone on their squad, and everyone else is in the pool
+- The picks snake: blue, orange, orange, blue, blue, …
+- Only players still in the pool can be picked, and a missed pick takes one of them at random
+
+### The fast test league
+
+- Each day lasts a few minutes, one after another from the start
+- A moment's date follows the fast clock, not the wall clock
+- Its calendar has the same days as a real season, with every deadline in the same place within the day
+- The week's times move with it: the kit refills on Monday, and next week's rest day can be set from this Monday
+- A Wheel dare is due by the end of the Sunday after it's drawn, on the fast clock
+
+### The group-play vote
+
+- A ranking names each of the six modes exactly once
+- Each ranking gives its first choice 6 points, down to 1 for its last, and the most points tops the vote
+- A tie goes to the commish's own ranking, then to SCOPE.md's order
+- The top-ranked modes fill the group-play weeks in order, the top one first; with more weeks than modes, the order repeats
+
+### The nemesis tag
+
+- Your nemesis is whoever has beaten you most
+- A tie goes to whoever you have the worse record against, then to the one you met last
+- Nobody is your nemesis until someone has beaten you
+
+### The playoff calendar
+
+- One week, top 4: semifinals Monday to Wednesday, a reset Thursday, the final Friday to Sunday, and sudden death the Monday after
+- Two weeks, top 4: semifinals Monday to Saturday, a reset Sunday, the final Monday to Saturday, and sudden death that Sunday
+- Top 2: the final only, Monday to Saturday, with sudden death on Sunday; no playoffs means no playoff days
+- Every playoff day still locks at noon the next day, and each round's kit opens with the round, or on the reset day before it
+- A season knows its rounds: semifinal and final with four, the final alone with two
+
+### The practice week
+
+- Runs seven days, then its results go final at the end of an eighth: 32 minutes with 4-minute days
+- Can run before any season exists, or while the season is in setup
+- Can run after the draft, as long as it ends before the first day of the season starts
+- Can't run during the draft, or run into a draft that is coming up
+- Isn't for a season in its offseason
+- Each practice day lasts 2 to 30 minutes, and it starts some time ahead
+- Pairs everyone off in the order given, and the odd one out faces The House
+- Has stand-in goals for anyone the draft has not set goals for: each one doable in a few minutes
 
 ### The rules and the engine agree on every deadline
 
@@ -431,3 +753,43 @@ Week 5, par 3. A draw worth +2 each, a Demolition that misses, one that fizzles 
 - Full Boost and logging: from the start of the day until it locks
 - First rest-day move: the new day and the default Sunday both still ahead
 - Receipt proof: due at the end of the day, or the end of the next day when asked at 6 pm or later
+
+### The season trophy case
+
+- SCOPE.md's ten trophies, all awarded now that the playoffs are built
+- Regular-Season Leader is the top of the final standings, and Prophet the best predictions record
+- Screen Time King is the lowest average over the days logged, among players who logged at least half the days
+- Iron Streak, Demolition Derby, Brewmaster and MVP of the Season go to the most of each, at least one, ties shared
+- A trophy nobody qualifies for stays empty: no beers means no Brewmaster
+
+### The Wheel of Shame
+
+- The wheel holds every dare from the draft that stands, then starter dares, 16 slices at most
+- Starters the commish took off are left out of the order, so they never reach the wheel
+- With no dares from the draft, the wheel is the 8 starters
+- Proof is due by 11:59 pm on the Sunday after the draw, league time
+- A dare is waiting to be spun, then spun, then proven, voted on for 24 hours, and either counts or is spun again
+- No proof by the deadline is a dodge: 3 Season Points off, spun or not
+
+### The Whiff Bowl
+
+- Everyone outside the playoffs is paired best against worst; an odd one out, the best seed, is safe
+- The last round is a race for "not last": the fewest points loses, then the most beers, then the lower seed
+
+### The win meter
+
+- Level on points, with the same recent average, the bar is even
+- A lead with days to go favors the leader, but never as a sure thing
+- The same lead counts for more as the days run out
+- A better recent average can favor the player who trails, with enough days left
+- Once no day is left, the leader has it all, and a tie on points splits it
+- Each day to come counts as a whole day left, and the open day as half of one
+- A recent daily average is the last 4 final weeks' points over 7 days each; until then, this week's pace
+
+### Votes on goals and dares (provisional: waiting on the commish)
+
+- A veto needs more than half of the players who can vote, not just of the votes cast
+- Enough vetoes vetoes it at once, however many have still to vote
+- It is approved as soon as enough have approved that a veto can no longer win
+- When voting closes without enough vetoes, it is approved
+- With nobody else to vote, it is approved

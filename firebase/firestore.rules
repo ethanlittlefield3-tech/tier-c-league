@@ -398,8 +398,13 @@ service cloud.firestore {
       match /wall/{post} {
         allow read: if isMember(L);
         allow create: if isPlayer(L, request.resource.data.by)
-          && request.resource.data.keys().hasOnly(['by', 'kind', 'text', 'to', 'at', 'deleted'])
+          && request.resource.data.keys().hasOnly(['by', 'kind', 'text', 'to', 'at', 'deleted', 'practice'])
           && request.resource.data.kind in ['quick', 'taunt', 'brag']
+          // During a practice week, trash talk is marked as practice so it clears with it. Never a brag.
+          && (!('practice' in request.resource.data)
+              || (request.resource.data.practice == true
+                  && request.resource.data.kind != 'brag'
+                  && 'practice' in get(/databases/$(database)/documents/leagues/$(L)).data))
           && validText(request.resource.data.text, 280)
           && request.resource.data.at == request.time
           && request.resource.data.deleted == false
@@ -431,6 +436,52 @@ service cloud.firestore {
       // Everyone in the league reads it; no phone writes it.
       match /feed/{event} {
         allow read: if isMember(L);
+      }
+
+      // ---- The practice week (the commish's request, 2026-11-28) ----------
+      // Before a season starts, the commish asks for a practice week: how
+      // long each day lasts and when it starts. The practice job picks the
+      // request up, runs the week as its own season, "practice", on a fast
+      // clock, and clears it away after. Only that job writes the season and
+      // the league's practice mark, so no phone can give a season a fast
+      // clock. The commish can call it off before it starts, end it early,
+      // or clear it once its results are up.
+      match /practice/{doc} {
+        allow read: if isMember(L);
+        allow create: if isCommish(L)
+          && doc == 'request'
+          && request.resource.data.keys().hasOnly(['status', 'dayMinutes', 'startsAt', 'requestedAt', 'audit'])
+          && request.resource.data.status == 'requested'
+          && request.resource.data.dayMinutes is int
+          && request.resource.data.dayMinutes >= 2 && request.resource.data.dayMinutes <= 30
+          && request.resource.data.startsAt is timestamp
+          && request.resource.data.startsAt > request.time
+          && request.resource.data.startsAt <= request.time + duration.value(2, 'h')
+          && request.resource.data.requestedAt == request.time
+          && !('practice' in get(/databases/$(database)/documents/leagues/$(L)).data)
+          // Seven days, then the day its results go final.
+          && practiceFits(request.resource.data.startsAt + duration.value(request.resource.data.dayMinutes * 8, 'm'))
+          && audited(L, request.resource.data.audit, 'practice.schedule', 'practice/request');
+        allow update: if isCommish(L)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'audit'])
+          && ((resource.data.status == 'live' && request.resource.data.status == 'ending')
+              || (resource.data.status == 'done' && request.resource.data.status == 'clearing'))
+          && audited(L, request.resource.data.audit, 'practice.' + request.resource.data.status, 'practice/request');
+        allow delete: if isCommish(L) && resource.data.status in ['requested', 'failed'];
+      }
+
+      // A practice week fits before the season: with no season yet, or one in
+      // setup and over before its draft (if that is still to come), or one
+      // drafted and over before its first day starts. Never during the draft.
+      function practiceFits(end) {
+        let current = get(/databases/$(database)/documents/leagues/$(L)).data.get('season', null);
+        return current == null || seasonAllowsPractice(current, end);
+      }
+
+      function seasonAllowsPractice(current, end) {
+        let s = get(/databases/$(database)/documents/leagues/$(L)/seasons/$(current)).data;
+        return (s.status == 'setup' && (s.get('draftAt', null) == null || s.draftAt <= request.time || end <= s.draftAt))
+          || (s.status == 'active' && end <= get(/databases/$(database)/documents/leagues/$(L)/seasons/$(current)/calendar/$(s.kickoff)).data.start);
       }
 
       // ---- The trophy case (SCOPE.md, "Season trophy case") ---------------
@@ -524,7 +575,9 @@ service cloud.firestore {
         allow read: if isMember(L);
 
         // A new season starts only once the current one is over (the offseason).
+        // "practice" is the practice week's, which only its job writes.
         allow create: if isCommish(L)
+          && S != 'practice'
           && request.resource.data.keys().hasOnly(settingFields())
           && validSettings(request.resource.data)
           && request.resource.data.status == 'setup'

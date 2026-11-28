@@ -1,6 +1,7 @@
 import { useDoc } from '../data/hooks.ts';
 import type { Me } from '../data/identity.ts';
 import { seasonDates } from '../today/model.ts';
+import { playSeasonOf } from '../practice/play.ts';
 
 /**
  * Who you face this week, for the wall: just the opponent's id and name.
@@ -10,7 +11,8 @@ import { seasonDates } from '../today/model.ts';
 export function useOpponent(me: Me, now: number): { id: string | null; name: string; vsHouse: boolean; seasonPath: string | null; today: string | null } {
   const leaguePath = `leagues/${me.league}`;
   const league = useDoc<{ season?: string | null }>(leaguePath);
-  const seasonId = league.data?.season ?? null;
+  // The practice week while one is on (the commish's request, 2026-11-28).
+  const seasonId = playSeasonOf(league.data);
   const seasonPath = seasonId ? `${leaguePath}/seasons/${seasonId}` : null;
   const season = useDoc<{ timeZone: string; kickoff: string }>(seasonPath);
   const dates = season.data ? seasonDates(now, season.data) : null;

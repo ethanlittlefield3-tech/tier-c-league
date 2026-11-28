@@ -25,11 +25,15 @@ export interface Reaction {
   beer: boolean;
 }
 
-/** Puts a post on the wall. A brag is aimed at nobody; a taunt or quick-chat line at one player. */
-export const postToWall = (me: Me, input: { kind: PostKind; text: string; to: string | null }) =>
+/**
+ * Puts a post on the wall. A brag is aimed at nobody; a taunt or quick-chat
+ * line at one player. During a practice week, trash talk is marked as
+ * practice, so it clears with it.
+ */
+export const postToWall = (me: Me, input: { kind: PostKind; text: string; to: string | null; practice?: boolean }) =>
   attempt(async (db) => {
     const ref = doc(collection(db, 'leagues', me.league, 'wall'));
-    await setDoc(ref, { by: me.player, kind: input.kind, text: input.text, to: input.to, at: serverTimestamp(), deleted: false });
+    await setDoc(ref, { by: me.player, kind: input.kind, text: input.text, to: input.to, at: serverTimestamp(), deleted: false, ...(input.practice && input.kind !== 'brag' ? { practice: true } : {}) });
     return ref.id;
   });
 

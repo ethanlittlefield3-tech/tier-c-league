@@ -1,0 +1,61 @@
+name: Practice week
+
+# Runs one league's practice week (the commish's request, 2026-11-28): the
+# commish asks for one in Commish tools before a season starts, and the
+# "Send alerts" job starts this for it about 20 minutes before its start.
+# It sets the week up as its own season, then sends its alerts every half
+# minute and settles it every two, until its results are final. Nothing in it
+# counts, and it clears itself once its results have been up for 30 minutes.
+# It can also be started by hand from the Actions tab, with the league's ID.
+on:
+  workflow_dispatch:
+    inputs:
+      league:
+        description: The league's ID (the practice request must already be in place)
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: practice-${{ inputs.league }}
+  cancel-in-progress: false
+
+jobs:
+  practice:
+    name: Practice week
+    runs-on: ubuntu-latest
+    # The longest week (30-minute days) is 4 hours, plus a start up to 20 minutes away.
+    timeout-minutes: 300
+    steps:
+      - name: Check that the league's key is in GitHub Secrets
+        id: key
+        env:
+          KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -n "$KEY" ]; then
+            echo "present=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "The FIREBASE_SERVICE_ACCOUNT secret is not set yet. Skipping."
+          fi
+
+      - uses: actions/checkout@v6
+        if: steps.key.outputs.present == 'yes'
+
+      - uses: actions/setup-node@v6
+        if: steps.key.outputs.present == 'yes'
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+        if: steps.key.outputs.present == 'yes'
+
+      # The key is handed to this step only. The league's ID goes in through
+      # the environment, never into the script itself.
+      - name: Run the practice week
+        if: steps.key.outputs.present == 'yes'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          LEAGUE_ID: ${{ inputs.league }}
+        run: node jobs/practice.ts run

@@ -24,6 +24,7 @@ import { alertsDue, timedChecks, type Alert, type AlertDay, type AlertInput } fr
 import { activityAlerts, type ActivePost } from './lib/activity.ts';
 import { deliver, type Device, type Push } from './lib/deliver.ts';
 import { fastClockOf } from './lib/fast.ts';
+import { PRACTICE_SEASON } from '../engine/src/practice.ts';
 import { closeAlerts, leadsOf, liveTotals, passedAlerts, type Lead } from './lib/live.ts';
 import { offseasonAlerts, offseasonLeavers } from './lib/offseason.ts';
 import { autoSpins } from './lib/wheel.ts';
@@ -131,23 +132,29 @@ async function weekTotals(input: {
 }
 
 const only = process.env.LEAGUE_ID?.trim();
+// The practice job runs this for one league's practice week (SEASON_ID=practice),
+// every half minute: the season's own alerts, marked as practice, on its fast
+// clock. Wall posts and league news are left to the regular run, so nothing
+// goes out twice, and quiet hours keep to the real clock.
+const practiceRun = Boolean(only) && process.env.SEASON_ID?.trim() === PRACTICE_SEASON;
 const leagues = only ? [await db.collection('leagues').doc(only).get()] : (await db.collection('leagues').get()).docs;
 let totalSent = 0;
 
 for (const league of leagues) {
-  const seasonId = league.get('season');
+  const seasonId = practiceRun ? PRACTICE_SEASON : league.get('season');
   if (!league.exists || typeof seasonId !== 'string') continue;
   const seasonRef = league.ref.collection('seasons').doc(seasonId);
   const season = await seasonRef.get();
+  if (practiceRun && season.get('practice') !== true) continue;
   // A finished season is in its offseason, and its last dares may still be open.
   if (!season.exists || !['setup', 'draft', 'active', 'finished'].includes(String(season.get('status')))) continue;
 
-  const stateRef = db.collection('jobs').doc(`tick_${league.id}`);
+  const stateRef = db.collection('jobs').doc(`tick_${league.id}${practiceRun ? '_practice' : ''}`);
   const state = (await stateRef.get()).data() ?? {};
   const now = Date.now();
   // A first run looks back 15 minutes; a job that was down looks back 6 hours at most.
   const since = typeof ms(state.since) === 'number' ? Math.max(Number(ms(state.since)), now - 6 * HOUR) : now - 15 * MIN;
-  const fast = fastClockOf({ demo: league.get('demo') }, { fast: plain(season.get('fast') ?? {}) });
+  const fast = fastClockOf({ demo: league.get('demo') }, { fast: plain(season.get('fast') ?? {}), practice: season.get('practice') });
   const clock = fast ? fastLeagueClock(String(season.get('kickoff')), fast) : zoneClock(String(season.get('timeZone')));
 
   // The calendar around now: from the day before the last run to today.
@@ -161,9 +168,11 @@ for (const league of leagues) {
   const after = stamp(since);
   const activitySince = typeof ms(state.activitySince) === 'number' ? Number(ms(state.activitySince)) : now - HOUR;
   // Reactions and comments are bundled: their posts are looked at once an hour.
-  const activityDue = now - activitySince >= 55 * MIN;
+  const activityDue = !practiceRun && now - activitySince >= 55 * MIN;
+  // In practice, no wall posts or news: the regular run has those.
+  const leagueAfter = practiceRun ? stamp(now + 365 * 24 * HOUR) : after;
   const [wall, asked, dueSoon, docks, spun, proven, changed, active, news, poked, challenged] = await Promise.all([
-    league.ref.collection('wall').where('at', '>', after).get(),
+    league.ref.collection('wall').where('at', '>', leagueAfter).get(),
     seasonRef.collection('receipts').where('requestedAt', '>', after).get(),
     seasonRef.collection('receipts').where('deadline', '>', stamp(since + HOUR)).where('deadline', '<=', stamp(now + HOUR)).get(),
     seasonRef.collection('adjustments').where('at', '>', after).get(),
@@ -171,7 +180,7 @@ for (const league of leagues) {
     seasonRef.collection('spins').where('proofAt', '>', after).get(),
     seasonRef.collection('days').where('updatedAt', '>', after).get(),
     activityDue ? league.ref.collection('wall').where('activityAt', '>', stamp(activitySince)).get() : null,
-    league.ref.collection('feed').where('at', '>', after).get(),
+    league.ref.collection('feed').where('at', '>', leagueAfter).get(),
     seasonRef.collection('pokes').where('at', '>', after).get(),
     seasonRef.collection('rematches').where('at', '>', after).get(),
   ]);
@@ -358,7 +367,8 @@ for (const league of leagues) {
       const devices: Device[] = found.docs
         .map((device) => ({ id: device.id, ...(device.data() as Omit<Device, 'id'>) }))
         .filter((device) => members.includes(device.player));
-      const out = deliver({ alerts, devices, held, now, hour: clock.hourOf(now) });
+      if (practiceRun) alerts = alerts.map((alert) => (alert.key.startsWith('practice-') ? alert : { ...alert, key: `practice-${alert.key}`, title: `Practice: ${alert.title}` }));
+      const out = deliver({ alerts, devices, held, now, hour: (practiceRun ? zoneClock(String(season.get('timeZone'))) : clock).hourOf(now) });
       nextHeld = out.held;
 
       // Only phones still signed in as their player get anything: a lost phone was signed out by a new key.

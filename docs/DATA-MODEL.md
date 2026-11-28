@@ -46,9 +46,12 @@ Where everything lives in Firestore, who can write it and who can read it. It co
 | `wall/{post}/comments/{id}` | The writer, on brags only. Taken down like a post. | Members | 1, rules today | `by`, `text` (1 to 280 characters), `at`, `deleted`, `audit` |
 | `taunts/{player}` | That player | That player | 1 | `saved` (custom taunts, with `{name}`) |
 | `suggestions/{idea}` | Any member, in their own name. Everyone else sets only their own vote; the commish sets only the tag. Taken down by its author, or by the commish with an audit entry, which blanks its words. | Members | 2, rules today | `by`, `text` (1 to 280 characters), `at`, `tag` (planned, maybe, no, or null), `votes` (each voter's `true`), `deleted`, `audit` |
+| `practice/request` | The commish asks for a practice week before the season, with an audit entry; calls it off before it starts, ends it early, or clears it once its results are up. The practice job and the alerts job write the rest. | Members | 3, rules today | `status` (requested, live, ending, done, clearing, failed), `dayMinutes` (2 to 30), `startsAt`, `requestedAt`, `audit`; the jobs add `dispatchedAt`, `driverAt` (the practice job's heartbeat) and `reason` (why it couldn't run) |
 | `trophies/{season}` | The weekly job, once the season's last regular week is final | Members | 2, rules today | `season`, `name`, `at`, `trophies` (by trophy: `winners` and the `value` that won it; a trophy nobody won is left out) |
 
 ## In a season: `leagues/{league}/seasons/{season}/...`
+
+**The practice week** (ruling R32) is a season of its own, `seasons/practice`, with the same documents as any season. Only the practice job writes its season document, which carries `practice: true` and a fast clock (`fast.startsAt`, `fast.dayMinutes`); no phone can save either on any season, or make a season called `practice`. While it is on, the league document carries the practice job's mark, `practice` (`season`, `status`: live or done, `startsAt`, `dayMinutes`, `finalAt`, `clearAt`), and phones play that season on Game Day, Feed and League. Trash talk posted during it carries `practice: true` on its `wall/{post}`. When it clears, the job deletes the whole season, those posts, its alerts' memory (`jobs/tick_{league}_practice`), the mark and the request.
 
 | Path | Written by | Read by | Phase | Fields |
 | --- | --- | --- | --- | --- |

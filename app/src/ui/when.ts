@@ -24,3 +24,8 @@ export function ago(ms: number): string {
   if (hours < 24) return `${hours} h`;
   return `${Math.floor(hours / 24)} d`;
 }
+
+/** A time of day on this phone's clock: "7:30 pm". */
+export function clockTime(at: number): string {
+  return new Date(at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).toLowerCase();
+}

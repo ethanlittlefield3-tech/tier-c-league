@@ -4,7 +4,7 @@
  * (firebase/firestore.rules, "audited").
  */
 import { bountyText, makeRecoveryKey, receiptFixes, settleDue, weekPlayers, type BountyTarget, type GroupWeekInput, type HolidayEvent, type Lane, type RumbleItem, type PlayerWeekData, type Square, type StoredReceipt, type WeekLineStored, type WeekMode } from '@tcl/engine';
-import { Timestamp, collection, deleteField, doc, getDoc, getDocs, query, serverTimestamp, where, writeBatch, type Firestore } from 'firebase/firestore';
+import { Timestamp, collection, deleteDoc, deleteField, doc, getDoc, getDocs, query, serverTimestamp, where, writeBatch, type Firestore } from 'firebase/firestore';
 import { connect } from './firebase.ts';
 import { trouble, type Me } from './identity.ts';
 import { plain } from './live.ts';
@@ -328,4 +328,33 @@ export const bringBack = (me: Me, player: string, name: string) =>
     save.set(doc(league, 'audit', keyAudit), auditEntry(me, 'key.reissue', `keys/${player}`, `A new key for ${name}, back in the league`));
     await save.commit();
     return key;
+  });
+
+/**
+ * Asks for a practice week (the commish's request, 2026-11-28): how long each
+ * day lasts and when it starts. The practice job picks the request up and
+ * runs it. It goes in the audit log.
+ */
+export const schedulePractice = (me: Me, dayMinutes: number, startsAt: number) =>
+  attempt(async (db) => {
+    const league = doc(db, 'leagues', me.league);
+    const audit = doc(collection(league, 'audit')).id;
+    const save = writeBatch(db);
+    save.set(doc(league, 'practice', 'request'), { status: 'requested', dayMinutes, startsAt: Timestamp.fromMillis(startsAt), requestedAt: serverTimestamp(), audit });
+    save.set(doc(league, 'audit', audit), auditEntry(me, 'practice.schedule', 'practice/request', `Practice week, days of ${dayMinutes} minutes`));
+    await save.commit();
+  });
+
+/** Calls a practice week off before it starts, or dismisses one that couldn't run. */
+export const cancelPractice = (me: Me) => attempt((db) => deleteDoc(doc(db, 'leagues', me.league, 'practice', 'request')));
+
+/** Ends a running practice week early, or clears a finished one now. Either way it clears within minutes. It goes in the audit log. */
+export const stopPractice = (me: Me, status: 'ending' | 'clearing') =>
+  attempt(async (db) => {
+    const league = doc(db, 'leagues', me.league);
+    const audit = doc(collection(league, 'audit')).id;
+    const save = writeBatch(db);
+    save.update(doc(league, 'practice', 'request'), { status, audit });
+    save.set(doc(league, 'audit', audit), auditEntry(me, `practice.${status}`, 'practice/request', status === 'ending' ? 'Practice week ended early' : 'Practice week cleared'));
+    await save.commit();
   });

@@ -6,6 +6,7 @@ import type { KitPlay } from '../today/week.ts';
 import { Back, Heading } from '../ui/parts.tsx';
 import { ReceiptAsk } from './ReceiptAsk.tsx';
 import type { ReceiptDay } from './useMatchup.ts';
+import { playSeasonOf } from '../practice/play.ts';
 
 type Log = { date: string; goals?: Partial<Record<Lane, boolean>>; screenMinutes?: number | null };
 
@@ -18,7 +19,8 @@ export function PlayerDay(props: { me: Me; player: string; onBack: () => void })
   const now = useNow();
   const leaguePath = `leagues/${props.me.league}`;
   const league = useDoc<{ season?: string | null }>(leaguePath);
-  const seasonId = league.data?.season ?? null;
+  // The practice week while one is on (the commish's request, 2026-11-28).
+  const seasonId = playSeasonOf(league.data);
   const seasonPath = seasonId ? `${leaguePath}/seasons/${seasonId}` : null;
   const season = useDoc<{ timeZone: string }>(seasonPath);
   const dates = season.data ? seasonDates(now, season.data) : null;

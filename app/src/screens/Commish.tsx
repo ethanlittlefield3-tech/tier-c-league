@@ -8,6 +8,7 @@ import { whyOf } from '../data/why.ts';
 import { Back, Field, Heading } from '../ui/parts.tsx';
 import { CommishGroupPlay } from './CommishGroupPlay.tsx';
 import { CommishHolidays } from './CommishHolidays.tsx';
+import { CommishPractice } from './CommishPractice.tsx';
 import { CommishOffseason } from './CommishOffseason.tsx';
 import { useOffseason } from './useOffseason.ts';
 import { CommishSeasonDare } from './CommishSeasonDare.tsx';
@@ -340,6 +341,9 @@ export function Commish(props: { me: Me; onBack: () => void }) {
         )}
 
         {league.data && seasonId && season.data && <DraftControls me={props.me} seasonId={seasonId} status={season.data.status} members={Object.keys(league.data.members ?? {})} joiningOpen={league.data.joining !== 'closed'} groupWeeks={season.data.groupWeeks ?? []} />}
+
+        {/* Before the season starts: a practice week (the commish's request, 2026-11-28). */}
+        {league.data && !loading && !finished && <CommishPractice me={props.me} seasonId={seasonId} season={season.data ? { status: season.data.status, draftAt: season.data.draftAt, kickoff: season.data.kickoff } : null} />}
 
         {finished && seasonId && season.data && <CommishOffseason me={props.me} seasonId={seasonId} seasonName={season.data.name} timeZone={season.data.timeZone} off={off} />}
         {league.data && seasonId && season.data?.status === 'active' && <CommishGroupPlay me={props.me} seasonId={seasonId} />}

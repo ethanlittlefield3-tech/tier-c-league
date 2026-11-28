@@ -23,6 +23,7 @@ export * from './dares.ts';
 export * from './wheel.ts';
 export * from './settlement.ts';
 export * from './fast.ts';
+export * from './practice.ts';
 export * from './alerts.ts';
 export * from './clock.ts';
 export * from './ranks.ts';

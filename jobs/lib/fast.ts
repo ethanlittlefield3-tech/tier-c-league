@@ -106,9 +106,13 @@ export function fastDocs(input: FastInput): SeedDoc[] {
   return docs;
 }
 
-/** The fast clock a season keeps, if it is a demo league's; `null` for every other league. */
-export function fastClockOf(league: { demo?: unknown }, season: { fast?: unknown }): (FastClock & { bots: string[] }) | null {
-  if (league.demo !== true) return null;
+/**
+ * The fast clock a season keeps, if it is a demo league's or a practice week
+ * (`practice: true`, which only the practice job writes); `null` for every
+ * other season.
+ */
+export function fastClockOf(league: { demo?: unknown }, season: { fast?: unknown; practice?: unknown }): (FastClock & { bots: string[] }) | null {
+  if (league.demo !== true && season.practice !== true) return null;
   const fast = season.fast as { startsAt?: unknown; dayMinutes?: unknown; bots?: unknown } | undefined;
   if (!fast || typeof fast.startsAt !== 'number' || typeof fast.dayMinutes !== 'number' || fast.dayMinutes <= 0) return null;
   return { startsAt: fast.startsAt, dayMinutes: fast.dayMinutes, bots: Array.isArray(fast.bots) ? fast.bots.map(String) : [] };

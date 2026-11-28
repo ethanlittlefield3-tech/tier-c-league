@@ -42,9 +42,10 @@ import { Offseason } from './Offseason.tsx';
 import { RumblePanel } from './RumblePanel.tsx';
 import { rumbleDraws, useRumble } from './useRumble.ts';
 import { lateSyncRisk, useOnline } from '../ui/online.ts';
-import { timeLeft } from '../ui/when.ts';
+import { clockTime, timeLeft } from '../ui/when.ts';
 import './draft.css';
 import './today.css';
+import { playSeasonOf, practiceOf } from '../practice/play.ts';
 
 interface LeagueDoc {
   season?: string | null;
@@ -158,7 +159,8 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
 
   const leaguePath = `leagues/${props.me.league}`;
   const league = useDoc<LeagueDoc>(leaguePath);
-  const seasonId = league.data?.season ?? null;
+  // The practice week while one is on (the commish's request, 2026-11-28).
+  const seasonId = playSeasonOf(league.data);
   const seasonPath = seasonId ? `${leaguePath}/seasons/${seasonId}` : null;
   const season = useDoc<SeasonDoc>(seasonPath);
   const dates = season.data ? seasonDates(now, season.data) : null;
@@ -293,6 +295,16 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
 
   if (!seasonId || !season.data || !dates) {
     return <Notice title="No season yet">Your commish sets up the season. Logging opens on kickoff day.</Notice>;
+  }
+
+  // A practice week that hasn't started yet (the commish's request, 2026-11-28).
+  const practice = practiceOf(league.data);
+  if (practice && now < practice.startsAt && !todayCal.data) {
+    return (
+      <div class="today">
+        <Notice title="Practice week">{`It starts at ${clockTime(practice.startsAt)}: a quick 1v1 week, each day ${practice.dayMinutes} minutes long. Nothing counts, and it all clears after.`}</Notice>
+      </div>
+    );
   }
 
   // The season is over: the offseason, with Stay or Leave.
@@ -452,7 +464,7 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
     <div class="today" data-window={dayWindow}>
       {fast && (
         <p class="today-fast">
-          Fast test league: each day lasts {fast.dayMinutes} minutes, so noon and midnight come round on that clock.
+          {practice ? 'Practice week' : 'Fast test league'}: each day lasts {fast.dayMinutes} minutes, so noon and midnight come round on that clock.
         </p>
       )}
       {draftCard}
@@ -484,7 +496,7 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
             nemesis: nemesisOf(myProfile.data?.rivals) === opponentId,
           }}
           meter={meter}
-          record={`All-time against ${opponentProfile.data?.displayName ?? 'your opponent'}: ${recordText(myProfile.data?.rivals?.[opponentId])}`}
+          record={practice ? "Practice: this one doesn't count." : `All-time against ${opponentProfile.data?.displayName ?? 'your opponent'}: ${recordText(myProfile.data?.rivals?.[opponentId])}`}
           cells={myWeek.cells}
           onOpponent={() => setTheirDayOpen(true)}
         />

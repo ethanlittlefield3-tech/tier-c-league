@@ -17,6 +17,7 @@ import { useOpponent } from './useOpponent.ts';
 import { latestWheel, type Draw, type ProofVote, type Spin } from './Wheel.tsx';
 import './wheel.css';
 import './feed.css';
+import { playSeasonOf, practiceOf } from '../practice/play.ts';
 
 interface Post {
   by: string;
@@ -62,7 +63,9 @@ export function Feed(props: { me: Me; onWheel?: () => void }) {
   const now = useNow();
   const leaguePath = `leagues/${props.me.league}`;
   const league = useDoc<{ season?: string | null; commish?: string; coCommish?: string | null; members?: Record<string, boolean> }>(leaguePath);
-  const seasonPath = league.data?.season ? `${leaguePath}/seasons/${league.data.season}` : null;
+  // The practice week while one is on (the commish's request, 2026-11-28).
+  const playSeason = playSeasonOf(league.data);
+  const seasonPath = playSeason ? `${leaguePath}/seasons/${playSeason}` : null;
   const players = useAll<{ displayName?: string; taunts?: string[]; car?: Partial<CarParts>; stickers?: Partial<Record<string, { until?: unknown }>> }>(`${leaguePath}/players`);
   const posts = useLatest<Post>(`${leaguePath}/wall`, 'at', 50);
   const checkIns = useLatest<FeedInput['checkIns'][number]['data']>(seasonPath ? `${seasonPath}/days` : null, 'firstAt', 20);
@@ -139,7 +142,7 @@ export function Feed(props: { me: Me; onWheel?: () => void }) {
           </button>
         </section>
       )}
-      <Compose me={props.me} opponent={opponent} saved={saved} />
+      <Compose me={props.me} opponent={opponent} saved={saved} practice={practiceOf(league.data) !== null} />
       <section class="feed-wall" aria-label="The feed">
         {timeline.length === 0 && !posts.loading && <p class="fine-print">Nothing on the wall yet. Start something.</p>}
         {timeline.map((item, at) => {
@@ -228,7 +231,7 @@ function dayLabel(at: number, now: number): string {
  * One place to post: just two buttons, Trash talk and Brag, until you tap
  * one, which opens it. Tapping the open one again folds it away.
  */
-function Compose(props: { me: Me; opponent: { id: string | null; name: string; vsHouse: boolean }; saved: string[] }) {
+function Compose(props: { me: Me; opponent: { id: string | null; name: string; vsHouse: boolean }; saved: string[]; practice: boolean }) {
   const [mode, setMode] = useState<'talk' | 'brag' | null>(null);
   const pick = (next: 'talk' | 'brag') => setMode(mode === next ? null : next);
   return (
@@ -241,14 +244,14 @@ function Compose(props: { me: Me; opponent: { id: string | null; name: string; v
           Brag
         </button>
       </div>
-      {mode === 'talk' && <Talk me={props.me} opponent={props.opponent} saved={props.saved} />}
+      {mode === 'talk' && <Talk me={props.me} opponent={props.opponent} saved={props.saved} practice={props.practice} />}
       {mode === 'brag' && <Brag me={props.me} />}
     </section>
   );
 }
 
 /** Taunts for this week's opponent: quick chat, your saved taunts, or a new one. */
-function Talk(props: { me: Me; opponent: { id: string | null; name: string; vsHouse: boolean }; saved: string[] }) {
+function Talk(props: { me: Me; opponent: { id: string | null; name: string; vsHouse: boolean }; saved: string[]; practice: boolean }) {
   const [text, setText] = useState('');
   const [keep, setKeep] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -269,7 +272,7 @@ function Talk(props: { me: Me; opponent: { id: string | null; name: string; vsHo
     setNote(null);
     void loadData()
       .then(async (api) => {
-        await api.postToWall(props.me, { kind, text: words, to });
+        await api.postToWall(props.me, { kind, text: words, to, practice: props.practice });
         if (alsoSave && !props.saved.includes(words)) await api.saveTaunts(props.me, [words, ...props.saved].slice(0, SAVED_TAUNTS_MAX));
       })
       .then(() => {
