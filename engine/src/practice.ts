@@ -18,7 +18,7 @@ export const PRACTICE_SEASON = 'practice';
 /** How long each practice day can last, in minutes. */
 export const PRACTICE_DAY_MINUTES = { min: 2, max: 30, standard: 4 } as const;
 
-/** How far ahead the commish can start it, in minutes. GitHub's job needs up to about 10 to wake. */
+/** How far ahead the commish can start it, in minutes. The job is started as soon as a GitHub run sees the request, up to an hour ahead. */
 export const PRACTICE_LEADS = [10, 15, 30, 60] as const;
 
 /** How long the results stay up once they are final, before practice clears itself. */

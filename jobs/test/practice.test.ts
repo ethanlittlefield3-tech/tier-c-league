@@ -60,8 +60,9 @@ describe('The practice week, as the job sets it up', () => {
 describe('When the alerts job starts or clears a practice week', () => {
   const asked = (overrides: Partial<PracticeRequest> = {}): PracticeRequest => ({ status: 'requested', startsAt: STARTS, dayMinutes: 4, ...overrides });
 
-  it('Starts the practice job within 20 minutes of the start, once', () => {
-    expect(practiceStep({ request: asked({ startsAt: NOW + 30 * MIN }), mark: null, now: NOW })).toBeNull();
+  it('Starts the practice job as soon as it sees the request, up to an hour before the start, once: GitHub runs its jobs late', () => {
+    expect(practiceStep({ request: asked({ startsAt: NOW + 70 * MIN }), mark: null, now: NOW })).toBeNull();
+    expect(practiceStep({ request: asked({ startsAt: NOW + 60 * MIN }), mark: null, now: NOW })).toBe('start');
     expect(practiceStep({ request: asked(), mark: null, now: NOW })).toBe('start');
     expect(practiceStep({ request: asked({ dispatchedAt: NOW - 5 * MIN }), mark: null, now: NOW })).toBeNull();
     expect(practiceStep({ request: asked({ dispatchedAt: NOW - 16 * MIN }), mark: null, now: NOW })).toBe('start');

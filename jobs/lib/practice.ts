@@ -118,8 +118,10 @@ export interface PracticeMarkRead {
  * What the alerts job does about a league's practice week on each run:
  * start the practice job for it, clear it away, or leave it be.
  *
- * - It starts the job up to 20 minutes before the start, so the week is
- *   ready, and again if the job has stopped answering mid-week.
+ * - It starts the job as soon as it sees the request, up to an hour before
+ *   the start (GitHub runs its scheduled jobs late, sometimes by an hour, so
+ *   the first run that sees it has to start it), and again if the job has
+ *   stopped answering mid-week.
  * - It clears a finished week once its results have been up for a while, or
  *   when the commish clears or ends it and no job is running to do it.
  * - A week that never got going is given up two hours after it should have
@@ -135,7 +137,7 @@ export function practiceStep(input: { request: PracticeRequest | null; mark: Pra
   if (request.status === 'ending' || request.status === 'clearing' || request.status === 'done') return alive ? null : 'clear';
   if (alive) return null;
   if (now > request.startsAt + practiceLength(request.dayMinutes) + 120 * MIN) return 'clear';
-  if (now < request.startsAt - 20 * MIN) return null;
+  if (now < request.startsAt - 60 * MIN) return null;
   if (typeof request.dispatchedAt === 'number' && now - request.dispatchedAt < 15 * MIN) return null;
   return 'start';
 }

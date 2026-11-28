@@ -2,7 +2,7 @@ name: Practice week
 
 # Runs one league's practice week (the commish's request, 2026-11-28): the
 # commish asks for one in Commish tools before a season starts, and the
-# "Send alerts" job starts this for it about 20 minutes before its start.
+# "Send alerts" job (or either hourly job) starts this as soon as it sees it.
 # It sets the week up as its own season, then sends its alerts every half
 # minute and settles it every two, until its results are final. Nothing in it
 # counts, and it clears itself once its results have been up for 30 minutes.
@@ -25,8 +25,9 @@ jobs:
   practice:
     name: Practice week
     runs-on: ubuntu-latest
-    # The longest week (30-minute days) is 4 hours, plus a start up to 20 minutes away.
-    timeout-minutes: 300
+    # The longest week (30-minute days) is 4 hours, plus a start up to an hour
+    # away and its results' half hour. GitHub's limit is 360.
+    timeout-minutes: 345
     steps:
       - name: Check that the league's key is in GitHub Secrets
         id: key

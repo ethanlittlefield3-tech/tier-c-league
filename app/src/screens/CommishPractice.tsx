@@ -94,9 +94,10 @@ export function CommishPractice(props: { me: Me; seasonId: string | null; season
       ) : asked ? (
         <>
           <p class="panel-text">
-            Asked for: {practiceModeName((asked as { mode?: string }).mode)}, starting at {clock(asked.startsAt)}, with days of {asked.dayMinutes} minutes. GitHub's practice job sets it up about 20 minutes before
-            {now > asked.startsAt ? ', and is on its way: it can run a few minutes late' : ''}.
+            Asked for: {practiceModeName((asked as { mode?: string }).mode)}, starting at {clock(asked.startsAt)}, with days of {asked.dayMinutes} minutes. GitHub's practice job sets it up as soon as it
+            picks the request up{now > asked.startsAt ? '. It is late: GitHub runs its jobs late, and the week starts a couple of minutes after it is set up' : ''}.
           </p>
+          <p class="fine-print">GitHub sometimes runs late, by up to an hour. To start it now: on GitHub, open Actions, choose Send alerts, then Run workflow.</p>
           {asked.status === 'requested' && (
             <button type="button" class="btn btn-second" disabled={busy} onClick={() => act((api) => api.cancelPractice(props.me))}>
               Call it off

@@ -133,7 +133,7 @@ Everyone in the league plays one quick week, a 1v1 or any group-play mode, on a 
 
 1. In the app, open **Commish tools** and find **Practice week**. It only shows before the season starts.
 2. Pick the mode (a 1v1 week, or any group-play mode), how long each day lasts (2 to 30 minutes) and when it starts (10 minutes to an hour away), then tap **Schedule the practice week**.
-3. The **Send alerts**, **Settle the weeks** and **Keep the season calendar** jobs each look for it, and whichever runs first starts the **Practice week** job, up to 20 minutes before the start. GitHub often runs them late, sometimes by an hour, and a late start moves the whole week later. To start it yourself, open **Actions**, choose **Send alerts**, then **Run workflow**.
+3. The **Send alerts**, **Settle the weeks** and **Keep the season calendar** jobs each look for it, and whichever runs first starts the **Practice week** job as soon as it sees it, up to an hour before the start. GitHub often runs them late, sometimes by an hour, and a late start moves the whole week later. To start it yourself, open **Actions**, choose **Send alerts**, then **Run workflow**.
 4. Everyone sees a gold "Practice week" strip, and Game Day plays the practice week until its results have been up for 30 minutes. **End it now** or **Clear it now** in Commish tools clears it within a few minutes.
 
 ## Resetting a season
