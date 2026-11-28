@@ -58,6 +58,7 @@ interface SeasonDoc {
   par: number;
   timeZone: string;
   kickoff: string;
+  regularWeeks: number;
   ruleOneIssue?: number[];
   fast?: { startsAt?: number; dayMinutes?: number } | null;
 }

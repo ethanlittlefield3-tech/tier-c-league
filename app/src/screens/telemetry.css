@@ -578,3 +578,58 @@
   margin-left: 8px;
   background: rgba(255, 176, 102, 0.75);
 }
+
+/* Season Wrapped: the season on one card, on Game Day in the offseason and
+   at the top of Telemetry. It brings its own hairline colours, because on
+   Game Day it sits outside Telemetry. */
+.wrapped {
+  --tm-cyan: #5ee0ff;
+  --tm-line: rgba(94, 224, 255, 0.18);
+  max-width: 440px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+  background:
+    radial-gradient(80% 60% at 50% 0%, rgba(31, 139, 255, 0.2), transparent 70%),
+    linear-gradient(180deg, rgba(17, 30, 73, 0.92), rgba(8, 15, 40, 0.94));
+}
+
+.today .wrapped {
+  margin-top: 14px;
+}
+
+.wrapped[data-champion='true'] {
+  border-color: rgba(255, 207, 63, 0.45);
+}
+
+.wrapped-place {
+  margin: 0 0 12px;
+  font: italic 800 17px/1.25 var(--display);
+  color: var(--gold);
+}
+
+.wrapped-tiles {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.wrapped-tiles small {
+  text-wrap: balance;
+}
+
+.wrapped-extras {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+.wrapped-extras strong {
+  color: var(--ink);
+}
+
+.wrapped-share {
+  width: 100%;
+  margin-top: 14px;
+}

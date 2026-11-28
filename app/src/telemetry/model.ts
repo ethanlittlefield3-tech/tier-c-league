@@ -63,6 +63,18 @@ export interface TelemetryModel {
   league: { form: number | null; formPlace: number | null; formOf: number; rows: CompareRow[] };
 }
 
+/** Your streak of days logged, now and at its longest: a rest day with nothing logged neither adds to it nor breaks it. */
+export function loggedStreak(days: readonly HabitDay[]): { current: number; best: number } {
+  let current = 0;
+  let best = 0;
+  for (const day of days) {
+    if (day.logged) current += 1;
+    else if (!day.rest) current = 0;
+    best = Math.max(best, current);
+  }
+  return { current, best };
+}
+
 const rate = (hits: number, days: number) => (days > 0 ? hits / days : null);
 const perWeek = (value: number, days: number) => (days > 0 ? Math.round((value / days) * 70) / 10 : 0);
 
@@ -93,14 +105,6 @@ export function telemetryModel(input: TelemetryInput): TelemetryModel {
   const form = formScore(input.history);
   const formBefore = input.history.length > 1 ? formScore(input.history.slice(0, -1)) : null;
 
-  // Your streak of days logged: a rest day with nothing logged neither adds nor breaks it.
-  let current = 0;
-  let best = 0;
-  for (const day of days) {
-    if (day.logged) current += 1;
-    else if (!day.rest) current = 0;
-    best = Math.max(best, current);
-  }
 
   const weekNumbers = [...new Set(calendar.map((day) => day.week))];
   const screenWeeks = weekNumbers
@@ -143,7 +147,7 @@ export function telemetryModel(input: TelemetryInput): TelemetryModel {
     lanes: LANES.map((lane) => ({ lane, rate: rate(stats.hits[lane], stats.goalDays - stats.noShows), before: rate(previous.hits[lane], previous.goalDays - previous.noShows) })),
     screen: { perDay: stats.screenDays ? stats.screenMinutes / stats.screenDays : null, weeks: screenWeeks },
     shape: weekdayShape(recent),
-    streak: { current, best },
+    streak: loggedStreak(days),
     league: {
       form: forms.length ? Math.round(forms.reduce((sum, each) => sum + each.form, 0) / forms.length) : null,
       formPlace: mine ? forms.filter((each) => each.form > mine.form).length + 1 : null,

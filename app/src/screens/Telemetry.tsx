@@ -4,6 +4,7 @@ import { useAll, useDoc, useNow, useWhere } from '../data/hooks.ts';
 import type { Me } from '../data/identity.ts';
 import { seasonDates, type DayEntry } from '../today/model.ts';
 import { telemetryModel, WINDOW_DAYS, type TelemetryModel } from '../telemetry/model.ts';
+import { SeasonWrapped } from './SeasonWrapped.tsx';
 import './telemetry.css';
 
 const LANE_NAMES: Record<Lane, string> = { mind: 'Mind', body: 'Body', wildcard: 'Wildcard' };
@@ -74,7 +75,7 @@ function Card(props: { title: string; meta?: string; children: preact.ComponentC
  * is the spotlight, one number on a boost gauge; then where your points go,
  * your lanes, screen time, the shape of your week, how steady you are, and
  * how you stand against the league. All from the real season: a practice
- * week never counts here.
+ * week never counts here. Once the season is over, its Wrapped card leads.
  */
 export function Telemetry(props: { me: Me }) {
   const now = useNow(60_000);
@@ -82,7 +83,7 @@ export function Telemetry(props: { me: Me }) {
   const league = useDoc<{ season?: string | null }>(leaguePath);
   const seasonId = league.data?.season ?? null;
   const seasonPath = seasonId ? `${leaguePath}/seasons/${seasonId}` : null;
-  const season = useDoc<{ par: number; kickoff: string; regularWeeks: number; timeZone: string; status?: string }>(seasonPath);
+  const season = useDoc<{ par: number; kickoff: string; regularWeeks: number; timeZone: string; status?: string; name?: string; champion?: string | null }>(seasonPath);
   const profile = useDoc<{ rankHistory?: { points: number; max: number }[] }>(`${leaguePath}/players/${props.me.player}`);
   const days = useWhere<DayEntry & { date: string }>(seasonPath ? `${seasonPath}/days` : null, 'player', props.me.player);
   const kit = useWhere<{ item?: string; period?: string; date?: string }>(seasonPath ? `${seasonPath}/kit` : null, 'player', props.me.player);
@@ -120,6 +121,7 @@ export function Telemetry(props: { me: Me }) {
 
   return (
     <div class="telemetry">
+      {seasonId && season.data?.status === 'finished' && <SeasonWrapped me={props.me} seasonId={seasonId} season={season.data} />}
       <section class="tm-hero" aria-label="Your form">
         <div class="tm-gauge">
           <FormGauge value={shown} pace={model.form !== null ? model.pace : null} />
