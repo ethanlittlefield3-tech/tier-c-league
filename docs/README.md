@@ -133,7 +133,7 @@ Everyone in the league plays one quick week, a 1v1 or any group-play mode, on a 
 
 1. In the app, open **Commish tools** and find **Practice week**. It only shows before the season starts.
 2. Pick the mode (a 1v1 week, or any group-play mode), how long each day lasts (2 to 30 minutes) and when it starts (10 minutes to an hour away), then tap **Schedule the practice week**.
-3. The **Send alerts** job (every 10 minutes) starts the **Practice week** job about 20 minutes before the start. To start it yourself, open **Actions**, choose **Practice week**, **Run workflow**, and give it the league's ID.
+3. The **Send alerts**, **Settle the weeks** and **Keep the season calendar** jobs each look for it, and whichever runs first starts the **Practice week** job, up to 20 minutes before the start. GitHub often runs them late, sometimes by an hour, and a late start moves the whole week later. To start it yourself, open **Actions**, choose **Send alerts**, then **Run workflow**.
 4. Everyone sees a gold "Practice week" strip, and Game Day plays the practice week until its results have been up for 30 minutes. **End it now** or **Clear it now** in Commish tools clears it within a few minutes.
 
 ## Resetting a season
@@ -142,7 +142,7 @@ This takes the current season back as if it had never been set up, with everythi
 
 1. In the app, open **Commish tools** and scroll to the bottom, to **Start over**.
 2. Type the season's name, then tap **Reset**. Until it starts, **Call it off** takes it back.
-3. The **Send alerts** job (every 10 minutes) starts the **Reset a season** job, which backs the league up, then resets it in about a minute. To start it yourself, open **Actions**, choose **Reset a season**, **Run workflow**, and give it the league's ID.
+3. The **Send alerts**, **Settle the weeks** and **Keep the season calendar** jobs each look for it, and whichever runs first starts the **Reset a season** job, which backs the league up, then resets it in about a minute. GitHub often runs them late, so it can take up to an hour. To start it now, open **Actions**, choose **Send alerts**, then **Run workflow**.
 4. Every phone follows at once. What goes: the season's days, points, power-ups, weeks, standings and picks; its weeks in everyone's rank; its badges, and any car part from them (back to the starter part); its rivalry records; its trophy case, its season decal, the champion's banner and its news in the feed. Players stay in the league, and the chat stays.
 
 ## Checking alerts reach your phone

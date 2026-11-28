@@ -26,6 +26,10 @@ jobs:
     name: Write the calendar
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Starting a practice week or a season reset needs to start a workflow, and nothing more.
+    permissions:
+      contents: read
+      actions: write
     steps:
       - name: Check that the league's key is in GitHub Secrets
         id: key
@@ -63,3 +67,36 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: node jobs/season-calendar.ts
+
+      # GitHub runs scheduled jobs late, sometimes by an hour, so this job
+      # also looks for practice weeks and season resets the commish asked
+      # for, as "Send alerts" does: whichever runs first starts them. The key
+      # is handed to these two steps only.
+      - name: Start or clear practice weeks
+        id: practice
+        if: steps.key.outputs.present == 'yes'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node jobs/practice.ts check
+
+      - name: Find season resets to start
+        id: reset
+        if: steps.key.outputs.present == 'yes'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node jobs/reset.ts check
+
+      # The workflow's own token starts those jobs; it has no key.
+      - name: Start the practice weeks and season resets
+        if: steps.practice.outputs.start != '' || steps.reset.outputs.start != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PRACTICE: ${{ steps.practice.outputs.start }}
+          RESETS: ${{ steps.reset.outputs.start }}
+        run: |
+          for league in $PRACTICE; do
+            gh workflow run practice.yml --repo "$GITHUB_REPOSITORY" -f league="$league"
+          done
+          for league in $RESETS; do
+            gh workflow run reset.yml --repo "$GITHUB_REPOSITORY" -f league="$league"
+          done

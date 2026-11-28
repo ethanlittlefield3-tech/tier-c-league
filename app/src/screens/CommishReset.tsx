@@ -27,7 +27,8 @@ function whereTo(seasonId: string): string {
  * Commish tools, the season reset (the commish's request, 2026-11-28): takes
  * the current season back as if it had never been set up, with everything it
  * gave out. The commish types the season's name to be sure; GitHub's reset
- * job backs the league up and does it within about 15 minutes.
+ * job backs the league up and does it, usually within the hour: GitHub runs
+ * its scheduled jobs late.
  */
 export function CommishReset(props: { me: Me; seasonId: string; seasonName: string }) {
   const request = useDoc<Request>(`leagues/${props.me.league}/reset/request`);
@@ -65,7 +66,7 @@ export function CommishReset(props: { me: Me; seasonId: string; seasonName: stri
       ) : asked ? (
         <>
           <p class="panel-text" role="status">
-            {asked.status === 'running' ? `Resetting ${name} now. It takes a minute.` : `${name} is being reset. GitHub's reset job does it within about 15 minutes, after a backup of the league.`}
+            {asked.status === 'running' ? `Resetting ${name} now. It takes a minute.` : `${name} is being reset, after a backup of the league. GitHub usually starts it within the hour. To start it now: on GitHub, open Actions, choose Send alerts, then Run workflow.`}
           </p>
           {asked.status === 'requested' && (
             <button type="button" class="btn btn-second" disabled={busy} onClick={() => act((api) => api.cancelReset(props.me))}>
