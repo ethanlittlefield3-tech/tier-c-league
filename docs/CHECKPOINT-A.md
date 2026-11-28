@@ -2,7 +2,7 @@
 
 Generated 2026-11-28 by `npm run checkpoint:a`. Do not edit by hand: the rule list comes from the test results and the worked weeks are run through the engine.
 
-- **Tests:** 423 of 423 passing.
+- **Tests:** 433 of 433 passing.
 - **Rulings and calls behind these rules:** `docs/DECISIONS.md`.
 
 ## Worked example weeks
@@ -666,6 +666,28 @@ Week 5, par 3. A draw worth +2 each, a Demolition that misses, one that fizzles 
 
 - A sticker shows until the time it comes off, a week after it went on
 - Both can show at once, and anything else is ignored
+
+### Telemetry: finished days, from the logs
+
+- A week's rest day is Sunday, unless the player moved it
+
+### Telemetry: you against the league
+
+- Sets each of your numbers against the league's average, with your place: fewer beers and less screen time place higher
+- Has nothing to compare until a week is in
+
+### Telemetry: your days, as habits
+
+- A finished day's points are scored before any power-up: what you did, not what a power-up made of it
+- Where the points go, against a best normal day: each missed goal, screen time short of its best, each beer, and days with nothing logged
+- Names the biggest leak, as points a week, and the weakest lane when it is missed goals
+- Shows the shape of your week: your average day on each weekday
+
+### Telemetry: your form, the one number
+
+- Form is your rank measure as a score out of 100: your last 4 final weeks against the most each could score
+- Form never shows below 0 or above 100
+- This week's pace: your points so far, as a week at that rate, out of 100
 
 ### The badge catalog
 

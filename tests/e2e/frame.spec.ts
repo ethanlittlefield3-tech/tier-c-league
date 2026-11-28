@@ -21,10 +21,10 @@ const playerOf = async (request: Parameters<typeof createLeague>[0], league: Tes
   String((await readDoc(request, `leagues/${league.id}/lookup/${key}`))?.player);
 
 test.describe('The app frame', () => {
-  test('Once in, the app opens on Game Day, with four tabs along the bottom: Game Day, Feed, League and Garage', async ({ page, request }) => {
+  test('Once in, the app opens on Game Day, with five tabs along the bottom: Game Day, Feed, League, Garage and Telemetry', async ({ page, request }) => {
     await inTheApp(page, request);
     await expect(page.getByRole('heading', { name: 'Game Day', level: 1 })).toBeVisible();
-    await expect(tabs(page).getByRole('button')).toHaveText(['Game Day', 'Feed', 'League', 'Garage']);
+    await expect(tabs(page).getByRole('button')).toHaveText(['Game Day', 'Feed', 'League', 'Garage', 'Telemetry']);
     await expect(tab(page, 'Game Day')).toHaveAttribute('aria-current', 'page');
   });
 
@@ -39,7 +39,7 @@ test.describe('The app frame', () => {
 
   test('Every tab is built: none says it is coming soon', async ({ page, request }) => {
     await inTheApp(page, request);
-    for (const name of ['Game Day', 'Feed', 'League', 'Garage']) {
+    for (const name of ['Game Day', 'Feed', 'League', 'Garage', 'Telemetry']) {
       await tab(page, name).click();
       await expect(page.getByText('Coming soon')).toHaveCount(0);
     }
@@ -52,7 +52,7 @@ test.describe('The app frame', () => {
     expect(bar).not.toBeNull();
     expect(Math.round(bar!.y + bar!.height)).toBe(screen.height);
     expect(bar!.width).toBeLessThanOrEqual(screen.width);
-    for (const name of ['Game Day', 'Feed', 'League', 'Garage']) {
+    for (const name of ['Game Day', 'Feed', 'League', 'Garage', 'Telemetry']) {
       const box = await tab(page, name).boundingBox();
       // Big enough to tap: Apple's guideline is 44 points.
       expect(box!.height).toBeGreaterThanOrEqual(44);

@@ -25,6 +25,7 @@ import { SPOTS, isNew, lastSeen, markSeen, newestFromOthers, startSeen, type Spo
 import { useOpponent } from './useOpponent.ts';
 import './frame.css';
 import { PracticeStrip } from '../practice/PracticeStrip.tsx';
+import { Telemetry } from './Telemetry.tsx';
 
 interface TabInfo {
   id: Tab;
@@ -32,12 +33,14 @@ interface TabInfo {
 }
 
 // SCOPE.md, "Screens", with Today and Match combined into Game Day (the
-// commish's request, 2026-11-27): four bottom tabs cover the whole game.
+// commish's request, 2026-11-27), and Telemetry, your own numbers, on the
+// right (2026-11-28): five bottom tabs cover the whole game.
 const TABS: readonly TabInfo[] = [
   { id: 'today', label: 'Game Day' },
   { id: 'feed', label: 'Feed' },
   { id: 'league', label: 'League' },
   { id: 'garage', label: 'Garage' },
+  { id: 'telemetry', label: 'Telemetry' },
 ];
 
 /** What a tab's dot tells a screen reader. */
@@ -271,7 +274,7 @@ export function Frame(props: { me: Me; onRenamed: (me: Me) => void; onSignedOut:
       )}
       <PracticeStrip me={props.me} />
       <main class="frame-body" key={tab}>
-        {tab === 'today' ? <Today me={props.me} onDraft={() => setDraftOpen(true)} onWheel={() => setWheelOpen(true)} onPicks={() => setPicksOpen(true)} /> : tab === 'feed' ? <Feed me={props.me} onWheel={() => setWheelOpen(true)} /> : tab === 'league' ? <League me={props.me} onPlayer={setDayOf} /> : <Garage me={props.me} />}
+        {tab === 'today' ? <Today me={props.me} onDraft={() => setDraftOpen(true)} onWheel={() => setWheelOpen(true)} onPicks={() => setPicksOpen(true)} /> : tab === 'feed' ? <Feed me={props.me} onWheel={() => setWheelOpen(true)} /> : tab === 'league' ? <League me={props.me} onPlayer={setDayOf} /> : tab === 'garage' ? <Garage me={props.me} /> : <Telemetry me={props.me} />}
       </main>
       <Tabs me={props.me} tab={tab} onTab={setTab} newestBadge={newestBadge} />
       {/* Monday's picks pop up once, over whichever tab is open (ruling R25). */}

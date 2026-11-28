@@ -23,6 +23,7 @@ import { badgeUpdate, seasonBadgeData } from './lib/badge-facts.ts';
 import { reactionCount } from './lib/activity.ts';
 import { matchupOf, withWeek, type RankEntry } from './lib/ranks.ts';
 import { weekReads } from './lib/week-reads.ts';
+import { weekStats } from './lib/week-stats.ts';
 import { drawDuos } from './lib/duos.ts';
 import { playoffDue, roundDoc, roundResults } from './lib/playoff-docs.ts';
 import { seedBracket, settleFinal, settleSemis, settleSuddenDeath, type Bracket, type PlayoffPeriod, type PlayoffSettings, type RoundTotals } from '../engine/src/playoffs.ts';
@@ -178,6 +179,8 @@ for (const league of leagues) {
         awards: settled.awards,
         lines: settled.lines,
         group: settled.group,
+        // Each player's habits this week, for Telemetry's league comparison.
+        stats: weekStats({ par: Number(season.get('par')), days: days as unknown as Parameters<typeof weekStats>[0]['days'], players }),
         ...(week.get('settledAt') ? {} : { settledAt: FieldValue.serverTimestamp() }),
         ...(settled.status === 'final' ? { finalAt: FieldValue.serverTimestamp() } : {}),
       },

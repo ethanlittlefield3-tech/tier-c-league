@@ -1,7 +1,7 @@
 // The five tab icons, drawn for this app. They share one line weight and
 // corner style, so they read as a set at 26 pixels.
 
-export type Tab = 'today' | 'feed' | 'league' | 'garage';
+export type Tab = 'today' | 'feed' | 'league' | 'garage' | 'telemetry';
 
 const line = {
   class: 'tab-icon',
@@ -60,9 +60,22 @@ function GarageIcon() {
   );
 }
 
+/** Telemetry: a boost gauge, its needle well up. */
+function TelemetryIcon() {
+  return (
+    <svg {...line}>
+      <path d="M4.2 17.5a8.5 8.5 0 1 1 15.6 0" />
+      <path d="M12 14l4.2-4.6" />
+      <circle cx="12" cy="14.5" r="1.4" />
+      <path d="M7 9.7l.9.9M12 6.8v1.3M17 9.7l-.9.9" />
+    </svg>
+  );
+}
+
 export const TAB_ICONS: Record<Tab, () => preact.JSX.Element> = {
   today: TodayIcon,
   feed: FeedIcon,
   league: LeagueIcon,
   garage: GarageIcon,
+  telemetry: TelemetryIcon,
 };
