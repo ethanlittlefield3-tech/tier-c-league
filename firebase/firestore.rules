@@ -450,8 +450,10 @@ service cloud.firestore {
         allow read: if isMember(L);
         allow create: if isCommish(L)
           && doc == 'request'
-          && request.resource.data.keys().hasOnly(['status', 'dayMinutes', 'startsAt', 'requestedAt', 'audit'])
+          && request.resource.data.keys().hasOnly(['status', 'dayMinutes', 'startsAt', 'requestedAt', 'mode', 'audit'])
           && request.resource.data.status == 'requested'
+          // A regular 1v1 week, or any of the six group-play modes.
+          && request.resource.data.get('mode', 'regular') in ['regular', 'rumble', 'teamWeek', 'twoVTwo', 'bounty', 'dropShot', 'alley']
           && request.resource.data.dayMinutes is int
           && request.resource.data.dayMinutes >= 2 && request.resource.data.dayMinutes <= 30
           && request.resource.data.startsAt is timestamp

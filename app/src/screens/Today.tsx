@@ -45,7 +45,7 @@ import { lateSyncRisk, useOnline } from '../ui/online.ts';
 import { clockTime, timeLeft } from '../ui/when.ts';
 import './draft.css';
 import './today.css';
-import { playSeasonOf, practiceOf } from '../practice/play.ts';
+import { playSeasonOf, practiceModeName, practiceOf } from '../practice/play.ts';
 
 interface LeagueDoc {
   season?: string | null;
@@ -302,7 +302,7 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
   if (practice && now < practice.startsAt && !todayCal.data) {
     return (
       <div class="today">
-        <Notice title="Practice week">{`It starts at ${clockTime(practice.startsAt)}: a quick 1v1 week, each day ${practice.dayMinutes} minutes long. Nothing counts, and it all clears after.`}</Notice>
+        <Notice title="Practice week">{`It starts at ${clockTime(practice.startsAt)}: ${practiceModeName(practice.mode)}, each day ${practice.dayMinutes} minutes long. Nothing counts, and it all clears after.`}</Notice>
       </div>
     );
   }

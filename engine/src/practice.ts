@@ -8,7 +8,9 @@
  * Points, ranks, badges, rivalries or trophies, and it clears itself once its
  * results have been up for a while.
  */
-import { HOUSE } from './schedule.ts';
+import { defaultBounty, type BountyTarget } from './group.ts';
+import { GROUP_MODES, type GroupMode } from './modes.ts';
+import { HOUSE, isPairedMode } from './schedule.ts';
 
 /** The practice week's season id, beside the real season's. */
 export const PRACTICE_SEASON = 'practice';
@@ -65,4 +67,42 @@ export function practicePairs(order: readonly string[]): { a: string; b: string 
   const pairs: { a: string; b: string }[] = [];
   for (let at = 0; at < order.length; at += 2) pairs.push({ a: order[at]!, b: order[at + 1] ?? HOUSE });
   return pairs;
+}
+
+/** A practice week can be a regular 1v1 week or any of the six group-play modes (the commish's request, 2026-11-28). */
+export type PracticeMode = 'regular' | GroupMode;
+export const PRACTICE_MODES: readonly PracticeMode[] = ['regular', ...GROUP_MODES];
+
+/**
+ * A practice week's matchups, for its mode, from everyone in the order given
+ * (shuffled by the caller): 1v1 pairs for a regular week, Rumble and Drop
+ * Shot; blue and orange for Team Week, alternating down the order; everyone
+ * on the roster for 2v2 (whose duos the weekly job draws when the week
+ * starts), Bounty Week (with the league-wide target) and the Alley.
+ */
+export function practiceWeek(mode: PracticeMode, order: readonly string[]): {
+  pairs: { a: string; b: string }[];
+  targets: Record<string, string[]>;
+  teams?: { blue: string[]; orange: string[] };
+  roster?: string[];
+  bounty?: BountyTarget;
+} {
+  if (isPairedMode(mode)) {
+    const pairs = practicePairs(order);
+    const targets: Record<string, string[]> = {};
+    for (const { a, b } of pairs) {
+      targets[a] = [b];
+      if (b !== HOUSE) targets[b] = [a];
+    }
+    return { pairs, targets };
+  }
+  if (mode === 'teamWeek') {
+    const blue = order.filter((_, at) => at % 2 === 0);
+    const orange = order.filter((_, at) => at % 2 === 1);
+    const targets: Record<string, string[]> = {};
+    for (const player of blue) targets[player] = [...orange];
+    for (const player of orange) targets[player] = [...blue];
+    return { pairs: [], teams: { blue, orange }, targets };
+  }
+  return { pairs: [], roster: [...order], targets: {}, ...(mode === 'bounty' ? { bounty: defaultBounty(order.length) } : {}) };
 }

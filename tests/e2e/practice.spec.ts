@@ -13,8 +13,8 @@ const button = (page: Page, name: string) => page.getByRole('button', { name, ex
 const MIN = 60_000;
 
 /** A practice week already set up, as the practice job would: the commish against Maya, each day 4 minutes. */
-async function practiceWeek(request: APIRequestContext, league: TestLeague, startsAt: number) {
-  const plan = practiceDocs({ leagueId: league.id, order: [league.commish, 'maya'], real: { par: 3, timeZone: 'America/New_York' }, goals: {}, startsAt, dayMinutes: 4, now: Date.now() });
+async function practiceWeek(request: APIRequestContext, league: TestLeague, startsAt: number, mode: 'regular' | 'teamWeek' = 'regular') {
+  const plan = practiceDocs({ leagueId: league.id, order: [league.commish, 'maya'], real: { par: 3, timeZone: 'America/New_York' }, goals: {}, startsAt, dayMinutes: 4, mode, now: Date.now() });
   await writeDocs(request, plan.docs as Parameters<typeof writeDocs>[1]);
   await patchDoc(request, `leagues/${league.id}`, { practice: { ...plan.mark } });
   await writeDoc(request, `leagues/${league.id}/practice/request`, { status: 'live', dayMinutes: 4, startsAt: new Date(startsAt), requestedAt: new Date() });
@@ -30,22 +30,25 @@ async function beforeTheSeason(request: APIRequestContext) {
 }
 
 test.describe('The practice week', () => {
-  test('Before the season, the commish schedules one from Commish tools: how long each day lasts and when it starts; everyone sees it coming', async ({ page, request }) => {
+  test('Before the season, the commish schedules one from Commish tools: its mode, how long each day lasts and when it starts; everyone sees it coming', async ({ page, request }) => {
     const league = await beforeTheSeason(request);
     await enterAsCommish(page, league);
     await button(page, 'Your profile, Alex').click();
     await button(page, 'Commish tools').click();
     const panel = page.getByRole('region', { name: 'Practice week' });
     await expect(panel).toContainText('Nothing counts');
+    await expect(panel.getByRole('group', { name: 'The mode' }).getByRole('button')).toHaveText(['1v1', 'Rumble', 'Team Week', '2v2', 'Bounty Week', 'Drop Shot', 'Alley']);
+    await panel.getByRole('button', { name: 'Team Week', exact: true }).click();
     await panel.getByLabel('Each day lasts').selectOption('2');
     await panel.getByRole('button', { name: '10 min', exact: true }).click();
     await expect(panel.locator('.practice-plan')).toContainText('Seven days of 2 minutes');
     await panel.getByRole('button', { name: 'Schedule the practice week' }).click();
-    await expect(panel).toContainText('Asked for: starts at');
-    await expect.poll(() => readDoc(request, `leagues/${league.id}/practice/request`)).toMatchObject({ status: 'requested', dayMinutes: 2 });
+    await expect(panel).toContainText('Asked for: Team Week, starting at');
+    await expect.poll(() => readDoc(request, `leagues/${league.id}/practice/request`)).toMatchObject({ status: 'requested', dayMinutes: 2, mode: 'teamWeek' });
     // Back out in the app, everyone sees it coming.
     await button(page, 'Back').click();
     await button(page, 'Back').click();
+    await expect(page.locator('.practice-strip')).toContainText('Team Week, starts at');
     await expect(page.locator('.practice-strip')).toContainText('with days of 2 minutes. Nothing counts.');
 
     // Called off before it starts.
@@ -95,7 +98,7 @@ test.describe('The practice week', () => {
     const league = await beforeTheSeason(request);
     await practiceWeek(request, league, Date.now() - MIN);
     await enterAsCommish(page, league);
-    await expect(page.locator('.practice-strip')).toContainText('Practice weekNothing counts. Results at');
+    await expect(page.locator('.practice-strip')).toContainText('Practice week1v1. Nothing counts. Results at');
     await expect(page.locator('.board-side[data-team="orange"] .board-name')).toContainText('Maya');
     await page.locator('.check-goal[data-lane="mind"]').click();
     await expect(page.locator('.today-status')).toHaveText('Saved');
@@ -111,6 +114,15 @@ test.describe('The practice week', () => {
       const ids = await listIds(request, `leagues/${league.id}/wall`);
       return ids.length ? (await readDoc(request, `leagues/${league.id}/wall/${ids[0]}`))?.practice : null;
     }).toBe(true);
+  });
+
+  test('In a group-play mode, Game Day plays that mode: Team Week shows its board, blue against orange', async ({ page, request }) => {
+    const league = await beforeTheSeason(request);
+    await practiceWeek(request, league, Date.now() - MIN, 'teamWeek');
+    await enterAsCommish(page, league);
+    await expect(page.locator('.practice-strip')).toContainText('Team Week. Nothing counts.');
+    await expect(page.locator('.group-board')).toContainText('Team Week');
+    await expect(page.locator('.group-you')).toContainText("You're on Blue");
   });
 
   test('Settled, it touches no profile, feed or trophy case; cleared, nothing is left of it but brags', async ({ request }) => {

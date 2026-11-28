@@ -11,8 +11,7 @@
  */
 import { localDate } from '../../engine/src/calendar.ts';
 import { fastCalendar } from '../../engine/src/fast.ts';
-import { PRACTICE_GOALS, PRACTICE_RESULTS_MINUTES, PRACTICE_SEASON, practiceLength, practicePairs } from '../../engine/src/practice.ts';
-import { HOUSE } from '../../engine/src/schedule.ts';
+import { PRACTICE_GOALS, PRACTICE_RESULTS_MINUTES, PRACTICE_SEASON, practiceLength, practiceWeek, type PracticeMode } from '../../engine/src/practice.ts';
 import type { Lane } from '../../engine/src/scoring.ts';
 import { calendarDocsFrom, mondayOf } from './calendar-docs.ts';
 import type { SeedDoc } from './league-seed.ts';
@@ -29,6 +28,8 @@ export interface PracticeInput {
   goals: Record<string, Partial<Record<Lane, string>>>;
   startsAt: number;
   dayMinutes: number;
+  /** A regular 1v1 week, or one of the six group-play modes. */
+  mode?: PracticeMode;
   now: number;
 }
 
@@ -38,6 +39,7 @@ export interface PracticeMark {
   status: 'live' | 'done';
   startsAt: Date;
   dayMinutes: number;
+  mode: PracticeMode;
   /** When its results go final. */
   finalAt: Date;
   clearAt: Date | null;
@@ -51,6 +53,7 @@ export function practiceDocs(input: PracticeInput): { docs: SeedDoc[]; mark: Pra
   // Its dates are only labels: this week's, from Monday.
   const kickoff = mondayOf(localDate(input.now, timeZone));
   const clock = { startsAt: input.startsAt, dayMinutes: input.dayMinutes };
+  const mode = input.mode ?? 'regular';
   const docs: SeedDoc[] = [];
 
   docs.push({
@@ -64,7 +67,7 @@ export function practiceDocs(input: PracticeInput): { docs: SeedDoc[]; mark: Pra
       playoffs: 'none',
       playoffSize: 4,
       par: input.real?.par ?? 3,
-      groupWeeks: [],
+      groupWeeks: mode === 'regular' ? [] : [1],
       timeZone,
       kickoff,
       draftAt: null,
@@ -77,7 +80,8 @@ export function practiceDocs(input: PracticeInput): { docs: SeedDoc[]; mark: Pra
       fast: { startsAt: new Date(input.startsAt), dayMinutes: input.dayMinutes },
     },
   });
-  for (const day of calendarDocsFrom(fastCalendar({ kickoff, regularWeeks: 1, timeZone }, clock))) docs.push({ path: `${season}/calendar/${day.id}`, data: day.data });
+  // Each day's power-ups follow the mode, as in a real week of it.
+  for (const day of calendarDocsFrom(fastCalendar({ kickoff, regularWeeks: 1, timeZone, ...(mode === 'regular' ? {} : { modes: { 1: mode } }) }, clock))) docs.push({ path: `${season}/calendar/${day.id}`, data: day.data });
 
   for (const player of input.order) {
     const own = input.goals[player] ?? {};
@@ -85,16 +89,11 @@ export function practiceDocs(input: PracticeInput): { docs: SeedDoc[]; mark: Pra
     docs.push({ path: `${season}/roster/${player}`, data: { goals: { mind: goal('mind'), body: goal('body'), wildcard: goal('wildcard') } } });
   }
 
-  const pairs = practicePairs(input.order);
-  const targets: Record<string, string[]> = {};
-  for (const { a, b } of pairs) {
-    targets[a] = [b];
-    if (b !== HOUSE) targets[b] = [a];
-  }
-  docs.push({ path: `${season}/weeks/w01`, data: { week: 1, period: 'w01', mode: 'regular', pairs, targets, monday: kickoff } });
+  const week = practiceWeek(mode, input.order);
+  docs.push({ path: `${season}/weeks/w01`, data: { week: 1, period: 'w01', mode, monday: kickoff, ...week } });
 
   const finalAt = new Date(input.startsAt + practiceLength(input.dayMinutes));
-  return { docs, mark: { season: PRACTICE_SEASON, status: 'live', startsAt: new Date(input.startsAt), dayMinutes: input.dayMinutes, finalAt, clearAt: null } };
+  return { docs, mark: { season: PRACTICE_SEASON, status: 'live', startsAt: new Date(input.startsAt), dayMinutes: input.dayMinutes, mode, finalAt, clearAt: null } };
 }
 
 /** The commish's request, as the jobs read it, with its times in milliseconds. */

@@ -1,10 +1,10 @@
 import { useState } from 'preact/hooks';
-import { PRACTICE_DAY_MINUTES, PRACTICE_LEADS, PRACTICE_RESULTS_MINUTES, practiceLength, practiceWindow } from '@tcl/engine';
+import { MODE_BLURBS, PRACTICE_DAY_MINUTES, PRACTICE_LEADS, PRACTICE_MODES, PRACTICE_RESULTS_MINUTES, practiceLength, practiceWindow, type GroupMode, type PracticeMode } from '@tcl/engine';
 import { useDoc, useNow } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
 import { whyOf } from '../data/why.ts';
-import { practiceOf, type PracticeMark } from '../practice/play.ts';
+import { practiceModeName, practiceOf, type PracticeMark } from '../practice/play.ts';
 import { clockTime } from '../ui/when.ts';
 
 const MIN = 60_000;
@@ -38,6 +38,7 @@ export function CommishPractice(props: { me: Me; seasonId: string | null; season
   const kickoffDay = useDoc<{ start: number }>(props.seasonId && props.season?.kickoff ? `leagues/${props.me.league}/seasons/${props.seasonId}/calendar/${props.season.kickoff}` : null);
   const [dayMinutes, setDayMinutes] = useState<number>(PRACTICE_DAY_MINUTES.standard);
   const [lead, setLead] = useState<number>(15);
+  const [mode, setMode] = useState<PracticeMode>('regular');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -70,8 +71,8 @@ export function CommishPractice(props: { me: Me; seasonId: string | null; season
             {mark.status === 'done'
               ? `Its results are up. It clears itself at ${clock(mark.clearAt ?? mark.finalAt + PRACTICE_RESULTS_MINUTES * MIN)}.`
               : now < mark.startsAt
-                ? `It starts at ${clock(mark.startsAt)}, with days of ${mark.dayMinutes} minutes. Results at ${clock(mark.finalAt)}.`
-                : `It's on, with days of ${mark.dayMinutes} minutes. Results at ${clock(mark.finalAt)}.`}
+                ? `${practiceModeName(mark.mode)}. It starts at ${clock(mark.startsAt)}, with days of ${mark.dayMinutes} minutes. Results at ${clock(mark.finalAt)}.`
+                : `${practiceModeName(mark.mode)}, on now with days of ${mark.dayMinutes} minutes. Results at ${clock(mark.finalAt)}.`}
           </p>
           {asked?.status === 'ending' || asked?.status === 'clearing' ? (
             <p class="fine-print" role="status">
@@ -93,7 +94,7 @@ export function CommishPractice(props: { me: Me; seasonId: string | null; season
       ) : asked ? (
         <>
           <p class="panel-text">
-            Asked for: starts at {clock(asked.startsAt)}, with days of {asked.dayMinutes} minutes. GitHub's practice job sets it up about 20 minutes before
+            Asked for: {practiceModeName((asked as { mode?: string }).mode)}, starting at {clock(asked.startsAt)}, with days of {asked.dayMinutes} minutes. GitHub's practice job sets it up about 20 minutes before
             {now > asked.startsAt ? ', and is on its way: it can run a few minutes late' : ''}.
           </p>
           {asked.status === 'requested' && (
@@ -105,9 +106,18 @@ export function CommishPractice(props: { me: Me; seasonId: string | null; season
       ) : (
         <>
           <p class="panel-text">
-            Everyone plays a quick 1v1 week: the real game, every screen and power-up, on a fast clock. Nothing counts: no Season Points, ranks, badges or rivalry records, and it all clears
-            after. Goals the draft has set carry over; everyone else gets quick stand-ins.
+            Everyone plays one quick week, a 1v1 or any group-play mode: the real game, every screen and power-up, on a fast clock. Nothing counts: no Season Points, ranks, badges or
+            rivalry records, and it all clears after. Goals the draft has set carry over; everyone else gets quick stand-ins.
           </p>
+          <p class="setup-label">The mode</p>
+          <div class="choice choice-wrap" role="group" aria-label="The mode">
+            {PRACTICE_MODES.map((each) => (
+              <button type="button" class="choice-option" aria-pressed={mode === each} disabled={busy} onClick={() => setMode(each)}>
+                {practiceModeName(each)}
+              </button>
+            ))}
+          </div>
+          <p class="fine-print">{mode === 'regular' ? 'Everyone paired off, the odd one out against The House.' : MODE_BLURBS[mode as GroupMode]}</p>
           <p class="setup-label">
             <label for="practice-minutes">Each day lasts</label>
           </p>
@@ -132,7 +142,7 @@ export function CommishPractice(props: { me: Me; seasonId: string | null; season
               {check.reason}
             </p>
           )}
-          <button type="button" class="btn" disabled={busy || !check.ok} onClick={() => act((api) => api.schedulePractice(props.me, dayMinutes, startsAt))}>
+          <button type="button" class="btn" disabled={busy || !check.ok} onClick={() => act((api) => api.schedulePractice(props.me, dayMinutes, startsAt, mode))}>
             Schedule the practice week
           </button>
         </>

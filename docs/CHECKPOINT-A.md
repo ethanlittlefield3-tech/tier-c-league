@@ -2,7 +2,7 @@
 
 Generated 2026-11-28 by `npm run checkpoint:a`. Do not edit by hand: the rule list comes from the test results and the worked weeks are run through the engine.
 
-- **Tests:** 440 of 440 passing.
+- **Tests:** 444 of 444 passing.
 - **Rulings and calls behind these rules:** `docs/DECISIONS.md`.
 
 ## Worked example weeks
@@ -778,6 +778,13 @@ Week 5, par 3. A draw worth +2 each, a Demolition that misses, one that fizzles 
 - Each practice day lasts 2 to 30 minutes, and it starts some time ahead
 - Pairs everyone off in the order given, and the odd one out faces The House
 - Has stand-in goals for anyone the draft has not set goals for: each one doable in a few minutes
+
+### The practice week, in any mode
+
+- Can be a regular 1v1 week or any of the six group-play modes
+- A 1v1 mode (regular, Rumble, Drop Shot) pairs everyone off, the odd one out against The House
+- Team Week splits everyone into blue and orange, in the order given, each able to demolish the other side
+- 2v2, Bounty Week and the Alley list everyone; Bounty Week gets the league-wide target; 2v2's duos are drawn when the week starts
 
 ### The rules and the engine agree on every deadline
 

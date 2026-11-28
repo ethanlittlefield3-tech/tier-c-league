@@ -2,7 +2,7 @@
 
 Generated 2026-11-28 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 353 of 353 passing.
+- **Tests:** 354 of 354 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -373,6 +373,7 @@ Only the commish asks for one, before the season and over before the draft or ki
 
 - Before the season, the commish asks for a practice week: how long each day lasts and when it starts, with an audit entry
 - Only the commish, only with an audit entry
+- It can be a regular 1v1 week or any of the six group-play modes
 - Each day lasts 2 to 30 whole minutes, and it starts ahead, within 2 hours
 - Not once the season has started, and not during the draft
 - After the draft, only if it is over before kickoff; before the draft, only if it is over before the draft

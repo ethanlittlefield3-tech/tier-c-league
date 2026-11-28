@@ -36,13 +36,23 @@ describe('The practice week, as the job sets it up', () => {
     expect(week.data).toMatchObject({ week: 1, mode: 'regular', pairs: [{ a: 'alex', b: 'maya' }, { a: 'sam', b: 'HOUSE' }], targets: { alex: ['maya'], maya: ['alex'], sam: ['HOUSE'] } });
   });
 
+  it('In a group-play mode, the week and its days follow the mode: Team Week has its squads, and Bounty Week has no Demolition', () => {
+    const team = plan({ mode: 'teamWeek' });
+    expect(team.docs.find((doc) => doc.path.endsWith('/weeks/w01'))!.data).toMatchObject({ mode: 'teamWeek', teams: { blue: ['alex', 'sam'], orange: ['maya'] } });
+    expect(team.mark.mode).toBe('teamWeek');
+    const bounty = plan({ mode: 'bounty' });
+    const day = bounty.docs.find((doc) => doc.path.includes('/calendar/'))!.data as { mode: string; kit: string[] };
+    expect(day).toMatchObject({ mode: 'bounty', kit: ['aerial', 'fullBoost'] });
+    expect(bounty.docs.find((doc) => doc.path === 'leagues/L1/seasons/practice')!.data).toMatchObject({ groupWeeks: [1] });
+  });
+
   it('Writes nothing outside its own season: no profile, feed, trophy or league document', () => {
     for (const doc of plan().docs) expect(doc.path.startsWith('leagues/L1/seasons/practice')).toBe(true);
   });
 
   it('Marks the league with its season, its start, and when its results go final: 8 days of the commish\'s length', () => {
     const { mark } = plan();
-    expect(mark).toMatchObject({ season: 'practice', status: 'live', dayMinutes: 4, clearAt: null });
+    expect(mark).toMatchObject({ season: 'practice', status: 'live', dayMinutes: 4, mode: 'regular', clearAt: null });
     expect(mark.finalAt.getTime()).toBe(STARTS + 32 * MIN);
   });
 });

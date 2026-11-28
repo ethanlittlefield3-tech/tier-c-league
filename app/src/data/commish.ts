@@ -335,13 +335,13 @@ export const bringBack = (me: Me, player: string, name: string) =>
  * day lasts and when it starts. The practice job picks the request up and
  * runs it. It goes in the audit log.
  */
-export const schedulePractice = (me: Me, dayMinutes: number, startsAt: number) =>
+export const schedulePractice = (me: Me, dayMinutes: number, startsAt: number, mode: string = 'regular') =>
   attempt(async (db) => {
     const league = doc(db, 'leagues', me.league);
     const audit = doc(collection(league, 'audit')).id;
     const save = writeBatch(db);
-    save.set(doc(league, 'practice', 'request'), { status: 'requested', dayMinutes, startsAt: Timestamp.fromMillis(startsAt), requestedAt: serverTimestamp(), audit });
-    save.set(doc(league, 'audit', audit), auditEntry(me, 'practice.schedule', 'practice/request', `Practice week, days of ${dayMinutes} minutes`));
+    save.set(doc(league, 'practice', 'request'), { status: 'requested', dayMinutes, startsAt: Timestamp.fromMillis(startsAt), requestedAt: serverTimestamp(), mode, audit });
+    save.set(doc(league, 'audit', audit), auditEntry(me, 'practice.schedule', 'practice/request', `Practice week (${mode}), days of ${dayMinutes} minutes`));
     await save.commit();
   });
 

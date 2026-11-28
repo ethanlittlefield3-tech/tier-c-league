@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { HOUSE, PRACTICE_GOALS, practiceLength, practicePairs, practiceWindow } from '../src/index.ts';
+import { HOUSE, PRACTICE_GOALS, PRACTICE_MODES, practiceLength, practicePairs, practiceWeek, practiceWindow } from '../src/index.ts';
 
 const MIN = 60_000;
 const NOW = Date.UTC(2026, 11, 1, 18, 0);
@@ -56,5 +56,31 @@ describe('The practice week', () => {
   it('Has stand-in goals for anyone the draft has not set goals for: each one doable in a few minutes', () => {
     expect(Object.keys(PRACTICE_GOALS).sort()).toEqual(['body', 'mind', 'wildcard']);
     for (const text of Object.values(PRACTICE_GOALS)) expect(text.length).toBeLessThanOrEqual(40);
+  });
+});
+
+describe('The practice week, in any mode', () => {
+  it('Can be a regular 1v1 week or any of the six group-play modes', () => {
+    expect(PRACTICE_MODES).toEqual(['regular', 'rumble', 'teamWeek', 'twoVTwo', 'bounty', 'dropShot', 'alley']);
+  });
+
+  it('A 1v1 mode (regular, Rumble, Drop Shot) pairs everyone off, the odd one out against The House', () => {
+    for (const mode of ['regular', 'rumble', 'dropShot'] as const) {
+      expect(practiceWeek(mode, ['a', 'b', 'c'])).toEqual({ pairs: [{ a: 'a', b: 'b' }, { a: 'c', b: HOUSE }], targets: { a: ['b'], b: ['a'], c: [HOUSE] } });
+    }
+  });
+
+  it('Team Week splits everyone into blue and orange, in the order given, each able to demolish the other side', () => {
+    expect(practiceWeek('teamWeek', ['a', 'b', 'c', 'd', 'e'])).toEqual({
+      pairs: [],
+      teams: { blue: ['a', 'c', 'e'], orange: ['b', 'd'] },
+      targets: { a: ['b', 'd'], c: ['b', 'd'], e: ['b', 'd'], b: ['a', 'c', 'e'], d: ['a', 'c', 'e'] },
+    });
+  });
+
+  it("2v2, Bounty Week and the Alley list everyone; Bounty Week gets the league-wide target; 2v2's duos are drawn when the week starts", () => {
+    expect(practiceWeek('twoVTwo', ['a', 'b', 'c', 'd'])).toEqual({ pairs: [], roster: ['a', 'b', 'c', 'd'], targets: {} });
+    expect(practiceWeek('bounty', ['a', 'b'])).toEqual({ pairs: [], roster: ['a', 'b'], targets: {}, bounty: { kind: 'hits', lane: 'any', count: 24 } });
+    expect(practiceWeek('alley', ['a', 'b'])).toEqual({ pairs: [], roster: ['a', 'b'], targets: {} });
   });
 });

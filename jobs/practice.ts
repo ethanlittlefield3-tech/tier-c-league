@@ -25,7 +25,7 @@ import { appendFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { FieldValue, Timestamp, getFirestore, type DocumentData } from 'firebase-admin/firestore';
-import { PRACTICE_SEASON, practiceWindow } from '../engine/src/practice.ts';
+import { PRACTICE_MODES, PRACTICE_SEASON, practiceWindow, type PracticeMode } from '../engine/src/practice.ts';
 import type { Lane } from '../engine/src/scoring.ts';
 import { connect } from './admin.ts';
 import { practiceClearAt, practiceDocs, practiceStep, type PracticeMarkRead, type PracticeRequest } from './lib/practice.ts';
@@ -72,6 +72,7 @@ async function setUp(id: string): Promise<{ startsAt: number; finalAt: number } 
   // A late start moves the whole week on, so every day keeps its length.
   const startsAt = Math.max(Number(request.startsAt), Date.now() + 2 * MIN);
   const dayMinutes = Number(request.dayMinutes);
+  const mode: PracticeMode = PRACTICE_MODES.includes(request.mode as PracticeMode) ? (request.mode as PracticeMode) : 'regular';
   const window = practiceWindow({
     season: real?.exists ? { status: String(real.get('status')), draftAt: typeof ms(real.get('draftAt')) === 'number' ? Number(ms(real.get('draftAt'))) : null } : null,
     kickoffStart: kickoff?.exists ? Number(ms(kickoff.get('start'))) : null,
@@ -107,6 +108,7 @@ async function setUp(id: string): Promise<{ startsAt: number; finalAt: number } 
     goals,
     startsAt,
     dayMinutes,
+    mode,
     now: Date.now(),
   });
   // Anything left from an earlier practice goes first.
@@ -118,7 +120,7 @@ async function setUp(id: string): Promise<{ startsAt: number; finalAt: number } 
   }
   await league.ref.update({ practice: plan.mark });
   await requestRef.update({ status: 'live', startsAt: Timestamp.fromMillis(startsAt) });
-  console.log(`League ${id}: practice week set up for ${order.length} players, days of ${dayMinutes} minutes.`);
+  console.log(`League ${id}: practice week set up for ${order.length} players, ${mode}, days of ${dayMinutes} minutes.`);
   return { startsAt, finalAt: plan.mark.finalAt.getTime() };
 }
 
@@ -147,12 +149,13 @@ async function runWeek(id: string): Promise<void> {
       return;
     }
     await requestRef.update({ driverAt: FieldValue.serverTimestamp() });
+    // The weekly job runs from the start: it draws Rumble's items and 2v2's duos when they are due.
+    if (now - lastSettle >= 2 * MIN) {
+      lastSettle = now;
+      await practiceJob('weekly', id);
+    }
     if (now >= times.startsAt) {
       await practiceJob('tick', id);
-      if (now - lastSettle >= 2 * MIN) {
-        lastSettle = now;
-        await practiceJob('weekly', id);
-      }
       const week = await league.collection('seasons').doc(PRACTICE_SEASON).collection('weeks').doc('w01').get();
       if (week.get('status') === 'final' || now > giveUpAt) {
         // One more run for the results alert, then the results stay up a while.

@@ -42,6 +42,12 @@ describe('The practice week', () => {
     await assertFails(ask(dev1(), {}, { audit: false }));
   });
 
+  it('It can be a regular 1v1 week or any of the six group-play modes', async () => {
+    await inSetup();
+    await assertFails(ask(dev1(), { mode: 'chaos' }));
+    await assertSucceeds(ask(dev1(), { mode: 'teamWeek' }));
+  });
+
   it('Each day lasts 2 to 30 whole minutes, and it starts ahead, within 2 hours', async () => {
     await inSetup();
     await assertFails(ask(dev1(), { dayMinutes: 1 }));
