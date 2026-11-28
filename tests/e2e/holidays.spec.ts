@@ -7,7 +7,7 @@ const button = (page: Page, name: string | RegExp) => page.getByRole('button', {
 const goal = (page: Page, lane: string) => page.locator(`.check-goal[data-lane="${lane}"]`);
 
 test.describe('Holiday events', () => {
-  test('The commish puts a Dry Day on a day that has not started, and can take it off again; each change goes in the audit log', async ({ page, request }) => {
+  test('The commish puts a Dry Day on a day that has not started, and can take it off again; each change goes in the audit log, and everyone sees it coming on Game Day and in the feed', async ({ page, request }) => {
     const league = await createLeague(request, { name: 'Sunday Squad' });
     const season = await startSeason(request, league);
     await enterAsCommish(page, league);
@@ -25,6 +25,17 @@ test.describe('Holiday events', () => {
     const day = await readDoc(request, `${season.path}/calendar/${tomorrow}`);
     expect(day?.event).toBe('dry');
     expect(await readDoc(request, `leagues/${league.id}/audit/${String(day?.audit)}`)).toMatchObject({ action: 'event.set', target: `calendar/${tomorrow}` });
+
+    // Everyone sees it coming: on Game Day, and in the feed. No push.
+    await button(page, 'Back').click();
+    await button(page, 'Back').click();
+    await expect(page.locator('.event-banner[data-upcoming="true"]')).toContainText('Coming up');
+    await expect(page.locator('.event-banner[data-upcoming="true"]')).toContainText('Dry Day.');
+    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Feed', exact: true }).click();
+    await expect(page.locator('.feed-event[data-kind="holiday"]').first()).toContainText('a Dry Day');
+    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Game Day', exact: true }).click();
+    await button(page, 'Your profile, Alex').click();
+    await button(page, 'Commish tools').click();
 
     await panel.getByRole('button', { name: /Take Dry Day off/ }).click();
     await expect(panel.getByRole('status')).toContainText('is a normal day again');

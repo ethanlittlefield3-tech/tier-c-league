@@ -2,7 +2,7 @@ import { ItemIcon } from '../art/itemIcons.tsx';
 import { createPortal } from 'preact/compat';
 import type { CarParts } from '../art/car/draw.ts';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { LANES, daysLeft, holidayOf, isPairedMode, nemesisOf, recordText, rumbleWeek, type Rival, type WeekInput, paceSoFar, receiptFixes, receiptStatus, recentDailyAverage, weekPeriod, winMeter, type BountyTarget, type Lane, type Square, type StoredReceipt, type WeekMode } from '@tcl/engine';
+import { LANES, addDays, daysLeft, holidayOf, isPairedMode, nemesisOf, recordText, rumbleWeek, type Rival, type WeekInput, paceSoFar, receiptFixes, receiptStatus, recentDailyAverage, weekPeriod, winMeter, type BountyTarget, type Lane, type Square, type StoredReceipt, type WeekMode } from '@tcl/engine';
 import { GoalExplosion } from '../art/car/GoalExplosion.tsx';
 import { BeerMug, ScreenClock } from '../art/dayIcons.tsx';
 import { useAll, useDoc, useNow, usePeek, useWhere } from '../data/hooks.ts';
@@ -543,7 +543,14 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
         ))
       )}
 
-      {holiday && <EventBanner event={holiday} today={showing === 'today'} />}
+      {holiday && <EventBanner event={holiday} when={showing === 'today' ? 'Today' : 'Yesterday'} />}
+      {/* Holiday events in the next week, so nobody is caught out (the commish's request, 2026-11-28). */}
+      {[...weekDays, ...nextWeek.docs.map((found) => found.data)]
+        .filter((day) => day.date > dates.today && day.date <= addDays(dates.today, 7) && holidayOf(day.event))
+        .sort((a, b) => (a.date < b.date ? -1 : 1))
+        .map((day) => (
+          <EventBanner event={holidayOf(day.event)!} when={`Coming up ${DAY_NAMES[day.dayIndex] ?? ''}`} upcoming />
+        ))}
 
       {playoffs && weekDoc.data && (
         <PlayoffBanner

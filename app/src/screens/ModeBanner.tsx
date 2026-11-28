@@ -1,5 +1,6 @@
 import { HOUSE, bountyText, defaultBounty, type BountyTarget, type GroupMode, type HolidayEvent } from '@tcl/engine';
 import './group.css';
+import { HOLIDAY_WORDS } from '../today/holiday-words.ts';
 
 /** Where you stand in a group-play week, in a line: your squad, your duo, the Bounty, or the Alley's rule. */
 export function youLine(props: {
@@ -69,19 +70,17 @@ export function PlayoffBanner(props: {
   );
 }
 
-const EVENT_WORDS: Record<HolidayEvent, [string, string]> = {
-  double: ['Double Points Day', "The day's points count double, and an Aerial doubles them again."],
-  dry: ['Dry Day', 'Log 0 beers for +2.'],
-  pass: ['Holiday Pass', 'Logging nothing scores 0, not −5.'],
-};
-
-/** The day's holiday event (SCOPE.md, "Holiday events"), which the commish scheduled. */
-export function EventBanner(props: { event: HolidayEvent; today: boolean }) {
-  const [title, detail] = EVENT_WORDS[props.event];
+/**
+ * A holiday event the commish scheduled (SCOPE.md, "Holiday events"): today's
+ * or yesterday's, or one coming up in the next week, so nobody is caught out
+ * (the commish's request, 2026-11-28).
+ */
+export function EventBanner(props: { event: HolidayEvent; when: string; upcoming?: boolean }) {
+  const [title, detail] = HOLIDAY_WORDS[props.event];
   return (
-    <p class="mode-banner event-banner" role="note" data-event={props.event}>
+    <p class="mode-banner event-banner" role="note" data-event={props.event} data-upcoming={props.upcoming === true}>
       <strong>
-        {props.today ? 'Today' : 'Yesterday'}: {title}.
+        {props.when}: {title}.
       </strong>{' '}
       {detail}
     </p>

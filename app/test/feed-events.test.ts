@@ -11,6 +11,22 @@ describe('The live feed', () => {
     expect(weekday('2027-01-17')).toBe('Sun');
   });
 
+  it("A holiday event the commish schedules shows in the feed, with what it does; taken off, it says so. Only each day's latest change counts", () => {
+    const events = feedEvents({
+      ...none,
+      name,
+      holidays: [
+        { id: 'a1', data: { at: 10, target: 'calendar/2027-01-15', reason: 'Double Points Day on Friday, Jan 15' } },
+        { id: 'a2', data: { at: 20, target: 'calendar/2027-01-15', reason: 'Dry Day on Friday, Jan 15' } },
+        { id: 'a3', data: { at: 30, target: 'calendar/2027-01-16', reason: 'No holiday event on Saturday, Jan 16' } },
+      ],
+    });
+    expect(events).toEqual([
+      { id: 'holiday-a3', at: 30, kind: 'holiday', text: 'Sat 1/16 is a normal day again', detail: 'The commish took its holiday event off.' },
+      { id: 'holiday-a2', at: 20, kind: 'holiday', text: 'The commish made Fri 1/15 a Dry Day', detail: 'Log 0 beers for +2.' },
+    ]);
+  });
+
   it('A check-in is the first time a player logs a day', () => {
     const events = feedEvents({ ...none, name, checkIns: [{ id: 'maya_2027-01-12', data: { player: 'maya', date: '2027-01-12', firstAt: 1000 } }] });
     expect(events).toEqual([{ id: 'checkin-maya_2027-01-12', at: 1000, kind: 'checkIn', text: 'Maya logged Tue' }]);

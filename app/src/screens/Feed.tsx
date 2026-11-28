@@ -75,6 +75,8 @@ export function Feed(props: { me: Me; onWheel?: () => void }) {
   const receipts = useLatest<NonNullable<FeedInput['receipts']>[number]['data']>(seasonPath ? `${seasonPath}/receipts` : null, 'requestedAt', 20);
   // The jobs' news: badges earned and rank changes.
   const news = useLatest<NonNullable<FeedInput['news']>[number]['data']>(`${leaguePath}/feed`, 'at', 20);
+  // The commish's holiday events, from the league log (the commish's request, 2026-11-28).
+  const holidays = useWhere<NonNullable<FeedInput['holidays']>[number]['data']>(`${leaguePath}/audit`, 'action', 'event.set');
   const spins = useAll<Spin>(seasonPath ? `${seasonPath}/spins` : null);
   const rematches = useAll<NonNullable<FeedInput['rematches']>[number]['data']>(seasonPath ? `${seasonPath}/rematches` : null);
   const proofVotes = useWhere<ProofVote & { at?: number | null }>(seasonPath ? `${seasonPath}/votes` : null, 'kind', 'proof');
@@ -93,6 +95,8 @@ export function Feed(props: { me: Me; onWheel?: () => void }) {
     adjustments: docks.docs,
     weeks: weeks.docs,
     receipts: receipts.docs,
+    // Holiday events come from the league log; a practice week has none.
+    holidays: practiceOf(league.data) ? [] : holidays.docs,
     news: news.docs,
     rematches: rematches.docs,
     now,

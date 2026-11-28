@@ -4,14 +4,15 @@
  * from the league's own data, so it moves the moment anything happens.
  * Badges earned and rank changes come from the jobs' news in `feed/`.
  */
-import { BADGES, DODGE_PENALTY, andList, PROOF_VOTE_HOURS, RANK_NAMES, dareStatus, rankMove, storylines, type DemolitionOutcome, type Lane, type Rank, type Square } from '@tcl/engine';
+import { BADGES, DODGE_PENALTY, andList, PROOF_VOTE_HOURS, RANK_NAMES, dareStatus, rankMove, storylines, type DemolitionOutcome, type HolidayEvent, type Lane, type Rank, type Square } from '@tcl/engine';
 import { groupLines, type GroupDoc } from '../group/words.ts';
+import { HOLIDAY_WORDS, holidayFromWords } from '../today/holiday-words.ts';
 import { storyText } from './stories.ts';
 
 export interface FeedEvent {
   id: string;
   at: number;
-  kind: 'checkIn' | 'power' | 'dock' | 'reveal' | 'results' | 'receipt' | 'wheel' | 'badge' | 'rank' | 'rematch' | 'picks' | 'champion' | 'left';
+  kind: 'checkIn' | 'power' | 'dock' | 'reveal' | 'results' | 'receipt' | 'wheel' | 'badge' | 'rank' | 'rematch' | 'picks' | 'champion' | 'left' | 'holiday';
   text: string;
   /** A second line: a dock's reason, or a week's scores and awards. */
   detail?: string;
@@ -53,6 +54,11 @@ export interface FeedInput {
       finalAt?: number | null;
     };
   }[];
+  /**
+   * The commish's holiday events, from the league log: each time one was put
+   * on a day or taken off (the commish's request, 2026-11-28).
+   */
+  holidays?: { id: string; data: { at?: number | null; target?: string; reason?: string } }[];
   /** Receipts, newest first. */
   receipts?: {
     id: string;
@@ -122,6 +128,25 @@ export function feedEvents(input: FeedInput): FeedEvent[] {
             ? `${who} used Rule One on ${day}`
             : null;
     if (text) events.push({ id: `kit-${id}`, at: data.at, kind: 'power', text });
+  }
+
+  // Holiday events: the latest change to each day, set or taken off.
+  const latest = new Map<string, { id: string; at: number; event: HolidayEvent | null }>();
+  for (const { id, data } of input.holidays ?? []) {
+    const date = data.target?.startsWith('calendar/') ? data.target.slice('calendar/'.length) : null;
+    const event = holidayFromWords(data.reason ?? '');
+    if (!date || event === undefined || typeof data.at !== 'number') continue;
+    const before = latest.get(date);
+    if (!before || before.at < data.at) latest.set(date, { id, at: data.at, event });
+  }
+  for (const [date, change] of latest) {
+    const day = `${weekday(date)} ${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}`;
+    if (change.event) {
+      const [title, detail] = HOLIDAY_WORDS[change.event];
+      events.push({ id: `holiday-${change.id}`, at: change.at, kind: 'holiday', text: `The commish made ${day} a ${title}`, detail });
+    } else {
+      events.push({ id: `holiday-${change.id}`, at: change.at, kind: 'holiday', text: `${day} is a normal day again`, detail: 'The commish took its holiday event off.' });
+    }
   }
 
   for (const { id, data } of input.adjustments) {
