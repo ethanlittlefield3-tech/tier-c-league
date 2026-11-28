@@ -6,21 +6,8 @@
  * trophies you won. The regular season only, as the standings count it, and
  * never a practice week. Pure, so it is tested apart from the screen.
  */
-import {
-  HOUSE,
-  LANES,
-  TROPHIES,
-  habitDays,
-  nemesisOf,
-  recordText,
-  rivalRecords,
-  weekDates,
-  weekPeriod,
-  type DayLog,
-  type StoryResult,
-  type TrophyId,
-} from "@tcl/engine";
-import { loggedStreak } from "./model.ts";
+import { HOUSE, LANES, TROPHIES, habitDays, nemesisOf, recordText, rivalRecords, weekDates, weekPeriod, type DayLog, type StoryResult, type TrophyId } from '@tcl/engine';
+import { loggedStreak } from './model.ts';
 
 export interface WrappedInput {
   me: string;
@@ -75,29 +62,20 @@ export interface Wrapped {
   text: string;
 }
 
-const ordinal = (n: number) =>
-  `${n}${n % 100 >= 11 && n % 100 <= 13 ? "th" : (["th", "st", "nd", "rd"][n % 10] ?? "th")}`;
-const signed = (value: number) => String(value).replace("-", "−");
-export const wrappedHours = (value: number) =>
-  `${Math.round(value * 10) / 10}h`;
+const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : (['th', 'st', 'nd', 'rd'][n % 10] ?? 'th')}`;
+const signed = (value: number) => String(value).replace('-', '−');
+export const wrappedHours = (value: number) => `${Math.round(value * 10) / 10}h`;
 
 export function seasonWrapped(input: WrappedInput): Wrapped {
   const { par, kickoff, regularWeeks } = input.season;
-  const calendar = Array.from(
-    { length: regularWeeks },
-    (_, index) => index + 1,
-  ).flatMap((week) =>
+  const calendar = Array.from({ length: regularWeeks }, (_, index) => index + 1).flatMap((week) =>
     weekDates(kickoff, week).map((date, dayIndex) => ({
       date,
       dayIndex,
       period: weekPeriod(week),
     })),
   );
-  const restByPeriod = Object.fromEntries(
-    input.kit
-      .filter((play) => play.item === "rest" && play.period && play.date)
-      .map((play) => [play.period!, play.date!]),
-  );
+  const restByPeriod = Object.fromEntries(input.kit.filter((play) => play.item === 'rest' && play.period && play.date).map((play) => [play.period!, play.date!]));
   const days = habitDays({
     par,
     days: calendar,
@@ -106,33 +84,18 @@ export function seasonWrapped(input: WrappedInput): Wrapped {
   });
 
   const screen = days.filter((day) => day.screenMinutes !== null);
-  const underPar = screen.length
-    ? screen.reduce(
-        (sum, day) => sum + Math.max(0, par * 60 - day.screenMinutes!),
-        0,
-      ) / 60
-    : null;
-  const screenPerDay = screen.length
-    ? screen.reduce((sum, day) => sum + day.screenMinutes!, 0) / screen.length
-    : null;
+  const underPar = screen.length ? screen.reduce((sum, day) => sum + Math.max(0, par * 60 - day.screenMinutes!), 0) / 60 : null;
+  const screenPerDay = screen.length ? screen.reduce((sum, day) => sum + day.screenMinutes!, 0) / screen.length : null;
 
-  const regular = input.weeks
-    .filter((week) => week.id.startsWith("w"))
-    .sort((a, b) => a.id.localeCompare(b.id));
+  const regular = input.weeks.filter((week) => week.id.startsWith('w')).sort((a, b) => a.id.localeCompare(b.id));
   const record = { win: 0, draw: 0, loss: 0 };
-  let bestWeek: Wrapped["bestWeek"] = null;
+  let bestWeek: Wrapped['bestWeek'] = null;
   for (const week of regular) {
     const result = week.results?.[input.me];
-    if (result && result.outcome !== "none") record[result.outcome] += 1;
-    const points =
-      week.lines?.find((line) => line.player === input.me)?.points ??
-      result?.points;
+    if (result && result.outcome !== 'none') record[result.outcome] += 1;
+    const points = week.lines?.find((line) => line.player === input.me)?.points ?? result?.points;
     const number = week.week ?? Number(week.id.slice(1));
-    if (
-      typeof points === "number" &&
-      (bestWeek === null || points > bestWeek.points)
-    )
-      bestWeek = { week: number, points };
+    if (typeof points === 'number' && (bestWeek === null || points > bestWeek.points)) bestWeek = { week: number, points };
   }
 
   // The season's own rivalries: who beat you most this season. The House is never anyone's nemesis.
@@ -140,26 +103,18 @@ export function seasonWrapped(input: WrappedInput): Wrapped {
     regular
       .filter((week) => week.results)
       .map((week) => ({
-        season: "season",
+        season: 'season',
         week: week.week ?? Number(week.id.slice(1)),
         results: week.results!,
       })),
   )[input.me];
   const nemesisId = nemesisOf(rivals);
-  const nemesis =
-    nemesisId && nemesisId !== HOUSE
-      ? { name: input.name(nemesisId), record: recordText(rivals?.[nemesisId]) }
-      : null;
+  const nemesis = nemesisId && nemesisId !== HOUSE ? { name: input.name(nemesisId), record: recordText(rivals?.[nemesisId]) } : null;
 
   const row = input.rows.find((each) => each.player === input.me) ?? null;
-  const trophies = TROPHIES.filter((trophy) =>
-    input.trophies?.[trophy.id]?.winners.includes(input.me),
-  ).map((trophy) => trophy.name);
-  const goals = days.reduce(
-    (sum, day) => sum + LANES.filter((lane) => day.hits[lane]).length,
-    0,
-  );
-  const wrapped: Omit<Wrapped, "text"> = {
+  const trophies = TROPHIES.filter((trophy) => input.trophies?.[trophy.id]?.winners.includes(input.me)).map((trophy) => trophy.name);
+  const goals = days.reduce((sum, day) => sum + LANES.filter((lane) => day.hits[lane]).length, 0);
+  const wrapped: Omit<Wrapped, 'text'> = {
     league: input.league,
     season: input.season.name,
     name: input.name(input.me),
@@ -181,28 +136,18 @@ export function seasonWrapped(input: WrappedInput): Wrapped {
   return { ...wrapped, text: wrappedText(wrapped) };
 }
 
-function wrappedText(card: Omit<Wrapped, "text">): string {
+function wrappedText(card: Omit<Wrapped, 'text'>): string {
   return [
     `${card.league}: ${card.season}, wrapped`,
-    card.place !== null
-      ? `${card.name}: ${card.champion ? "Champion, " : ""}${ordinal(card.place)} of ${card.of}, ${signed(card.seasonPoints ?? 0)} Season Points`
-      : `${card.name}${card.champion ? ": Champion" : ""}`,
+    card.place !== null ? `${card.name}: ${card.champion ? 'Champion, ' : ''}${ordinal(card.place)} of ${card.of}, ${signed(card.seasonPoints ?? 0)} Season Points` : `${card.name}${card.champion ? ': Champion' : ''}`,
     `Record: ${card.record.win}–${card.record.draw}–${card.record.loss}`,
     `Goals hit: ${card.goals} · Perfect days: ${card.perfect}`,
-    ...(card.underPar !== null
-      ? [`Screen time: ${wrappedHours(card.underPar)} under par`]
-      : []),
-    ...(card.bestWeek
-      ? [
-          `Best week: Week ${card.bestWeek.week}, ${signed(card.bestWeek.points)} points`,
-        ]
-      : []),
-    `Longest streak: ${card.streak} ${card.streak === 1 ? "day" : "days"}`,
-    ...(card.nemesis
-      ? [`Nemesis: ${card.nemesis.name} (${card.nemesis.record})`]
-      : []),
-    ...(card.trophies.length ? [`Trophies: ${card.trophies.join(", ")}`] : []),
-  ].join("\n");
+    ...(card.underPar !== null ? [`Screen time: ${wrappedHours(card.underPar)} under par`] : []),
+    ...(card.bestWeek ? [`Best week: Week ${card.bestWeek.week}, ${signed(card.bestWeek.points)} points`] : []),
+    `Longest streak: ${card.streak} ${card.streak === 1 ? 'day' : 'days'}`,
+    ...(card.nemesis ? [`Nemesis: ${card.nemesis.name} (${card.nemesis.record})`] : []),
+    ...(card.trophies.length ? [`Trophies: ${card.trophies.join(', ')}`] : []),
+  ].join('\n');
 }
 
 export { ordinal as wrappedOrdinal };

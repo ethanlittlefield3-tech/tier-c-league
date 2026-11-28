@@ -1,13 +1,13 @@
-import { useState } from "preact/hooks";
-import type { TrophyId } from "@tcl/engine";
-import type { CarParts } from "../art/car/draw.ts";
-import { useAll, useDoc, useWhere } from "../data/hooks.ts";
-import type { Me } from "../data/identity.ts";
-import { drawWrapped, wrappedPlace, wrappedTiles } from "../reel/wrapped.ts";
-import type { DayEntry } from "../today/model.ts";
-import { seasonWrapped, type WrappedInput } from "../telemetry/wrapped.ts";
-import { Reel } from "./Reel.tsx";
-import "./telemetry.css";
+import { useState } from 'preact/hooks';
+import type { TrophyId } from '@tcl/engine';
+import type { CarParts } from '../art/car/draw.ts';
+import { useAll, useDoc, useWhere } from '../data/hooks.ts';
+import type { Me } from '../data/identity.ts';
+import { drawWrapped, wrappedPlace, wrappedTiles } from '../reel/wrapped.ts';
+import type { DayEntry } from '../today/model.ts';
+import { seasonWrapped, type WrappedInput } from '../telemetry/wrapped.ts';
+import { Reel } from './Reel.tsx';
+import './telemetry.css';
 
 /**
  * Season Wrapped (the commish's request, 2026-11-28): once a season is over,
@@ -27,19 +27,11 @@ export function SeasonWrapped(props: {
 }) {
   const leaguePath = `leagues/${props.me.league}`;
   const seasonPath = `${leaguePath}/seasons/${props.seasonId}`;
-  const days = useWhere<DayEntry & { date: string }>(
-    `${seasonPath}/days`,
-    "player",
-    props.me.player,
-  );
-  const kit = useWhere<{ item?: string; period?: string; date?: string }>(
-    `${seasonPath}/kit`,
-    "player",
-    props.me.player,
-  );
+  const days = useWhere<DayEntry & { date: string }>(`${seasonPath}/days`, 'player', props.me.player);
+  const kit = useWhere<{ item?: string; period?: string; date?: string }>(`${seasonPath}/kit`, 'player', props.me.player);
   const weeks = useAll<{
     week?: number;
-    results?: WrappedInput["weeks"][number]["results"];
+    results?: WrappedInput['weeks'][number]['results'];
     lines?: { player: string; points: number }[];
   }>(`${seasonPath}/weeks`);
   const standings = useDoc<{
@@ -48,31 +40,22 @@ export function SeasonWrapped(props: {
   const trophies = useDoc<{
     trophies?: Partial<Record<TrophyId, { winners: string[] }>>;
   }>(`${leaguePath}/trophies/${props.seasonId}`);
-  const players = useAll<{ displayName?: string; car?: Partial<CarParts> }>(
-    `${leaguePath}/players`,
-  );
+  const players = useAll<{ displayName?: string; car?: Partial<CarParts> }>(`${leaguePath}/players`);
   const [sharing, setSharing] = useState(false);
-  if (days.loading || weeks.loading || standings.loading || players.loading)
-    return null;
+  if (days.loading || weeks.loading || standings.loading || players.loading) return null;
 
-  const name = (player: string) =>
-    player === "HOUSE"
-      ? "The House"
-      : (players.docs.find((found) => found.id === player)?.data.displayName ??
-        "a former player");
+  const name = (player: string) => (player === 'HOUSE' ? 'The House' : (players.docs.find((found) => found.id === player)?.data.displayName ?? 'a former player'));
   const card = seasonWrapped({
     me: props.me.player,
     league: props.me.leagueName,
     season: {
-      name: props.season.name ?? "The season",
+      name: props.season.name ?? 'The season',
       par: props.season.par,
       kickoff: props.season.kickoff,
       regularWeeks: props.season.regularWeeks,
       champion: props.season.champion ?? null,
     },
-    logs: Object.fromEntries(
-      days.docs.map((found) => [found.data.date, found.data]),
-    ),
+    logs: Object.fromEntries(days.docs.map((found) => [found.data.date, found.data])),
     kit: kit.docs.map((found) => found.data),
     weeks: weeks.docs.map((found) => ({
       id: found.id,
@@ -84,17 +67,11 @@ export function SeasonWrapped(props: {
     trophies: trophies.data?.trophies ?? null,
     name,
   });
-  const car =
-    players.docs.find((found) => found.id === props.me.player)?.data.car ??
-    null;
+  const car = players.docs.find((found) => found.id === props.me.player)?.data.car ?? null;
   const place = wrappedPlace(card);
 
   return (
-    <section
-      class="tm-card wrapped"
-      aria-labelledby="wrapped-title"
-      data-champion={card.champion}
-    >
+    <section class="tm-card wrapped" aria-labelledby="wrapped-title" data-champion={card.champion}>
       <header class="tm-card-head">
         <h2 id="wrapped-title">{card.season}, wrapped</h2>
         <span>Regular season</span>
@@ -112,33 +89,20 @@ export function SeasonWrapped(props: {
         <ul class="wrapped-extras">
           {card.nemesis && (
             <li>
-              Nemesis: <strong>{card.nemesis.name}</strong>,{" "}
-              {card.nemesis.record}
+              Nemesis: <strong>{card.nemesis.name}</strong>, {card.nemesis.record}
             </li>
           )}
           {card.trophies.length > 0 && (
             <li>
-              Trophies: <strong>{card.trophies.join(", ")}</strong>
+              Trophies: <strong>{card.trophies.join(', ')}</strong>
             </li>
           )}
         </ul>
       )}
-      <button
-        type="button"
-        class="btn wrapped-share"
-        onClick={() => setSharing(true)}
-      >
+      <button type="button" class="btn wrapped-share" onClick={() => setSharing(true)}>
         Share your season
       </button>
-      {sharing && (
-        <Reel
-          title={`${card.season}, wrapped`}
-          text={card.text}
-          file="tier-c-wrapped.png"
-          draw={() => drawWrapped(card, car)}
-          onClose={() => setSharing(false)}
-        />
-      )}
+      {sharing && <Reel title={`${card.season}, wrapped`} text={card.text} file="tier-c-wrapped.png" draw={() => drawWrapped(card, car)} onClose={() => setSharing(false)} />}
     </section>
   );
 }
