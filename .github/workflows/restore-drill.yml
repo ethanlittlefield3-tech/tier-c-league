@@ -1,0 +1,67 @@
+name: Restore drill
+
+# Proves the newest backup can really be restored (the commish's request,
+# 2026-11-28): it restores it into a throwaway emulator on GitHub's machine,
+# never the real database, and checks every document came back exactly. It
+# needs only the backups repo's two secrets, not the league's key. Once a
+# month, and by hand from the Actions tab. If it fails, GitHub emails you.
+on:
+  schedule:
+    - cron: '41 10 3 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drill:
+    name: Restore drill
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check that the backups repo is set up
+        id: repo
+        env:
+          TOKEN: ${{ secrets.BACKUP_TOKEN }}
+          REPO: ${{ secrets.BACKUP_REPO }}
+        run: |
+          if [ -n "$TOKEN" ] && [ -n "$REPO" ]; then
+            echo "present=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "The backups repo is not set up yet (BACKUP_REPO and BACKUP_TOKEN). Nothing to drill with."
+          fi
+
+      - uses: actions/checkout@v6
+        if: steps.repo.outputs.present == 'yes'
+
+      - uses: actions/setup-node@v6
+        if: steps.repo.outputs.present == 'yes'
+        with:
+          node-version: 22
+          cache: npm
+
+      # The Firestore emulator needs Java.
+      - uses: actions/setup-java@v4
+        if: steps.repo.outputs.present == 'yes'
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - run: npm ci
+        if: steps.repo.outputs.present == 'yes'
+
+      # The token is handed to this step only.
+      - name: Open the newest backup
+        if: steps.repo.outputs.present == 'yes'
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ secrets.BACKUP_REPO }}
+          token: ${{ secrets.BACKUP_TOKEN }}
+          path: backups
+          persist-credentials: false
+
+      - name: Restore it into an emulator and check it
+        if: steps.repo.outputs.present == 'yes'
+        env:
+          BACKUP_DIR: backups/snapshot
+        run: npx firebase --config firebase/firebase.json emulators:exec --only firestore --project demo-tier-c "node jobs/restore-drill.ts"

@@ -156,6 +156,7 @@ Everyone in the league plays one quick 1v1 week on a fast clock, inside the leag
 | Settle the weeks | Every hour | Posts each week's results once its Sunday locks at noon on Monday, final at midnight on Tuesday; reveals Demolitions; draws the Wheel; keeps the standings; deletes proof photos after 14 days |
 | Send alerts | Every 10 minutes | Works out which alerts came due and sends them to each phone that turned them on, holding them through its quiet hours |
 | Back up the league | Every night | Copies every document to the private backups repo (see below) |
+| Restore drill | Once a month | Restores the newest backup into a throwaway emulator and checks it comes back exactly (see below) |
 | Practice week | Started by **Send alerts** for a practice week you scheduled | Sets the week up, sends its alerts and settles it until its results are final (see below) |
 | Keep the schedules running | Once a month | Records the date, because GitHub pauses scheduled jobs in a public repo after 60 days with no activity |
 
@@ -172,6 +173,18 @@ It needs a private repo and a token, set up once. The steps come one at a time i
 3. Two secrets in this repo's **Settings**, **Secrets and variables**, **Actions**: `BACKUP_REPO` (the private repo's name, like `owner/tier-c-backups`) and `BACKUP_TOKEN` (the token).
 
 Until both secrets are set, the job skips. A backup holds every recovery key and league code, so keep that repo private.
+
+**The restore drill** proves a backup really comes back. Once a month, **Restore drill** takes the newest backup, restores it into a throwaway emulator on GitHub's machine (never the real database, and without the league's key), and checks every document came back exactly. If it fails, GitHub emails you. Run it by hand any time from **Actions**, **Restore drill**, **Run workflow**.
+
+**The backup token expires.** Put a reminder in your calendar a week before its expiry date, and make a new one then (same steps as above). Until you do, backups stop, and GitHub emails you that the job failed.
+
+## After the first week: check the free limits
+
+Firebase's free plan allows 50,000 reads, 20,000 writes and 1 GB stored a day, and the app is built to stay well under. Check once with real players:
+
+1. Open the Firebase console, your project, then **Firestore Database**, then **Usage**.
+2. Look at the reads for the busiest day of Week 1.
+3. Under about 15,000 reads a day, there's nothing to do. Over 30,000, tell me the number and I'll find what's reading the most.
 
 ## Restoring
 
