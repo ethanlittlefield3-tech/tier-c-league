@@ -10,6 +10,7 @@ import { CommishGroupPlay } from './CommishGroupPlay.tsx';
 import { CommishHolidays } from './CommishHolidays.tsx';
 import { CommishPractice } from './CommishPractice.tsx';
 import { CommishOffseason } from './CommishOffseason.tsx';
+import { CommishReset } from './CommishReset.tsx';
 import { useOffseason } from './useOffseason.ts';
 import { CommishSeasonDare } from './CommishSeasonDare.tsx';
 import { CommishPlayers } from './CommishPlayers.tsx';
@@ -361,6 +362,10 @@ export function Commish(props: { me: Me; onBack: () => void }) {
           <CommishScores me={props.me} seasonId={seasonId} timeZone={season.data.timeZone} members={Object.keys(league.data.members ?? {})} />
         )}
         {league.data && seasonId && season.data && <CommishModeration me={props.me} seasonId={seasonId} />}
+
+        {/* Last, away from everything else: the season reset (the commish's request, 2026-11-28). */}
+        {league.data && seasonId && season.data && <p class="commish-section">Start over</p>}
+        {league.data && seasonId && season.data && <CommishReset me={props.me} seasonId={seasonId} seasonName={season.data.name ?? 'the season'} />}
       </div>
     </main>
   );

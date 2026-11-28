@@ -4,6 +4,7 @@
  * (firebase/firestore.rules, "seasons").
  */
 import { Timestamp, collection, doc, getDocs, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { nextSeasonNumber } from '@tcl/engine';
 import type { SeasonSettings } from '../commish/season.ts';
 import { connect } from './firebase.ts';
 import { trouble, type Me } from './identity.ts';
@@ -44,11 +45,8 @@ export async function saveSeason(me: Me, input: { seasonId: string | null; setti
       return input.seasonId;
     }
 
-    // Seasons are numbered: s1, s2 and so on.
-    const existing = new Set((await getDocs(collection(league, 'seasons'))).docs.map((found) => found.id));
-    let number = existing.size + 1;
-    while (existing.has(`s${number}`)) number += 1;
-    const seasonId = `s${number}`;
+    // Seasons are numbered: s1, s2 and so on. A practice week never takes a number.
+    const seasonId = `s${nextSeasonNumber((await getDocs(collection(league, 'seasons'))).docs.map((found) => found.id))}`;
     const seasonAudit = doc(collection(league, 'audit')).id;
     const leagueAudit = doc(collection(league, 'audit')).id;
     save.set(doc(league, 'seasons', seasonId), { ...fields(input.settings), status: 'setup', audit: seasonAudit });

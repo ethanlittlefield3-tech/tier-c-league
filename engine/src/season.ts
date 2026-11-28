@@ -107,3 +107,12 @@ export function regularCalendar(season: SeasonPlan): CalendarDay[] {
   }
   return days;
 }
+
+/**
+ * The number a new season takes: one more than the highest-numbered season
+ * there is (`s1`, `s2` and so on). A practice week never takes one, and after
+ * a season reset the next season takes the reset one's number again.
+ */
+export function nextSeasonNumber(ids: readonly string[]): number {
+  return Math.max(0, ...ids.map((id) => (/^s([0-9]+)$/.test(id) ? Number(id.slice(1)) : 0))) + 1;
+}

@@ -1,0 +1,98 @@
+name: Reset a season
+
+# Resets one league's current season (the commish's request, 2026-11-28):
+# the commish asks in Commish tools, and the "Send alerts" job starts this
+# within about 10 minutes. It backs the league up first, when the backups
+# repo is set up, then takes the season back as if it had never been set up:
+# the league goes back to the season before, the season is deleted, and
+# everything it gave out (ranks, badges, rivalry records, trophies, the
+# banner, its feed news) comes off. It can also be started by hand from the
+# Actions tab, with the league's ID, once the request is in place.
+on:
+  workflow_dispatch:
+    inputs:
+      league:
+        description: The league's ID (the commish's reset request must already be in place)
+        required: true
+
+permissions:
+  contents: read
+
+# One at a time, and never beside a backup.
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  reset:
+    name: Reset a season
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check that the keys are in GitHub Secrets
+        id: key
+        env:
+          KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          TOKEN: ${{ secrets.BACKUP_TOKEN }}
+          REPO: ${{ secrets.BACKUP_REPO }}
+        run: |
+          if [ -z "$KEY" ]; then
+            echo "The FIREBASE_SERVICE_ACCOUNT secret is not set yet. Skipping."
+            exit 0
+          fi
+          echo "present=yes" >> "$GITHUB_OUTPUT"
+          if [ -n "$TOKEN" ] && [ -n "$REPO" ]; then
+            echo "backup=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "The backups repo is not set up, so the reset runs without a backup first."
+          fi
+
+      - uses: actions/checkout@v6
+        if: steps.key.outputs.present == 'yes'
+
+      - uses: actions/setup-node@v6
+        if: steps.key.outputs.present == 'yes'
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+        if: steps.key.outputs.present == 'yes'
+
+      # The token is handed to this step only. It stays with that checkout, so the push below can use it.
+      - name: Open the backups repo
+        if: steps.key.outputs.backup == 'yes'
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ secrets.BACKUP_REPO }}
+          token: ${{ secrets.BACKUP_TOKEN }}
+          path: backups
+
+      # A copy of everything as it is before the reset. The league's key is handed to this step only.
+      - name: Back the league up first
+        if: steps.key.outputs.backup == 'yes'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          BACKUP_DIR: backups/snapshot
+        run: node jobs/backup.ts
+
+      - name: Commit the backup, if anything changed
+        if: steps.key.outputs.backup == 'yes'
+        working-directory: backups
+        run: |
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing changed since the last backup."
+          else
+            git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "Backup before a season reset $(date -u +%F)"
+            git push -q
+            echo "Backup before the reset saved."
+          fi
+
+      # The league's key is handed to this step only.
+      - name: Reset the season
+        if: steps.key.outputs.present == 'yes'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          LEAGUE_ID: ${{ inputs.league }}
+        run: node jobs/reset.ts run

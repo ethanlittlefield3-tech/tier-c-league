@@ -7,6 +7,7 @@ import {
   canUseFullBoost,
   defaultRestDay,
   kitForMode,
+  nextSeasonNumber,
   proofDeadline,
   regularCalendar,
   regularCalendarDay,
@@ -125,5 +126,23 @@ describe('The rules and the engine agree on every deadline', () => {
         expect(rules, `${day.date} at ${new Date(now).toISOString()}`).toBe(proofDeadline(now, season.timeZone));
       }
     }
+  });
+});
+
+describe('Numbering seasons', () => {
+  it('A new season takes the next number after the highest season there is: s1, s2 and so on', () => {
+    expect(nextSeasonNumber([])).toBe(1);
+    expect(nextSeasonNumber(['s1'])).toBe(2);
+    expect(nextSeasonNumber(['s1', 's3'])).toBe(4);
+  });
+
+  it('A practice week never takes a number, so a season started during one is still Season 1', () => {
+    expect(nextSeasonNumber(['practice'])).toBe(1);
+    expect(nextSeasonNumber(['s1', 'practice'])).toBe(2);
+  });
+
+  it("After a season reset, the next season takes the reset season's number again", () => {
+    // Season 2 was reset: only Season 1 is left.
+    expect(nextSeasonNumber(['s1'])).toBe(2);
   });
 });

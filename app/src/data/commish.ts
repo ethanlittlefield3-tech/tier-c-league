@@ -358,3 +358,22 @@ export const stopPractice = (me: Me, status: 'ending' | 'clearing') =>
     save.set(doc(league, 'audit', audit), auditEntry(me, `practice.${status}`, 'practice/request', status === 'ending' ? 'Practice week ended early' : 'Practice week cleared'));
     await save.commit();
   });
+
+/**
+ * Asks for the current season to be reset (the commish's request,
+ * 2026-11-28): the reset job backs the league up, then takes the season back
+ * as if it had never been set up, with everything it gave out. It goes in
+ * the audit log.
+ */
+export const requestReset = (me: Me, season: string, name: string) =>
+  attempt(async (db) => {
+    const league = doc(db, 'leagues', me.league);
+    const audit = doc(collection(league, 'audit')).id;
+    const save = writeBatch(db);
+    save.set(doc(league, 'reset', 'request'), { season, status: 'requested', requestedAt: serverTimestamp(), audit });
+    save.set(doc(league, 'audit', audit), auditEntry(me, 'season.reset', `seasons/${season}`, `Asked for ${name} to be reset`));
+    await save.commit();
+  });
+
+/** Calls a season reset off before it starts, or dismisses one that couldn't run. */
+export const cancelReset = (me: Me) => attempt((db) => deleteDoc(doc(db, 'leagues', me.league, 'reset', 'request')));

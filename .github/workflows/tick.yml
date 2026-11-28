@@ -7,7 +7,8 @@ name: Send alerts
 # phones have turned alerts on, which needs the web push key in the app. It
 # can also be started by hand from the Actions tab ("Run workflow").
 # It also starts the "Practice week" job for any practice week the commish
-# has asked for, and clears finished ones.
+# has asked for, and clears finished ones, and the "Reset a season" job for
+# any season reset the commish has asked for.
 on:
   schedule:
     - cron: '3-59/10 * * * *'
@@ -24,7 +25,7 @@ jobs:
   tick:
     name: Send alerts
     runs-on: ubuntu-latest
-    # Starting the practice job needs to start a workflow, and nothing more.
+    # Starting the practice and reset jobs needs to start a workflow, and nothing more.
     permissions:
       contents: read
       actions: write
@@ -78,4 +79,24 @@ jobs:
         run: |
           for league in $LEAGUES; do
             gh workflow run practice.yml --repo "$GITHUB_REPOSITORY" -f league="$league"
+          done
+
+      # Season resets: which leagues' commish has asked for one. The key is
+      # handed to this step only.
+      - name: Find season resets to start
+        id: reset
+        if: steps.key.outputs.present == 'yes'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node jobs/reset.ts check
+
+      # The workflow's own token starts the reset job; it has no key.
+      - name: Start the season resets
+        if: steps.reset.outputs.start != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LEAGUES: ${{ steps.reset.outputs.start }}
+        run: |
+          for league in $LEAGUES; do
+            gh workflow run reset.yml --repo "$GITHUB_REPOSITORY" -f league="$league"
           done

@@ -136,6 +136,15 @@ Everyone in the league plays one quick week, a 1v1 or any group-play mode, on a 
 3. The **Send alerts** job (every 10 minutes) starts the **Practice week** job about 20 minutes before the start. To start it yourself, open **Actions**, choose **Practice week**, **Run workflow**, and give it the league's ID.
 4. Everyone sees a gold "Practice week" strip, and Game Day plays the practice week until its results have been up for 30 minutes. **End it now** or **Clear it now** in Commish tools clears it within a few minutes.
 
+## Resetting a season
+
+This takes the current season back as if it had never been set up, with everything it gave out. Reset Season 2, and the league goes back to the end of Season 1; reset Season 1, and the league has no season. Then you set the season up again, draft and all. There is no undo in the app, so the league is backed up first, if the backups repo is set up (see below).
+
+1. In the app, open **Commish tools** and scroll to the bottom, to **Start over**.
+2. Type the season's name, then tap **Reset**. Until it starts, **Call it off** takes it back.
+3. The **Send alerts** job (every 10 minutes) starts the **Reset a season** job, which backs the league up, then resets it in about a minute. To start it yourself, open **Actions**, choose **Reset a season**, **Run workflow**, and give it the league's ID.
+4. Every phone follows at once. What goes: the season's days, points, power-ups, weeks, standings and picks; its weeks in everyone's rank; its badges, and any car part from them (back to the starter part); its rivalry records; its trophy case, its season decal, the champion's banner and its news in the feed. Players stay in the league, and the chat stays.
+
 ## Checking alerts reach your phone
 
 1. On the phone, open Tier C from the Home Screen, tap your badge, and under **Alerts** tap **Turn on alerts**, then **Allow**.
@@ -158,6 +167,7 @@ Everyone in the league plays one quick week, a 1v1 or any group-play mode, on a 
 | Back up the league | Every night | Copies every document to the private backups repo (see below) |
 | Restore drill | Once a month | Restores the newest backup into a throwaway emulator and checks it comes back exactly (see below) |
 | Practice week | Started by **Send alerts** for a practice week you scheduled | Sets the week up, sends its alerts and settles it until its results are final (see below) |
+| Reset a season | Started by **Send alerts** for a season reset you asked for | Backs the league up, then takes the season back as if it had never been set up (see above) |
 | Keep the schedules running | Once a month | Records the date, because GitHub pauses scheduled jobs in a public repo after 60 days with no activity |
 
 GitHub can run a scheduled job late. If a week's results are late, Commish tools can settle it from your phone.

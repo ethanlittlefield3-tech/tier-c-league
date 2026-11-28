@@ -19,6 +19,7 @@ const ACTIONS: Record<string, string> = {
   'score.adjust': 'changed a score',
   'idea.delete': 'took down an idea from the suggestion box',
   'practice.schedule': 'scheduled a practice week',
+  'season.reset': 'asked for the season to be reset',
   'practice.ending': 'ended the practice week early',
   'practice.clearing': 'cleared the practice week',
 };

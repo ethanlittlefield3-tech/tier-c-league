@@ -2,7 +2,7 @@
 
 Generated 2026-11-28 by `npm run checkpoint:b`. Do not edit by hand: every line below is the title of an emulator test.
 
-- **Tests:** 354 of 354 passing.
+- **Tests:** 361 of 361 passing.
 - **Rules:** `firebase/firestore.rules`. **Data model:** `docs/DATA-MODEL.md`.
 - Each test signs in as a real device and tries the action against the Firestore emulator, with the same rules file that will be deployed.
 
@@ -384,6 +384,20 @@ Only the commish asks for one, before the season and over before the draft or ki
 - Everyone in the league can see it; nobody else can
 - No phone makes a season called "practice", or marks any season as practice or gives it a fast clock
 - During a practice week, trash talk is marked as practice, so it clears with it; a brag isn't, and nothing is marked practice when no practice week is on
+
+## A season reset
+
+Only the commish asks for one, for the league's current season and never the practice week, with an audit entry. It can be called off until its job starts; only the job carries it out.
+
+**A season reset**
+
+- The commish asks for the current season to be reset, with an audit entry, at any point in it
+- Only the commish, only with an audit entry naming the season
+- Only the league's current season, never the practice week, and nothing else in the request
+- With no season, there is nothing to reset
+- The commish calls it off before it starts, or clears one that failed; not once it's running, and nobody else
+- Nobody's phone changes a request: only the reset job moves it on
+- Everyone in the league can see it; nobody else can
 
 ## Holiday events
 

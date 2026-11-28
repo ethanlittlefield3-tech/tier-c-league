@@ -472,6 +472,25 @@ service cloud.firestore {
         allow delete: if isCommish(L) && resource.data.status in ['requested', 'failed'];
       }
 
+      // ---- A season reset (the commish's request, 2026-11-28) -----------
+      // The commish asks for the current season to be reset, with an audit
+      // entry. The reset job does it, after a backup: the league goes back to
+      // the season before, and everything the season gave out comes off. The
+      // commish can call it off before it starts, or clear one that failed.
+      match /reset/{doc} {
+        allow read: if isMember(L);
+        allow create: if isCommish(L)
+          && doc == 'request'
+          && request.resource.data.keys().hasOnly(['season', 'status', 'requestedAt', 'audit'])
+          && request.resource.data.status == 'requested'
+          && request.resource.data.season is string
+          && request.resource.data.season != 'practice'
+          && request.resource.data.season == get(/databases/$(database)/documents/leagues/$(L)).data.get('season', null)
+          && request.resource.data.requestedAt == request.time
+          && audited(L, request.resource.data.audit, 'season.reset', 'seasons/' + request.resource.data.season);
+        allow delete: if isCommish(L) && resource.data.status in ['requested', 'failed'];
+      }
+
       // A practice week fits before the season: with no season yet, or one in
       // setup and over before its draft (if that is still to come), or one
       // drafted and over before its first day starts. Never during the draft.
