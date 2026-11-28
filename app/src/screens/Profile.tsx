@@ -128,107 +128,128 @@ export function Profile(props: { me: Me; onBack: () => void; onRenamed: (me: Me)
           ))}
         </div>
 
-        {isCommish && (
-          <button type="button" class="btn profile-commish" onClick={props.onCommish}>
-            Commish tools
-          </button>
-        )}
-
-        <form class="panel" onSubmit={saveName} noValidate>
-          <h2>Display name</h2>
-          <Field
-            id="profile-name"
-            label="Display name"
-            value={name}
-            onInput={(value) => {
-              setName(value);
-              setNameNote(null);
-            }}
-            maxLength={40}
-            hideLabel
-            error={nameNote?.error ? nameNote.text : null}
-            help={`Up to ${NAME_MAX} characters.`}
-          />
-          {nameNote && !nameNote.error && (
-            <p class="panel-ok" role="status">
-              {nameNote.text}
-            </p>
+        {/* Right below your car: the commish's tools and the suggestion box, in the same format (the commish's request, 2026-11-28). */}
+        <div class="profile-actions" data-two={isCommish}>
+          {isCommish && (
+            <button type="button" class="btn profile-commish" onClick={props.onCommish}>
+              Commish tools
+            </button>
           )}
-          <button class="btn" type="submit" disabled={saving}>
-            {saving ? 'Saving' : 'Save name'}
+          <button type="button" class="btn profile-ideas" onClick={props.onIdeas}>
+            Suggest an idea
           </button>
-        </form>
+        </div>
 
-        <section class="panel" aria-labelledby="profile-key-title">
-          <h2 id="profile-key-title">Recovery key</h2>
-          <p class="panel-text">The only way back into your profile on a new phone. Your commish can look it up too.</p>
-          {key !== null && (
-            <>
-              <p class="profile-key" aria-label={`Your recovery key is ${key.split('').join(' ')}`}>
-                {key}
-              </p>
-              <button class="btn btn-second" type="button" onClick={copyKey}>
-                {copied === 'yes' ? 'Copied' : 'Copy the key'}
+        {/* You: your name and your recovery key, one card. */}
+        <div class="settings-group">
+          <form class="panel settings-row" onSubmit={saveName} noValidate>
+            <h2>Display name</h2>
+            <div class="profile-name-row">
+              <Field
+                id="profile-name"
+                label="Display name"
+                value={name}
+                onInput={(value) => {
+                  setName(value);
+                  setNameNote(null);
+                }}
+                maxLength={40}
+                hideLabel
+                error={nameNote?.error ? nameNote.text : null}
+                help={`Up to ${NAME_MAX} characters.`}
+              />
+              <button class="btn settings-btn" type="submit" disabled={saving}>
+                {saving ? 'Saving' : 'Save name'}
               </button>
-              {copied === 'failed' && (
-                <p class="panel-text" role="status">
-                  That did not work here. Write the key down or take a screenshot.
+            </div>
+            {nameNote && !nameNote.error && (
+              <p class="panel-ok" role="status">
+                {nameNote.text}
+              </p>
+            )}
+          </form>
+
+          <section class="panel settings-row" aria-labelledby="profile-key-title">
+            <div class="settings-line">
+              <div>
+                <h2 id="profile-key-title">Recovery key</h2>
+                <p class="panel-text">The only way back in on a new phone. Your commish can look it up too.</p>
+              </div>
+              <button class={key === null ? 'btn settings-btn' : 'btn-quiet'} type="button" onClick={toggleKey} disabled={fetchingKey} aria-expanded={key !== null}>
+                {key !== null ? 'Hide my key' : fetchingKey ? 'Getting it' : 'Show my key'}
+              </button>
+            </div>
+            {key !== null && (
+              <>
+                <p class="profile-key" aria-label={`Your recovery key is ${key.split('').join(' ')}`}>
+                  {key}
                 </p>
-              )}
-            </>
-          )}
-          {keyError && (
-            <p class="field-error" role="alert">
-              {keyError}
-            </p>
-          )}
-          <button class={key === null ? 'btn' : 'btn-quiet'} type="button" onClick={toggleKey} disabled={fetchingKey} aria-expanded={key !== null}>
-            {key !== null ? 'Hide my key' : fetchingKey ? 'Getting it' : 'Show my key'}
-          </button>
-        </section>
+                <button class="btn btn-second" type="button" onClick={copyKey}>
+                  {copied === 'yes' ? 'Copied' : 'Copy the key'}
+                </button>
+                {copied === 'failed' && (
+                  <p class="panel-text" role="status">
+                    That did not work here. Write the key down or take a screenshot.
+                  </p>
+                )}
+              </>
+            )}
+            {keyError && (
+              <p class="field-error" role="alert">
+                {keyError}
+              </p>
+            )}
+          </section>
+        </div>
 
         <Alerts me={props.me} />
 
-        <section class="panel" aria-labelledby="profile-phone-title">
-          <h2 id="profile-phone-title">This phone</h2>
-          {confirming ? (
-            <>
-              <p class="panel-text">
-                <strong>Sign out of this phone?</strong> Your profile stays as it is. You need your recovery key to get back in.
-              </p>
-              {leaveError && (
-                <p class="field-error" role="alert">
-                  {leaveError}
+        {/* The league's log and this phone, one card. */}
+        <div class="settings-group">
+          <section class="panel settings-row" aria-labelledby="profile-log-title">
+            <div class="settings-line">
+              <div>
+                <h2 id="profile-log-title">League log</h2>
+                <p class="panel-text">Everything the commish has done, with the reason.</p>
+              </div>
+              <button type="button" class="btn btn-second settings-btn" onClick={props.onLog}>
+                Open the league log
+              </button>
+            </div>
+          </section>
+
+          <section class="panel settings-row" aria-labelledby="profile-phone-title">
+            {confirming ? (
+              <>
+                <h2 id="profile-phone-title">This phone</h2>
+                <p class="panel-text">
+                  <strong>Sign out of this phone?</strong> Your profile stays as it is. You need your recovery key to get back in.
                 </p>
-              )}
-              <button class="btn btn-danger" type="button" onClick={signOut} disabled={leaving}>
-                {leaving ? 'Signing out' : 'Sign out'}
-              </button>
-              <button class="btn-quiet" type="button" onClick={() => setConfirming(false)} disabled={leaving}>
-                Cancel
-              </button>
-            </>
-          ) : (
-            <>
-              <p class="panel-text">For a phone you are giving away or no longer use.</p>
-              <button class="btn btn-second" type="button" onClick={() => setConfirming(true)}>
-                Sign out of this phone
-              </button>
-            </>
-          )}
-        </section>
-
-        <section class="panel" aria-labelledby="profile-log-title">
-          <h2 id="profile-log-title">League log</h2>
-          <p class="panel-text">Everything the commish has done, with the reason.</p>
-          <button type="button" class="btn btn-second" onClick={props.onLog}>
-            Open the league log
-          </button>
-        </section>
-
-        <button type="button" class="profile-ideas" onClick={props.onIdeas}>
-          Suggest an idea
-        </button>
+                {leaveError && (
+                  <p class="field-error" role="alert">
+                    {leaveError}
+                  </p>
+                )}
+                <button class="btn btn-danger" type="button" onClick={signOut} disabled={leaving}>
+                  {leaving ? 'Signing out' : 'Sign out'}
+                </button>
+                <button class="btn-quiet" type="button" onClick={() => setConfirming(false)} disabled={leaving}>
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <div class="settings-line">
+                <div>
+                  <h2 id="profile-phone-title">This phone</h2>
+                  <p class="panel-text">For a phone you are giving away or no longer use.</p>
+                </div>
+                <button class="btn btn-second settings-btn" type="button" onClick={() => setConfirming(true)}>
+                  Sign out of this phone
+                </button>
+              </div>
+            )}
+          </section>
+        </div>
 
         <p class="profile-credit">
           <SmallNunchucks />A Nunchucks Production

@@ -11,9 +11,9 @@
 /* Your car is your icon: it stands over your name. */
 .profile-car {
   display: block;
-  width: 200px;
-  max-width: 64%;
-  margin-bottom: 6px;
+  width: 170px;
+  max-width: 56%;
+  margin-bottom: 2px;
 }
 
 .profile-car svg {
@@ -122,11 +122,31 @@
   height: 18px;
 }
 
-/* The commish's way to their tools, in gold. */
-.btn.profile-commish {
+/* Right below the car: Commish tools (the commish only) and the suggestion
+   box, the same size and shape side by side. */
+.profile-actions {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+.profile-actions[data-two='true'] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.profile-actions .btn {
   width: 100%;
   min-width: 0;
-  margin-top: 16px;
+  min-height: 48px;
+  margin: 0;
+  padding: 0 12px;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+}
+
+/* The commish's way to their tools, in gold. */
+.btn.profile-commish {
   background: linear-gradient(180deg, #ffd96b, #c98a24);
   box-shadow:
     0 0 22px rgba(255, 207, 63, 0.35),
@@ -242,4 +262,83 @@
   line-height: 1.4;
   text-align: center;
   color: var(--ink-soft);
+}
+
+/* ---- Settings, grouped into cards of rows ------------------------------ */
+.settings-group {
+  margin-top: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(196, 216, 255, 0.14);
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(17, 30, 73, 0.92), rgba(10, 19, 48, 0.92));
+}
+
+.settings-group > .panel {
+  margin: 0;
+  padding: 14px 16px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+
+.settings-group > .panel + .panel {
+  border-top: 1px solid rgba(196, 216, 255, 0.1);
+}
+
+.settings-row h2 {
+  font-size: 17px;
+}
+
+.settings-row .panel-text {
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+/* A setting's words on the left, its button on the right. */
+.settings-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-line > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.panel .settings-btn {
+  flex: none;
+  width: auto;
+  min-width: 0;
+  min-height: 40px;
+  margin-top: 0;
+  padding: 0 14px;
+  font: italic 800 12.5px/1.15 var(--display);
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+.settings-line .btn-quiet {
+  flex: none;
+  margin-top: 0;
+}
+
+.profile-name-row {
+  margin-top: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.profile-name-row > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.panel .profile-name-row .field {
+  margin-top: 0;
+}
+
+.profile-name-row .settings-btn {
+  min-height: 48px;
 }

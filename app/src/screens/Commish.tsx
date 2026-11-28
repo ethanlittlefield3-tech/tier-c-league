@@ -312,6 +312,8 @@ export function Commish(props: { me: Me; onBack: () => void }) {
         <p class="lead">For the commish only.</p>
 
 
+        {/* Grouped by what they're for (the commish's request, 2026-11-28): the league, the season, then scores and weeks. */}
+        <p class="commish-section">League</p>
         {league.data?.code && (
           <section class="panel">
             <h2>League code</h2>
@@ -320,6 +322,9 @@ export function Commish(props: { me: Me; onBack: () => void }) {
           </section>
         )}
 
+        {league.data && <CommishPlayers me={props.me} league={league.data} />}
+
+        <p class="commish-section">Season</p>
         {loading ? (
           <div class="waiting commish-waiting" aria-busy="true">
             <div class="waiting-ring" />
@@ -350,7 +355,8 @@ export function Commish(props: { me: Me; onBack: () => void }) {
         {league.data && seasonId && season.data?.status === 'active' && season.data.playoffs !== 'none' && <CommishSeasonDare me={props.me} seasonId={seasonId} />}
         {league.data && seasonId && season.data?.status === 'active' && season.data.holidayEvents && <CommishHolidays me={props.me} seasonId={seasonId} />}
 
-        {league.data && <CommishPlayers me={props.me} league={league.data} />}
+
+        {league.data && seasonId && season.data && <p class="commish-section">Scores and weeks</p>}
         {league.data && seasonId && season.data && (
           <CommishScores me={props.me} seasonId={seasonId} timeZone={season.data.timeZone} members={Object.keys(league.data.members ?? {})} />
         )}
