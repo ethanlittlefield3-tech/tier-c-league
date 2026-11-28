@@ -1,7 +1,8 @@
 /**
  * Both sides of this week's matchup, live: the season, today's calendar day,
  * the week, your opponent, and both players' weeks scored by the engine.
- * Match uses it; Today gathers the same things for itself.
+ * Game Day works it out once, here, and hands it to every part of the
+ * screen (the commish's request, 2026-11-28).
  */
 import type { CarParts } from '../art/car/draw.ts';
 import { isPairedMode, receiptFixes, rumbleWeek, type Lane, type Square, type StoredReceipt, type WeekInput } from '@tcl/engine';
@@ -43,7 +44,7 @@ export function useMatchup(me: Me, now: number) {
   const targets = weekDoc.data?.targets?.[me.player] ?? [];
   // Only a 1v1 week (regular, Rumble or Drop Shot) has one opponent; Team Week and 2v2 aim at a side.
   const opponentId = isPairedMode(mode) ? (targets.find((target) => target !== 'HOUSE') ?? null) : null;
-  const profile = useDoc<{ displayName?: string; car?: Partial<CarParts>; stickers?: Partial<Record<string, { until?: unknown }>> }>(opponentId ? `${leaguePath}/players/${opponentId}` : null);
+  const profile = useDoc<{ displayName?: string; car?: Partial<CarParts>; stickers?: Partial<Record<string, { until?: unknown }>>; rankHistory?: { points: number }[] }>(opponentId ? `${leaguePath}/players/${opponentId}` : null);
   const roster = useDoc<{ goals?: Partial<Record<Lane, { text?: string }>> }>(seasonPath && opponentId ? `${seasonPath}/roster/${opponentId}` : null);
 
   const myDays = useWhere<Logged>(seasonPath ? `${seasonPath}/days` : null, 'player', me.player);
@@ -77,7 +78,12 @@ export function useMatchup(me: Me, now: number) {
           days,
           logs: logsOf(myDays.docs),
           kit: myKit.docs.map((found) => found.data),
-          demolitionsOn: onMe && onMe.target === me.player ? [{ date: onMe.date, lane: onMe.lane }] : [],
+          // A 1v1 opponent's Demolition shows from the noon it unseals; in group play, once the weekly job reveals it.
+          demolitionsOn: isPairedMode(mode)
+            ? onMe && onMe.target === me.player
+              ? [{ date: onMe.date, lane: onMe.lane }]
+              : []
+            : (weekDoc.data?.reveals ?? []).filter((hit) => hit.target === me.player).map((hit) => ({ date: hit.date, lane: hit.lane })),
           adjustments: [...myChanges.docs.map((found) => found.data), ...receiptFixes(myReceipts.docs.map((found) => found.data), now)],
           now,
           timeZone: season.data.timeZone,
@@ -99,7 +105,7 @@ export function useMatchup(me: Me, now: number) {
         }
       : null;
   // In Rumble both weeks are scored together, with the items played.
-  const myBoots = mySealed.docs.map((found) => found.data).filter((play) => play.kind === 'boot').map((play) => ({ date: play.date, lane: play.lane }));
+  const myBoots = mySealed.docs.map((found) => found.data).filter((play) => play.kind === 'boot' && play.lane).map((play) => ({ date: play.date, lane: play.lane }));
   const rumbled = mode === 'rumble' && myInput && theirInput && opponentId ? rumbleWeek(myInput, theirInput, rumbleDraws(rumble, me.player, opponentId, myBoots, days.map((each) => each.date))) : null;
   const myWeek = rumbled?.a ?? (myInput ? playerWeek(myInput) : null);
   const theirWeek = rumbled?.b ?? (theirInput ? playerWeek(theirInput) : null);
@@ -126,12 +132,19 @@ export function useMatchup(me: Me, now: number) {
           stickers: profile.data?.stickers ?? null,
           goals: roster.data?.goals ?? {},
           kit: theirKit.docs.map((found) => found.data),
+          rankHistory: profile.data?.rankHistory ?? null,
+          /** Where they put this week's rest day, if they moved it. */
+          rest: theirKit.docs.map((found) => found.data).find((play) => play.item === 'rest' && play.period === period)?.date ?? null,
           log: dates ? (theirDays.docs.find((found) => found.data.date === dates.today)?.data ?? null) : null,
         }
       : null,
     vsHouse: targets.includes('HOUSE'),
     myWeek,
     theirWeek,
+    /** Your Boots in Rumble, once revealed to you. */
+    myBoots,
+    /** Whether this week was scored with Rumble's items. */
+    rumbled: rumbled !== null,
     /** Your own sealed Demolition on them this week, which only you can see. */
     myDemolition: mine,
     /** Days still open to receipts: today, and yesterday until it locks at noon. */

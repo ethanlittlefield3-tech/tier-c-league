@@ -3,14 +3,14 @@ import { ItemIcon } from '../art/itemIcons.tsx';
 import { HOUSE, LANES, REMATCH_LAST_DAY, RUMBLE_NAMES, daysLeft, houseSide, isPairedMode, paceSoFar, rematchFor, weekPeriod, winMeter, type GroupMode, type Lane } from '@tcl/engine';
 import { createPortal } from 'preact/compat';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { useDoc, useNow, useWhere } from '../data/hooks.ts';
+import { useDoc, useWhere } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
 import { whyOf } from '../data/why.ts';
 import { formatPoints, formatScreenShort, pointsChip } from '../today/model.ts';
 import type { DayCell } from '../today/week.ts';
 import { GoalMark } from './GoalMark.tsx';
-import { useMatchup } from './useMatchup.ts';
+import type { useMatchup } from './useMatchup.ts';
 import { GroupBoard } from './GroupBoard.tsx';
 import { useWeekBoard } from './useWeekBoard.ts';
 import { ReceiptAsk } from './ReceiptAsk.tsx';
@@ -203,10 +203,12 @@ function statusOf(cells: { state: string }[] | undefined, today: string | undefi
   return `${new Date(`${today}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' })} \u00b7 Live`;
 }
 
+/** The matchup Game Day works out once and hands to each part of it. */
+export type Matchup = ReturnType<typeof useMatchup>;
+
 /** The group-play board, in a week with no single opponent: shown on Game Day in place of the scoreboard. */
-export function GroupBoardFor(props: { me: Me }) {
-  const now = useNow();
-  const match = useMatchup(props.me, now);
+export function GroupBoardFor(props: { me: Me; now: number; match: Matchup }) {
+  const { match, now } = props;
   if (match.loading || !match.seasonId || !match.today || isPairedMode(match.mode)) return null;
   return <GroupMatch me={props.me} now={now} match={match} />;
 }
@@ -220,6 +222,8 @@ export function GroupBoardFor(props: { me: Me }) {
  */
 export function HouseScoreboard(props: {
   me: Me;
+  now: number;
+  match: Matchup;
   week: number;
   mode: GroupMode | null;
   status: string;
@@ -228,8 +232,7 @@ export function HouseScoreboard(props: {
   myAverage: number | null;
   cells: DayCell[];
 }) {
-  const now = useNow();
-  const match = useMatchup(props.me, now);
+  const { match, now } = props;
   const board = useWeekBoard({
     seasonPath: match.seasonPath,
     leaguePath: `leagues/${props.me.league}`,
@@ -268,9 +271,8 @@ export function HouseScoreboard(props: {
  * on Game Day's scoreboard opens it over the page. Their goals, screen time,
  * beers and day total, live, and anything played on the day.
  */
-export function OpponentDay(props: { me: Me; onClose: () => void }) {
-  const now = useNow();
-  const match = useMatchup(props.me, now);
+export function OpponentDay(props: { me: Me; match: Matchup; onClose: () => void }) {
+  const { match } = props;
   const title = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     title.current?.focus({ preventScroll: true });
@@ -402,9 +404,8 @@ export function OpponentDay(props: { me: Me; onClose: () => void }) {
  * 2026-11-27): a slim poke, then asking your opponent for receipts, then a
  * rematch, Drop Shot's floors and your Demolition, when there are any.
  */
-export function MatchExtras(props: { me: Me }) {
-  const now = useNow();
-  const match = useMatchup(props.me, now);
+export function MatchExtras(props: { me: Me; now: number; match: Matchup }) {
+  const { match, now } = props;
   if (match.loading || !match.seasonId || !match.season || !match.today || !match.dates) return null;
   const rematch = <Rematch me={props.me} seasonId={match.seasonId} week={match.today.week} period={match.today.period} dayIndex={match.today.dayIndex} date={match.dates.today} />;
   if (!isPairedMode(match.mode)) return null;

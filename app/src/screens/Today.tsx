@@ -2,10 +2,10 @@ import { ItemIcon } from '../art/itemIcons.tsx';
 import { createPortal } from 'preact/compat';
 import type { CarParts } from '../art/car/draw.ts';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { LANES, addDays, daysLeft, holidayOf, isPairedMode, nemesisOf, recordText, rumbleWeek, type Rival, type WeekInput, paceSoFar, receiptFixes, receiptStatus, recentDailyAverage, weekPeriod, winMeter, type BountyTarget, type Lane, type Square, type StoredReceipt, type WeekMode } from '@tcl/engine';
+import { LANES, addDays, daysLeft, holidayOf, isPairedMode, nemesisOf, recordText, type Rival, paceSoFar, receiptFixes, receiptStatus, recentDailyAverage, weekPeriod, winMeter, type BountyTarget, type Lane, type Square, type StoredReceipt, type WeekMode } from '@tcl/engine';
 import { GoalExplosion } from '../art/car/GoalExplosion.tsx';
 import { BeerMug, ScreenClock } from '../art/dayIcons.tsx';
-import { useAll, useDoc, useNow, usePeek, useWhere } from '../data/hooks.ts';
+import { useAll, useDoc, useNow, useWhere } from '../data/hooks.ts';
 import type { Me, Trouble } from '../data/identity.ts';
 import { loadData } from '../data/load.ts';
 import { whyOf } from '../data/why.ts';
@@ -29,6 +29,7 @@ import { PowerUps, type Play } from './PowerUps.tsx';
 import { ReceiptsDue } from './ReceiptsDue.tsx';
 import { DropShotFloors } from './GroupBoard.tsx';
 import { GroupBoardFor, HouseScoreboard, MatchExtras, OpponentDay } from './Match.tsx';
+import { useMatchup } from './useMatchup.ts';
 import { Scoreboard, boostOf } from './Scoreboard.tsx';
 import { usePicksDue } from './usePicksDue.ts';
 import './picks.css';
@@ -40,7 +41,6 @@ import { WeekStrip } from './WeekStrip.tsx';
 import { EventBanner, PlayoffBanner } from './ModeBanner.tsx';
 import { Offseason } from './Offseason.tsx';
 import { RumblePanel } from './RumblePanel.tsx';
-import { rumbleDraws, useRumble } from './useRumble.ts';
 import { lateSyncRisk, useOnline } from '../ui/online.ts';
 import { clockTime, timeLeft } from '../ui/when.ts';
 import './draft.css';
@@ -216,13 +216,12 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
   const everyone = useAll<{ displayName?: string }>(mode !== 'regular' ? `${leaguePath}/players` : null);
   const rosters = useAll<RosterDoc>(seasonPath && sideTargets.length > 0 ? `${seasonPath}/roster` : null);
   const weekKit = useWhere<KitPlay & { player: string }>(seasonPath && sideTargets.length > 0 ? `${seasonPath}/kit` : null, 'period', period);
-  const opponentProfile = useDoc<{ displayName?: string; rankHistory?: { points: number }[]; car?: Partial<CarParts>; stickers?: Partial<Record<string, { until?: unknown }>> }>(
-    opponentId ? `${leaguePath}/players/${opponentId}` : null,
-  );
+  // This week's matchup, worked out once and handed to every part of Game Day
+  // (the commish's request, 2026-11-28): your opponent, both weeks scored.
+  const match = useMatchup(props.me, now);
+  const opponent = match.opponent;
   // Your recent weeks, for the win meter; your car, for the scoreboard and a perfect day's goal explosion; your rivalries.
   const myProfile = useDoc<{ rankHistory?: { points: number }[]; car?: Partial<CarParts>; stickers?: Partial<Record<string, { until?: unknown }>>; rivals?: Record<string, Rival> }>(`${leaguePath}/players/${me}`);
-  const opponentRoster = useDoc<RosterDoc>(seasonPath && opponentId ? `${seasonPath}/roster/${opponentId}` : null);
-  const opponentRest = useDoc<{ date: string }>(seasonPath && period && opponentId ? `${seasonPath}/kit/${period}_${opponentId}_rest` : null);
   const draftState = useDoc<{ step: string; votesCloseAt?: number }>(seasonPath ? `${seasonPath}/draft/state` : null);
   // The Wheel of Shame: last week's lowest scorer spins once that week is final.
   const thisWeekNumber = (todayCal.data as { week?: number } | null)?.week ?? 0;
@@ -231,23 +230,10 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
   const mySpins = useWhere<{ player: string }>(seasonPath ? `${seasonPath}/spins` : null, 'player', me);
   const myDraw = Object.values(prevWeek.data?.wheel ?? {}).find((draw) => draw.player === me && now < draw.dueAt && !mySpins.docs.some((spin) => spin.id === draw.id)) ?? null;
 
-  // Both sides of this week, for the week strip and the scoreboard.
+  // Your docks, corrections and failed receipts, for the day shown.
   type Change = { date: string; amount: number; void: Square | null; receipt?: boolean };
-  const myDays = useWhere<DayEntry & { date: string }>(seasonPath ? `${seasonPath}/days` : null, 'player', me);
-  const myKit = useWhere<KitPlay>(seasonPath ? `${seasonPath}/kit` : null, 'player', me);
   const myChanges = useWhere<Change>(seasonPath ? `${seasonPath}/adjustments` : null, 'player', me);
-  const theirDays = useWhere<DayEntry & { date: string }>(seasonPath ? `${seasonPath}/days` : null, 'player', opponentId);
-  const theirKit = useWhere<KitPlay>(seasonPath ? `${seasonPath}/kit` : null, 'player', opponentId);
-  const theirChanges = useWhere<Change>(seasonPath ? `${seasonPath}/adjustments` : null, 'player', opponentId);
-  const theirReceipts = useWhere<StoredReceipt>(seasonPath ? `${seasonPath}/receipts` : null, 'target', opponentId);
   const myFixes: Change[] = [...myChanges.docs.map((found) => found.data), ...receiptFixes(myReceipts.docs.map((found) => found.data), now).map((fix) => ({ ...fix, receipt: true }))];
-  const theirFixes: Change[] = [...theirChanges.docs.map((found) => found.data), ...receiptFixes(theirReceipts.docs.map((found) => found.data), now)];
-  // A Demolition aimed at you is sealed until its day locks at noon, so look once after each noon.
-  const lockedSoFar = week.docs.filter((found) => now >= found.data.lock).length;
-  const demolitionOnMe = usePeek<{ target: string; date: string; lane: Lane }>(
-    seasonPath && period && opponentId ? `${seasonPath}/sealed/${period}_${opponentId}_demolition` : null,
-    lockedSoFar,
-  );
 
   // The playoffs: the bracket, and the #1 seed's second Full Boost in the semifinal.
   const playoffs = weekDoc.data?.phase === 'playoff';
@@ -255,8 +241,6 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
   const topSeed = playoffs && period === 'p01' && bracket.data?.seeds[0] === me;
   const secondBoost = useDoc<Play>(seasonPath && topSeed ? `${seasonPath}/kit/p01_${me}_fullBoost2` : null);
 
-  // Rumble: today's items and the Boots revealed so far.
-  const rumble = useRumble({ seasonPath, active: mode === 'rumble', days: week.docs.map((found) => found.data), me, opponent: opponentId, now });
 
   // Once the server has every save, the screen is the truth again.
   useEffect(() => {
@@ -410,52 +394,19 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
     dayWindow === 'locked' ? 'Final' : score.kind === 'open' ? 'Nothing logged yet' : restDay ? 'So far, on your rest day' : 'So far';
   const status = error ?? (day.pending ? (online ? 'Saving' : 'Saved on this phone. It goes through when you are back online.') : day.data ? 'Saved' : '');
   const lateRisk = lateSyncRisk({ online, pending: day.pending, lock: cal?.lock ?? null, now });
-  const logsOf = (docs: { data: DayEntry & { date: string } }[]) => Object.fromEntries(docs.map((found) => [found.data.date, found.data]));
   const weekDays = week.docs.map((found) => found.data);
-  const myDemolition = sealed.docs.map((found) => found.data).find((play) => play.kind !== 'boot' && play.period === period && play.target === opponentId) ?? null;
-  const myInput: WeekInput = {
-    par: season.data.par,
-    days: weekDays,
-    logs: logsOf(myDays.docs),
-    kit: myKit.docs.map((found) => found.data),
-    // A 1v1 opponent's Demolition shows from the noon it unseals; in group play, once the weekly job reveals it.
-    demolitionsOn: paired
-      ? demolitionOnMe && demolitionOnMe.target === me
-        ? [{ date: demolitionOnMe.date, lane: demolitionOnMe.lane }]
-        : []
-      : (weekDoc.data?.reveals ?? []).filter((hit) => hit.target === me).map((hit) => ({ date: hit.date, lane: hit.lane })),
-    adjustments: myFixes,
-    now,
-    timeZone: season.data.timeZone,
-    today: dates?.today,
-  };
-  const theirInput: WeekInput | null = opponentId
-    ? {
-        par: season.data.par,
-        days: weekDays,
-        logs: logsOf(theirDays.docs),
-        kit: theirKit.docs.map((found) => found.data),
-        demolitionsOn: myDemolition && myDemolition.lane ? [{ date: myDemolition.date, lane: myDemolition.lane }] : [],
-        adjustments: theirFixes,
-        now,
-        timeZone: season.data.timeZone,
-        today: dates?.today,
-      }
-    : null;
-  // In Rumble both weeks are scored together, with the items played.
-  const myBoots = sealed.docs.map((found) => found.data).filter((play) => play.kind === 'boot' && play.lane).map((play) => ({ date: play.date, lane: play.lane! }));
-  const rumbled = mode === 'rumble' && opponentId && theirInput ? rumbleWeek(myInput, theirInput, rumbleDraws(rumble, me, opponentId, myBoots, weekDays.map((each) => each.date))) : null;
-  const myWeek = rumbled?.a ?? playerWeek(myInput);
-  const theirWeek = rumbled?.b ?? (theirInput ? playerWeek(theirInput) : null);
+  // Both weeks, from the matchup: a week with no days yet is empty.
+  const myWeek = match.myWeek ?? playerWeek({ par: season.data.par, days: [], logs: {}, kit: [], demolitionsOn: [], adjustments: [], now, timeZone: season.data.timeZone, today: dates?.today });
+  const theirWeek = match.theirWeek;
   // The day on screen, with today's items played, once the server has it.
-  const shown = (rumbled && myWeek.cells.find((cell) => cell.date === date)?.score) || score;
+  const shown = (match.rumbled && myWeek.cells.find((cell) => cell.date === date)?.score) || score;
   const screenPointsShown = entry.screenMinutes === null ? null : score.screen.points;
   // The win meter: points so far, and each side's recent pace for the days left.
   const meter =
     theirWeek && daysLeft(myWeek.cells) > 0
       ? winMeter(
           { points: myWeek.totals.points, dailyAverage: recentDailyAverage(myProfile.data?.rankHistory) ?? paceSoFar(myWeek.cells) },
-          { points: theirWeek.totals.points, dailyAverage: recentDailyAverage(opponentProfile.data?.rankHistory) ?? paceSoFar(theirWeek.cells) },
+          { points: theirWeek.totals.points, dailyAverage: recentDailyAverage(opponent?.rankHistory ?? undefined) ?? paceSoFar(theirWeek.cells) },
           daysLeft(myWeek.cells),
         )
       : null;
@@ -483,20 +434,20 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
         <Scoreboard
           week={todayCal.data.week}
           mode={mode === 'rumble' || mode === 'dropShot' ? mode : null}
-          items={mode === 'rumble' ? { mine: rumble.items[`${dates.today}_${me}`] ?? null, theirs: rumble.items[`${dates.today}_${opponentId}`] ?? null } : null}
+          items={mode === 'rumble' ? { mine: match.rumbleItems[`${dates.today}_${me}`] ?? null, theirs: match.rumbleItems[`${dates.today}_${opponentId}`] ?? null } : null}
           status={daysLeft(myWeek.cells) > 0 ? `${weekdayShort(dates.today)} \u00b7 Live` : 'Week over'}
           me={{ name: 'You', car: myProfile.data?.car, stickers: myProfile.data?.stickers, points: myWeek.totals.points, beers: myWeek.totals.beers, boost: boostOf(myWeek.cells) }}
           them={{
-            name: opponentProfile.data?.displayName ?? 'Your opponent',
-            car: opponentProfile.data?.car,
-            stickers: opponentProfile.data?.stickers,
+            name: opponent?.name ?? 'Your opponent',
+            car: opponent?.car ?? undefined,
+            stickers: opponent?.stickers,
             points: theirWeek.totals.points,
             beers: theirWeek.totals.beers,
             boost: boostOf(theirWeek.cells),
             nemesis: nemesisOf(myProfile.data?.rivals) === opponentId,
           }}
           meter={meter}
-          record={practice ? "Practice: this one doesn't count." : `All-time against ${opponentProfile.data?.displayName ?? 'your opponent'}: ${recordText(myProfile.data?.rivals?.[opponentId])}`}
+          record={practice ? "Practice: this one doesn't count." : `All-time against ${opponent?.name ?? 'your opponent'}: ${recordText(myProfile.data?.rivals?.[opponentId])}`}
           cells={myWeek.cells}
           onOpponent={() => setTheirDayOpen(true)}
         />
@@ -506,31 +457,33 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
             now={now}
             today={todayCal.data as CalendarDoc & { noon?: number }}
             vsHouse={targets.includes('HOUSE')}
-            mine={rumble.items[`${dates.today}_${me}`] ?? null}
-            theirs={opponentId ? (rumble.items[`${dates.today}_${opponentId}`] ?? null) : null}
+            mine={match.rumbleItems[`${dates.today}_${me}`] ?? null}
+            theirs={opponentId ? (match.rumbleItems[`${dates.today}_${opponentId}`] ?? null) : null}
             opponent={
               opponentId
                 ? {
                     id: opponentId,
-                    name: opponentProfile.data?.displayName ?? 'Your opponent',
-                    goals: Object.fromEntries(LANES.map((lane) => [lane, opponentRoster.data?.goals?.[lane]?.text ?? ''])) as Partial<Record<Lane, string>>,
-                    resting: isRestDay({ date: dates.today, calendar: todayCal.data, restDate: opponentRest.data?.date ?? null }),
+                    name: opponent?.name ?? 'Your opponent',
+                    goals: Object.fromEntries(LANES.map((lane) => [lane, opponent?.goals?.[lane]?.text ?? ''])) as Partial<Record<Lane, string>>,
+                    resting: isRestDay({ date: dates.today, calendar: todayCal.data, restDate: opponent?.rest ?? null }),
                   }
                 : null
             }
-            myBoot={myBoots.find((boot) => boot.date === dates.today)?.lane ?? null}
+            myBoot={match.myBoots.find((boot) => boot.date === dates.today)?.lane ?? null}
           />
         )}
-        {mode === 'dropShot' && <DropShotFloors mine={myWeek.cells} theirs={theirWeek.cells} name={opponentProfile.data?.displayName ?? 'Your opponent'} />}
+        {mode === 'dropShot' && <DropShotFloors mine={myWeek.cells} theirs={theirWeek.cells} name={opponent?.name ?? 'Your opponent'} />}
         </div>
       ) : !paired ? (
-        <GroupBoardFor me={props.me} />
+        <GroupBoardFor me={props.me} now={now} match={match} />
       ) : (
         weekDays.length > 0 &&
         todayCal.data &&
         (targets.includes('HOUSE') ? (
           <HouseScoreboard
             me={props.me}
+            now={now}
+            match={match}
             week={todayCal.data.week}
             mode={mode === 'rumble' || mode === 'dropShot' ? mode : null}
             status={daysLeft(myWeek.cells) > 0 ? `${weekdayShort(dates.today)} \u00b7 Live` : 'Week over'}
@@ -557,7 +510,7 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
           me={me}
           week={weekDoc.data}
           bracket={bracket.data}
-          name={(player) => (player === me ? 'You' : (everyone.docs.find((found) => found.id === player)?.data.displayName ?? opponentProfile.data?.displayName ?? 'your opponent'))}
+          name={(player) => (player === me ? 'You' : (everyone.docs.find((found) => found.id === player)?.data.displayName ?? opponent?.name ?? 'your opponent'))}
         />
       )}
 
@@ -728,9 +681,9 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
               ? [
                   {
                     id: opponentId,
-                    name: opponentProfile.data?.displayName ?? 'Your opponent',
-                    goals: Object.fromEntries(LANES.map((lane) => [lane, opponentRoster.data?.goals?.[lane]?.text ?? ''])) as Partial<Record<Lane, string>>,
-                    rest: opponentRest.data?.date ?? null,
+                    name: opponent?.name ?? 'Your opponent',
+                    goals: Object.fromEntries(LANES.map((lane) => [lane, opponent?.goals?.[lane]?.text ?? ''])) as Partial<Record<Lane, string>>,
+                    rest: opponent?.rest ?? null,
                   },
                 ]
               : sideTargets.map((id) => ({
@@ -747,7 +700,7 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
       )}
 
       {/* From Match: a slim poke, then receipts from your opponent, then the rest. */}
-      <MatchExtras me={props.me} />
+      <MatchExtras me={props.me} now={now} match={match} />
 
       {/* This week's picks, while open: at the bottom, out of the way. */}
       {picksDue && picksDue.picked < picksDue.pairs.length && props.onPicks && (
@@ -790,7 +743,7 @@ export function Today(props: { me: Me; onDraft?: () => void; onWheel?: () => voi
           document.body,
         )}
 
-      {theirDayOpen && <OpponentDay me={props.me} onClose={() => setTheirDayOpen(false)} />}
+      {theirDayOpen && <OpponentDay me={props.me} match={match} onClose={() => setTheirDayOpen(false)} />}
     </div>
   );
 }
