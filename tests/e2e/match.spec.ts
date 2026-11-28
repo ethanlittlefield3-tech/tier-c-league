@@ -85,6 +85,21 @@ test.describe('Game Day: your matchup', () => {
     await expect(page.locator('.week-them .boost-value')).toHaveText('75');
   });
 
+  test("Each car streams its own boost and trail from the Garage, growing as the day's dial fills", async ({ page, request }) => {
+    const { league, season } = await onMatch(page, request);
+    await patchDoc(request, `leagues/${league.id}/players/maya`, { car: { body: 'dart', paint: 'lime', boost: 'gasLeak', trail: 'sparks' } });
+    const theirs = page.locator('.week-them .board-flame');
+    await expect(theirs).toHaveAttribute('data-boost', 'gasLeak');
+    await expect(theirs).toHaveAttribute('data-trail', 'sparks');
+    // Yours is the starter boost in your team's blue, with the starter trail.
+    await expect(page.locator('.week-me .board-flame')).toHaveAttribute('data-boost', 'team');
+    await expect(theirs).toHaveCSS('opacity', '0');
+    await mayaLogs(request, season.path, season.today, { goals: { mind: true, body: true, wildcard: false }, screenMinutes: 60, beers: 0 });
+    // Two goals and screen time: three slices of four.
+    await expect(theirs).toHaveAttribute('style', /scaleX\(0\.75\)/);
+    await expect(theirs).toHaveCSS('opacity', '1');
+  });
+
   test('You can poke your opponent once a day, and the league keeps it', async ({ page, request }) => {
     const { season, me } = await onMatch(page, request);
     await button(page, 'Poke Maya').click();

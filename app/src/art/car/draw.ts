@@ -679,6 +679,21 @@ let counter = 0;
 const attribute = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 /**
+ * A car's own boost and trail on their own, streaming back from the exhaust
+ * at the right edge: Game Day's scoreboard grows it as the day's dial fills
+ * (the commish's request, 2026-11-28). `team` colors the starter boost, as
+ * on the car.
+ */
+export function drawBoost(parts: Partial<CarParts>, options: { team?: 'blue' | 'orange' } = {}): string {
+  counter += 1;
+  const id = `boost${counter}`;
+  const car = { ...STARTER_CAR, ...parts };
+  const team = options.team ?? 'blue';
+  const exhaust: [number, number] = [0, 0];
+  return `<svg viewBox="-96 -24 100 48" preserveAspectRatio="xMaxYMid meet" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${boost(car.boost, exhaust, team, id)}${trailStyle(car.trail, trailColor(car.boost, team), exhaust)}</svg>`;
+}
+
+/**
  * A car as SVG markup. `team` colors the starter boost trail: your car is
  * always team blue, your opponent's orange. `bare` leaves out the boost and
  * the shadow, for small icons.

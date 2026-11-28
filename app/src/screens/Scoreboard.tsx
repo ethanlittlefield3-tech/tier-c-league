@@ -1,6 +1,7 @@
+import { useMemo } from 'preact/hooks';
 import { MODE_NAMES, RUMBLE_NAMES, type GroupMode, type RumbleItem } from '@tcl/engine';
 import { CarArt } from '../art/car/CarArt.tsx';
-import type { CarParts } from '../art/car/draw.ts';
+import { STARTER_CAR, drawBoost, type CarParts } from '../art/car/draw.ts';
 import { HouseArt } from '../art/dayIcons.tsx';
 import { ItemIcon } from '../art/itemIcons.tsx';
 import { formatPoints } from '../today/model.ts';
@@ -77,17 +78,25 @@ export function boostOf(cells: readonly { today: boolean; rest: boolean; score: 
   };
 }
 
-/** A side's car, with a boost flame that grows as its dial fills, and today's Rumble item on its roof. */
+/**
+ * A side's car, with its own boost and trail from the Garage streaming behind
+ * it, growing as its dial fills (the commish's request, 2026-11-28), and
+ * today's Rumble item on its roof.
+ */
 function BoardCar(props: { side: BoardSide; team: 'blue' | 'orange'; item?: RumbleItem | null }) {
   const level = fullness(props.side.boost);
+  const car = { ...STARTER_CAR, ...(props.side.car ?? {}) };
+  const flame = useMemo(() => drawBoost(car, { team: props.team }), [car.boost, car.trail, props.team]);
   return (
     <span class="board-car" data-team={props.team}>
-      <span class="board-flame" aria-hidden="true" style={{ transform: `scaleX(${level.toFixed(2)})`, opacity: level > 0 ? 1 : 0 }}>
-        <svg viewBox="0 0 40 20">
-          <path d="M40 4C28 3 14 0 0 10 14 20 28 17 40 16Z" fill="currentColor" />
-          <path d="M40 7C31 6 22 5 12 10 22 15 31 14 40 13Z" fill="#fff6c8" />
-        </svg>
-      </span>
+      <span
+        class="board-flame"
+        aria-hidden="true"
+        data-boost={car.boost}
+        data-trail={car.trail}
+        style={{ transform: `scaleX(${level.toFixed(2)})`, opacity: level > 0 ? 1 : 0 }}
+        dangerouslySetInnerHTML={{ __html: flame }}
+      />
       <CarArt parts={props.side.car} stickers={props.side.stickers} team={props.team} bare class="board-car-art" />
       {props.item && (
         <span class="board-item" title={RUMBLE_NAMES[props.item]}>
