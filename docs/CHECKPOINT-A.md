@@ -2,7 +2,7 @@
 
 Generated 2026-11-28 by `npm run checkpoint:a`. Do not edit by hand: the rule list comes from the test results and the worked weeks are run through the engine.
 
-- **Tests:** 433 of 433 passing.
+- **Tests:** 440 of 440 passing.
 - **Rulings and calls behind these rules:** `docs/DECISIONS.md`.
 
 ## Worked example weeks
@@ -158,9 +158,9 @@ Week 5, par 3. A draw worth +2 each, a Demolition that misses, one that fizzles 
 ### 1. Daily points
 
 - Each goal hit is worth +1
-- Screen time scores par minus one point for each full hour (the par 3 scale)
+- Screen time scores par minus one point for each full hour (the par 3 scale), and never below -3, what not logging it costs (ruling R34)
 - Par can be set from 1 to 6, and it shifts the whole scale
-- Each beer costs 1 point
+- Each beer costs 1 point, down to the floor of a no-show (ruling R34)
 - Screen time not logged costs 3 in place of the scale, at any par
 - Nothing logged all day is a no-show worth -5
 - Logging anything is showing up: one beer and nothing else is -4, not -5
@@ -170,7 +170,7 @@ Week 5, par 3. A draw worth +2 each, a Demolition that misses, one that fizzles 
 ### 2. Rest day
 
 - Goals take the day off and score 0, even if they are tapped
-- Screen time and beers still count, so the best rest day is +3 at par 3
+- Screen time and beers still count, so the best rest day is +3 at par 3, and a logged one never goes below -3 (ruling R34)
 - Logging nothing on a rest day counts as screen time not logged: -3, not a -5 no-show
 - Full Boost has nothing to fix on a rest day
 - Aerial on a rest day doubles only screen time and beers
@@ -383,6 +383,16 @@ Week 5, par 3. A draw worth +2 each, a Demolition that misses, one that fizzles 
 - Date arithmetic crosses months, years and leap days correctly
 - A normal league day is exactly 24 hours from start to start
 
+### 1b. Logging never costs more than logging nothing (ruling R34)
+
+- Logged screen time never scores below -3, the price of not logging it: 7 hours at par 3 is -3, not -4
+- A logged day never scores below a no-show: 8 hours of screen time and 6 beers is -5, not -9
+- A logged rest day never scores below a blank rest day: -3
+- On a Holiday Pass day, a logged day never scores below a blank one, which scores 0 that day
+- Days above the floor score as before: 5 hours and 2 beers with one goal is -3
+- An Aerial doubles a floored day, as it doubles a no-show, and a Demolition and docks still come after
+- The day says how much the floor saved
+
 ### A league's clock
 
 - A real league goes by its time zone: 9 pm on a date, and the date and hour at any moment
@@ -560,7 +570,7 @@ Week 5, par 3. A draw worth +2 each, a Demolition that misses, one that fizzles 
 ### Holiday events: Holiday Pass
 
 - A no-show scores 0, not -5, and a blank rest day 0, not -3
-- A logged day scores as usual
+- A logged day scores as usual, but never below 0, what a blank day scores that day (ruling R34)
 - Every goal still counts as missed on a no-show, so a Demolition lands, and docks still count
 - A no-show on a Holiday Pass neither grows nor breaks a check-in streak
 

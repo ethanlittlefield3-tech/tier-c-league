@@ -41,7 +41,7 @@ describe('Telemetry: your days, as habits', () => {
   it('Shows the shape of your week: your average day on each weekday', () => {
     const shape = weekdayShape([day(0, { goals: all, screenMinutes: 30, beers: 0 }), day(0, null), day(5, { goals: none, screenMinutes: 400, beers: 3 })]);
     expect(shape[0]).toEqual({ dayIndex: 0, average: 0.5, days: 2 });
-    expect(shape[5]).toEqual({ dayIndex: 5, average: -6, days: 1 });
+    expect(shape[5]).toEqual({ dayIndex: 5, average: -5, days: 1 });
     expect(shape[3]).toEqual({ dayIndex: 3, average: null, days: 0 });
   });
 });

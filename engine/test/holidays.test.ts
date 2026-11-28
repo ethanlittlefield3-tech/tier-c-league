@@ -50,8 +50,9 @@ describe('Holiday events: Holiday Pass', () => {
     expect(score(null, { event: 'pass' }).event).toEqual({ kind: 'pass', points: 5 });
   });
 
-  it('A logged day scores as usual', () => {
-    expect(points(log('---', '6:00', 1), { event: 'pass' })).toBe(-4);
+  it('A logged day scores as usual, but never below 0, what a blank day scores that day (ruling R34)', () => {
+    expect(points(log('M--', '2:00', 0), { event: 'pass' })).toBe(2);
+    expect(points(log('---', '6:00', 1), { event: 'pass' })).toBe(0);
   });
 
   it("Every goal still counts as missed on a no-show, so a Demolition lands, and docks still count", () => {

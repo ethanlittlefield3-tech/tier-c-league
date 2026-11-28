@@ -130,6 +130,9 @@ describe('The day total', () => {
     const entry = { goals: { mind: true, body: false, wildcard: false }, screenMinutes: 30, beers: 0 };
     expect(breakdown(liveDayScore({ par: 3, entry, restDay: false, locked: false, aerial: true }))).toBe('Goals +1 · screen +3 · beers 0 · Aerial ×2');
     expect(breakdown(liveDayScore({ par: 3, entry, restDay: false, locked: false, ruleOne: true }))).toBe('Rule One: the day scores 0');
+    // Ruling R34: a rough day logged honestly is held at a no-show's -5, and says so.
+    const rough = { goals: { mind: false, body: false, wildcard: false }, screenMinutes: 480, beers: 6 };
+    expect(breakdown(liveDayScore({ par: 3, entry: rough, restDay: false, locked: false }))).toBe('Goals 0 · screen −3 · beers −6 · floor +4');
   });
 
   it("In Rumble, it names each item's points, and a Magnet's beers", () => {

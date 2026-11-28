@@ -72,10 +72,14 @@ export function isValidScreenMinutes(minutes: number): boolean {
   );
 }
 
-/** Par minus one point for each full hour. `null` means not logged: -3 in place of the scale. */
+/**
+ * Par minus one point for each full hour. `null` means not logged: -3 in
+ * place of the scale. Logged screen time never scores below that -3, so
+ * logging it honestly never costs more than leaving it blank (ruling R34).
+ */
 export function screenPoints(minutes: number | null, par: number): number {
   if (minutes === null) return RULES.screenNotLogged;
-  return par - Math.floor(minutes / 60);
+  return Math.max(RULES.screenNotLogged, par - Math.floor(minutes / 60));
 }
 
 /** What a player logged for one day. Mirrors the `days/{player_day}` document. */
@@ -186,6 +190,11 @@ export interface DayScore {
    * value, and the goal, screen and beer parts only describe what was logged.
    */
   base: number;
+  /**
+   * What the floor added to a logged day's base (ruling R34): a logged day
+   * never scores below what logging nothing would have that day. 0 on most days.
+   */
+  floor: number;
   aerial: 'none' | 'doubled' | 'cancelled';
   /** What doubling added. Negative when the base was negative. */
   aerialPoints: number;
@@ -278,6 +287,7 @@ export function scoreDay(input: DayInput, options: ScoreOptions = {}): DayScore 
       beers,
       beerPoints,
       base: 0,
+      floor: 0,
       aerial: input.aerial === true ? 'cancelled' : 'none',
       aerialPoints: 0,
       demolitions: targets.map((lane) => ({ lane, outcome: 'ruleOne' as const })),
@@ -301,10 +311,18 @@ export function scoreDay(input: DayInput, options: ScoreOptions = {}): DayScore 
   let eventBase = 0;
   let kind: DayKind;
   let base: number;
+  let floor = 0;
   if (checkedIn) {
     kind = 'played';
     eventBase = holiday === 'dry' && beers === 0 ? RULES.dryDay : 0;
     base = goalPoints + screen.points + beerPoints + beerShift + eventBase;
+    // Ruling R34: logging never costs more than logging nothing would have
+    // that day: a no-show, a blank rest day, or 0 on a Holiday Pass.
+    const blank = (holiday === 'pass' ? 0 : restDay ? RULES.screenNotLogged : RULES.noShow) + beerShift;
+    if (base < blank) {
+      floor = blank - base;
+      base = blank;
+    }
   } else if (open) {
     kind = 'open';
     base = beerShift;
@@ -355,6 +373,7 @@ export function scoreDay(input: DayInput, options: ScoreOptions = {}): DayScore 
     beers,
     beerPoints,
     base,
+    floor,
     aerial: aerial ? 'doubled' : 'none',
     aerialPoints,
     demolitions,

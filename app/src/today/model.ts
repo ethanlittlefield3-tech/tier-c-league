@@ -147,6 +147,8 @@ export function breakdown(score: DayScore): string {
   parts.push(`beers ${formatPoints(score.beerPoints)}`);
   if (score.beerShift) parts.push(`Magnet ${formatPoints(score.beerShift)}`);
   if (score.event?.kind === 'dry' && score.event.points > 0) parts.push(`Dry Day ${formatPoints(score.event.points)}`);
+  // Ruling R34: a logged day never scores below what logging nothing would have.
+  if (score.floor > 0) parts.push(`floor ${formatPoints(score.floor)}`);
   if (score.aerial === 'doubled') parts.push('Aerial ×2');
   if (score.event?.kind === 'double') parts.push('Double Points ×2');
   // Rumble's Tornado, Punch and Spike.

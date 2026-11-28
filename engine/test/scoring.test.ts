@@ -17,7 +17,7 @@ describe('1. Daily points', () => {
     expect(points(log('MBW', '3:00'))).toBe(3);
   });
 
-  it('Screen time scores par minus one point for each full hour (the par 3 scale)', () => {
+  it('Screen time scores par minus one point for each full hour (the par 3 scale), and never below -3, what not logging it costs (ruling R34)', () => {
     const scale: [string, number][] = [
       ['0:00', 3],
       ['0:45', 3],
@@ -32,9 +32,9 @@ describe('1. Daily points', () => {
       ['5:00', -2],
       ['5:45', -2],
       ['6:00', -3],
-      ['7:00', -4],
-      ['10:30', -7],
-      ['24:00', -21],
+      ['7:00', -3],
+      ['10:30', -3],
+      ['24:00', -3],
     ];
     for (const [screen, expected] of scale) {
       expect(screenPoints(minutes(screen), 3), `${screen} at par 3`).toBe(expected);
@@ -57,11 +57,11 @@ describe('1. Daily points', () => {
     }
   });
 
-  it('Each beer costs 1 point', () => {
+  it('Each beer costs 1 point, down to the floor of a no-show (ruling R34)', () => {
     expect(points(log('MBW', '0:45', 0))).toBe(6);
     expect(points(log('MBW', '0:45', 1))).toBe(5);
     expect(points(log('MBW', '0:45', 4))).toBe(2);
-    expect(points(log('MBW', '0:45', 30))).toBe(-24);
+    expect(points(log('MBW', '0:45', 30))).toBe(-5);
   });
 
   it('Screen time not logged costs 3 in place of the scale, at any par', () => {
@@ -97,6 +97,41 @@ describe('1. Daily points', () => {
   });
 });
 
+describe('1b. Logging never costs more than logging nothing (ruling R34)', () => {
+  it('Logged screen time never scores below -3, the price of not logging it: 7 hours at par 3 is -3, not -4', () => {
+    expect(points(log('MBW', '7:00'))).toBe(0);
+    expect(points(log('MBW', null))).toBe(0);
+  });
+
+  it('A logged day never scores below a no-show: 8 hours of screen time and 6 beers is -5, not -9', () => {
+    expect(points(log('---', '8:00', 6))).toBe(-5);
+    expect(points(null)).toBe(-5);
+  });
+
+  it('A logged rest day never scores below a blank rest day: -3', () => {
+    expect(points(log('---', '9:00', 4), { restDay: true })).toBe(-3);
+    expect(points(null, { restDay: true })).toBe(-3);
+  });
+
+  it('On a Holiday Pass day, a logged day never scores below a blank one, which scores 0 that day', () => {
+    expect(points(log('---', '8:00', 3), { event: 'pass' })).toBe(0);
+  });
+
+  it('Days above the floor score as before: 5 hours and 2 beers with one goal is -3', () => {
+    expect(points(log('M--', '5:00', 2))).toBe(-3);
+  });
+
+  it('An Aerial doubles a floored day, as it doubles a no-show, and a Demolition and docks still come after', () => {
+    expect(points(log('---', '8:00', 6), { aerial: true })).toBe(-10);
+    expect(points(log('---', '8:00', 6), { demolitions: ['mind'], adjustments: [-1] })).toBe(-8);
+  });
+
+  it('The day says how much the floor saved', () => {
+    expect(scoreDay({ par: 3, log: log('---', '8:00', 6) }).floor).toBe(4);
+    expect(scoreDay({ par: 3, log: log('M--', '5:00', 2) }).floor).toBe(0);
+  });
+});
+
 describe('2. Rest day', () => {
   it('Goals take the day off and score 0, even if they are tapped', () => {
     const result = score(log('MBW', '3:00'), { restDay: true });
@@ -104,10 +139,10 @@ describe('2. Rest day', () => {
     expect(result.goals).toEqual({ mind: 'rest', body: 'rest', wildcard: 'rest' });
   });
 
-  it('Screen time and beers still count, so the best rest day is +3 at par 3', () => {
+  it('Screen time and beers still count, so the best rest day is +3 at par 3, and a logged one never goes below -3 (ruling R34)', () => {
     expect(points(log('---', '0:45', 0), { restDay: true })).toBe(3);
     expect(points(log('---', '0:45', 2), { restDay: true })).toBe(1);
-    expect(points(log('---', '5:00', 3), { restDay: true })).toBe(-5);
+    expect(points(log('---', '5:00', 3), { restDay: true })).toBe(-3);
   });
 
   it('Logging nothing on a rest day counts as screen time not logged: -3, not a -5 no-show', () => {
